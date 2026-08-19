@@ -2454,7 +2454,7 @@ const REQUEUE_GAP=10;                     // 틀림 재출 간격
 const PUSH_EVERY_N=20, PUSH_EVERY_MS=5*60*1000, STALE_MS=10*60*1000;
 const PAIR_TYPES=new Set(['정의','기준','동치','근사','표기','전거','대응']); // 방향 버튼 노출 대상(양방향 쌍)
 const TERM_TYPES=new Set(['동치','표기','전거','예시','대응','연쇄','종류','구성','단계','표']);
-const SUBJECTS=['1.국어','2.수학','3.영어','4.사회','5.도덕','6.과학','7.체육','8.음악','9.미술'];
+const SUBJECTS=['1.국어','2.수학','3.영어','4.사회','5.도덕','6.과학','7.체육','8.음악','9.미술','13.총창'];
 
 /* ═══════════════ FSRS ═══════════════ */
 const engine = FSRS.fsrs(FSRS.generatorParameters({
@@ -2627,7 +2627,10 @@ function loadCfg(){
 function saveCfg(){ lsSet(K_CFG, JSON.stringify(cfg)); }
 
 /* ═══════════════ 신규 투입 계획 (과목 순서 + 하루 상한) + 회독 대기 큐 ═══════════════ */
-let intake={order:[...SUBJECTS], cap:130};
+// 기본 투입 순서 = 수강 기록 기반 "오래 방치된 과목 먼저" (누적복습 data.json 실측 2026-08-19:
+// 음악 종강 6/28·영어 7/01·총창 6/29 — 최고령 / 미술 7/31·수학 중앙 7/12 / 이하 중앙값 순.
+// 잊은 과목일수록 일찍 넣어야 시험까지 반복 횟수를 확보한다. 홈에서 언제든 재설정 가능.)
+let intake={order:['8.음악','3.영어','13.총창','9.미술','2.수학','6.과학','5.도덕','7.체육','1.국어','4.사회'], cap:130};
 function loadIntake(){ const v=lsGet(K_INTAKE);
   if(v){ try{ const o=JSON.parse(v);
     if(Array.isArray(o.order)&&o.order.length)intake.order=o.order;

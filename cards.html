@@ -2454,30 +2454,84 @@ const PUSH_EVERY_N=20, PUSH_EVERY_MS=5*60*1000, STALE_MS=10*60*1000;
 const PAIR_TYPES=new Set(['정의','기준','동치','근사','표기','전거','대응']); // 방향 버튼 노출 대상(양방향 쌍)
 const TERM_TYPES=new Set(['동치','표기','전거','예시','대응','연쇄','종류','구성','단계','표']);
 const SUBJECTS=['1.국어','2.수학','3.영어','4.사회','5.도덕','6.과학','7.체육','8.음악','9.미술','13.총창'];
-const UNIT_MAX = 50; // 🔴 단위 원칙의 유일한 손잡이 — 투입·회독 단위 = 1바퀴(개념 수) ≤ 50인 가장 높은 트리 마디
-const TOPIC_DATE = { // 대주제 → 수강일 (누적복습 수강 기록 근사 매칭 2026-08-19)
-  "3.영어|언어 습득 이론":'06-05', "3.영어|교수법":'06-07', "6.과학|기본이론":'06-09',
-  "3.영어|학습자 변인":'06-11', "8.음악|전통 음악":'06-14', "7.체육|학습과제":'06-15',
-  "4.사회|사회과 교수·학습 모형":'06-16', "8.음악|서양 음악":'06-16', "6.과학|과학 학습 모형":'06-18',
-  "3.영어|기능별 언어 지도":'06-19', "3.영어|요소별 언어 지도":'06-19', "3.영어|수업 활동":'06-19',
-  "4.사회|사회과 수업 기법":'06-19', "7.체육|평가":'06-22', "7.체육|수업 관리":'06-22',
-  "2.수학|도형과 측정":'06-27', "3.영어|교사 언어":'06-28', "7.체육|체육 수업 모형":'06-28',
-  "8.음악|음악 교육론":'06-28', "13.총창|교육과정의 성격":'06-29', "13.총창|Ⅰ. 교육과정 구성의 방향":'06-29',
-  "13.총창|Ⅱ. 학교 교육과정 설계와 운영":'06-29', "13.총창|Ⅲ. 학교급별 교육과정 편성·운영의 기준":'06-29', "13.총창|Ⅳ. 학교 교육과정 지원":'06-29',
-  "13.총창|창의적 체험활동":'06-29', "3.영어|평가":'07-01', "3.영어|교육과정":'07-01',
-  "4.사회|역사, 지리 영역 지도":'07-02', "9.미술|조형 요소와 원리":'07-04', "2.수학|수학의 가치와 특성":'07-05',
-  "4.사회|사회과 교육의 목표":'07-05', "4.사회|사회과 교육의 본질에 대한 유형":'07-05', "4.사회|사회과 교육과정의 내용 구성 원리":'07-05',
-  "2.수학|수학 수업 모형":'07-06', "5.도덕|교과서 편찬 방향":'07-07', "6.과학|물질":'07-07',
-  "9.미술|입체와 공예":'07-07', "1.국어|기초 문식성":'07-11', "9.미술|디자인과 매체":'07-11',
-  "2.수학|폴리아":'07-12', "9.미술|감상":'07-12', "5.도덕|도덕 수업 모형":'07-14',
-  "9.미술|전통 미술":'07-18', "6.과학|생명":'07-21', "1.국어|문법":'07-22',
-  "5.도덕|도덕 교육의 관점":'07-22', "5.도덕|도덕과 평가 방법":'07-22', "9.미술|평면 표현":'07-23',
-  "5.도덕|도덕 교육의 이론적 기초":'07-24', "5.도덕|도덕과의 기능":'07-29', "5.도덕|도덕과 교수·학습 방법":'07-29',
-  "9.미술|미술 교육론":'07-29', "1.국어|읽기":'07-30', "4.사회|3~4학년군 각론":'08-01',
-  "6.과학|운동과 에너지":'08-06', "7.체육|3, 4학년군 운동":'08-08', "4.사회|5~6학년군 각론":'08-10',
-  "2.수학|수와 연산":'08-11', "1.국어|쓰기":'08-14', "6.과학|지구와 우주":'08-17',
-};
-let PLAN=[], PLAN_RANK=new Map();
+const INTAKE_PLAN=[ // [과목|대주제, 수강일] — 누적복습 수강 기록 근사 매칭 (2026-08-19, 오래된 것부터)
+  ["3.영어|언어 습득 이론","06-05"],
+  ["3.영어|교수법","06-07"],
+  ["6.과학|기본이론","06-09"],
+  ["3.영어|학습자 변인","06-11"],
+  ["8.음악|전통 음악","06-14"],
+  ["7.체육|학습과제","06-15"],
+  ["4.사회|사회과 교수·학습 모형","06-16"],
+  ["8.음악|서양 음악#0","06-16"],
+  ["8.음악|서양 음악#1","06-16"],
+  ["6.과학|과학 학습 모형","06-18"],
+  ["3.영어|기능별 언어 지도#0","06-19"],
+  ["3.영어|기능별 언어 지도#1","06-19"],
+  ["3.영어|요소별 언어 지도","06-19"],
+  ["3.영어|수업 활동","06-19"],
+  ["4.사회|사회과 수업 기법","06-19"],
+  ["7.체육|평가","06-22"],
+  ["7.체육|수업 관리","06-22"],
+  ["2.수학|도형과 측정#0","06-27"],
+  ["2.수학|도형과 측정#1","06-27"],
+  ["3.영어|교사 언어","06-28"],
+  ["7.체육|체육 수업 모형","06-28"],
+  ["8.음악|음악 교육론","06-28"],
+  ["13.총창|교육과정의 성격","06-29"],
+  ["13.총창|Ⅰ. 교육과정 구성의 방향","06-29"],
+  ["13.총창|Ⅱ. 학교 교육과정 설계와 운영","06-29"],
+  ["13.총창|Ⅲ. 학교급별 교육과정 편성·운영의 기준","06-29"],
+  ["13.총창|Ⅳ. 학교 교육과정 지원","06-29"],
+  ["13.총창|창의적 체험활동","06-29"],
+  ["3.영어|평가","07-01"],
+  ["3.영어|교육과정","07-01"],
+  ["4.사회|역사, 지리 영역 지도","07-02"],
+  ["9.미술|조형 요소와 원리","07-04"],
+  ["2.수학|수학의 가치와 특성","07-05"],
+  ["4.사회|사회과 교육의 목표","07-05"],
+  ["4.사회|사회과 교육의 본질에 대한 유형","07-05"],
+  ["4.사회|사회과 교육과정의 내용 구성 원리","07-05"],
+  ["2.수학|수학 수업 모형","07-06"],
+  ["5.도덕|교과서 편찬 방향","07-07"],
+  ["6.과학|물질","07-07"],
+  ["9.미술|입체와 공예","07-07"],
+  ["1.국어|기초 문식성#0","07-11"],
+  ["1.국어|기초 문식성#1","07-11"],
+  ["1.국어|기초 문식성#2","07-11"],
+  ["9.미술|디자인과 매체","07-11"],
+  ["2.수학|폴리아","07-12"],
+  ["9.미술|감상","07-12"],
+  ["5.도덕|도덕 수업 모형","07-14"],
+  ["9.미술|전통 미술","07-18"],
+  ["6.과학|생명","07-21"],
+  ["1.국어|문법#0","07-22"],
+  ["1.국어|문법#1","07-22"],
+  ["5.도덕|도덕 교육의 관점","07-22"],
+  ["5.도덕|도덕과 평가 방법","07-22"],
+  ["9.미술|평면 표현","07-23"],
+  ["5.도덕|도덕 교육의 이론적 기초#0","07-24"],
+  ["5.도덕|도덕 교육의 이론적 기초#1","07-24"],
+  ["5.도덕|도덕과의 기능","07-29"],
+  ["5.도덕|도덕과 교수·학습 방법","07-29"],
+  ["9.미술|미술 교육론","07-29"],
+  ["1.국어|읽기#0","07-30"],
+  ["1.국어|읽기#1","07-30"],
+  ["4.사회|3~4학년군 각론#0","08-01"],
+  ["4.사회|3~4학년군 각론#1","08-01"],
+  ["6.과학|운동과 에너지","08-06"],
+  ["7.체육|3, 4학년군 운동","08-08"],
+  ["4.사회|5~6학년군 각론#0","08-10"],
+  ["4.사회|5~6학년군 각론#1","08-10"],
+  ["4.사회|5~6학년군 각론#2","08-10"],
+  ["2.수학|수와 연산#0","08-11"],
+  ["2.수학|수와 연산#1","08-11"],
+  ["2.수학|수와 연산#2","08-11"],
+  ["1.국어|쓰기#0","08-14"],
+  ["1.국어|쓰기#1","08-14"],
+  ["6.과학|지구와 우주","08-17"],
+];
+const PLAN_RANK=new Map(INTAKE_PLAN.map((x,i)=>[x[0],i]));
+const PLAN_DATE=new Map(INTAKE_PLAN);
 
 /* ═══════════════ FSRS ═══════════════ */
 const engine = FSRS.fsrs(FSRS.generatorParameters({
@@ -2650,7 +2704,7 @@ function loadCfg(){
 function saveCfg(){ lsSet(K_CFG, JSON.stringify(cfg)); }
 
 /* ═══════════════ 신규 투입 계획 (과목 순서 + 하루 상한) + 회독 대기 큐 ═══════════════ */
-let intake={order:[...SUBJECTS], cap:130}; // order는 유보 필드 — 신규 순서 정본은 단위 원칙(UNIT_MAX)+TOPIC_DATE
+let intake={order:[...SUBJECTS], cap:130}; // order는 유보 필드 — 신규 순서 정본은 INTAKE_PLAN(수강일 기반)
 function loadIntake(){ const v=lsGet(K_INTAKE);
   if(v){ try{ const o=JSON.parse(v);
     if(Array.isArray(o.order)&&o.order.length)intake.order=o.order;
@@ -2690,54 +2744,42 @@ async function loadData(){
   BYID={}; const tags=new Set(), typs=new Set();
   DATA.forEach((c,i)=>{ c._i=i; BYID[c.id]=c; (c.tags||[]).forEach(t=>tags.add(t)); typs.add(c.typ); });
   ALLTAGS=[...tags].sort(); ALLTYPS=[...typs].sort();
-  buildUnits();
+  TAGMETA={}; // 과목|대주제 → 첫 카드 위치·장수 (회독 대기 큐용)
+  for(const c of DATA){ const k=tagKey(c);
+    if(!TAGMETA[k])TAGMETA[k]={subj:c.subj, tag:unitTagName(c), i0:c._i, n:0};
+    TAGMETA[k].n++; }
 }
-let UNIT_OF={}; // node → 단위 id
-function tagKey(c){ return UNIT_OF[c.node] || (c.subj+'|'+((c.tags&&c.tags[0])||'(기타)')); }
-function buildUnits(){ // 🔴 단위 원칙: 개념 트리를 내려가며 1바퀴 ≤ UNIT_MAX인 가장 높은 마디.
-  // 마디가 넘치면 자식으로 내려가고, 같은 부모의 이웃 자식은 넘지 않는 한 묶는다. 수동 분할 없음.
-  UNIT_OF={}; TAGMETA={};
-  const seen=new Set(), byTop=new Map();
-  for(const c of DATA){ if(seen.has(c.node))continue; seen.add(c.node);
-    const top=(c.tags&&c.tags[0])||'(기타)', tk=c.subj+'|'+top;
-    if(!byTop.has(tk))byTop.set(tk,[]);
-    byTop.get(tk).push({node:c.node, parts:c.node.split('/'), i0:c._i}); }
-  const unitList=[];
-  for(const [tk,arr] of byTop){
-    const subj=tk.split('|')[0], top=tk.split('|')[1];
-    let n=0;
-    const emit=(pack,label)=>{ if(!pack.length)return;
-      const id=tk+'#'+(n++);
-      for(const lf of pack)UNIT_OF[lf.node]=id;
-      TAGMETA[id]={subj, tag:label, i0:pack[0].i0, n:0, date:TOPIC_DATE[tk]||''};
-      unitList.push(id); };
-    carve(arr, 2, top, emit); // parts[0]=과목, parts[1]=대주제 → 그 아래부터
-  }
-  for(const c of DATA){ const k=tagKey(c); if(TAGMETA[k])TAGMETA[k].n++; }
-  PLAN=unitList.sort((a,b)=>{ const A=TAGMETA[a],B=TAGMETA[b];
-    const da=A.date||'99', db=B.date||'99';
-    return da<db?-1:da>db?1:A.i0-B.i0; });
-  PLAN_RANK=new Map(PLAN.map((k,i)=>[k,i]));
+const SPLITS = { // 대주제 분할 (동하 확정 2026-08-19) — 투입·회독 단위를 중주제 그룹으로
+ '2.수학|도형과 측정': [['평면·이론',['평면도형과 구성 요소','평면도형','디에네스, 개념 학습 이론','반 힐레, 기하 사고 수준 이론']],
+                        ['입체·측정',['입체도형','측정 각론','넓이와 부피']]],
+ '2.수학|수와 연산': [['수 계열',['자연수','약수와 배수','수의 범위와 올림, 버림, 반올림']],
+                      ['덧셈과 뺄셈',['자연수의 덧셈과 뺄셈']],
+                      ['곱셈과 나눗셈',['자연수의 곱셈','자연수의 나눗셈']]],
+ '1.국어|읽기': [['이론·지도',['읽기 과정 모형','과정 중심 읽기 지도','평가','수업 모형']],
+                 ['각론·기능',['각론','읽기 기능','독서의 정의적 요인']]],
+ '1.국어|쓰기': [['이론·지도',['쓰기 이론','과정 중심 쓰기 지도','평가','수업 모형']],
+                 ['각론',['정보 전달을 위한 글','설득을 위한 글','친교 및 정서 표현을 위한 글','매체 중심 쓰기 지도','쓰기의 정의적 요인']]],
+ '1.국어|기초 문식성': [['낱자·음절',['낱자와 음소','글자와 음절']],
+                        ['단어·문장',['단어','문장']],
+                        ['문단·글·해독',['문단','글','한글 해독 지도 방법']]],
+ '4.사회|5~6학년군 각론': [['5-1',['5-1 각론']],['6-1',['6-1 각론']],['6-2',['6-2 각론']]],
+ '4.사회|3~4학년군 각론': [['3학년군',['3-1 각론','3-2 각론']],['4학년군',['4-1 각론','4-2 각론']]],
+ '5.도덕|도덕 교육의 이론적 기초': [['도덕 심리학',['도덕 심리학']],['동·서양 윤리학',['서양 윤리학','동양 윤리학']]],
+ '8.음악|서양 음악': [['악보·리듬',['악보 요소','박자와 리듬']],['가락·구조·연주',['가락과 화성','악곡의 구조','연주']]],
+ '1.국어|문법': [['단어',['단어']],['문장·담화',['문장','글과 담화']]],
+ '3.영어|기능별 언어 지도': [['공통·이해',['공통','이해']],['표현',['표현']]],
+};
+function tagKey(c){ // 투입·회독 단위 키 — 분할 대주제는 그룹까지 (subj|대주제#g)
+  const t0=(c.tags&&c.tags[0])||'(기타)';
+  const base=c.subj+'|'+t0;
+  const sp=SPLITS[base];
+  if(!sp) return base;
+  const mid=(c.tags&&c.tags[1])||'';
+  for(let i=0;i<sp.length;i++){ if(sp[i][1].includes(mid)) return base+'#'+i; }
+  return base+'#0';
 }
-function carve(arr, depth, top, emit){
-  if(arr.length<=UNIT_MAX){ emit(arr, top); return; }
-  const groups=[]; let cur=null;
-  for(const lf of arr){ // depth 세그먼트로 연속 그룹화 (경로가 짧은 노드는 자기 자신이 그룹)
-    const key=lf.parts[depth]!==undefined?lf.parts[depth]:lf.node;
-    if(!cur||cur.key!==key){ cur={key, name:lf.parts[depth]!==undefined?lf.parts[depth]:lf.parts[lf.parts.length-1], items:[]}; groups.push(cur); }
-    cur.items.push(lf); }
-  if(groups.length<=1){ emit(arr, top); return; } // 트리가 여기서 끝 → 더 못 쪼갬 (원칙상 유일 예외)
-  let pack=[], names=[];
-  const flush=()=>{ if(!pack.length)return;
-    emit(pack, top+' — '+(names.length===1?names[0]:names[0]+'~'+names[names.length-1]));
-    pack=[]; names=[]; };
-  for(const g of groups){
-    if(g.items.length>UNIT_MAX){ flush(); carve(g.items, depth+1, top+' · '+g.name, emit); }
-    else if(pack.length+g.items.length>UNIT_MAX){ flush(); pack=[...g.items]; names=[g.name]; }
-    else { pack.push(...g.items); names.push(g.name); }
-  }
-  flush();
-}
+function unitTagName(c){ const t0=(c.tags&&c.tags[0])||'(기타)'; const sp=SPLITS[c.subj+'|'+t0];
+  if(!sp) return t0; const i=+(tagKey(c).split('#')[1]||0); return t0+' — '+sp[i][0]; }
 async function loadState(){
   const c=lsGet(K_STATE);
   let local=null;
@@ -2860,7 +2902,7 @@ function nextTopic(){ // 다음 투입 = 계획 최우선 대주제의 오늘 �
   if(curPreset.bury) pool=buryFilter(pool, nodesRatedToday()); // 쌍은 다음날로 (A → 내일 A' — 동하 승인)
   if(!pool.length) return null;
   const k=tagKey(pool[0]);
-  return {key:k, cards:pool.filter(c=>tagKey(c)===k), date:(TAGMETA[k]&&TAGMETA[k].date)||'', label:hoedokLabel(k)};
+  return {key:k, cards:pool.filter(c=>tagKey(c)===k), date:PLAN_DATE.get(k)||'', label:hoedokLabel(k)};
 }
 function extendWithNew(){ // 신규 = 대주제 한 개씩 — 끝나면 체크포인트에서 다음 주제·장수 보고 선택
   const nt=nextTopic();
@@ -3177,11 +3219,11 @@ function renderIntake(){ // 투입 계획 미리보기 — 남은 신규가 있�
   const intro={};
   for(const c of DATA){ const s=state.cards[c.id]; if(s&&s.fsrs){ const k=tagKey(c); intro[k]=(intro[k]||0)+1; } }
   let shown=0;
-  for(const k of PLAN){
+  for(const [k,date] of INTAKE_PLAN){
     const m=TAGMETA[k]; if(!m)continue;
     const left=m.n-(intro[k]||0); if(left<=0)continue;
     const el=document.createElement('div'); el.className='hd-row';
-    el.innerHTML=`<span class="t">${shown===0?'▶ ':''}${esc(m.subj.split('.')[1]+' · '+m.tag)} <small>${intro[k]?left+'장 남음':m.n+'장'} · ${m.date||'—'} 수강</small></span>`;
+    el.innerHTML=`<span class="t">${shown===0?'▶ ':''}${esc(m.subj.split('.')[1]+' · '+m.tag)} <small>${intro[k]?left+'장 남음':m.n+'장'} · ${date} 수강</small></span>`;
     box.appendChild(el);
     if(++shown>=6)break;
   }

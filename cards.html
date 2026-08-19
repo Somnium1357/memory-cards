@@ -179,6 +179,14 @@ input:focus,select:focus{border-color:var(--accent);}
 .p-edit{flex:0 0 auto;width:34px;height:34px;display:flex;align-items:center;justify-content:center;
   border-radius:12px;color:var(--faint);}
 .p-edit:active{background:var(--sunken);}
+.h-sec{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--faint);margin:20px 4px 8px;}
+.hd-row{display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:12px;
+  padding:10px 14px;margin-bottom:6px;font-size:13px;font-weight:600;box-shadow:var(--shadow);}
+.hd-row .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hd-row small{color:var(--mute);font-weight:600;margin-left:4px;}
+.hd-row button{flex:0 0 auto;font-size:12px;font-weight:800;color:var(--accent);
+  padding:7px 12px;border-radius:8px;background:var(--accent-dim);}
+.hd-row button:active{opacity:.7;}
 .h-row{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 6px;}
 .h-tab{flex:1;min-width:96px;background:var(--surface);border-radius:16px;padding:13px 8px;
   text-align:center;font-size:13px;font-weight:700;color:var(--ink2);box-shadow:var(--shadow);}
@@ -320,6 +328,15 @@ input:focus,select:focus{border-color:var(--accent);}
         <div class="h-sub" id="hSub"></div>
         <div id="presetList"></div>
         <button class="more-btn" id="btnNewPreset">＋ 새 프리셋</button>
+        <div id="hoedokSec" style="display:none">
+          <div class="h-sec">회독 대기 — 카드가 진입한 대주제</div>
+          <div id="hoedokList"></div>
+        </div>
+        <div class="h-sec">신규 투입</div>
+        <div class="mini-chips" id="intakeOrder" style="max-height:none"></div>
+        <div class="tgl-row" style="padding-top:6px"><button class="h-tool" id="intakeReset" style="flex:0 0 auto;padding:8px 14px">순서 바꾸기</button>
+          <span style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mute)">하루 신규 상한
+          <input id="intakeCap" type="number" inputmode="numeric" min="0" style="width:80px;text-align:center"></span></div>
         <div class="h-row">
           <button class="h-tab" data-go="scrList">목록</button>
           <button class="h-tab" data-go="scrStats">통계</button>
@@ -2429,7 +2446,7 @@ const BUILTIN = { owner:'Somnium1357', repo:'memory-cards' };
 const DATA_PATH='cards-data.json', STATE_PATH='cards-state.json';
 const K_CFG='cards_cfg_v1', K_STATE='cards_state_cache_v1', K_DIRTY='cards_dirty_v1',
       K_THEME='cards_theme_v1', K_PRESETS='cards_presets_v1', K_LASTP='cards_last_preset_v1',
-      K_DATA='cards_data_cache_v1', K_SWIPE='cards_swipe_v1';
+      K_DATA='cards_data_cache_v1', K_SWIPE='cards_swipe_v1', K_INTAKE='cards_intake_v1';
 const OLD_CFG='review_cfg_v1';            // 관리앱(같은 오리진)의 토큰 재사용
 const DAY_CUT=4;                          // 하루 경계 = 새벽 4시
 const EXAM_DAY='2026-11-07';              // due 최대 클램프
@@ -2475,7 +2492,7 @@ function todayKey(){ return dayKey(new Date()); }
 function tomorrowKey(){ return dayKey(new Date(Date.now()+86400000)); }
 
 /* ═══════════════ 전역 상태 ═══════════════ */
-let DATA=[], BYID={}, ALLTAGS=[], ALLTYPS=[];
+let DATA=[], BYID={}, ALLTAGS=[], ALLTYPS=[], TAGMETA={};
 let state={cards:{},log:[]}, sha=null, cfg=null;
 let dirty=false, pushing=false, ratedSincePush=0, lastPushAt=Date.now();
 let queue=[], qPos=0, revealed=false, itemMarks=[], curPreset=null, phase='review',
@@ -2540,6 +2557,7 @@ function mergeState(remote, local){ // 병합: cards=u 최신 우선 / log=appen
     const k=e[0]+'|'+e[1]; if(seen.has(k))continue; seen.add(k); out.log.push(e);
   }
   out.log.sort((x,y)=>x[1]<y[1]?-1:1);
+  out.hoedok={...(remote.hoedok||{}), ...(local.hoedok||{})}; // 읽음 체크 합집합
   return out;
 }
 async function ghPutState(){
@@ -2608,6 +2626,33 @@ function loadCfg(){
 }
 function saveCfg(){ lsSet(K_CFG, JSON.stringify(cfg)); }
 
+/* ═══════════════ 신규 투입 계획 (과목 순서 + 하루 상한) + 회독 대기 큐 ═══════════════ */
+let intake={order:[...SUBJECTS], cap:130};
+function loadIntake(){ const v=lsGet(K_INTAKE);
+  if(v){ try{ const o=JSON.parse(v);
+    if(Array.isArray(o.order)&&o.order.length)intake.order=o.order;
+    if(o.cap!==undefined)intake.cap=o.cap; }catch(e){} } }
+function saveIntake(){ lsSet(K_INTAKE, JSON.stringify(intake)); }
+function subjRank(s){ const i=intake.order.indexOf(s); return i<0?99:i; }
+function newSort(a,b){ return subjRank(a.subj)-subjRank(b.subj) || a._i-b._i; } // 신규 = 투입 순서 → 문서순
+function newToday(){ // 오늘 처음 투입된 카드 수 (생애 첫 채점이 오늘)
+  const tk=todayKey(); let n=0;
+  for(const id in state.cards){ const s=state.cards[id];
+    if(s.d===tk&&s.fsrs&&s.fsrs.reps===1)n++; }
+  return n;
+}
+function hoedokPending(){ // 회독 대기 = 카드가 진입했는데 아직 읽음 체크 안 된 대주제
+  if(!state.hoedok)state.hoedok={};
+  const entered=new Set();
+  for(const c of DATA){ const s=state.cards[c.id]; if(s&&s.fsrs)entered.add(tagKey(c)); }
+  return [...entered].filter(k=>!state.hoedok[k]&&TAGMETA[k])
+    .sort((a,b)=>{const A=TAGMETA[a],B=TAGMETA[b];
+      return subjRank(A.subj)-subjRank(B.subj)||A.i0-B.i0;});
+}
+function markHoedok(k){ if(!state.hoedok)state.hoedok={};
+  state.hoedok[k]=todayKey(); cacheState(); setDirty(true); }
+function hoedokLabel(k){ const m=TAGMETA[k]; return `${m.subj.split('.')[1]} · ${m.tag}`; }
+
 /* ═══════════════ 데이터 로드 ═══════════════ */
 async function loadData(){
   try{
@@ -2623,7 +2668,12 @@ async function loadData(){
   BYID={}; const tags=new Set(), typs=new Set();
   DATA.forEach((c,i)=>{ c._i=i; BYID[c.id]=c; (c.tags||[]).forEach(t=>tags.add(t)); typs.add(c.typ); });
   ALLTAGS=[...tags].sort(); ALLTYPS=[...typs].sort();
+  TAGMETA={}; // 과목|대주제 → 첫 카드 위치·장수 (회독 대기 큐용)
+  for(const c of DATA){ const k=tagKey(c);
+    if(!TAGMETA[k])TAGMETA[k]={subj:c.subj, tag:(c.tags&&c.tags[0])||'(기타)', i0:c._i, n:0};
+    TAGMETA[k].n++; }
 }
+function tagKey(c){ return c.subj+'|'+((c.tags&&c.tags[0])||'(기타)'); }
 async function loadState(){
   const c=lsGet(K_STATE);
   let local=null;
@@ -2639,7 +2689,7 @@ async function loadState(){
       showBanner(e&&e.code==='auth'?'토큰이 만료됐어요 — GitHub 연결에서 갱신':'상태 불러오기 실패 — 로컬 캐시로 진행', e&&e.code==='auth');
     }
   }else if(local){ state=local; }
-  if(!state.cards)state.cards={}; if(!state.log)state.log=[];
+  if(!state.cards)state.cards={}; if(!state.log)state.log=[]; if(!state.hoedok)state.hoedok={};
 }
 
 /* ═══════════════ 프리셋 ═══════════════ */
@@ -2689,7 +2739,7 @@ function riskSort(pool){ // 선발 기본 = 위험도 우선(R 낮은 순). 신�
   const rev=[], nw=[];
   for(const c of pool){ const r=retrievability(state.cards[c.id]&&state.cards[c.id].fsrs);
     (r==null?nw:rev).push([c,r]); }
-  rev.sort((a,b)=>a[1]-b[1]); nw.sort((a,b)=>a[0]._i-b[0]._i);
+  rev.sort((a,b)=>a[1]-b[1]); nw.sort((a,b)=>newSort(a[0],b[0]));
   return [...rev.map(x=>x[0]), ...nw.map(x=>x[0])];
 }
 function buryFilter(pool, done){ // 형제 분산: 노드당 1장 (오늘 이미 채점한 노드 제외)
@@ -2740,14 +2790,17 @@ function startSession(p){
   go('scrSolve');
   if(!queue.length){ showSummaryOrNew(); } else showCard();
 }
-function newPoolNow(){ // 신규 이어가기 풀 (형제 분산 반영 — 요약 버튼 표기와 실제 큐 일치)
-  let pool=scopePool(curPreset.scope,'new').sort((a,b)=>a._i-b._i);
+function newPoolNow(){ // 신규 이어가기 풀 (투입 순서 정렬 + 형제 분산 — 요약 버튼 표기와 실제 큐 일치)
+  let pool=scopePool(curPreset.scope,'new').sort(newSort);
   if(curPreset.bury) pool=buryFilter(pool, nodesRatedToday());
   return pool;
 }
-function extendWithNew(){ // 복습 소진 → 신규 이어가기 (문서순, 상한 없음)
+function capLeft(){ return intake.cap ? Math.max(0, intake.cap-newToday()) : Infinity; }
+function extendWithNew(ignoreCap){ // 복습 소진 → 신규 이어가기 (투입 순서. 상한은 자기 조절용 — 넘겨서 계속 가능)
   phase='new';
-  queue=newPoolNow(); qPos=0;
+  let pool=newPoolNow();
+  if(!ignoreCap && intake.cap && capLeft()<pool.length) pool=pool.slice(0, capLeft());
+  queue=pool; qPos=0;
   undoSnap=null; updateUndo(); // 스냅샷은 이전 큐 좌표라 phase 경계에서 폐기
   if(!queue.length){ renderSummary(true); return; }
   showCard();
@@ -2887,13 +2940,20 @@ function renderSummary(final){
   const sm=$('summary'); sm.style.display='flex';
   const tmr=tomorrowCount(curPreset?curPreset.scope:null);
   const newPool=curPreset?newPoolNow().length:0;
-  sm.innerHTML=`<div class="big">${final?'오늘은 여기까지':'복습 끝!'}</div>
-    <div class="det">오늘 ${sessionDone}장 풀었어요${newServed?` (신규 ${newServed})`:''}<br>내일 예상 복습 ~${tmr}장 · 남은 신규 ${newPool}장</div>
+  const capped = final && newPool>0 && intake.cap && capLeft()===0; // 오늘 신규 몫 소진
+  const hp=hoedokPending();
+  const hpLine = hp.length
+    ? `<div class="det" style="margin-top:6px">📖 읽을 것: ${hp.slice(0,3).map(hoedokLabel).map(esc).join(' · ')}${hp.length>3?` 외 ${hp.length-3}`:''}</div>` : '';
+  sm.innerHTML=`<div class="big">${capped?'오늘 신규 몫 끝':final?'오늘은 여기까지':'복습 끝!'}</div>
+    <div class="det">오늘 ${sessionDone}장 풀었어요${newServed?` (신규 ${newServed})`:''}${intake.cap?` · 신규 ${newToday()}/${intake.cap}`:''}<br>내일 예상 복습 ~${tmr}장 · 남은 신규 ${newPool}장</div>
+    ${hpLine}
     <div class="actions">
       ${!final&&newPool?'<button class="btn-primary" id="smNew">신규 계속</button>':''}
-      ${final&&newPool&&curPreset?'<button class="btn-primary" id="smNew">신규 더 풀기</button>':''}
+      ${final&&newPool&&!capped&&curPreset?'<button class="btn-primary" id="smNew">신규 더 풀기</button>':''}
+      ${capped&&curPreset?'<button class="btn-ghost" id="smOver">상한 넘겨 계속</button>':''}
       <button class="btn-ghost" id="smHome">홈</button></div>`;
   const bn=$('smNew'); if(bn)bn.onclick=()=>{ $('summary').style.display='none'; extendWithNew(); };
+  const ov=$('smOver'); if(ov)ov.onclick=()=>{ $('summary').style.display='none'; extendWithNew(true); };
   $('smHome').onclick=()=>{ push(); go('scrHome'); };
   counts(); push(); // 세션 경계 = 배치 push 시점
 }
@@ -3030,8 +3090,40 @@ function renderHome(){
   $('thB').classList.toggle('on',theme==='b');
   $('thC').classList.toggle('on',theme==='c');
   $('tglSwipe').classList.toggle('on',swipeOn);
+  renderHoedok(); renderIntake();
   counts();
 }
+function renderHoedok(){ // 회독 대기 — 카드가 진입한 대주제, 읽으면 체크
+  const box=$('hoedokList'); box.innerHTML='';
+  const hp=hoedokPending();
+  $('hoedokSec').style.display = hp.length?'block':'none';
+  for(const k of hp){
+    const m=TAGMETA[k];
+    const el=document.createElement('div'); el.className='hd-row';
+    el.innerHTML=`<span class="t">${esc(hoedokLabel(k))} <small>${m.n}장</small></span><button>읽음 ✓</button>`;
+    el.querySelector('button').onclick=()=>{ markHoedok(k); renderHoedok(); toast('읽음 체크'); };
+    box.appendChild(el);
+  }
+}
+let orderSeq=null; // 순서 재설정 중이면 배열
+function renderIntake(){
+  const box=$('intakeOrder'); box.innerHTML='';
+  for(const s of intake.order){
+    const b=document.createElement('button'); b.className='chip'+(orderSeq&&orderSeq.includes(s)?' on':'');
+    const r=orderSeq?orderSeq.indexOf(s):intake.order.indexOf(s);
+    b.textContent=(r>=0?(r+1)+' ':'')+s.split('.')[1];
+    b.onclick=()=>{ if(!orderSeq)return; // 재설정 모드에서만 반응
+      if(!orderSeq.includes(s))orderSeq.push(s);
+      if(orderSeq.length===SUBJECTS.length){ intake.order=orderSeq; orderSeq=null; saveIntake(); toast('투입 순서 저장'); }
+      renderIntake(); };
+    box.appendChild(b);
+  }
+  $('intakeReset').textContent = orderSeq ? `탭한 순서대로 (${orderSeq.length}/9)` : '순서 바꾸기';
+  $('intakeCap').value = intake.cap||'';
+}
+$('intakeReset').onclick=()=>{ orderSeq = orderSeq?null:[]; renderIntake(); };
+$('intakeCap').addEventListener('change',()=>{ intake.cap=+$('intakeCap').value||null; saveIntake();
+  toast(intake.cap?`하루 신규 ${intake.cap}장`:'신규 상한 없음'); });
 $('btnNewPreset').onclick=()=>openPresetEditor(null);
 $('btnSync').onclick=async()=>{ if(!cfg||!cfg.token){openSetup();return;} await push(true); if(!dirty)toast('저장 완료'); };
 $('btnBackup').onclick=()=>{
@@ -3264,7 +3356,7 @@ function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show');
 /* ═══════════════ 부트 — 열면 바로 첫 카드 ═══════════════ */
 (async function(){
   applyTheme();
-  loadCfg(); loadPresets();
+  loadCfg(); loadPresets(); loadIntake();
   await loadData();
   if(!DATA.length){
     $('loading').textContent='카드 데이터를 못 불러왔어요 — 네트워크 확인 후 새로고침';

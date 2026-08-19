@@ -2741,6 +2741,8 @@ function hoedokPending(){ // 회독 대기 = 카드가 진입했는데 아직 �
 }
 function markHoedok(k){ if(!state.hoedok)state.hoedok={};
   state.hoedok[k]=todayKey(); cacheState(); setDirty(true); }
+function unmarkHoedok(k){ if(!state.hoedok)state.hoedok={};
+  state.hoedok[k]=null; cacheState(); setDirty(true); } // null 툼스톤 — 합집합 병합에서도 취소가 이긴다
 function hoedokLabel(k){ const m=TAGMETA[k]; return `${m.subj.split('.')[1]} · ${m.tag}`; }
 
 /* ═══════════════ 데이터 로드 ═══════════════ */
@@ -3225,15 +3227,22 @@ function renderHome(){
   renderHoedok(); renderIntake();
   counts();
 }
-function renderHoedok(){ // 회독 대기 — 카드가 진입한 대주제, 읽으면 체크
+function renderHoedok(){ // 회독 대기 — 카드가 진입한 대주제. 오늘 체크분은 [취소] 가능(오터치 복구)
   const box=$('hoedokList'); box.innerHTML='';
   const hp=hoedokPending();
-  $('hoedokSec').style.display = hp.length?'block':'none';
+  const doneToday=Object.keys(state.hoedok||{}).filter(k=>state.hoedok[k]===todayKey()&&TAGMETA[k]);
+  $('hoedokSec').style.display = (hp.length||doneToday.length)?'block':'none';
   for(const k of hp){
     const m=TAGMETA[k];
     const el=document.createElement('div'); el.className='hd-row';
     el.innerHTML=`<span class="t">${esc(hoedokLabel(k))} <small>${m.n}장</small></span><button>읽음 ✓</button>`;
     el.querySelector('button').onclick=()=>{ markHoedok(k); renderHoedok(); toast('읽음 체크'); };
+    box.appendChild(el);
+  }
+  for(const k of doneToday){
+    const el=document.createElement('div'); el.className='hd-row'; el.style.opacity='.55';
+    el.innerHTML=`<span class="t" style="text-decoration:line-through">${esc(hoedokLabel(k))}</span><button>취소</button>`;
+    el.querySelector('button').onclick=()=>{ unmarkHoedok(k); renderHoedok(); toast('읽음 취소 — 대기로 복귀'); };
     box.appendChild(el);
   }
 }

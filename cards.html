@@ -2622,7 +2622,8 @@ function ghUrl(p){return `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/
 async function ghGetState(){
   const r=await fetch(ghUrl(STATE_PATH),{headers:ghHeaders(),cache:'no-store'});
   if(r.status===404){sha=null;return null;}
-  if(r.status===401||r.status===403)throw{code:'auth'};
+  if(r.status===401)throw{code:'auth'};
+  if(r.status===403)throw{code:'perm'}; // 토큰은 유효하나 이 레포 쓰기 권한 없음 (fine-grained 레포 미지정 등)
   if(!r.ok)throw{code:'http',status:r.status};
   const j=await r.json(); sha=j.sha;
   let txt;
@@ -2662,7 +2663,8 @@ async function ghPutState(){
     state=mergeState(remote,state); cacheState();
     r=await fetch(ghUrl(STATE_PATH),opts());
   }
-  if(r.status===401||r.status===403)throw{code:'auth'};
+  if(r.status===401)throw{code:'auth'};
+  if(r.status===403)throw{code:'perm'}; // 토큰은 유효하나 이 레포 쓰기 권한 없음 (fine-grained 레포 미지정 등)
   if(!r.ok)throw{code:'http',status:r.status};
   const j=await r.json(); sha=j.content.sha;
 }
@@ -2675,7 +2677,10 @@ async function push(force){ // 배치 push — 옵티미스틱: 실패해도 로
     await ghPutState();
     setDirty(false); ratedSincePush=0; lastPushAt=Date.now(); hideBanner();
   }catch(e){
-    showBanner(e&&e.code==='auth' ? '토큰이 만료됐어요 — GitHub 연결에서 갱신' : '저장 실패 — 네트워크 확인', e&&e.code==='auth');
+    const msg = e&&e.code==='auth' ? '토큰이 만료됐어요 — GitHub 연결에서 갱신'
+      : e&&e.code==='perm' ? '토큰에 이 레포 쓰기 권한이 없어요 — github.com 토큰 설정에서 memory-cards 접근 + Contents 쓰기 추가 후 재시도'
+      : '저장 실패 — 네트워크 확인';
+    showBanner(msg, e&&e.code==='auth');
   }finally{ pushing=false; updateSaveUI(); }
 }
 function afterRate(){ // 채점 후 배치 훅
@@ -2810,7 +2815,7 @@ async function loadState(){
       if(wasDirty&&local){ cacheState(); dirty=true; push(true); }
     }catch(e){
       if(local) state=local;
-      showBanner(e&&e.code==='auth'?'토큰이 만료됐어요 — GitHub 연결에서 갱신':'상태 불러오기 실패 — 로컬 캐시로 진행', e&&e.code==='auth');
+      showBanner(e&&e.code==='auth'?'토큰이 만료됐어요 — GitHub 연결에서 갱신':e&&e.code==='perm'?'토큰에 이 레포 권한이 없어요 — github.com에서 memory-cards 접근을 추가하세요':'상태 불러오기 실패 — 로컬 캐시로 진행', e&&e.code==='auth');
     }
   }else if(local){ state=local; }
   if(!state.cards)state.cards={}; if(!state.log)state.log=[]; if(!state.hoedok)state.hoedok={};

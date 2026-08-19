@@ -1,0 +1,3282 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="b">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="카드">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#13151A">
+<title>카드</title>
+<style>
+/* ══ 테마 토큰 — B(다크 포커스) 기본 · C(페이퍼 웜) ══ */
+:root, :root[data-theme="b"]{
+  --bg:#13151A; --surface:#1C1F27; --surface2:#252935; --sunken:#0E1014;
+  --ink:#E8EAF0; --ink2:#C3C8D4; --mute:#828A9B; --faint:#7A8296; --line:#2B303C;
+  --accent:#8CA7FF; --accent-ink:#0E1014; --accent-dim:rgba(140,167,255,.13);
+  --again:#F0716E; --hard:#EFA85A; --good:#57C97B; --easy:#68A8F5;
+  --again-dim:rgba(240,113,110,.13); --hard-dim:rgba(239,168,90,.13);
+  --good-dim:rgba(87,201,123,.13); --easy-dim:rgba(104,168,245,.13);
+  --danger:#F0716E; --ok:#57C97B;
+  --shadow:0 8px 28px rgba(0,0,0,.38); --shadow-sm:0 1px 4px rgba(0,0,0,.28);
+  --head-font:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Malgun Gothic",sans-serif;
+}
+:root[data-theme="c"]{
+  --bg:#F3EDDE; --surface:#FBF7EC; --surface2:#F0E9D8; --sunken:#EAE2CE;
+  --ink:#2F2A20; --ink2:#4C4536; --mute:#6E6450; --faint:#857A5E; --line:#E0D8C2;
+  --accent:#AE5B33; --accent-ink:#FBF7EC; --accent-dim:rgba(174,91,51,.11);
+  --again:#A93E35; --hard:#8F5D0E; --good:#256E45; --easy:#2D5AA8;
+  --again-dim:rgba(169,62,53,.10); --hard-dim:rgba(143,93,14,.12);
+  --good-dim:rgba(37,110,69,.11); --easy-dim:rgba(45,90,168,.10);
+  --danger:#A93E35; --ok:#256E45;
+  --shadow:0 6px 22px rgba(93,80,52,.16); --shadow-sm:0 1px 4px rgba(93,80,52,.25);
+  --head-font:"SerifKR","Apple Myungjo","Nanum Myeongjo",Georgia,serif;
+}
+@font-face{
+  font-family:"SerifKR";
+  src:url("serif-kr.woff2") format("woff2");
+  font-weight:100 900; font-display:swap;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
+html,body{height:100%;}
+body{
+  background:var(--bg); color:var(--ink); overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Malgun Gothic",sans-serif;
+  -webkit-user-select:none; user-select:none; -webkit-text-size-adjust:100%;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+button{font-family:inherit;color:inherit;background:none;border:none;cursor:pointer;font-size:inherit;}
+input,select{font-family:inherit;font-size:16px;color:var(--ink);background:var(--surface);
+  border:1.5px solid var(--line);border-radius:12px;padding:9px 12px;outline:none;-webkit-user-select:auto;user-select:auto;}
+input:focus,select:focus{border-color:var(--accent);}
+::placeholder{color:var(--faint);}
+
+/* ══ 앱 골격 ══ */
+#app{display:flex;height:100%;}
+#main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative;}
+#rail{flex:0 0 216px;border-left:1px solid var(--line);background:var(--surface);
+  display:flex;flex-direction:column;padding:14px 12px calc(14px + env(safe-area-inset-bottom));overflow-y:auto;}
+@media (max-width:820px), (orientation:portrait){
+  #rail{position:fixed;right:0;top:0;bottom:0;z-index:40;transform:translateX(105%);
+    transition:transform .22s ease;box-shadow:var(--shadow);width:240px;}
+  #rail.open{transform:none;}
+  #railFab{display:flex !important;}
+}
+#railFab{display:none;position:fixed;right:14px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:39;
+  width:48px;height:48px;border-radius:16px;background:var(--surface2);box-shadow:var(--shadow);
+  align-items:center;justify-content:center;color:var(--mute);font-size:19px;}
+#railScrim{position:fixed;inset:0;z-index:38;background:rgba(0,0,0,.25);display:none;}
+#railScrim.show{display:block;}
+
+/* ══ 상단 바 ══ */
+#topbar{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:8px 12px 6px;min-height:46px;}
+.tb-btn{width:40px;height:36px;display:flex;align-items:center;justify-content:center;
+  border-radius:12px;color:var(--mute);}
+.tb-btn:active{background:var(--surface2);}
+.tb-btn svg{width:19px;height:19px;}
+.tb-btn[disabled]{opacity:.28;}
+#tbCounts{flex:1;text-align:center;font-size:13px;font-weight:600;color:var(--mute);letter-spacing:.1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#tbCounts b{color:var(--ink2);font-weight:700;}
+#saveBadge{width:7px;height:7px;border-radius:50%;background:var(--hard);display:none;flex:0 0 auto;}
+#saveBadge.show{display:block;}
+#banner{display:none;background:var(--again-dim);color:var(--again);font-size:13px;font-weight:600;
+  padding:8px 14px;text-align:center;}
+#banner.show{display:block;}
+#banner button{font-weight:800;text-decoration:underline;color:inherit;margin-left:8px;}
+
+/* ══ 풀이 화면 ══ */
+.scr{display:none;flex:1;min-height:0;flex-direction:column;}
+.scr.on{display:flex;}
+#cardZone{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:6px 18px 10px;}
+#card{width:100%;max-width:660px;max-height:100%;display:flex;flex-direction:column;
+  background:var(--surface);border-radius:22px;box-shadow:var(--shadow);
+  padding:26px 28px;overflow:hidden;cursor:pointer;}
+#cardScroll{overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;}
+#cScope{font-size:12px;font-weight:600;color:var(--mute);letter-spacing:.2px;margin-bottom:12px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#cFront{font-size:24px;font-weight:700;line-height:1.5;font-family:var(--head-font);letter-spacing:-.2px;}
+#cBackWrap{display:none;margin-top:18px;border-top:1px solid var(--line);padding-top:16px;}
+#cBackWrap.on{display:block;}
+#cBack{font-size:19px;font-weight:600;line-height:1.55;color:var(--ink2);}
+#cItems{display:none;flex-direction:column;gap:7px;margin-top:4px;}
+#cItems.on{display:flex;}
+.it-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+  background:var(--surface2);font-size:17px;font-weight:600;line-height:1.4;color:var(--ink2);}
+.it-row .xm{flex:0 0 22px;height:22px;border-radius:8px;border:2px solid var(--faint);
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:transparent;}
+.it-row.x{background:var(--again-dim);color:var(--again);}
+.it-row.x .xm{border-color:var(--again);color:var(--again);}
+.it-ord{flex:0 0 auto;font-size:12px;font-weight:700;color:var(--faint);min-width:14px;}
+#cNote{display:none;margin-top:14px;padding:10px 14px;border-radius:12px;background:var(--sunken);
+  font-size:13px;line-height:1.55;color:var(--mute);}
+#cNote.on{display:block;}
+#cNote b{color:var(--ink2);font-weight:700;font-size:12px;letter-spacing:.4px;margin-right:6px;}
+#cMeta{display:none;margin-top:14px;align-items:center;gap:8px;}
+#cMeta.on{display:flex;}
+.typ-tag{font-size:11px;font-weight:700;color:var(--mute);background:var(--surface2);
+  padding:3px 9px;border-radius:999px;}
+#cHint{font-size:11px;color:var(--faint);font-weight:500;}
+#cTags{display:flex;gap:5px;flex-wrap:wrap;}
+#cTags .utag{font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-dim);
+  padding:3px 9px;border-radius:999px;}
+#cTagAdd{color:var(--faint);}
+#cTagInput{display:none;width:110px;font-size:16px;padding:4px 10px;border-radius:999px;}
+#cTagInput.on{display:inline-block;}
+#annMarks{display:flex;gap:5px;margin-left:auto;}
+.ann-chip{font-size:11px;font-weight:700;color:var(--accent);background:var(--surface2);
+  padding:3px 8px;border-radius:999px;}
+#phaseLine{text-align:center;font-size:12px;font-weight:600;color:var(--faint);padding:0 0 4px;min-height:16px;}
+
+/* ══ 채점 바 — 낮고 넓게 ══ */
+#gradeBar{flex:0 0 auto;display:flex;gap:8px;padding:6px 18px calc(12px + env(safe-area-inset-bottom));
+  max-width:700px;width:100%;margin:0 auto;visibility:hidden;}
+#gradeBar.on{visibility:visible;}
+.gbtn{flex:1;height:54px;border-radius:16px;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:1px;font-weight:700;transition:opacity .1s, transform .06s;}
+.gbtn:active{transform:scale(.97);}
+.gbtn .gl{font-size:15px;letter-spacing:-.2px;}
+.gbtn .gi{font-size:11px;font-weight:600;opacity:.75;}
+.gbtn[disabled]{opacity:.22;pointer-events:none;}
+#gAgain{background:var(--again-dim);color:var(--again);}
+#gHard{background:var(--hard-dim);color:var(--hard);}
+#gGood{background:var(--good-dim);color:var(--good);}
+#gEasy{background:var(--easy-dim);color:var(--easy);}
+#revealHint{position:absolute;left:0;right:0;bottom:calc(26px + env(safe-area-inset-bottom));
+  text-align:center;font-size:12px;color:var(--faint);pointer-events:none;font-weight:500;}
+
+/* ══ 사이드바 ══ */
+.rail-grp{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--faint);margin:16px 4px 8px;}
+.rail-grp:first-child{margin-top:2px;}
+.rbtn{display:flex;align-items:center;gap:10px;width:100%;min-height:46px;padding:10px 12px;
+  border-radius:12px;font-size:15px;font-weight:600;color:var(--ink2);text-align:left;}
+.rbtn:active{background:var(--surface2);}
+.rbtn svg{width:17px;height:17px;flex:0 0 auto;color:var(--mute);}
+.rbtn.on{background:var(--accent-dim);color:var(--accent);}
+.rbtn.on svg{color:var(--accent);}
+.rbtn .st{margin-left:auto;font-size:10px;opacity:0;}
+.rbtn.on .st{opacity:1;}
+.rail-sep{height:1px;background:var(--line);margin:14px 2px;}
+.rail-bottom{margin-top:auto;}
+#flagMemoRow{display:none;padding:4px 2px 2px;}
+#flagMemoRow.on{display:block;}
+#flagMemo{width:100%;font-size:16px;padding:8px 10px;}
+
+/* ══ 홈 화면 ══ */
+.home-wrap{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 18px calc(24px + env(safe-area-inset-bottom));}
+.home-inner{max-width:660px;margin:0 auto;}
+.h-title{font-size:24px;font-weight:800;font-family:var(--head-font);margin:10px 2px 4px;letter-spacing:-.3px;}
+.h-sub{font-size:12px;color:var(--mute);margin:0 2px 14px;}
+.preset{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:16px;
+  padding:16px;margin-bottom:8px;box-shadow:var(--shadow);cursor:pointer;}
+.preset:active{background:var(--surface2);}
+.p-body{flex:1;min-width:0;}
+.p-name{font-size:17px;font-weight:700;}
+.p-desc{font-size:12px;color:var(--mute);margin-top:3px;line-height:1.45;}
+.p-cnt{font-size:13px;font-weight:700;color:var(--accent);flex:0 0 auto;}
+.p-edit{flex:0 0 auto;width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+  border-radius:12px;color:var(--faint);}
+.p-edit:active{background:var(--sunken);}
+.h-row{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 6px;}
+.h-tab{flex:1;min-width:96px;background:var(--surface);border-radius:16px;padding:13px 8px;
+  text-align:center;font-size:13px;font-weight:700;color:var(--ink2);box-shadow:var(--shadow);}
+.h-tab:active{background:var(--surface2);}
+.h-tools{display:flex;gap:8px;margin-top:14px;}
+.h-tool{flex:1;border:1.5px solid var(--line);border-radius:12px;padding:10px 6px;
+  font-size:12px;font-weight:700;color:var(--mute);text-align:center;}
+.h-tool:active{background:var(--surface2);}
+#themeSeg{display:flex;background:var(--sunken);border-radius:12px;padding:3px;gap:3px;margin-top:14px;}
+#themeSeg button{flex:1;padding:9px;border-radius:8px;font-size:13px;font-weight:700;color:var(--mute);}
+#themeSeg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm);}
+#themeSeg button:active,.seg button:active{opacity:.7;}
+.chip:active{opacity:.65;}
+.more-btn:active,.btn-ghost:active{background:var(--surface2);}
+.btn-primary:active,.btn-danger:active{opacity:.8;}
+
+/* ══ 서브 화면 공통 ══ */
+.sub-head{display:flex;align-items:center;gap:8px;padding:8px 14px 4px;}
+.sub-title{font-size:17px;font-weight:800;font-family:var(--head-font);flex:1;}
+.sub-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 18px calc(24px + env(safe-area-inset-bottom));}
+.sub-inner{max-width:660px;margin:0 auto;}
+.lrow{background:var(--surface);border-radius:16px;padding:12px 16px;margin-bottom:8px;font-size:13px;}
+.lrow .lf{font-weight:600;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.lrow .lb{color:var(--mute);font-size:12px;margin-top:5px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.lrow .lmeta{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;}
+.lmeta .m{font-size:11px;font-weight:700;color:var(--mute);background:var(--surface2);padding:2px 8px;border-radius:999px;}
+.lmeta .warn{color:var(--again);background:var(--again-dim);}
+.lmeta button{font-size:12px;font-weight:800;color:var(--accent);padding:2px 6px;margin-left:auto;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.stat{background:var(--surface);border-radius:16px;padding:13px 16px;box-shadow:var(--shadow);}
+.stat .k{font-size:11px;font-weight:700;color:var(--mute);}
+.stat .v{font-size:22px;font-weight:800;margin-top:2px;letter-spacing:-.4px;}
+.stat .v small{font-size:12px;color:var(--mute);font-weight:600;}
+.bar-list{background:var(--surface);border-radius:16px;padding:6px 16px;margin-bottom:14px;}
+.bl-row{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:13px;font-weight:600;}
+.bl-row .n{flex:0 0 64px;color:var(--ink2);}
+.bl-row .bar{flex:1;height:6px;border-radius:99px;background:var(--sunken);overflow:hidden;}
+.bl-row .bar i{display:block;height:100%;background:var(--accent);border-radius:99px;}
+.bl-row .c{flex:0 0 40px;text-align:right;color:var(--mute);font-size:12px;}
+.search-row{display:flex;gap:8px;margin-bottom:10px;}
+.search-row input{flex:1;}
+.chip-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;}
+.chip-row::-webkit-scrollbar{display:none;}
+.chip{flex:0 0 auto;font-size:12px;font-weight:700;padding:7px 13px;border-radius:999px;
+  background:var(--surface);color:var(--mute);border:1.5px solid var(--line);}
+.chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
+.more-btn{width:100%;padding:12px;border-radius:12px;border:1.5px dashed var(--line);
+  color:var(--mute);font-weight:700;font-size:13px;margin:4px 0 10px;}
+.empty-note{text-align:center;color:var(--faint);font-size:13px;padding:36px 12px;line-height:1.6;}
+
+/* ══ 세션 요약 ══ */
+#summary{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:24px;}
+#summary .big{font-size:26px;font-weight:800;font-family:var(--head-font);letter-spacing:-.3px;}
+#summary .det{font-size:13px;color:var(--mute);line-height:1.7;text-align:center;}
+#summary .actions{display:flex;gap:10px;margin-top:18px;}
+#summary .actions button{padding:13px 22px;border-radius:16px;font-size:15px;font-weight:700;}
+.btn-primary{background:var(--accent);color:var(--accent-ink);}
+.btn-ghost{border:1.5px solid var(--line);color:var(--ink2);}
+
+/* ══ 오버레이 시트 ══ */
+.ovl{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);display:none;
+  align-items:center;justify-content:center;padding:20px;}
+.ovl.show{display:flex;}
+.sheet{background:var(--surface);border-radius:22px;width:100%;max-width:430px;max-height:86vh;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;padding:22px;box-shadow:var(--shadow);}
+.sheet h2{font-size:19px;font-weight:800;font-family:var(--head-font);margin-bottom:4px;}
+.sheet .desc{font-size:12px;color:var(--mute);line-height:1.6;margin-bottom:14px;}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:12px;font-weight:700;color:var(--mute);margin:0 2px 5px;}
+.field input,.field select{width:100%;}
+.sheet .btn-row{display:flex;gap:8px;margin-top:14px;}
+.sheet .btn-row button{flex:1;padding:13px;border-radius:12px;font-size:15px;font-weight:700;}
+.btn-danger{background:var(--again-dim);color:var(--again);}
+.seg{display:flex;background:var(--sunken);border-radius:12px;padding:3px;gap:3px;}
+.seg button{flex:1;padding:8px 4px;border-radius:8px;font-size:12px;font-weight:700;color:var(--mute);white-space:nowrap;}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm);}
+.mini-chips{display:flex;gap:6px;flex-wrap:wrap;max-height:130px;overflow-y:auto;padding:2px;}
+.mini-chips .chip{font-size:12px;padding:6px 11px;}
+.wt-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+.wt-cell{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--mute);}
+.wt-cell input{width:100%;padding:6px 8px;font-size:16px;text-align:center;}
+.tgl-row{display:flex;align-items:center;justify-content:space-between;padding:9px 2px;font-size:13px;font-weight:600;}
+.tgl{width:46px;height:28px;border-radius:99px;background:var(--sunken);position:relative;transition:background .15s;}
+.tgl::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;
+  background:var(--surface);box-shadow:var(--shadow-sm);transition:transform .15s;}
+.tgl.on{background:var(--accent);}
+.tgl.on::after{transform:translateX(18px);}
+#toast{position:fixed;left:50%;bottom:calc(30px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(90px);
+  background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:999px;font-size:13px;font-weight:600;
+  opacity:0;transition:all .22s;z-index:99;box-shadow:var(--shadow);white-space:nowrap;max-width:88vw;overflow:hidden;text-overflow:ellipsis;}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+#loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  background:var(--bg);z-index:50;font-size:14px;color:var(--mute);font-weight:600;}
+</style>
+</head>
+<body>
+<div id="loading">여는 중…</div>
+<div id="app">
+  <div id="main">
+    <div id="banner"></div>
+    <div id="topbar">
+      <button class="tb-btn" id="btnHome" title="홈"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg></button>
+      <span id="saveBadge" title="미저장분 있음"></span>
+      <div id="tbCounts"></div>
+      <button class="tb-btn" id="btnUndo" title="되돌리기" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+    </div>
+
+    <!-- 풀이 -->
+    <div class="scr on" id="scrSolve">
+      <div id="phaseLine"></div>
+      <div id="cardZone">
+        <div id="card">
+          <div id="cScope"></div>
+          <div id="cardScroll">
+            <div id="cFront"></div>
+            <div id="cBackWrap">
+              <div id="cBack"></div>
+              <div id="cItems"></div>
+              <div id="cNote"></div>
+              <div id="cMeta"><span class="typ-tag" id="cTyp"></span><span id="cHint"></span><span id="cTags"></span><button class="typ-tag" id="cTagAdd">＋태그</button><input id="cTagInput" type="text" maxlength="16" placeholder="태그"><span id="annMarks"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="revealHint">카드를 탭하면 정답</div>
+      <div id="gradeBar">
+        <button class="gbtn" id="gAgain"><span class="gl">다시</span><span class="gi" id="giAgain"></span></button>
+        <button class="gbtn" id="gHard"><span class="gl">어려움</span><span class="gi" id="giHard"></span></button>
+        <button class="gbtn" id="gGood"><span class="gl">알맞음</span><span class="gi" id="giGood"></span></button>
+        <button class="gbtn" id="gEasy"><span class="gl">쉬움</span><span class="gi" id="giEasy"></span></button>
+      </div>
+      <div id="summary" style="display:none"></div>
+    </div>
+
+    <!-- 홈 -->
+    <div class="scr" id="scrHome">
+      <div class="home-wrap"><div class="home-inner">
+        <div class="h-title">세션</div>
+        <div class="h-sub" id="hSub"></div>
+        <div id="presetList"></div>
+        <button class="more-btn" id="btnNewPreset">＋ 새 프리셋</button>
+        <div class="h-row">
+          <button class="h-tab" data-go="scrList">목록</button>
+          <button class="h-tab" data-go="scrStats">통계</button>
+          <button class="h-tab" data-go="scrWeak">약점</button>
+          <button class="h-tab" data-go="scrFlags">플래그</button>
+        </div>
+        <div id="themeSeg">
+          <button id="thB">다크 포커스</button>
+          <button id="thC">페이퍼 웜</button>
+        </div>
+        <div class="h-tools">
+          <button class="h-tool" id="btnSync">지금 저장</button>
+          <button class="h-tool" id="btnBackup">상태 백업</button>
+          <button class="h-tool" id="btnSetup">GitHub 연결</button>
+        </div>
+        <div class="tgl-row" style="margin-top:10px"><span style="font-size:13px;color:var(--mute)">스와이프 채점 (좌 다시 · 우 알맞음)</span><div class="tgl" id="tglSwipe"></div></div>
+      </div></div>
+    </div>
+
+    <!-- 목록 -->
+    <div class="scr" id="scrList">
+      <div class="sub-head"><button class="tb-btn" data-go="scrHome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title">카드 목록</div></div>
+      <div class="sub-body"><div class="sub-inner">
+        <div class="search-row"><input id="qSearch" type="search" placeholder="검색 (앞면·뒷면·태그)"><select id="qSort"><option value="doc">문서순</option><option value="risk">위험도순</option><option value="miss">틀림순</option></select></div>
+        <div class="chip-row" id="qSubjChips"></div>
+        <div class="tgl-row" style="padding:2px 2px 8px"><span style="font-size:13px;color:var(--mute)">은퇴 카드만</span><div class="tgl" id="tglRetired"></div></div>
+        <div id="listBody"></div>
+        <button class="more-btn" id="listMore" style="display:none">더 보기</button>
+      </div></div>
+    </div>
+
+    <!-- 통계 -->
+    <div class="scr" id="scrStats">
+      <div class="sub-head"><button class="tb-btn" data-go="scrHome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title">통계</div></div>
+      <div class="sub-body"><div class="sub-inner" id="statsBody"></div></div>
+    </div>
+
+    <!-- 약점 -->
+    <div class="scr" id="scrWeak">
+      <div class="sub-head"><button class="tb-btn" data-go="scrHome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title">약점</div></div>
+      <div class="sub-body"><div class="sub-inner" id="weakBody"></div></div>
+    </div>
+
+    <!-- 플래그 -->
+    <div class="scr" id="scrFlags">
+      <div class="sub-head"><button class="tb-btn" data-go="scrHome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title">플래그 · @주석</div></div>
+      <div class="sub-body"><div class="sub-inner" id="flagsBody"></div></div>
+    </div>
+  </div>
+
+  <!-- 사이드바 -->
+  <div id="rail">
+    <div class="rail-grp">메타</div>
+    <button class="rbtn" id="rRetire"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>은퇴</button>
+    <button class="rbtn" id="rFlag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4a1 1 0 0 1 1-1h11l-2 4 2 4H5"/></svg>플래그<span class="st">●</span></button>
+    <div id="flagMemoRow"><input id="flagMemo" type="text" placeholder="메모 (선택)" maxlength="120"></div>
+    <div class="rail-grp">추가</div>
+    <button class="rbtn ann" data-ann="지도"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 8l10 5 10-5-10-5z"/><path d="M6 10.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-5.5"/></svg>지도<span class="st">●</span></button>
+    <button class="rbtn ann" data-ann="사례"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>사례<span class="st">●</span></button>
+    <button class="rbtn ann" data-ann="정의"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>정의<span class="st">●</span></button>
+    <button class="rbtn ann" data-ann="이름"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8h10M7 12h6"/><rect x="3" y="4" width="18" height="16" rx="2"/></svg>이름<span class="st">●</span></button>
+    <div class="rail-sep"></div>
+    <button class="rbtn ann" id="rDir" data-ann="방향"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg>방향<span class="st">●</span></button>
+    <div class="rail-bottom">
+      <button class="rbtn" id="rOff" style="color:var(--mute)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.4 5.6a9 9 0 1 1-12.8 0"/><path d="M12 2v8"/></svg>끄기</button>
+    </div>
+  </div>
+  <button id="railFab">☰</button>
+  <div id="railScrim"></div>
+</div>
+
+<!-- 셋업 -->
+<div class="ovl" id="ovlSetup"><div class="sheet">
+  <h2>GitHub 연결</h2>
+  <p class="desc">채점 기록을 <b>Somnium1357/memory-cards</b> 레포의 cards-state.json에 커밋해요. 토큰(Contents: Read and write)은 이 기기에만 저장됩니다.</p>
+  <div class="field"><label>토큰 (github_pat_… / ghp_…)</label><input id="cfgToken" type="password" autocomplete="off" spellcheck="false"></div>
+  <div class="desc" id="cfgErr" style="color:var(--again);display:none"></div>
+  <div class="btn-row"><button class="btn-ghost" id="setupClose">닫기</button><button class="btn-primary" id="btnConnect">연결</button></div>
+</div></div>
+
+<!-- 확인 다이얼로그 (끄기 가드) -->
+<div class="ovl" id="ovlConfirm"><div class="sheet">
+  <h2 id="cfTitle"></h2>
+  <p class="desc" id="cfDesc"></p>
+  <div class="btn-row"><button class="btn-ghost" id="cfNo">취소</button><button class="btn-danger" id="cfYes">끄기</button></div>
+</div></div>
+
+<!-- 프리셋 편집 -->
+<div class="ovl" id="ovlPreset"><div class="sheet">
+  <h2 id="peTitle">프리셋</h2>
+  <div class="field"><label>이름</label><input id="peName" type="text" maxlength="24"></div>
+  <div class="field"><label>과목 (비우면 전체)</label><div class="mini-chips" id="peSubj"></div></div>
+  <div class="field"><label>대주제 태그 (비우면 전체)</label><input id="peTagSearch" type="search" placeholder="태그 검색…" style="margin-bottom:6px"><div class="mini-chips" id="peTags"></div></div>
+  <div class="field"><label>유형 (비우면 전체)</label><div class="mini-chips" id="peTyps"></div></div>
+  <div class="field"><label>상태</label><div class="seg" id="peStatus">
+    <button data-v="due">due만</button><button data-v="new">신규만</button><button data-v="all">전부</button><button data-v="weak">약점만</button></div></div>
+  <div class="field"><label>제시 순서</label><div class="seg" id="peOrder">
+    <button data-v="shuffle">셔플</button><button data-v="doc">문서순</button><button data-v="weighted">가중 셔플</button></div></div>
+  <div class="field" id="peWtField" style="display:none"><label>과목 가중치 (배점 비율)</label><div class="wt-grid" id="peWts"></div></div>
+  <div class="field"><label>분량 (비우면 전량)</label><input id="peLimit" type="number" inputmode="numeric" min="1" placeholder="전량"></div>
+  <div class="tgl-row"><span>형제 카드 분산 (하루 한 장)</span><div class="tgl" id="peBury"></div></div>
+  <div class="tgl-row"><span>복습 소진 후 신규 이어가기</span><div class="tgl" id="peNewAfter"></div></div>
+  <div class="btn-row"><button class="btn-ghost" id="peDelete" style="color:var(--again)">삭제</button><button class="btn-ghost" id="peCancel">취소</button><button class="btn-primary" id="peSave">저장</button></div>
+</div></div>
+
+<div id="toast"></div>
+
+<script>/* ts-fsrs v5.4.1 (MIT) — npm 레지스트리 dist/index.umd.js 인라인 (CDN 런타임 로드 금지 원칙) */
+(function (global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+  typeof define === 'function' && define.amd ? define(['exports'], factory) :
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.FSRS = {}));
+})(this, (function (exports) { 'use strict';
+
+  class FSRSError extends Error {
+    constructor(message = "FSRS Error") {
+      var _a;
+      super(message);
+      this.name = "FSRSError";
+      (_a = Error.captureStackTrace) == null ? void 0 : _a.call(Error, this, FSRSError);
+    }
+  }
+  class FSRSValidationError extends FSRSError {
+    constructor(message) {
+      var _a;
+      super(message);
+      this.name = "FSRSValidationError";
+      (_a = Error.captureStackTrace) == null ? void 0 : _a.call(Error, this, FSRSValidationError);
+    }
+  }
+
+  var State = /* @__PURE__ */ ((State2) => {
+    State2[State2["New"] = 0] = "New";
+    State2[State2["Learning"] = 1] = "Learning";
+    State2[State2["Review"] = 2] = "Review";
+    State2[State2["Relearning"] = 3] = "Relearning";
+    return State2;
+  })(State || {});
+  var Rating = /* @__PURE__ */ ((Rating2) => {
+    Rating2[Rating2["Manual"] = 0] = "Manual";
+    Rating2[Rating2["Again"] = 1] = "Again";
+    Rating2[Rating2["Hard"] = 2] = "Hard";
+    Rating2[Rating2["Good"] = 3] = "Good";
+    Rating2[Rating2["Easy"] = 4] = "Easy";
+    return Rating2;
+  })(Rating || {});
+
+  var __defProp$6 = Object.defineProperty;
+  var __defProps$2 = Object.defineProperties;
+  var __getOwnPropDescs$2 = Object.getOwnPropertyDescriptors;
+  var __getOwnPropSymbols$2 = Object.getOwnPropertySymbols;
+  var __hasOwnProp$2 = Object.prototype.hasOwnProperty;
+  var __propIsEnum$2 = Object.prototype.propertyIsEnumerable;
+  var __defNormalProp$6 = (obj, key, value) => key in obj ? __defProp$6(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+  var __spreadValues$2 = (a, b) => {
+    for (var prop in b || (b = {}))
+      if (__hasOwnProp$2.call(b, prop))
+        __defNormalProp$6(a, prop, b[prop]);
+    if (__getOwnPropSymbols$2)
+      for (var prop of __getOwnPropSymbols$2(b)) {
+        if (__propIsEnum$2.call(b, prop))
+          __defNormalProp$6(a, prop, b[prop]);
+      }
+    return a;
+  };
+  var __spreadProps$2 = (a, b) => __defProps$2(a, __getOwnPropDescs$2(b));
+  class TypeConvert {
+    static card(card) {
+      return __spreadProps$2(__spreadValues$2({}, card), {
+        state: TypeConvert.state(card.state),
+        due: TypeConvert.time(card.due),
+        last_review: card.last_review ? TypeConvert.time(card.last_review) : void 0
+      });
+    }
+    static rating(value) {
+      if (typeof value === "string") {
+        const firstLetter = value.charAt(0).toUpperCase();
+        const restOfString = value.slice(1).toLowerCase();
+        const ret = Rating[`${firstLetter}${restOfString}`];
+        if (ret === void 0) {
+          throw new FSRSValidationError(`Invalid rating:[${value}]`);
+        }
+        return ret;
+      } else if (typeof value === "number") {
+        return value;
+      }
+      throw new FSRSValidationError(`Invalid rating:[${value}]`);
+    }
+    static state(value) {
+      if (typeof value === "string") {
+        const firstLetter = value.charAt(0).toUpperCase();
+        const restOfString = value.slice(1).toLowerCase();
+        const ret = State[`${firstLetter}${restOfString}`];
+        if (ret === void 0) {
+          throw new FSRSValidationError(`Invalid state:[${value}]`);
+        }
+        return ret;
+      } else if (typeof value === "number") {
+        return value;
+      }
+      throw new FSRSValidationError(`Invalid state:[${value}]`);
+    }
+    static time(value) {
+      if (value instanceof Date) {
+        return value;
+      }
+      const date = new Date(value);
+      if (typeof value === "object" && value !== null && !Number.isNaN(Date.parse(value) || +date)) {
+        return date;
+      } else if (typeof value === "string") {
+        const timestamp = Date.parse(value);
+        if (!Number.isNaN(timestamp)) {
+          return new Date(timestamp);
+        } else {
+          throw new FSRSValidationError(`Invalid date:[${value}]`);
+        }
+      } else if (typeof value === "number") {
+        return new Date(value);
+      }
+      throw new FSRSValidationError(`Invalid date:[${value}]`);
+    }
+    static review_log(log) {
+      return __spreadProps$2(__spreadValues$2({}, log), {
+        due: TypeConvert.time(log.due),
+        rating: TypeConvert.rating(log.rating),
+        state: TypeConvert.state(log.state),
+        review: TypeConvert.time(log.review)
+      });
+    }
+  }
+
+  /* istanbul ignore next -- @preserve */
+  Date.prototype.scheduler = function(t, isDay) {
+    return date_scheduler(this, t, isDay);
+  };
+  /* istanbul ignore next -- @preserve */
+  Date.prototype.diff = function(pre, unit) {
+    return date_diff(this, pre, unit);
+  };
+  /* istanbul ignore next -- @preserve */
+  Date.prototype.format = function() {
+    return formatDate(this);
+  };
+  /* istanbul ignore next -- @preserve */
+  Date.prototype.dueFormat = function(last_review, unit, timeUnit) {
+    return show_diff_message(this, last_review, unit, timeUnit);
+  };
+  function date_scheduler(now, t, isDay) {
+    return new Date(
+      isDay ? TypeConvert.time(now).getTime() + t * 24 * 60 * 60 * 1e3 : TypeConvert.time(now).getTime() + t * 60 * 1e3
+    );
+  }
+  function date_diff(now, pre, unit) {
+    if (!now || !pre) {
+      throw new FSRSValidationError("Invalid date");
+    }
+    const diff = TypeConvert.time(now).getTime() - TypeConvert.time(pre).getTime();
+    let r = 0;
+    switch (unit) {
+      case "days":
+        r = Math.floor(diff / (24 * 60 * 60 * 1e3));
+        break;
+      case "minutes":
+        r = Math.floor(diff / (60 * 1e3));
+        break;
+    }
+    return r;
+  }
+  function formatDate(dateInput) {
+    const date = TypeConvert.time(dateInput);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const seconds = date.getSeconds();
+    return `${year}-${padZero(month)}-${padZero(day)} ${padZero(hours)}:${padZero(
+    minutes
+  )}:${padZero(seconds)}`;
+  }
+  function padZero(num) {
+    return num < 10 ? `0${num}` : `${num}`;
+  }
+  const TIMEUNIT = [60, 60, 24, 31, 12];
+  const TIMEUNITFORMAT = ["second", "min", "hour", "day", "month", "year"];
+  function show_diff_message(due, last_review, unit, timeUnit = TIMEUNITFORMAT) {
+    due = TypeConvert.time(due);
+    last_review = TypeConvert.time(last_review);
+    if (timeUnit.length !== TIMEUNITFORMAT.length) {
+      timeUnit = TIMEUNITFORMAT;
+    }
+    let diff = due.getTime() - last_review.getTime();
+    let i = 0;
+    diff /= 1e3;
+    for (i = 0; i < TIMEUNIT.length; i++) {
+      if (diff < TIMEUNIT[i]) {
+        break;
+      } else {
+        diff /= TIMEUNIT[i];
+      }
+    }
+    return `${Math.floor(diff)}${unit ? timeUnit[i] : ""}`;
+  }
+  /* istanbul ignore next -- @preserve */
+  function fixDate(value) {
+    return TypeConvert.time(value);
+  }
+  /* istanbul ignore next -- @preserve */
+  function fixState(value) {
+    return TypeConvert.state(value);
+  }
+  /* istanbul ignore next -- @preserve */
+  function fixRating(value) {
+    return TypeConvert.rating(value);
+  }
+  const Grades = Object.freeze([
+    Rating.Again,
+    Rating.Hard,
+    Rating.Good,
+    Rating.Easy
+  ]);
+  const FUZZ_RANGES = [
+    {
+      start: 2.5,
+      end: 7,
+      factor: 0.15
+    },
+    {
+      start: 7,
+      end: 20,
+      factor: 0.1
+    },
+    {
+      start: 20,
+      end: Infinity,
+      factor: 0.05
+    }
+  ];
+  function get_fuzz_range(interval, elapsed_days, maximum_interval) {
+    let delta = 1;
+    for (const range of FUZZ_RANGES) {
+      delta += range.factor * Math.max(Math.min(interval, range.end) - range.start, 0);
+    }
+    interval = Math.min(interval, maximum_interval);
+    let min_ivl = Math.max(2, Math.round(interval - delta));
+    const max_ivl = Math.min(Math.round(interval + delta), maximum_interval);
+    if (interval > elapsed_days) {
+      min_ivl = Math.max(min_ivl, elapsed_days + 1);
+    }
+    min_ivl = Math.min(min_ivl, max_ivl);
+    return { min_ivl, max_ivl };
+  }
+  function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+  }
+  function roundTo(num, decimals) {
+    const factor = 10 ** decimals;
+    return Math.round(num * factor) / factor;
+  }
+  function dateDiffInDays(last, cur) {
+    const utc1 = Date.UTC(
+      last.getUTCFullYear(),
+      last.getUTCMonth(),
+      last.getUTCDate()
+    );
+    const utc2 = Date.UTC(
+      cur.getUTCFullYear(),
+      cur.getUTCMonth(),
+      cur.getUTCDate()
+    );
+    return Math.floor(
+      (utc2 - utc1) / 864e5
+      /** 1000 * 60 * 60 * 24*/
+    );
+  }
+
+  const ConvertStepUnitToMinutes = (step) => {
+    const unit = step.slice(-1);
+    const value = parseInt(step.slice(0, -1), 10);
+    if (Number.isNaN(value) || !Number.isFinite(value) || value < 0) {
+      throw new FSRSValidationError(`Invalid step value: ${step}`);
+    }
+    switch (unit) {
+      case "m":
+        return value;
+      case "h":
+        return value * 60;
+      case "d":
+        return value * 1440;
+      default:
+        throw new FSRSValidationError(
+          `Invalid step unit: ${step}, expected m/h/d`
+        );
+    }
+  };
+  const BasicLearningStepsStrategy = (params, state, cur_step) => {
+    const learning_steps = state === State.Relearning || state === State.Review ? params.relearning_steps : params.learning_steps;
+    const steps_length = learning_steps.length;
+    if (steps_length === 0 || cur_step >= steps_length) return {};
+    const firstStep = learning_steps[0];
+    const toMinutes = ConvertStepUnitToMinutes;
+    const getAgainInterval = () => {
+      return toMinutes(firstStep);
+    };
+    const getHardInterval = () => {
+      if (steps_length === 1) return Math.round(toMinutes(firstStep) * 1.5);
+      const nextStep = learning_steps[1];
+      return Math.round((toMinutes(firstStep) + toMinutes(nextStep)) / 2);
+    };
+    const getStepInfo = (index) => {
+      if (index < 0 || index >= steps_length) {
+        return null;
+      } else {
+        return learning_steps[index];
+      }
+    };
+    const getGoodMinutes = (step) => {
+      return toMinutes(step);
+    };
+    const result = {};
+    const step_info = getStepInfo(Math.max(0, cur_step));
+    if (state === State.Review) {
+      result[Rating.Again] = {
+        scheduled_minutes: toMinutes(step_info),
+        next_step: 0
+      };
+      return result;
+    } else {
+      result[Rating.Again] = {
+        scheduled_minutes: getAgainInterval(),
+        next_step: 0
+      };
+      result[Rating.Hard] = {
+        scheduled_minutes: getHardInterval(),
+        next_step: cur_step
+      };
+      const next_info = getStepInfo(cur_step + 1);
+      if (next_info) {
+        const nextMin = getGoodMinutes(next_info);
+        if (nextMin) {
+          result[Rating.Good] = {
+            scheduled_minutes: Math.round(nextMin),
+            next_step: cur_step + 1
+          };
+        }
+      }
+    }
+    return result;
+  };
+
+  function DefaultInitSeedStrategy() {
+    const time = this.review_time.getTime();
+    const reps = this.current.reps;
+    const mul = this.current.difficulty * this.current.stability;
+    return `${time}_${reps}_${mul}`;
+  }
+  function GenSeedStrategyWithCardId(card_id_field) {
+    return function() {
+      var _a;
+      const card_id = (_a = Reflect.get(this.current, card_id_field)) != null ? _a : 0;
+      const reps = this.current.reps;
+      return String(card_id + reps || 0);
+    };
+  }
+
+  var StrategyMode = /* @__PURE__ */ ((StrategyMode2) => {
+    StrategyMode2["SCHEDULER"] = "Scheduler";
+    StrategyMode2["LEARNING_STEPS"] = "LearningSteps";
+    StrategyMode2["SEED"] = "Seed";
+    return StrategyMode2;
+  })(StrategyMode || {});
+
+  var __defProp$5 = Object.defineProperty;
+  var __defNormalProp$5 = (obj, key, value) => key in obj ? __defProp$5(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+  var __publicField$5 = (obj, key, value) => __defNormalProp$5(obj, typeof key !== "symbol" ? key + "" : key, value);
+  class AbstractScheduler {
+    // init
+    constructor(card, now, algorithm, strategies) {
+      __publicField$5(this, "last");
+      __publicField$5(this, "current");
+      __publicField$5(this, "review_time");
+      __publicField$5(this, "next", /* @__PURE__ */ new Map());
+      __publicField$5(this, "algorithm");
+      __publicField$5(this, "strategies");
+      __publicField$5(this, "elapsed_days", 0);
+      this.algorithm = algorithm;
+      this.last = TypeConvert.card(card);
+      this.current = TypeConvert.card(card);
+      this.review_time = TypeConvert.time(now);
+      this.strategies = strategies;
+      this.init();
+    }
+    checkGrade(grade) {
+      if (!Number.isFinite(grade) || grade < 1 || grade > 4) {
+        throw new FSRSValidationError(`Invalid grade "${grade}",expected 1-4`);
+      }
+    }
+    init() {
+      const { state, last_review } = this.current;
+      let interval = 0;
+      if (state !== State.New && last_review) {
+        interval = dateDiffInDays(last_review, this.review_time);
+      }
+      this.current.last_review = this.review_time;
+      this.elapsed_days = interval;
+      this.current.elapsed_days = interval;
+      this.current.reps += 1;
+      let seed_strategy = DefaultInitSeedStrategy;
+      if (this.strategies) {
+        const custom_strategy = this.strategies.get(StrategyMode.SEED);
+        if (custom_strategy) {
+          seed_strategy = custom_strategy;
+        }
+      }
+      this.algorithm.seed = seed_strategy.call(this);
+    }
+    preview() {
+      return {
+        [Rating.Again]: this.review(Rating.Again),
+        [Rating.Hard]: this.review(Rating.Hard),
+        [Rating.Good]: this.review(Rating.Good),
+        [Rating.Easy]: this.review(Rating.Easy),
+        [Symbol.iterator]: this.previewIterator.bind(this)
+      };
+    }
+    *previewIterator() {
+      for (const grade of Grades) {
+        yield this.review(grade);
+      }
+    }
+    review(grade) {
+      const { state } = this.last;
+      let item;
+      this.checkGrade(grade);
+      switch (state) {
+        case State.New:
+          item = this.newState(grade);
+          break;
+        case State.Learning:
+        case State.Relearning:
+          item = this.learningState(grade);
+          break;
+        case State.Review:
+          item = this.reviewState(grade);
+          break;
+      }
+      return item;
+    }
+    buildLog(rating) {
+      const { last_review, due, elapsed_days } = this.last;
+      return {
+        rating,
+        state: this.current.state,
+        due: last_review || due,
+        stability: this.current.stability,
+        difficulty: this.current.difficulty,
+        elapsed_days: this.elapsed_days,
+        last_elapsed_days: elapsed_days,
+        scheduled_days: this.current.scheduled_days,
+        learning_steps: this.current.learning_steps,
+        review: this.review_time
+      };
+    }
+  }
+
+  var __defProp$4 = Object.defineProperty;
+  var __defNormalProp$4 = (obj, key, value) => key in obj ? __defProp$4(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+  var __publicField$4 = (obj, key, value) => __defNormalProp$4(obj, typeof key !== "symbol" ? key + "" : key, value);
+  class Alea {
+    constructor(seed) {
+      __publicField$4(this, "c");
+      __publicField$4(this, "s0");
+      __publicField$4(this, "s1");
+      __publicField$4(this, "s2");
+      const mash = Mash();
+      this.c = 1;
+      this.s0 = mash(" ");
+      this.s1 = mash(" ");
+      this.s2 = mash(" ");
+      if (seed == null) seed = Date.now();
+      this.s0 -= mash(seed);
+      if (this.s0 < 0) this.s0 += 1;
+      this.s1 -= mash(seed);
+      if (this.s1 < 0) this.s1 += 1;
+      this.s2 -= mash(seed);
+      if (this.s2 < 0) this.s2 += 1;
+    }
+    next() {
+      const t = 2091639 * this.s0 + this.c * 23283064365386963e-26;
+      this.s0 = this.s1;
+      this.s1 = this.s2;
+      this.c = t | 0;
+      this.s2 = t - this.c;
+      return this.s2;
+    }
+    set state(state) {
+      this.c = state.c;
+      this.s0 = state.s0;
+      this.s1 = state.s1;
+      this.s2 = state.s2;
+    }
+    get state() {
+      return {
+        c: this.c,
+        s0: this.s0,
+        s1: this.s1,
+        s2: this.s2
+      };
+    }
+  }
+  function Mash() {
+    let n = 4022871197;
+    return function mash(data) {
+      data = String(data);
+      for (let i = 0; i < data.length; i++) {
+        n += data.charCodeAt(i);
+        let h = 0.02519603282416938 * n;
+        n = h >>> 0;
+        h -= n;
+        h *= n;
+        n = h >>> 0;
+        h -= n;
+        n += h * 4294967296;
+      }
+      return (n >>> 0) * 23283064365386963e-26;
+    };
+  }
+  function alea(seed) {
+    const xg = new Alea(seed);
+    const prng = () => xg.next();
+    prng.int32 = () => xg.next() * 4294967296 | 0;
+    prng.double = () => prng() + (prng() * 2097152 | 0) * 11102230246251565e-32;
+    prng.state = () => xg.state;
+    prng.importState = (state) => {
+      xg.state = state;
+      return prng;
+    };
+    return prng;
+  }
+
+  const version="5.4.1";
+
+  const default_request_retention = 0.9;
+  const default_maximum_interval = 36500;
+  const default_enable_fuzz = false;
+  const default_enable_short_term = true;
+  const default_learning_steps = Object.freeze([
+    "1m",
+    "10m"
+  ]);
+  const default_relearning_steps = Object.freeze([
+    "10m"
+  ]);
+  const FSRSVersion = `v${version} using FSRS-6.0`;
+  const S_MIN = 1e-3;
+  const S_MAX = 36500;
+  const INIT_S_MAX = 100;
+  const FSRS5_DEFAULT_DECAY = 0.5;
+  const FSRS6_DEFAULT_DECAY = 0.1542;
+  const default_w = Object.freeze([
+    0.212,
+    1.2931,
+    2.3065,
+    8.2956,
+    6.4133,
+    0.8334,
+    3.0194,
+    1e-3,
+    1.8722,
+    0.1666,
+    0.796,
+    1.4835,
+    0.0614,
+    0.2629,
+    1.6483,
+    0.6014,
+    1.8729,
+    0.5425,
+    0.0912,
+    0.0658,
+    FSRS6_DEFAULT_DECAY
+  ]);
+  const W17_W18_Ceiling = 2;
+  const CLAMP_PARAMETERS = (w17_w18_ceiling, enable_short_term = default_enable_short_term) => [
+    [S_MIN, INIT_S_MAX],
+    [S_MIN, INIT_S_MAX],
+    [S_MIN, INIT_S_MAX],
+    [S_MIN, INIT_S_MAX],
+    [1, 10],
+    [1e-3, 4],
+    [1e-3, 4],
+    [1e-3, 0.75],
+    [0, 4.5],
+    [0, 0.8],
+    [1e-3, 3.5],
+    [1e-3, 5],
+    [1e-3, 0.25],
+    [1e-3, 0.9],
+    [0, 4],
+    [0, 1],
+    [1, 6],
+    [0, w17_w18_ceiling],
+    [0, w17_w18_ceiling],
+    [
+      enable_short_term ? 0.01 : 0,
+      0.8
+    ],
+    [0.1, 0.8]
+  ];
+
+  const clipParameters = (parameters, numRelearningSteps, enableShortTerm = default_enable_short_term) => {
+    const clip = CLAMP_PARAMETERS(W17_W18_Ceiling, enableShortTerm).slice(
+      0,
+      parameters.length
+    );
+    if (Math.max(0, numRelearningSteps) > 1) {
+      const w11 = clamp(parameters[11] || 0, clip[11][0], clip[11][1]);
+      const w13 = clamp(parameters[13] || 0, clip[13][0], clip[13][1]);
+      const w14 = clamp(parameters[14] || 0, clip[14][0], clip[14][1]);
+      const value = -(Math.log(w11) + Math.log(Math.pow(2, w13) - 1) + w14 * 0.3) / numRelearningSteps;
+      const w17_w18_ceiling = clamp(
+        roundTo(Math.sqrt(Math.max(value, 0)), 8),
+        0.01,
+        W17_W18_Ceiling
+      );
+      if (clip[17]) clip[17] = [clip[17][0], w17_w18_ceiling];
+      if (clip[18]) clip[18] = [clip[18][0], w17_w18_ceiling];
+    }
+    return clip.map(
+      ([min, max], index) => clamp(parameters[index] || 0, min, max)
+    );
+  };
+  const checkParameters = (parameters) => {
+    const invalid = parameters.find((param) => !Number.isFinite(param));
+    if (invalid !== void 0) {
+      throw new FSRSValidationError(
+        `Non-finite or NaN value in parameters ${parameters}`
+      );
+    } else if (![17, 19, 21].includes(parameters.length)) {
+      throw new FSRSValidationError(
+        `Invalid parameter length: ${parameters.length}. Must be 17, 19 or 21 for FSRSv4, 5 and 6 respectively.`
+      );
+    }
+    return parameters;
+  };
+  const migrateParameters = (parameters, numRelearningSteps = 0, enableShortTerm = default_enable_short_term) => {
+    if (parameters === void 0) {
+      return [...default_w];
+    }
+    switch (parameters.length) {
+      case 21:
+        return clipParameters(
+          Array.from(parameters),
+          numRelearningSteps,
+          enableShortTerm
+        );
+      case 19:
+        console.debug("[FSRS-6]auto fill w from 19 to 21 length");
+        return clipParameters(
+          Array.from(parameters),
+          numRelearningSteps,
+          enableShortTerm
+        ).concat([0, FSRS5_DEFAULT_DECAY]);
+      case 17: {
+        const w = clipParameters(
+          Array.from(parameters),
+          numRelearningSteps,
+          enableShortTerm
+        );
+        w[4] = +(w[5] * 2 + w[4]).toFixed(8);
+        w[5] = +(Math.log(w[5] * 3 + 1) / 3).toFixed(8);
+        w[6] = +(w[6] + 0.5).toFixed(8);
+        console.debug("[FSRS-6]auto fill w from 17 to 21 length");
+        return w.concat([0, 0, 0, FSRS5_DEFAULT_DECAY]);
+      }
+      default:
+        console.warn("[FSRS]Invalid parameters length, using default parameters");
+        return [...default_w];
+    }
+  };
+  const generatorParameters = (props) => {
+    var _a, _b;
+    const learning_steps = Array.isArray(props == null ? void 0 : props.learning_steps) ? props.learning_steps : default_learning_steps;
+    const relearning_steps = Array.isArray(props == null ? void 0 : props.relearning_steps) ? props.relearning_steps : default_relearning_steps;
+    const enable_short_term = (_a = props == null ? void 0 : props.enable_short_term) != null ? _a : default_enable_short_term;
+    const w = migrateParameters(
+      props == null ? void 0 : props.w,
+      relearning_steps.length,
+      enable_short_term
+    );
+    return {
+      request_retention: (props == null ? void 0 : props.request_retention) || default_request_retention,
+      maximum_interval: (props == null ? void 0 : props.maximum_interval) || default_maximum_interval,
+      w,
+      enable_fuzz: (_b = props == null ? void 0 : props.enable_fuzz) != null ? _b : default_enable_fuzz,
+      enable_short_term,
+      learning_steps,
+      relearning_steps
+    };
+  };
+  function createEmptyCard(now, afterHandler) {
+    const emptyCard = {
+      due: now ? TypeConvert.time(now) : /* @__PURE__ */ new Date(),
+      stability: 0,
+      difficulty: 0,
+      elapsed_days: 0,
+      scheduled_days: 0,
+      reps: 0,
+      lapses: 0,
+      learning_steps: 0,
+      state: State.New,
+      last_review: void 0
+    };
+    if (afterHandler && typeof afterHandler === "function") {
+      return afterHandler(emptyCard);
+    } else {
+      return emptyCard;
+    }
+  }
+
+  var __defProp$3 = Object.defineProperty;
+  var __defNormalProp$3 = (obj, key, value) => key in obj ? __defProp$3(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+  var __publicField$3 = (obj, key, value) => __defNormalProp$3(obj, typeof key !== "symbol" ? key + "" : key, value);
+  const computeDecayFactor = (decayOrParams) => {
+    const decay = typeof decayOrParams === "number" ? -decayOrParams : -decayOrParams[20];
+    const factor = Math.exp(Math.pow(decay, -1) * Math.log(0.9)) - 1;
+    return { decay, factor: roundTo(factor, 8) };
+  };
+  function forgetting_curve(decayOrParams, elapsed_days, stability) {
+    const { decay, factor } = computeDecayFactor(decayOrParams);
+    return roundTo(Math.pow(1 + factor * elapsed_days / stability, decay), 8);
+  }
+  class FSRSAlgorithm {
+    constructor(params) {
+      __publicField$3(this, "param");
+      __publicField$3(this, "intervalModifier");
+      __publicField$3(this, "_seed");
+      /**
+       * The formula used is :
+       * $$R(t,S) = (1 + \text{FACTOR} \times \frac{t}{9 \cdot S})^{\text{DECAY}}$$
+       * @param {number} elapsed_days t days since the last review
+       * @param {number} stability Stability (interval when R=90%)
+       * @return {number} r Retrievability (probability of recall)
+       */
+      __publicField$3(this, "forgetting_curve");
+      this.param = new Proxy(
+        generatorParameters(params),
+        this.params_handler_proxy()
+      );
+      this.intervalModifier = this.calculate_interval_modifier(
+        this.param.request_retention
+      );
+      this.forgetting_curve = forgetting_curve.bind(this, this.param.w);
+    }
+    get interval_modifier() {
+      return this.intervalModifier;
+    }
+    set seed(seed) {
+      this._seed = seed;
+    }
+    /**
+     * @see https://github.com/open-spaced-repetition/fsrs4anki/wiki/The-Algorithm#fsrs-5
+     *
+     * The formula used is: $$I(r,s) = (r^{\frac{1}{DECAY}} - 1) / FACTOR \times s$$
+     * @param request_retention 0<request_retention<=1,Requested retention rate
+     * @throws {Error} Requested retention rate should be in the range (0,1]
+     */
+    calculate_interval_modifier(request_retention) {
+      if (request_retention <= 0 || request_retention > 1) {
+        throw new FSRSValidationError(
+          "Requested retention rate should be in the range (0,1]"
+        );
+      }
+      const { decay, factor } = computeDecayFactor(this.param.w);
+      return roundTo((Math.pow(request_retention, 1 / decay) - 1) / factor, 8);
+    }
+    /**
+     * Get the parameters of the algorithm.
+     */
+    get parameters() {
+      return this.param;
+    }
+    /**
+     * Set the parameters of the algorithm.
+     * @param params Partial<FSRSParameters>
+     */
+    set parameters(params) {
+      this.update_parameters(params);
+    }
+    params_handler_proxy() {
+      const _this = this;
+      return {
+        set: function(target, prop, value) {
+          if (prop === "request_retention" && Number.isFinite(value)) {
+            _this.intervalModifier = _this.calculate_interval_modifier(
+              Number(value)
+            );
+          } else if (prop === "w") {
+            value = migrateParameters(
+              value,
+              target.relearning_steps.length,
+              target.enable_short_term
+            );
+            _this.forgetting_curve = forgetting_curve.bind(this, value);
+            _this.intervalModifier = _this.calculate_interval_modifier(
+              Number(target.request_retention)
+            );
+          }
+          Reflect.set(target, prop, value);
+          return true;
+        }
+      };
+    }
+    update_parameters(params) {
+      const _params = generatorParameters(params);
+      for (const key in _params) {
+        const paramKey = key;
+        this.param[paramKey] = _params[paramKey];
+      }
+    }
+    /**
+       * The formula used is :
+       * $$ S_0(G) = w_{G-1}$$
+       * $$S_0 = \max \lbrace S_0,0.1\rbrace $$
+    
+       * @param g Grade (rating at Anki) [1.again,2.hard,3.good,4.easy]
+       * @return Stability (interval when R=90%)
+       */
+    init_stability(g) {
+      return Math.max(this.param.w[g - 1], 0.1);
+    }
+    /**
+     * The formula used is :
+     * $$D_0(G) = w_4 - e^{(G-1) \cdot w_5} + 1 $$
+     * $$D_0 = \min \lbrace \max \lbrace D_0(G),1 \rbrace,10 \rbrace$$
+     * where the $$D_0(1)=w_4$$ when the first rating is good.
+     *
+     * @param {Grade} g Grade (rating at Anki) [1.again,2.hard,3.good,4.easy]
+     * @return {number} Difficulty $$D \in [1,10]$$
+     */
+    init_difficulty(g) {
+      const w = this.param.w;
+      const d = w[4] - Math.exp((g - 1) * w[5]) + 1;
+      return roundTo(d, 8);
+    }
+    /**
+     * If fuzzing is disabled or ivl is less than 2.5, it returns the original interval.
+     * @param {number} ivl - The interval to be fuzzed.
+     * @param {number} elapsed_days t days since the last review
+     * @return {number} - The fuzzed interval.
+     **/
+    apply_fuzz(ivl, elapsed_days) {
+      if (!this.param.enable_fuzz || ivl < 2.5) return Math.round(ivl);
+      const generator = alea(this._seed);
+      const fuzz_factor = generator();
+      const { min_ivl, max_ivl } = get_fuzz_range(
+        ivl,
+        elapsed_days,
+        this.param.maximum_interval
+      );
+      return Math.floor(fuzz_factor * (max_ivl - min_ivl + 1) + min_ivl);
+    }
+    /**
+     *   @see The formula used is : {@link FSRSAlgorithm.calculate_interval_modifier}
+     *   @param {number} s - Stability (interval when R=90%)
+     *   @param {number} elapsed_days t days since the last review
+     */
+    next_interval(s, elapsed_days) {
+      const newInterval = Math.min(
+        Math.max(1, Math.round(s * this.intervalModifier)),
+        this.param.maximum_interval
+      );
+      return this.apply_fuzz(newInterval, elapsed_days);
+    }
+    /**
+     * @see https://github.com/open-spaced-repetition/fsrs4anki/issues/697
+     */
+    linear_damping(delta_d, old_d) {
+      return roundTo(delta_d * (10 - old_d) / 9, 8);
+    }
+    /**
+     * The formula used is :
+     * $$\text{delta}_d = -w_6 \cdot (g - 3)$$
+     * $$\text{next}_d = D + \text{linear damping}(\text{delta}_d , D)$$
+     * $$D^\prime(D,R) = w_7 \cdot D_0(4) +(1 - w_7) \cdot \text{next}_d$$
+     * @param {number} d Difficulty $$D \in [1,10]$$
+     * @param {Grade} g Grade (rating at Anki) [1.again,2.hard,3.good,4.easy]
+     * @return {number} $$\text{next}_D$$
+     */
+    next_difficulty(d, g) {
+      const delta_d = -this.param.w[6] * (g - 3);
+      const next_d = d + this.linear_damping(delta_d, d);
+      return clamp(
+        this.mean_reversion(this.init_difficulty(Rating.Easy), next_d),
+        1,
+        10
+      );
+    }
+    /**
+     * The formula used is :
+     * $$w_7 \cdot \text{init} +(1 - w_7) \cdot \text{current}$$
+     * @param {number} init $$w_2 : D_0(3) = w_2 + (R-2) \cdot w_3= w_2$$
+     * @param {number} current $$D - w_6 \cdot (R - 2)$$
+     * @return {number} difficulty
+     */
+    mean_reversion(init, current) {
+      const w = this.param.w;
+      return roundTo(w[7] * init + (1 - w[7]) * current, 8);
+    }
+    /**
+     * The formula used is :
+     * $$S^\prime_r(D,S,R,G) = S\cdot(e^{w_8}\cdot (11-D)\cdot S^{-w_9}\cdot(e^{w_{10}\cdot(1-R)}-1)\cdot w_{15}(\text{if} G=2) \cdot w_{16}(\text{if} G=4)+1)$$
+     * @param {number} d Difficulty D \in [1,10]
+     * @param {number} s Stability (interval when R=90%)
+     * @param {number} r Retrievability (probability of recall)
+     * @param {Grade} g Grade (Rating[0.again,1.hard,2.good,3.easy])
+     * @return {number} S^\prime_r new stability after recall
+     */
+    next_recall_stability(d, s, r, g) {
+      const w = this.param.w;
+      const hard_penalty = Rating.Hard === g ? w[15] : 1;
+      const easy_bound = Rating.Easy === g ? w[16] : 1;
+      return roundTo(
+        clamp(
+          s * (1 + Math.exp(w[8]) * (11 - d) * Math.pow(s, -w[9]) * (Math.exp((1 - r) * w[10]) - 1) * hard_penalty * easy_bound),
+          S_MIN,
+          36500
+        ),
+        8
+      );
+    }
+    /**
+     * The formula used is :
+     * $$S^\prime_f(D,S,R) = w_{11}\cdot D^{-w_{12}}\cdot ((S+1)^{w_{13}}-1) \cdot e^{w_{14}\cdot(1-R)}$$
+     * enable_short_term = true : $$S^\prime_f \in \min \lbrace \max \lbrace S^\prime_f,0.01\rbrace, \frac{S}{e^{w_{17} \cdot w_{18}}} \rbrace$$
+     * enable_short_term = false : $$S^\prime_f \in \min \lbrace \max \lbrace S^\prime_f,0.01\rbrace, S \rbrace$$
+     * @param {number} d Difficulty D \in [1,10]
+     * @param {number} s Stability (interval when R=90%)
+     * @param {number} r Retrievability (probability of recall)
+     * @return {number} S^\prime_f new stability after forgetting
+     */
+    next_forget_stability(d, s, r) {
+      const w = this.param.w;
+      return roundTo(
+        clamp(
+          w[11] * Math.pow(d, -w[12]) * (Math.pow(s + 1, w[13]) - 1) * Math.exp((1 - r) * w[14]),
+          S_MIN,
+          36500
+        ),
+        8
+      );
+    }
+    /**
+     * The formula used is :
+     * $$S^\prime_s(S,G) = S \cdot e^{w_{17} \cdot (G-3+w_{18})}$$
+     * @param {number} s Stability (interval when R=90%)
+     * @param {Grade} g Grade (Rating[0.again,1.hard,2.good,3.easy])
+     */
+    next_short_term_stability(s, g) {
+      const w = this.param.w;
+      const sinc = Math.pow(s, -w[19]) * Math.exp(w[17] * (g - 3 + w[18]));
+      const maskedSinc = g >= Rating.Hard ? Math.max(sinc, 1) : sinc;
+      return roundTo(clamp(s * maskedSinc, S_MIN, 36500), 8);
+    }
+    /**
+     * Calculates the next state of memory based on the current state, time elapsed, and grade.
+     *
+     * @param memory_state - The current state of memory, which can be null.
+     * @param t - The time elapsed since the last review.
+     * @param {Rating} g Grade (Rating[0.Manual,1.Again,2.Hard,3.Good,4.Easy])
+     * @param r - Optional retrievability value. If not provided, it will be calculated.
+     * @returns The next state of memory with updated difficulty and stability.
+     */
+    next_state(memory_state, t, g, r) {
+      const { difficulty: d, stability: s } = memory_state != null ? memory_state : {
+        difficulty: 0,
+        stability: 0
+      };
+      if (t < 0) {
+        throw new FSRSValidationError(`Invalid delta_t "${t}"`);
+      }
+      if (g < 0 || g > 4) {
+        throw new FSRSValidationError(`Invalid grade "${g}"`);
+      }
+      if (d === 0 && s === 0) {
+        return {
+          difficulty: clamp(this.init_difficulty(g), 1, 10),
+          stability: this.init_stability(g)
+        };
+      }
+      if (g === 0) {
+        return {
+          difficulty: d,
+          stability: s
+        };
+      }
+      if (d < 1 || s < S_MIN) {
+        throw new FSRSValidationError(
+          `Invalid memory state { difficulty: ${d}, stability: ${s} }`
+        );
+      }
+      const w = this.param.w;
+      r = typeof r === "number" ? r : this.forgetting_curve(t, s);
+      let new_s;
+      if (t === 0 && this.param.enable_short_term) {
+        new_s = this.next_short_term_stability(s, g);
+      } else if (g === 1) {
+        const s_after_fail = this.next_forget_stability(d, s, r);
+        let [w_17, w_18] = [0, 0];
+        if (this.param.enable_short_term) {
+          w_17 = w[17];
+          w_18 = w[18];
+        }
+        const next_s_min = s / Math.exp(w_17 * w_18);
+        new_s = clamp(roundTo(next_s_min, 8), S_MIN, s_after_fail);
+      } else {
+        new_s = this.next_recall_stability(d, s, r, g);
+      }
+      const new_d = this.next_difficulty(d, g);
+      return { difficulty: new_d, stability: new_s };
+    }
+  }
+
+  var __defProp$2 = Object.defineProperty;
+  var __defNormalProp$2 = (obj, key, value) => key in obj ? __defProp$2(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+  var __publicField$2 = (obj, key, value) => __defNormalProp$2(obj, key + "" , value);
+  class BasicScheduler extends AbstractScheduler {
+    constructor(card, now, algorithm, strategies) {
+      super(card, now, algorithm, strategies);
+      __publicField$2(this, "learningStepsStrategy");
+      let learningStepStrategy = BasicLearningStepsStrategy;
+      if (this.strategies) {
+        const custom_strategy = this.strategies.get(StrategyMode.LEARNING_STEPS);
+        if (custom_strategy) {
+          learningStepStrategy = custom_strategy;
+        }
+      }
+      this.learningStepsStrategy = learningStepStrategy;
+    }
+    getLearningInfo(card, grade) {
+      var _a, _b, _c, _d;
+      const parameters = this.algorithm.parameters;
+      card.learning_steps = card.learning_steps || 0;
+      const steps_strategy = this.learningStepsStrategy(
+        parameters,
+        card.state,
+        card.learning_steps
+      );
+      const scheduled_minutes = Math.max(
+        0,
+        (_b = (_a = steps_strategy[grade]) == null ? void 0 : _a.scheduled_minutes) != null ? _b : 0
+      );
+      const next_steps = Math.max(0, (_d = (_c = steps_strategy[grade]) == null ? void 0 : _c.next_step) != null ? _d : 0);
+      return {
+        scheduled_minutes,
+        next_steps
+      };
+    }
+    /**
+     * @description This function applies the learning steps based on the current card's state and grade.
+     */
+    applyLearningSteps(nextCard, grade, to_state) {
+      const { scheduled_minutes, next_steps } = this.getLearningInfo(
+        this.current,
+        grade
+      );
+      if (scheduled_minutes > 0 && scheduled_minutes < 1440) {
+        nextCard.learning_steps = next_steps;
+        nextCard.scheduled_days = 0;
+        nextCard.state = to_state;
+        nextCard.due = date_scheduler(
+          this.review_time,
+          Math.round(scheduled_minutes),
+          false
+          /** true:days false: minute */
+        );
+      } else {
+        nextCard.state = State.Review;
+        if (scheduled_minutes >= 1440) {
+          nextCard.learning_steps = next_steps;
+          nextCard.due = date_scheduler(
+            this.review_time,
+            Math.round(scheduled_minutes),
+            false
+            /** true:days false: minute */
+          );
+          nextCard.scheduled_days = Math.floor(scheduled_minutes / 1440);
+        } else {
+          nextCard.learning_steps = 0;
+          const interval = this.algorithm.next_interval(
+            nextCard.stability,
+            this.elapsed_days
+          );
+          nextCard.scheduled_days = interval;
+          nextCard.due = date_scheduler(this.review_time, interval, true);
+        }
+      }
+    }
+    newState(grade) {
+      const exist = this.next.get(grade);
+      if (exist) {
+        return exist;
+      }
+      const next = this.next_ds(this.elapsed_days, grade);
+      this.applyLearningSteps(next, grade, State.Learning);
+      const item = {
+        card: next,
+        log: this.buildLog(grade)
+      };
+      this.next.set(grade, item);
+      return item;
+    }
+    learningState(grade) {
+      const exist = this.next.get(grade);
+      if (exist) {
+        return exist;
+      }
+      const next = this.next_ds(this.elapsed_days, grade);
+      this.applyLearningSteps(
+        next,
+        grade,
+        this.last.state
+        /** Learning or Relearning */
+      );
+      const item = {
+        card: next,
+        log: this.buildLog(grade)
+      };
+      this.next.set(grade, item);
+      return item;
+    }
+    reviewState(grade) {
+      const exist = this.next.get(grade);
+      if (exist) {
+        return exist;
+      }
+      const interval = this.elapsed_days;
+      const retrievability = this.algorithm.forgetting_curve(
+        interval,
+        this.current.stability
+      );
+      const next_again = this.next_ds(interval, Rating.Again, retrievability);
+      const next_hard = this.next_ds(interval, Rating.Hard, retrievability);
+      const next_good = this.next_ds(interval, Rating.Good, retrievability);
+      const next_easy = this.next_ds(interval, Rating.Easy, retrievability);
+      this.next_interval(next_hard, next_good, next_easy, interval);
+      this.next_state(next_hard, next_good, next_easy);
+      this.applyLearningSteps(next_again, Rating.Again, State.Relearning);
+      next_again.lapses += 1;
+      const item_again = {
+        card: next_again,
+        log: this.buildLog(Rating.Again)
+      };
+      const item_hard = {
+        card: next_hard,
+        log: super.buildLog(Rating.Hard)
+      };
+      const item_good = {
+        card: next_good,
+        log: super.buildLog(Rating.Good)
+      };
+      const item_easy = {
+        card: next_easy,
+        log: super.buildLog(Rating.Easy)
+      };
+      this.next.set(Rating.Again, item_again);
+      this.next.set(Rating.Hard, item_hard);
+      this.next.set(Rating.Good, item_good);
+      this.next.set(Rating.Easy, item_easy);
+      return this.next.get(grade);
+    }
+    /**
+     * Review next_ds
+     */
+    next_ds(t, g, r) {
+      const next_state = this.algorithm.next_state(
+        {
+          difficulty: this.current.difficulty,
+          stability: this.current.stability
+        },
+        t,
+        g,
+        r
+      );
+      const card = TypeConvert.card(this.current);
+      card.difficulty = next_state.difficulty;
+      card.stability = next_state.stability;
+      return card;
+    }
+    /**
+     * Review next_interval
+     */
+    next_interval(next_hard, next_good, next_easy, interval) {
+      let hard_interval, good_interval;
+      hard_interval = this.algorithm.next_interval(next_hard.stability, interval);
+      good_interval = this.algorithm.next_interval(next_good.stability, interval);
+      hard_interval = Math.min(hard_interval, good_interval);
+      good_interval = Math.max(good_interval, hard_interval + 1);
+      const easy_interval = Math.max(
+        this.algorithm.next_interval(next_easy.stability, interval),
+        good_interval + 1
+      );
+      next_hard.scheduled_days = hard_interval;
+      next_hard.due = date_scheduler(this.review_time, hard_interval, true);
+      next_good.scheduled_days = good_interval;
+      next_good.due = date_scheduler(this.review_time, good_interval, true);
+      next_easy.scheduled_days = easy_interval;
+      next_easy.due = date_scheduler(this.review_time, easy_interval, true);
+    }
+    /**
+     * Review next_state
+     */
+    next_state(next_hard, next_good, next_easy) {
+      next_hard.state = State.Review;
+      next_hard.learning_steps = 0;
+      next_good.state = State.Review;
+      next_good.learning_steps = 0;
+      next_easy.state = State.Review;
+      next_easy.learning_steps = 0;
+    }
+  }
+
+  class LongTermScheduler extends AbstractScheduler {
+    newState(grade) {
+      const exist = this.next.get(grade);
+      if (exist) {
+        return exist;
+      }
+      this.current.scheduled_days = 0;
+      this.current.elapsed_days = 0;
+      const first_interval = 0;
+      const next_again = this.next_ds(first_interval, Rating.Again);
+      const next_hard = this.next_ds(first_interval, Rating.Hard);
+      const next_good = this.next_ds(first_interval, Rating.Good);
+      const next_easy = this.next_ds(first_interval, Rating.Easy);
+      this.next_interval(
+        next_again,
+        next_hard,
+        next_good,
+        next_easy,
+        first_interval
+      );
+      this.next_state(next_again, next_hard, next_good, next_easy);
+      this.update_next(next_again, next_hard, next_good, next_easy);
+      return this.next.get(grade);
+    }
+    next_ds(t, g, r) {
+      const next_state = this.algorithm.next_state(
+        {
+          difficulty: this.current.difficulty,
+          stability: this.current.stability
+        },
+        t,
+        g,
+        r
+      );
+      const card = TypeConvert.card(this.current);
+      card.difficulty = next_state.difficulty;
+      card.stability = next_state.stability;
+      return card;
+    }
+    /**
+     * @see https://github.com/open-spaced-repetition/ts-fsrs/issues/98#issuecomment-2241923194
+     */
+    learningState(grade) {
+      return this.reviewState(grade);
+    }
+    reviewState(grade) {
+      const exist = this.next.get(grade);
+      if (exist) {
+        return exist;
+      }
+      const interval = this.elapsed_days;
+      const retrievability = this.algorithm.forgetting_curve(
+        interval,
+        this.current.stability
+      );
+      const next_again = this.next_ds(interval, Rating.Again, retrievability);
+      const next_hard = this.next_ds(interval, Rating.Hard, retrievability);
+      const next_good = this.next_ds(interval, Rating.Good, retrievability);
+      const next_easy = this.next_ds(interval, Rating.Easy, retrievability);
+      this.next_interval(next_again, next_hard, next_good, next_easy, interval);
+      this.next_state(next_again, next_hard, next_good, next_easy);
+      next_again.lapses += 1;
+      this.update_next(next_again, next_hard, next_good, next_easy);
+      return this.next.get(grade);
+    }
+    /**
+     * Review/New next_interval
+     */
+    next_interval(next_again, next_hard, next_good, next_easy, interval) {
+      let again_interval, hard_interval, good_interval, easy_interval;
+      again_interval = this.algorithm.next_interval(
+        next_again.stability,
+        interval
+      );
+      hard_interval = this.algorithm.next_interval(next_hard.stability, interval);
+      good_interval = this.algorithm.next_interval(next_good.stability, interval);
+      easy_interval = this.algorithm.next_interval(next_easy.stability, interval);
+      again_interval = Math.min(again_interval, hard_interval);
+      hard_interval = Math.max(hard_interval, again_interval + 1);
+      good_interval = Math.max(good_interval, hard_interval + 1);
+      easy_interval = Math.max(easy_interval, good_interval + 1);
+      next_again.scheduled_days = again_interval;
+      next_again.due = date_scheduler(this.review_time, again_interval, true);
+      next_hard.scheduled_days = hard_interval;
+      next_hard.due = date_scheduler(this.review_time, hard_interval, true);
+      next_good.scheduled_days = good_interval;
+      next_good.due = date_scheduler(this.review_time, good_interval, true);
+      next_easy.scheduled_days = easy_interval;
+      next_easy.due = date_scheduler(this.review_time, easy_interval, true);
+    }
+    /**
+     * Review/New next_state
+     */
+    next_state(next_again, next_hard, next_good, next_easy) {
+      next_again.state = State.Review;
+      next_again.learning_steps = 0;
+      next_hard.state = State.Review;
+      next_hard.learning_steps = 0;
+      next_good.state = State.Review;
+      next_good.learning_steps = 0;
+      next_easy.state = State.Review;
+      next_easy.learning_steps = 0;
+    }
+    update_next(next_again, next_hard, next_good, next_easy) {
+      const item_again = {
+        card: next_again,
+        log: this.buildLog(Rating.Again)
+      };
+      const item_hard = {
+        card: next_hard,
+        log: super.buildLog(Rating.Hard)
+      };
+      const item_good = {
+        card: next_good,
+        log: super.buildLog(Rating.Good)
+      };
+      const item_easy = {
+        card: next_easy,
+        log: super.buildLog(Rating.Easy)
+      };
+      this.next.set(Rating.Again, item_again);
+      this.next.set(Rating.Hard, item_hard);
+      this.next.set(Rating.Good, item_good);
+      this.next.set(Rating.Easy, item_easy);
+    }
+  }
+
+  var __defProp$1 = Object.defineProperty;
+  var __defProps$1 = Object.defineProperties;
+  var __getOwnPropDescs$1 = Object.getOwnPropertyDescriptors;
+  var __getOwnPropSymbols$1 = Object.getOwnPropertySymbols;
+  var __hasOwnProp$1 = Object.prototype.hasOwnProperty;
+  var __propIsEnum$1 = Object.prototype.propertyIsEnumerable;
+  var __defNormalProp$1 = (obj, key, value) => key in obj ? __defProp$1(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+  var __spreadValues$1 = (a, b) => {
+    for (var prop in b || (b = {}))
+      if (__hasOwnProp$1.call(b, prop))
+        __defNormalProp$1(a, prop, b[prop]);
+    if (__getOwnPropSymbols$1)
+      for (var prop of __getOwnPropSymbols$1(b)) {
+        if (__propIsEnum$1.call(b, prop))
+          __defNormalProp$1(a, prop, b[prop]);
+      }
+    return a;
+  };
+  var __spreadProps$1 = (a, b) => __defProps$1(a, __getOwnPropDescs$1(b));
+  var __publicField$1 = (obj, key, value) => __defNormalProp$1(obj, key + "" , value);
+  class Reschedule {
+    /**
+     * Creates an instance of the `Reschedule` class.
+     * @param fsrs - An instance of the FSRS class used for scheduling.
+     */
+    constructor(fsrs) {
+      __publicField$1(this, "fsrs");
+      this.fsrs = fsrs;
+    }
+    /**
+     * Replays a review for a card and determines the next review date based on the given rating.
+     * @param card - The card being reviewed.
+     * @param reviewed - The date the card was reviewed.
+     * @param rating - The grade given to the card during the review.
+     * @returns A `RecordLogItem` containing the updated card and review log.
+     */
+    replay(card, reviewed, rating) {
+      return this.fsrs.next(card, reviewed, rating);
+    }
+    /**
+     * Processes a manual review for a card, allowing for custom state, stability, difficulty, and due date.
+     * @param card - The card being reviewed.
+     * @param state - The state of the card after the review.
+     * @param reviewed - The date the card was reviewed.
+     * @param elapsed_days - The number of days since the last review.
+     * @param stability - (Optional) The stability of the card.
+     * @param difficulty - (Optional) The difficulty of the card.
+     * @param due - (Optional) The due date for the next review.
+     * @returns A `RecordLogItem` containing the updated card and review log.
+     * @throws Will throw an error if the state or due date is not provided when required.
+     */
+    handleManualRating(card, state, reviewed, elapsed_days, stability, difficulty, due) {
+      if (typeof state === "undefined") {
+        throw new FSRSValidationError(
+          "reschedule: state is required for manual rating"
+        );
+      }
+      let log;
+      let next_card;
+      if (state === State.New) {
+        log = {
+          rating: Rating.Manual,
+          state,
+          due: due != null ? due : reviewed,
+          stability: card.stability,
+          difficulty: card.difficulty,
+          elapsed_days,
+          last_elapsed_days: card.elapsed_days,
+          scheduled_days: card.scheduled_days,
+          learning_steps: card.learning_steps,
+          review: reviewed
+        };
+        next_card = createEmptyCard(reviewed);
+        next_card.last_review = reviewed;
+      } else {
+        if (typeof due === "undefined") {
+          throw new FSRSValidationError(
+            "reschedule: due is required for manual rating"
+          );
+        }
+        const scheduled_days = date_diff(due, reviewed, "days");
+        log = {
+          rating: Rating.Manual,
+          state: card.state,
+          due: card.last_review || card.due,
+          stability: card.stability,
+          difficulty: card.difficulty,
+          elapsed_days,
+          last_elapsed_days: card.elapsed_days,
+          scheduled_days: card.scheduled_days,
+          learning_steps: card.learning_steps,
+          review: reviewed
+        };
+        next_card = __spreadProps$1(__spreadValues$1({}, card), {
+          state,
+          due,
+          last_review: reviewed,
+          stability: stability || card.stability,
+          difficulty: difficulty || card.difficulty,
+          elapsed_days,
+          scheduled_days,
+          reps: card.reps + 1
+        });
+      }
+      return { card: next_card, log };
+    }
+    /**
+     * Reschedules a card based on its review history.
+     *
+     * @param current_card - The card to be rescheduled.
+     * @param reviews - An array of review history objects.
+     * @returns An array of record log items representing the rescheduling process.
+     */
+    reschedule(current_card, reviews) {
+      const collections = [];
+      let cur_card = createEmptyCard(current_card.due);
+      for (const review of reviews) {
+        let item;
+        review.review = TypeConvert.time(review.review);
+        if (review.rating === Rating.Manual) {
+          let interval = 0;
+          if (cur_card.state !== State.New && cur_card.last_review) {
+            interval = date_diff(review.review, cur_card.last_review, "days");
+          }
+          item = this.handleManualRating(
+            cur_card,
+            review.state,
+            review.review,
+            interval,
+            review.stability,
+            review.difficulty,
+            review.due ? TypeConvert.time(review.due) : void 0
+          );
+        } else {
+          item = this.replay(cur_card, review.review, review.rating);
+        }
+        collections.push(item);
+        cur_card = item.card;
+      }
+      return collections;
+    }
+    calculateManualRecord(current_card, now, record_log_item, update_memory) {
+      if (!record_log_item) {
+        return null;
+      }
+      const { card: reschedule_card, log } = record_log_item;
+      const cur_card = TypeConvert.card(current_card);
+      if (cur_card.due.getTime() === reschedule_card.due.getTime()) {
+        return null;
+      }
+      cur_card.scheduled_days = date_diff(
+        reschedule_card.due,
+        cur_card.due,
+        "days"
+      );
+      return this.handleManualRating(
+        cur_card,
+        reschedule_card.state,
+        TypeConvert.time(now),
+        log.elapsed_days,
+        update_memory ? reschedule_card.stability : void 0,
+        update_memory ? reschedule_card.difficulty : void 0,
+        reschedule_card.due
+      );
+    }
+  }
+
+  var __defProp = Object.defineProperty;
+  var __defProps = Object.defineProperties;
+  var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
+  var __getOwnPropSymbols = Object.getOwnPropertySymbols;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
+  var __propIsEnum = Object.prototype.propertyIsEnumerable;
+  var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+  var __spreadValues = (a, b) => {
+    for (var prop in b || (b = {}))
+      if (__hasOwnProp.call(b, prop))
+        __defNormalProp(a, prop, b[prop]);
+    if (__getOwnPropSymbols)
+      for (var prop of __getOwnPropSymbols(b)) {
+        if (__propIsEnum.call(b, prop))
+          __defNormalProp(a, prop, b[prop]);
+      }
+    return a;
+  };
+  var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
+  var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+  function applyAfterHandler(value, afterHandler) {
+    return typeof afterHandler === "function" ? afterHandler(value) : value;
+  }
+  class FSRS extends FSRSAlgorithm {
+    constructor(param) {
+      super(param);
+      __publicField(this, "strategyHandler", /* @__PURE__ */ new Map());
+      __publicField(this, "Scheduler");
+      const { enable_short_term } = this.parameters;
+      this.Scheduler = enable_short_term ? BasicScheduler : LongTermScheduler;
+    }
+    params_handler_proxy() {
+      const _this = this;
+      return {
+        set: function(target, prop, value) {
+          if (prop === "request_retention" && Number.isFinite(value)) {
+            _this.intervalModifier = _this.calculate_interval_modifier(
+              Number(value)
+            );
+          } else if (prop === "enable_short_term") {
+            _this.Scheduler = value === true ? BasicScheduler : LongTermScheduler;
+          } else if (prop === "w") {
+            value = migrateParameters(
+              value,
+              target.relearning_steps.length,
+              target.enable_short_term
+            );
+            _this.forgetting_curve = forgetting_curve.bind(this, value);
+            _this.intervalModifier = _this.calculate_interval_modifier(
+              Number(target.request_retention)
+            );
+          }
+          Reflect.set(target, prop, value);
+          return true;
+        }
+      };
+    }
+    useStrategy(mode, handler) {
+      this.strategyHandler.set(mode, handler);
+      return this;
+    }
+    clearStrategy(mode) {
+      if (mode) {
+        this.strategyHandler.delete(mode);
+      } else {
+        this.strategyHandler.clear();
+      }
+      return this;
+    }
+    getScheduler(card, now) {
+      const schedulerStrategy = this.strategyHandler.get(
+        StrategyMode.SCHEDULER
+      );
+      const Scheduler = schedulerStrategy || this.Scheduler;
+      const instance = new Scheduler(card, now, this, this.strategyHandler);
+      return instance;
+    }
+    /**
+     * Display the collection of cards and logs for the four scenarios after scheduling the card at the current time.
+     * @param card Card to be processed
+     * @param now Current time or scheduled time
+     * @param afterHandler Convert the result to another type. (Optional)
+     * @example
+     * ```typescript
+     * const card: Card = createEmptyCard(new Date());
+     * const f = fsrs();
+     * const recordLog = f.repeat(card, new Date());
+     * ```
+     * @example
+     * ```typescript
+     * interface RevLogUnchecked
+     *   extends Omit<ReviewLog, "due" | "review" | "state" | "rating"> {
+     *   cid: string;
+     *   due: Date | number;
+     *   state: StateType;
+     *   review: Date | number;
+     *   rating: RatingType;
+     * }
+     *
+     * interface RepeatRecordLog {
+     *   card: CardUnChecked; //see method: createEmptyCard
+     *   log: RevLogUnchecked;
+     * }
+     *
+     * function repeatAfterHandler(recordLog: RecordLog) {
+     *     const record: { [key in Grade]: RepeatRecordLog } = {} as {
+     *       [key in Grade]: RepeatRecordLog;
+     *     };
+     *     for (const grade of Grades) {
+     *       record[grade] = {
+     *         card: {
+     *           ...(recordLog[grade].card as Card & { cid: string }),
+     *           due: recordLog[grade].card.due.getTime(),
+     *           state: State[recordLog[grade].card.state] as StateType,
+     *           last_review: recordLog[grade].card.last_review
+     *             ? recordLog[grade].card.last_review!.getTime()
+     *             : null,
+     *         },
+     *         log: {
+     *           ...recordLog[grade].log,
+     *           cid: (recordLog[grade].card as Card & { cid: string }).cid,
+     *           due: recordLog[grade].log.due.getTime(),
+     *           review: recordLog[grade].log.review.getTime(),
+     *           state: State[recordLog[grade].log.state] as StateType,
+     *           rating: Rating[recordLog[grade].log.rating] as RatingType,
+     *         },
+     *       };
+     *     }
+     *     return record;
+     * }
+     * const card: Card = createEmptyCard(new Date(), cardAfterHandler); //see method:  createEmptyCard
+     * const f = fsrs();
+     * const recordLog = f.repeat(card, new Date(), repeatAfterHandler);
+     * ```
+     */
+    repeat(card, now, afterHandler) {
+      const instance = this.getScheduler(card, now);
+      const recordLog = instance.preview();
+      return applyAfterHandler(recordLog, afterHandler);
+    }
+    /**
+     * Display the collection of cards and logs for the card scheduled at the current time, after applying a specific grade rating.
+     * @param card Card to be processed
+     * @param now Current time or scheduled time
+     * @param grade Rating of the review (Again, Hard, Good, Easy)
+     * @param afterHandler Convert the result to another type. (Optional)
+     * @example
+     * ```typescript
+     * const card: Card = createEmptyCard(new Date());
+     * const f = fsrs();
+     * const recordLogItem = f.next(card, new Date(), Rating.Again);
+     * ```
+     * @example
+     * ```typescript
+     * interface RevLogUnchecked
+     *   extends Omit<ReviewLog, "due" | "review" | "state" | "rating"> {
+     *   cid: string;
+     *   due: Date | number;
+     *   state: StateType;
+     *   review: Date | number;
+     *   rating: RatingType;
+     * }
+     *
+     * interface NextRecordLog {
+     *   card: CardUnChecked; //see method: createEmptyCard
+     *   log: RevLogUnchecked;
+     * }
+     *
+    function nextAfterHandler(recordLogItem: RecordLogItem) {
+      const recordItem = {
+        card: {
+          ...(recordLogItem.card as Card & { cid: string }),
+          due: recordLogItem.card.due.getTime(),
+          state: State[recordLogItem.card.state] as StateType,
+          last_review: recordLogItem.card.last_review
+            ? recordLogItem.card.last_review!.getTime()
+            : null,
+        },
+        log: {
+          ...recordLogItem.log,
+          cid: (recordLogItem.card as Card & { cid: string }).cid,
+          due: recordLogItem.log.due.getTime(),
+          review: recordLogItem.log.review.getTime(),
+          state: State[recordLogItem.log.state] as StateType,
+          rating: Rating[recordLogItem.log.rating] as RatingType,
+        },
+      };
+      return recordItem
+    }
+     * const card: Card = createEmptyCard(new Date(), cardAfterHandler); //see method:  createEmptyCard
+     * const f = fsrs();
+     * const recordLogItem = f.repeat(card, new Date(), Rating.Again, nextAfterHandler);
+     * ```
+     */
+    next(card, now, grade, afterHandler) {
+      const instance = this.getScheduler(card, now);
+      const g = TypeConvert.rating(grade);
+      if (g === Rating.Manual) {
+        throw new FSRSValidationError("Cannot review a manual rating");
+      }
+      const recordLogItem = instance.review(g);
+      return applyAfterHandler(recordLogItem, afterHandler);
+    }
+    /**
+     * Get the retrievability of the card
+     * @param card  Card to be processed
+     * @param now  Current time or scheduled time
+     * @param format  default:true , Convert the result to another type. (Optional)
+     * @returns  The retrievability of the card,if format is true, the result is a string, otherwise it is a number
+     */
+    get_retrievability(card, now, format = true) {
+      const processedCard = TypeConvert.card(card);
+      now = now ? TypeConvert.time(now) : /* @__PURE__ */ new Date();
+      const t = processedCard.state !== State.New ? Math.max(date_diff(now, processedCard.last_review, "days"), 0) : 0;
+      const r = processedCard.state !== State.New ? this.forgetting_curve(t, +processedCard.stability.toFixed(8)) : 0;
+      return format ? `${(r * 100).toFixed(2)}%` : r;
+    }
+    /**
+     *
+     * @param card Card to be processed
+     * @param log last review log
+     * @param afterHandler Convert the result to another type. (Optional)
+     * @example
+     * ```typescript
+     * const now = new Date();
+     * const f = fsrs();
+     * const emptyCardFormAfterHandler = createEmptyCard(now);
+     * const repeatFormAfterHandler = f.repeat(emptyCardFormAfterHandler, now);
+     * const { card, log } = repeatFormAfterHandler[Rating.Hard];
+     * const rollbackFromAfterHandler = f.rollback(card, log);
+     * ```
+     *
+     * @example
+     * ```typescript
+     * const now = new Date();
+     * const f = fsrs();
+     * const emptyCardFormAfterHandler = createEmptyCard(now, cardAfterHandler);  //see method: createEmptyCard
+     * const repeatFormAfterHandler = f.repeat(emptyCardFormAfterHandler, now, repeatAfterHandler); //see method: fsrs.repeat()
+     * const { card, log } = repeatFormAfterHandler[Rating.Hard];
+     * const rollbackFromAfterHandler = f.rollback(card, log, cardAfterHandler);
+     * ```
+     */
+    rollback(card, log, afterHandler) {
+      const processedCard = TypeConvert.card(card);
+      const processedLog = TypeConvert.review_log(log);
+      if (processedLog.rating === Rating.Manual) {
+        throw new FSRSValidationError("Cannot rollback a manual rating");
+      }
+      let last_due;
+      let last_review;
+      let last_lapses;
+      switch (processedLog.state) {
+        case State.New:
+          last_due = processedLog.due;
+          last_review = void 0;
+          last_lapses = 0;
+          break;
+        case State.Learning:
+        case State.Relearning:
+        case State.Review:
+          last_due = processedLog.review;
+          last_review = processedLog.due;
+          last_lapses = processedCard.lapses - (processedLog.rating === Rating.Again && processedLog.state === State.Review ? 1 : 0);
+          break;
+      }
+      const prevCard = __spreadProps(__spreadValues({}, processedCard), {
+        due: last_due,
+        stability: processedLog.stability,
+        difficulty: processedLog.difficulty,
+        elapsed_days: processedLog.last_elapsed_days,
+        scheduled_days: processedLog.scheduled_days,
+        reps: Math.max(0, processedCard.reps - 1),
+        lapses: Math.max(0, last_lapses),
+        learning_steps: processedLog.learning_steps,
+        state: processedLog.state,
+        last_review
+      });
+      return applyAfterHandler(prevCard, afterHandler);
+    }
+    /**
+     *
+     * @param card Card to be processed
+     * @param now Current time or scheduled time
+     * @param reset_count Should the review count information(reps,lapses) be reset. (Optional)
+     * @param afterHandler Convert the result to another type. (Optional)
+     * @example
+     * ```typescript
+     * const now = new Date();
+     * const f = fsrs();
+     * const emptyCard = createEmptyCard(now);
+     * const scheduling_cards = f.repeat(emptyCard, now);
+     * const { card, log } = scheduling_cards[Rating.Hard];
+     * const forgetCard = f.forget(card, new Date(), true);
+     * ```
+     *
+     * @example
+     * ```typescript
+     * interface RepeatRecordLog {
+     *   card: CardUnChecked; //see method: createEmptyCard
+     *   log: RevLogUnchecked; //see method: fsrs.repeat()
+     * }
+     *
+     * function forgetAfterHandler(recordLogItem: RecordLogItem): RepeatRecordLog {
+     *     return {
+     *       card: {
+     *         ...(recordLogItem.card as Card & { cid: string }),
+     *         due: recordLogItem.card.due.getTime(),
+     *         state: State[recordLogItem.card.state] as StateType,
+     *         last_review: recordLogItem.card.last_review
+     *           ? recordLogItem.card.last_review!.getTime()
+     *           : null,
+     *       },
+     *       log: {
+     *         ...recordLogItem.log,
+     *         cid: (recordLogItem.card as Card & { cid: string }).cid,
+     *         due: recordLogItem.log.due.getTime(),
+     *         review: recordLogItem.log.review.getTime(),
+     *         state: State[recordLogItem.log.state] as StateType,
+     *         rating: Rating[recordLogItem.log.rating] as RatingType,
+     *       },
+     *     };
+     * }
+     * const now = new Date();
+     * const f = fsrs();
+     * const emptyCardFormAfterHandler = createEmptyCard(now, cardAfterHandler); //see method:  createEmptyCard
+     * const repeatFormAfterHandler = f.repeat(emptyCardFormAfterHandler, now, repeatAfterHandler); //see method: fsrs.repeat()
+     * const { card } = repeatFormAfterHandler[Rating.Hard];
+     * const forgetFromAfterHandler = f.forget(card, date_scheduler(now, 1, true), false, forgetAfterHandler);
+     * ```
+     */
+    forget(card, now, reset_count = false, afterHandler) {
+      const processedCard = TypeConvert.card(card);
+      now = TypeConvert.time(now);
+      const scheduled_days = processedCard.state === State.New ? 0 : date_diff(now, processedCard.due, "days");
+      const forget_log = {
+        rating: Rating.Manual,
+        state: processedCard.state,
+        due: processedCard.due,
+        stability: processedCard.stability,
+        difficulty: processedCard.difficulty,
+        elapsed_days: 0,
+        last_elapsed_days: processedCard.elapsed_days,
+        scheduled_days,
+        learning_steps: processedCard.learning_steps,
+        review: now
+      };
+      const forget_card = __spreadProps(__spreadValues({}, processedCard), {
+        due: now,
+        stability: 0,
+        difficulty: 0,
+        elapsed_days: 0,
+        scheduled_days: 0,
+        reps: reset_count ? 0 : processedCard.reps,
+        lapses: reset_count ? 0 : processedCard.lapses,
+        learning_steps: 0,
+        state: State.New,
+        last_review: processedCard.last_review
+      });
+      const recordLogItem = { card: forget_card, log: forget_log };
+      return applyAfterHandler(recordLogItem, afterHandler);
+    }
+    /**
+     * Reschedules the current card and returns the rescheduled collections and reschedule item.
+     *
+     * @template T - The type of the record log item.
+     * @param {CardInput | Card} current_card - The current card to be rescheduled.
+     * @param {Array<FSRSHistory>} reviews - The array of FSRSHistory objects representing the reviews.
+     * @param {Partial<RescheduleOptions<T>>} options - The optional reschedule options.
+     * @returns {IReschedule<T>} - The rescheduled collections and reschedule item.
+     *
+     * @example
+     * ```typescript
+     * const f = fsrs()
+     * const grades: Grade[] = [Rating.Good, Rating.Good, Rating.Good, Rating.Good]
+     * const reviews_at = [
+     *   new Date(2024, 8, 13),
+     *   new Date(2024, 8, 13),
+     *   new Date(2024, 8, 17),
+     *   new Date(2024, 8, 28),
+     * ]
+     *
+     * const reviews: FSRSHistory[] = []
+     * for (let i = 0; i < grades.length; i++) {
+     *   reviews.push({
+     *     rating: grades[i],
+     *     review: reviews_at[i],
+     *   })
+     * }
+     *
+     * const results_short = scheduler.reschedule(
+     *   createEmptyCard(),
+     *   reviews,
+     *   {
+     *     skipManual: false,
+     *   }
+     * )
+     * console.log(results_short)
+     * ```
+     */
+    reschedule(current_card, reviews = [], options = {}) {
+      const {
+        recordLogHandler,
+        reviewsOrderBy,
+        skipManual = true,
+        now = /* @__PURE__ */ new Date(),
+        update_memory_state: updateMemoryState = false
+      } = options;
+      if (reviewsOrderBy && typeof reviewsOrderBy === "function") {
+        reviews.sort(reviewsOrderBy);
+      }
+      if (skipManual) {
+        reviews = reviews.filter((review) => review.rating !== Rating.Manual);
+      }
+      const rescheduleSvc = new Reschedule(this);
+      const collections = rescheduleSvc.reschedule(
+        options.first_card || createEmptyCard(),
+        reviews
+      );
+      const len = collections.length;
+      const cur_card = TypeConvert.card(current_card);
+      const manual_item = rescheduleSvc.calculateManualRecord(
+        cur_card,
+        now,
+        len ? collections[len - 1] : void 0,
+        updateMemoryState
+      );
+      return {
+        collections: typeof recordLogHandler === "function" ? collections.map(recordLogHandler) : collections,
+        reschedule_item: manual_item ? applyAfterHandler(manual_item, recordLogHandler) : null
+      };
+    }
+  }
+  const fsrs = (params) => {
+    return new FSRS(params || {});
+  };
+
+  exports.AbstractScheduler = AbstractScheduler;
+  exports.BasicLearningStepsStrategy = BasicLearningStepsStrategy;
+  exports.CLAMP_PARAMETERS = CLAMP_PARAMETERS;
+  exports.ConvertStepUnitToMinutes = ConvertStepUnitToMinutes;
+  exports.DefaultInitSeedStrategy = DefaultInitSeedStrategy;
+  exports.FSRS = FSRS;
+  exports.FSRS5_DEFAULT_DECAY = FSRS5_DEFAULT_DECAY;
+  exports.FSRS6_DEFAULT_DECAY = FSRS6_DEFAULT_DECAY;
+  exports.FSRSAlgorithm = FSRSAlgorithm;
+  exports.FSRSVersion = FSRSVersion;
+  exports.GenSeedStrategyWithCardId = GenSeedStrategyWithCardId;
+  exports.Grades = Grades;
+  exports.INIT_S_MAX = INIT_S_MAX;
+  exports.Rating = Rating;
+  exports.S_MAX = S_MAX;
+  exports.S_MIN = S_MIN;
+  exports.State = State;
+  exports.StrategyMode = StrategyMode;
+  exports.TypeConvert = TypeConvert;
+  exports.W17_W18_Ceiling = W17_W18_Ceiling;
+  exports.checkParameters = checkParameters;
+  exports.clamp = clamp;
+  exports.clipParameters = clipParameters;
+  exports.computeDecayFactor = computeDecayFactor;
+  exports.createEmptyCard = createEmptyCard;
+  exports.dateDiffInDays = dateDiffInDays;
+  exports.date_diff = date_diff;
+  exports.date_scheduler = date_scheduler;
+  exports.default_enable_fuzz = default_enable_fuzz;
+  exports.default_enable_short_term = default_enable_short_term;
+  exports.default_learning_steps = default_learning_steps;
+  exports.default_maximum_interval = default_maximum_interval;
+  exports.default_relearning_steps = default_relearning_steps;
+  exports.default_request_retention = default_request_retention;
+  exports.default_w = default_w;
+  exports.fixDate = fixDate;
+  exports.fixRating = fixRating;
+  exports.fixState = fixState;
+  exports.forgetting_curve = forgetting_curve;
+  exports.formatDate = formatDate;
+  exports.fsrs = fsrs;
+  exports.generatorParameters = generatorParameters;
+  exports.get_fuzz_range = get_fuzz_range;
+  exports.migrateParameters = migrateParameters;
+  exports.roundTo = roundTo;
+  exports.show_diff_message = show_diff_message;
+
+}));
+//# sourceMappingURL=index.umd.js.map
+</script>
+<script>
+"use strict";
+/* ═══════════════ 상수 ═══════════════ */
+const BUILTIN = { owner:'Somnium1357', repo:'memory-cards' };
+const DATA_PATH='cards-data.json', STATE_PATH='cards-state.json';
+const K_CFG='cards_cfg_v1', K_STATE='cards_state_cache_v1', K_DIRTY='cards_dirty_v1',
+      K_THEME='cards_theme_v1', K_PRESETS='cards_presets_v1', K_LASTP='cards_last_preset_v1',
+      K_DATA='cards_data_cache_v1', K_SWIPE='cards_swipe_v1';
+const OLD_CFG='review_cfg_v1';            // 관리앱(같은 오리진)의 토큰 재사용
+const DAY_CUT=4;                          // 하루 경계 = 새벽 4시
+const EXAM_DAY='2026-11-07';              // due 최대 클램프
+const REQUEUE_GAP=10;                     // 틀림 재출 간격
+const PUSH_EVERY_N=20, PUSH_EVERY_MS=5*60*1000, STALE_MS=10*60*1000;
+const PAIR_TYPES=new Set(['정의','기준','동치','근사','표기','전거','대응']); // 방향 버튼 노출 대상(양방향 쌍)
+const TERM_TYPES=new Set(['동치','표기','전거','예시','대응','연쇄','종류','구성','단계','표']);
+const SUBJECTS=['1.국어','2.수학','3.영어','4.사회','5.도덕','6.과학','7.체육','8.음악','9.미술'];
+
+/* ═══════════════ FSRS ═══════════════ */
+const engine = FSRS.fsrs(FSRS.generatorParameters({
+  request_retention: 0.90,
+  enable_fuzz: false,
+  enable_short_term: false,   // 당일 재출은 앱 큐 로직 소관 (스펙)
+}));
+const EXAM_END = new Date(EXAM_DAY+'T12:00:00+09:00');
+const RATING = {1:FSRS.Rating.Again, 2:FSRS.Rating.Hard, 3:FSRS.Rating.Good, 4:FSRS.Rating.Easy};
+
+function fsrsSerialize(c){
+  return { due:c.due.toISOString(), stability:c.stability, difficulty:c.difficulty,
+    elapsed_days:c.elapsed_days, scheduled_days:c.scheduled_days, learning_steps:c.learning_steps||0,
+    reps:c.reps, lapses:c.lapses, state:c.state,
+    last_review:c.last_review?new Date(c.last_review).toISOString():undefined };
+}
+function fsrsRevive(o){
+  if(!o) return null;
+  return { due:new Date(o.due), stability:o.stability, difficulty:o.difficulty,
+    elapsed_days:o.elapsed_days||0, scheduled_days:o.scheduled_days||0, learning_steps:o.learning_steps||0,
+    reps:o.reps||0, lapses:o.lapses||0, state:o.state||0,
+    last_review:o.last_review?new Date(o.last_review):undefined };
+}
+function retrievability(f){ // 회상 확률 R (신규·미정의는 null)
+  if(!f || !f.last_review) return null;
+  const r = engine.get_retrievability(fsrsRevive(f), new Date(), false);
+  return typeof r === 'number' ? r : null;
+}
+
+/* ═══════════════ 날짜 (4시 경계) ═══════════════ */
+const pad=n=>String(n).padStart(2,'0');
+function dayKey(d){ const t=new Date(d.getTime()-DAY_CUT*3600*1000);
+  return `${t.getFullYear()}-${pad(t.getMonth()+1)}-${pad(t.getDate())}`; }
+function todayKey(){ return dayKey(new Date()); }
+function tomorrowKey(){ return dayKey(new Date(Date.now()+86400000)); }
+
+/* ═══════════════ 전역 상태 ═══════════════ */
+let DATA=[], BYID={}, ALLTAGS=[], ALLTYPS=[];
+let state={cards:{},log:[]}, sha=null, cfg=null;
+let dirty=false, pushing=false, ratedSincePush=0, lastPushAt=Date.now();
+let queue=[], qPos=0, revealed=false, itemMarks=[], curPreset=null, phase='review',
+    sessionDone=0, undoSnap=null, newServed=0;
+
+function st(id){ // 카드 상태 엔트리 (없으면 생성)
+  let s=state.cards[id];
+  if(!s){ s={fsrs:null,miss:0,retired:false,flag:null,ann:[],u:'',d:''}; state.cards[id]=s; }
+  if(!Array.isArray(s.ann)) s.ann=[];
+  return s;
+}
+function touch(s){ s.u=new Date().toISOString(); }
+function isDue(c){ const s=state.cards[c.id];
+  return !!(s && s.fsrs && !s.retired && dayKey(new Date(s.fsrs.due))<=todayKey()); }
+function isNew(c){ const s=state.cards[c.id]; return !s || (!s.fsrs && !s.retired); }
+function isWeak(c){ const s=state.cards[c.id]; if(!s||s.retired) return false;
+  return (s.fsrs && s.fsrs.reps>=2 && s.fsrs.stability<7) || s.miss>=2; }
+function retired(c){ const s=state.cards[c.id]; return !!(s && s.retired); }
+function offed(c){ const s=state.cards[c.id]; return !!(s && s.ann && s.ann.includes('끄기')); }
+
+/* ═══════════════ localStorage (전량 try/catch — 쿼터 초과 시 온라인 전용으로 진행) ═══════════════ */
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } }
+function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+let cacheWarned=false;
+function cacheState(){ // 상태 캐시가 데이터 캐시보다 우선 — 쿼터 초과 시 데이터 캐시를 비우고 재시도
+  const j=JSON.stringify(state);
+  if(lsSet(K_STATE,j)) return;
+  lsDel(K_DATA);
+  if(lsSet(K_STATE,j)) return;
+  if(!cacheWarned){ cacheWarned=true;
+    showBanner('저장 공간 부족 — 로컬 백업이 안 돼요. 지금 저장을 눌러 커밋해 두세요', false); }
+}
+function setDirty(v){ dirty=v; v?lsSet(K_DIRTY,'1'):lsDel(K_DIRTY); updateSaveUI(); }
+
+/* ═══════════════ GitHub API (관리앱 검증 패턴 이식) ═══════════════ */
+function utf8ToB64(str){const b=new TextEncoder().encode(str);let s='';b.forEach(x=>s+=String.fromCharCode(x));return btoa(s);}
+function b64ToUtf8(b64){const bin=atob(b64);const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new TextDecoder().decode(a);}
+function ghHeaders(){return {'Authorization':'Bearer '+cfg.token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};}
+function ghUrl(p){return `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${encodeURIComponent(p)}`;}
+async function ghGetState(){
+  const r=await fetch(ghUrl(STATE_PATH),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){sha=null;return null;}
+  if(r.status===401||r.status===403)throw{code:'auth'};
+  if(!r.ok)throw{code:'http',status:r.status};
+  const j=await r.json(); sha=j.sha;
+  let txt;
+  if(j.content){ txt=b64ToUtf8(j.content.replace(/\s/g,'')); }
+  else { const r2=await fetch(j.download_url,{cache:'no-store'}); txt=await r2.text(); } // >1MB 대비
+  return txt.trim()?JSON.parse(txt):null;
+}
+function mergeState(remote, local){ // 병합: cards=u 최신 우선 / log=append 합집합
+  if(!remote) return local;
+  const out={cards:{},log:[]};
+  const ids=new Set([...Object.keys(remote.cards||{}),...Object.keys(local.cards||{})]);
+  for(const id of ids){
+    const a=(remote.cards||{})[id], b=(local.cards||{})[id];
+    out.cards[id] = !a?b : !b?a : ((b.u||'')>(a.u||'')?b:a);
+  }
+  const seen=new Set();
+  for(const e of [...(remote.log||[]),...(local.log||[])]){
+    const k=e[0]+'|'+e[1]; if(seen.has(k))continue; seen.add(k); out.log.push(e);
+  }
+  out.log.sort((x,y)=>x[1]<y[1]?-1:1);
+  return out;
+}
+async function ghPutState(){
+  const mk=()=>({message:'카드 상태 '+new Date().toISOString(),
+    content:utf8ToB64(JSON.stringify(state)), ...(sha?{sha}:{})});
+  const opts=()=>{
+    const body=JSON.stringify(mk());
+    const o={method:'PUT',headers:{...ghHeaders(),'Content-Type':'application/json'},body};
+    // 이탈 저장: 본문이 keepalive 한도(64KB) 안일 때만 keepalive (초기 몇 주 유효)
+    if(document.visibilityState==='hidden' && body.length<55000) o.keepalive=true;
+    return o;
+  };
+  let r=await fetch(ghUrl(STATE_PATH),opts());
+  if(r.status===409||r.status===422){ // 409=충돌 / 422=sha 미확보 (부팅 시 fetch 실패 등) → 재확보 후 병합 재시도
+    const remote=await ghGetState();
+    state=mergeState(remote,state); cacheState();
+    r=await fetch(ghUrl(STATE_PATH),opts());
+  }
+  if(r.status===401||r.status===403)throw{code:'auth'};
+  if(!r.ok)throw{code:'http',status:r.status};
+  const j=await r.json(); sha=j.content.sha;
+}
+async function push(force){ // 배치 push — 옵티미스틱: 실패해도 로컬은 이미 저장됨
+  if(!cfg||!cfg.token){ return; }
+  if(pushing){ return; }
+  if(!dirty && !force){ return; }
+  pushing=true;
+  try{
+    await ghPutState();
+    setDirty(false); ratedSincePush=0; lastPushAt=Date.now(); hideBanner();
+  }catch(e){
+    showBanner(e&&e.code==='auth' ? '토큰이 만료됐어요 — GitHub 연결에서 갱신' : '저장 실패 — 네트워크 확인', e&&e.code==='auth');
+  }finally{ pushing=false; updateSaveUI(); }
+}
+function afterRate(){ // 채점 후 배치 훅
+  cacheState(); setDirty(true); ratedSincePush++;
+  if(ratedSincePush>=PUSH_EVERY_N) push();
+}
+setInterval(()=>{ if(dirty && Date.now()-lastPushAt>PUSH_EVERY_MS) push(); updateSaveUI(); }, 30*1000);
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden' && dirty) push(); });
+
+/* 저장 표시 — 평상시 무표시, 이상 시에만 */
+function updateSaveUI(){
+  const stale = dirty && (Date.now()-lastPushAt>STALE_MS);
+  document.getElementById('saveBadge').classList.toggle('show', !!stale);
+}
+function showBanner(msg, isAuth){
+  const b=document.getElementById('banner');
+  b.innerHTML=msg+(isAuth?'<button id="bnFix">연결</button>':'<button id="bnRetry">재시도</button>');
+  b.classList.add('show');
+  const f=document.getElementById('bnFix'), rt=document.getElementById('bnRetry');
+  if(f)f.onclick=()=>{openSetup();};
+  if(rt)rt.onclick=()=>{hideBanner();push(true);};
+}
+function hideBanner(){ document.getElementById('banner').classList.remove('show'); }
+
+/* ═══════════════ 설정 ═══════════════ */
+function loadCfg(){
+  const v=lsGet(K_CFG);
+  if(v){ try{ cfg=JSON.parse(v); }catch(e){} }
+  if(!cfg||!cfg.token){ // 같은 오리진 관리앱 토큰 폴백
+    const o=lsGet(OLD_CFG);
+    if(o){ try{ const oc=JSON.parse(o); if(oc.token) cfg={owner:BUILTIN.owner,repo:BUILTIN.repo,token:oc.token}; }catch(e){} }
+  }
+  if(cfg){ cfg.owner=BUILTIN.owner; cfg.repo=BUILTIN.repo; }
+}
+function saveCfg(){ lsSet(K_CFG, JSON.stringify(cfg)); }
+
+/* ═══════════════ 데이터 로드 ═══════════════ */
+async function loadData(){
+  try{
+    const r=await fetch(DATA_PATH+'?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok)throw 0;
+    const j=await r.json();
+    DATA=j.cards||[];
+    lsSet(K_DATA, JSON.stringify(j));
+  }catch(e){
+    const c=lsGet(K_DATA);
+    if(c){ try{ DATA=(JSON.parse(c).cards)||[]; toast('오프라인 — 캐시 카드로 진행'); }catch(e2){} }
+  }
+  BYID={}; const tags=new Set(), typs=new Set();
+  DATA.forEach((c,i)=>{ c._i=i; BYID[c.id]=c; (c.tags||[]).forEach(t=>tags.add(t)); typs.add(c.typ); });
+  ALLTAGS=[...tags].sort(); ALLTYPS=[...typs].sort();
+}
+async function loadState(){
+  const c=lsGet(K_STATE);
+  let local=null;
+  if(c){ try{ local=JSON.parse(c); }catch(e){} }
+  const wasDirty=!!lsGet(K_DIRTY);
+  if(cfg&&cfg.token){
+    try{
+      const remote=await ghGetState();
+      state = wasDirty&&local ? mergeState(remote,local) : (remote||local||state);
+      if(wasDirty&&local){ cacheState(); dirty=true; push(true); }
+    }catch(e){
+      if(local) state=local;
+      showBanner(e&&e.code==='auth'?'토큰이 만료됐어요 — GitHub 연결에서 갱신':'상태 불러오기 실패 — 로컬 캐시로 진행', e&&e.code==='auth');
+    }
+  }else if(local){ state=local; }
+  if(!state.cards)state.cards={}; if(!state.log)state.log=[];
+}
+
+/* ═══════════════ 프리셋 ═══════════════ */
+const DEFAULT_PRESETS=[
+  {id:'daily', name:'일일 복습', scope:{subj:[],tags:[],typ:[],status:'due'}, order:'shuffle',
+   weights:{}, limit:null, bury:true, newAfter:true},
+];
+let presets=[];
+function loadPresets(){
+  const v=lsGet(K_PRESETS);
+  if(v){ try{ presets=JSON.parse(v); }catch(e){} }
+  if(!Array.isArray(presets)||!presets.length) presets=JSON.parse(JSON.stringify(DEFAULT_PRESETS));
+  if(!presets.some(p=>p.id==='daily')) presets.unshift(JSON.parse(JSON.stringify(DEFAULT_PRESETS[0])));
+}
+function savePresets(){ lsSet(K_PRESETS, JSON.stringify(presets)); }
+
+/* ═══════════════ 큐 = 3축 합성: 범위 → 선발(위험도 R순) → 제시 순서 ═══════════════ */
+function userTags(id){ const s=state.cards[id]; return (s&&Array.isArray(s.t))?s.t:[]; }
+function inScope(c,sc){
+  if(retired(c)||offed(c)) return false;
+  if(sc.subj.length && !sc.subj.includes(c.subj)) return false;
+  if(sc.tags.length && !(c.tags||[]).concat(userTags(c.id)).some(t=>sc.tags.includes(t))) return false;
+  if(sc.typ.length && !sc.typ.includes(c.typ)) return false;
+  return true;
+}
+function scopePool(sc, status){
+  return DATA.filter(c=>{
+    if(!inScope(c,sc)) return false;
+    if(status==='due') return isDue(c);
+    if(status==='new') return isNew(c);
+    if(status==='weak') return isWeak(c);
+    return true; // all
+  });
+}
+function nodesRatedToday(){
+  const tk=todayKey(), s=new Set();
+  for(let i=state.log.length-1;i>=0;i--){
+    const e=state.log[i]; if(dayKey(new Date(e[1]))!==tk) break;
+    const c=BYID[e[0]]; if(c)s.add(c.node);
+  }
+  // break는 로그가 시간순 정렬이라는 전제 — 병합 직후엔 전체 스캔이 안전
+  if(s.size===0 && state.log.length){ for(const e of state.log){ if(dayKey(new Date(e[1]))===tk){const c=BYID[e[0]]; if(c)s.add(c.node);} } }
+  return s;
+}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function riskSort(pool){ // 선발 기본 = 위험도 우선(R 낮은 순). 신규(R 없음)는 문서순으로 뒤에.
+  const rev=[], nw=[];
+  for(const c of pool){ const r=retrievability(state.cards[c.id]&&state.cards[c.id].fsrs);
+    (r==null?nw:rev).push([c,r]); }
+  rev.sort((a,b)=>a[1]-b[1]); nw.sort((a,b)=>a[0]._i-b[0]._i);
+  return [...rev.map(x=>x[0]), ...nw.map(x=>x[0])];
+}
+function buryFilter(pool, done){ // 형제 분산: 노드당 1장 (오늘 이미 채점한 노드 제외)
+  const seen=new Set(), out=[];
+  for(const c of pool){ if(done.has(c.node)||seen.has(c.node)) continue; seen.add(c.node); out.push(c); }
+  return out;
+}
+function againPending(sc){ // 오늘 마지막 채점이 Again인 카드 = "그날 맞출 때까지" 잔여분 (세션 재시작에도 복원)
+  const tk=todayKey(), last={};
+  for(const e of state.log){ if(dayKey(new Date(e[1]))===tk) last[e[0]]=e[2]; }
+  return DATA.filter(c=>last[c.id]===1 && inScope(c,sc));
+}
+function buildQueue(p, status){
+  let pool=scopePool(p.scope, status);
+  if(p.bury) pool=buryFilter(riskSort(pool), nodesRatedToday()); // 분산은 선발 전에 (가중 쿼터 왜곡 방지)
+  // 선발: 문서순 세션=앞에서 N(통독 의도) / 그 외=위험도 R순, 가중=쿼터 배분 후 쿼터 내 R순
+  let sel;
+  if(p.order==='doc'){ pool.sort((a,b)=>a._i-b._i); sel=pool; }
+  else if(p.order==='weighted' && p.limit){
+    const ws=SUBJECTS.map(s=>[s, +(p.weights&&p.weights[s])||0]).filter(x=>x[1]>0);
+    const tot=ws.reduce((a,x)=>a+x[1],0);
+    if(tot>0){
+      sel=[];
+      const by={}; for(const c of pool){ (by[c.subj]=by[c.subj]||[]).push(c); }
+      for(const [s,w] of ws){ const q=Math.round(p.limit*w/tot);
+        sel.push(...riskSort(by[s]||[]).slice(0,q)); }
+      const rest=riskSort(pool.filter(c=>!sel.includes(c)));
+      while(sel.length<p.limit && rest.length) sel.push(rest.shift());
+    } else sel=riskSort(pool);
+  }
+  else sel=riskSort(pool);
+  if(p.limit) sel=sel.slice(0,p.limit);
+  // 제시 순서 (선발된 집합에 적용)
+  if(p.order!=='doc') shuffle(sel);
+  else sel.sort((a,b)=>a._i-b._i);
+  // 틀림 재출 복원: 오늘 Again으로 끝난 카드는 그날 맞출 때까지 큐 뒤에 복귀 (복습 성격 세션만)
+  if(status!=='new'){
+    const inSel=new Set(sel.map(c=>c.id));
+    for(const c of againPending(p.scope)){ if(!inSel.has(c.id)) sel.push(c); }
+  }
+  return sel;
+}
+function startSession(p){
+  curPreset=p; lsSet(K_LASTP,p.id);
+  phase = p.scope.status==='new' ? 'new' : 'review';
+  queue = buildQueue(p, p.scope.status==='new'?'new':p.scope.status);
+  qPos=0; sessionDone=0; newServed=0; undoSnap=null; updateUndo();
+  go('scrSolve');
+  if(!queue.length){ showSummaryOrNew(); } else showCard();
+}
+function newPoolNow(){ // 신규 이어가기 풀 (형제 분산 반영 — 요약 버튼 표기와 실제 큐 일치)
+  let pool=scopePool(curPreset.scope,'new').sort((a,b)=>a._i-b._i);
+  if(curPreset.bury) pool=buryFilter(pool, nodesRatedToday());
+  return pool;
+}
+function extendWithNew(){ // 복습 소진 → 신규 이어가기 (문서순, 상한 없음)
+  phase='new';
+  queue=newPoolNow(); qPos=0;
+  undoSnap=null; updateUndo(); // 스냅샷은 이전 큐 좌표라 phase 경계에서 폐기
+  if(!queue.length){ renderSummary(true); return; }
+  showCard();
+}
+
+/* ═══════════════ 풀이 ═══════════════ */
+const $=id=>document.getElementById(id);
+function cur(){ return queue[qPos]||null; }
+function tomorrowCount(sc){ // 내일 예상 = due가 정확히 내일인 카드 (오늘 잔여분은 "복습 N"이 담당)
+  const tk=tomorrowKey(); let n=0;
+  for(const c of DATA){ const s=state.cards[c.id];
+    if(s&&s.fsrs&&!s.retired&&dayKey(new Date(s.fsrs.due))===tk&&(!sc||inScope(c,sc))) n++; }
+  return n;
+}
+function counts(){ // 상단 바 = 현재 세션 범위 기준 (스펙)
+  const sc=curPreset?curPreset.scope:null;
+  const remain=queue.length-qPos;
+  const tmr=tomorrowCount(sc);
+  const label = phase==='new'?'신규':'복습';
+  $('tbCounts').innerHTML = curPreset
+    ? `${label} <b>${remain}</b> · 오늘 ${sessionDone} · 내일 ~<b>${tmr}</b>`
+    : `내일 ~<b>${tmr}</b>`;
+}
+function showCard(){
+  const c=cur();
+  if(!c){ showSummaryOrNew(); return; }
+  revealed=false; itemMarks=(c.items||[]).map(()=>false);
+  $('summary').style.display='none'; $('cardZone').style.display='flex';
+  $('revealHint').style.display='block';
+  const m=c.front.match(/^〔([^〕]*)〕\s*(.*)$/s);
+  $('cScope').textContent=m?m[1]:''; $('cFront').textContent=m?m[2]:c.front;
+  $('cBackWrap').classList.remove('on');
+  $('gradeBar').classList.remove('on');
+  $('phaseLine').textContent = phase==='new' ? '신규 학습 중' : '';
+  syncRail(); counts();
+  $('cardScroll').scrollTop=0;
+}
+function reveal(){
+  const c=cur(); if(!c||revealed)return;
+  revealed=true;
+  $('revealHint').style.display='none';
+  const hasItems=Array.isArray(c.items)&&c.items.length>=2;
+  $('cBack').textContent = hasItems?'':c.back;
+  $('cBack').style.display = hasItems?'none':'block';
+  const box=$('cItems'); box.innerHTML=''; box.classList.toggle('on',hasItems);
+  if(hasItems){
+    const ordered = c.typ==='단계'||c.typ==='연쇄';
+    c.items.forEach((it,i)=>{
+      const row=document.createElement('div'); row.className='it-row';
+      row.innerHTML=`${ordered?`<span class="it-ord">${i+1}</span>`:''}<span class="xm">✕</span><span>${esc(it)}</span>`;
+      row.onclick=(ev)=>{ ev.stopPropagation(); itemMarks[i]=!itemMarks[i];
+        row.classList.toggle('x',itemMarks[i]); syncGradeButtons(); };
+      box.appendChild(row);
+    });
+  }
+  const n=$('cNote'); n.classList.toggle('on',!!c.note);
+  if(c.note)n.innerHTML='<b>보충</b>'+esc(c.note);
+  $('cTyp').textContent=c.typ;
+  $('cHint').textContent = TERM_TYPES.has(c.typ)||((c.back||'').length<=14&&!c.back.includes('·'))
+    ? '용어 답 — 표기까지 정확히' : '서술 답 — 요지 재현이면 정답';
+  $('cBackWrap').classList.add('on');
+  $('gradeBar').classList.add('on');
+  $('cMeta').classList.add('on');
+  renderCardTags(c);
+  intervalsPreview(c); syncGradeButtons();
+}
+function renderCardTags(c){ // 임의 태그 (사용자 부착 축) — 탭하면 제거
+  const box=$('cTags'); box.innerHTML='';
+  for(const t of userTags(c.id)){
+    const b=document.createElement('button'); b.className='utag'; b.textContent='#'+t;
+    b.onclick=(ev)=>{ ev.stopPropagation(); const s=st(c.id);
+      s.t=(s.t||[]).filter(x=>x!==t); touch(s); cacheState(); setDirty(true); renderCardTags(c); };
+    box.appendChild(b);
+  }
+  $('cTagInput').classList.remove('on'); $('cTagInput').value='';
+}
+function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function syncGradeButtons(){
+  const hasX=itemMarks.some(Boolean);
+  ['gHard','gGood','gEasy'].forEach(id=>{ $(id).toggleAttribute('disabled',hasX); });
+}
+function intervalsPreview(c){ // 채점 버튼 위 다음 간격 미리보기
+  const s=st(c.id), now=new Date();
+  const fc = s.fsrs?fsrsRevive(s.fsrs):FSRS.createEmptyCard(now);
+  const firstToday = s.d!==todayKey();
+  for(const [num,lab] of [[1,'giAgain'],[2,'giHard'],[3,'giGood'],[4,'giEasy']]){
+    if(!firstToday){ $(lab).textContent = num===1?'재출':'로그만'; continue; }
+    try{
+      const r=engine.next(fc, now, RATING[num]);
+      let due=new Date(r.card.due); if(due>EXAM_END)due=EXAM_END;
+      const days=Math.max(0,Math.round((due-now)/86400000));
+      $(lab).textContent = days<1?'<1일':(days<30?days+'일':(days/30.4).toFixed(1)+'개월');
+    }catch(e){ $(lab).textContent=''; }
+  }
+}
+function rate(num){
+  const c=cur(); if(!c||!revealed)return;
+  const s=st(c.id), now=new Date(), tk=todayKey();
+  const hasItems=itemMarks.length>=2, anyX=itemMarks.some(Boolean);
+  if(anyX && num!==1) return;             // X 있으면 Again만
+  const firstToday = s.d!==tk;
+  undoSnap={ id:c.id, prev:JSON.parse(JSON.stringify(state.cards[c.id]||null)),
+             logLen:state.log.length, qPos, phase, sessionDone, newServed };
+  if(firstToday){                          // 그날 첫 채점만 FSRS 반영
+    const fc = s.fsrs?fsrsRevive(s.fsrs):FSRS.createEmptyCard(now);
+    const r=engine.next(fc, now, RATING[num]);
+    const nc=r.card;
+    if(nc.due>EXAM_END) nc.due=EXAM_END;   // 시험일 클램프
+    s.fsrs=fsrsSerialize(nc); s.d=tk;
+  }                                        // 재출 채점은 로그만 (이중 반영 방지)
+  const extra = hasItems? {items:itemMarks.map(x=>x?'x':'o').join('')} : null;
+  state.log.push(extra?[c.id,now.toISOString(),num,extra]:[c.id,now.toISOString(),num]);
+  if(num===1){ s.miss=(s.miss||0)+1;
+    queue.splice(Math.min(qPos+1+REQUEUE_GAP, queue.length), 0, c); } // 10장 뒤 재출
+  touch(s); afterRate();
+  sessionDone++; if(phase==='new')newServed++;
+  qPos++; updateUndo(); showCard();
+}
+function updateUndo(){ $('btnUndo').toggleAttribute('disabled',!undoSnap); }
+function doUndo(){
+  if(!undoSnap)return;
+  const {id,prev,logLen}=undoSnap;
+  if(prev===null) delete state.cards[id]; else state.cards[id]=prev;
+  state.log.length=logLen;
+  qPos=undoSnap.qPos; phase=undoSnap.phase; sessionDone=undoSnap.sessionDone; newServed=undoSnap.newServed;
+  // 재출 삽입 롤백: 큐에서 해당 카드의 뒤쪽 중복 제거
+  for(let i=queue.length-1;i>qPos;i--){ if(queue[i]&&queue[i].id===id){queue.splice(i,1);break;} }
+  undoSnap=null; cacheState(); setDirty(true); updateUndo(); showCard(); toast('되돌렸어요');
+}
+function showSummaryOrNew(){
+  if(curPreset && curPreset.newAfter && phase==='review'){ renderSummary(false); }
+  else renderSummary(true);
+}
+function renderSummary(final){
+  $('cardZone').style.display='none'; $('gradeBar').classList.remove('on');
+  $('revealHint').style.display='none'; $('phaseLine').textContent='';
+  const sm=$('summary'); sm.style.display='flex';
+  const tmr=tomorrowCount(curPreset?curPreset.scope:null);
+  const newPool=curPreset?newPoolNow().length:0;
+  sm.innerHTML=`<div class="big">${final?'오늘은 여기까지':'복습 끝!'}</div>
+    <div class="det">오늘 ${sessionDone}장 풀었어요${newServed?` (신규 ${newServed})`:''}<br>내일 예상 복습 ~${tmr}장 · 남은 신규 ${newPool}장</div>
+    <div class="actions">
+      ${!final&&newPool?'<button class="btn-primary" id="smNew">신규 계속</button>':''}
+      ${final&&newPool&&curPreset?'<button class="btn-primary" id="smNew">신규 더 풀기</button>':''}
+      <button class="btn-ghost" id="smHome">홈</button></div>`;
+  const bn=$('smNew'); if(bn)bn.onclick=()=>{ $('summary').style.display='none'; extendWithNew(); };
+  $('smHome').onclick=()=>{ push(); go('scrHome'); };
+  counts(); push(); // 세션 경계 = 배치 push 시점
+}
+
+/* ═══════════════ 사이드바 ═══════════════ */
+function syncRail(){
+  const c=cur(); const s=c?state.cards[c.id]:null;
+  const ann=(s&&s.ann)||[];
+  document.querySelectorAll('.rbtn.ann').forEach(b=>{
+    b.classList.toggle('on', ann.includes(b.dataset.ann));
+  });
+  $('rFlag').classList.toggle('on', !!(s&&s.flag!=null));
+  $('rDir').style.display = c&&PAIR_TYPES.has(c.typ) ? 'flex':'none';
+  $('flagMemoRow').classList.toggle('on', !!(s&&s.flag!=null));
+  $('flagMemo').value = (s&&s.flag)||'';
+}
+function toggleAnn(name){
+  const c=cur(); if(!c)return;
+  const s=st(c.id);
+  const i=s.ann.indexOf(name);
+  if(i>=0)s.ann.splice(i,1); else s.ann.push(name);
+  touch(s); cacheState(); setDirty(true); syncRail();
+}
+document.querySelectorAll('.rbtn.ann').forEach(b=>{
+  b.onclick=()=>toggleAnn(b.dataset.ann);
+});
+$('rFlag').onclick=()=>{
+  const c=cur(); if(!c)return;
+  const s=st(c.id);
+  if(s.flag!=null){ s.flag=null; } else { s.flag=''; }
+  touch(s); cacheState(); setDirty(true); syncRail();
+};
+$('flagMemo').addEventListener('change',()=>{
+  const c=cur(); if(!c)return; const s=st(c.id);
+  if(s.flag!=null){ s.flag=$('flagMemo').value; touch(s); cacheState(); setDirty(true); }
+});
+$('rRetire').onclick=()=>{
+  const c=cur(); if(!c)return;
+  const s=st(c.id); s.retired=true; touch(s); cacheState(); setDirty(true);
+  removeCurFromQueue(); toast('은퇴 — 목록에서 복구 가능');
+};
+$('rOff').onclick=()=>{ // 끄기 = 노드 단위 중단 → 오터치 가드 (확인 다이얼로그)
+  const c=cur(); if(!c)return;
+  const sibs=DATA.filter(x=>x.node===c.node).length;
+  $('cfTitle').textContent='이 노드 카드화 끄기';
+  $('cfDesc').textContent=`「${c.node.split('/').pop()}」 노드의 카드 ${sibs}장이 전부 멈춰요. 수거 루틴이 spec에 제외 마커를 반영하면 재생성돼도 안 생깁니다. 낱장만 빼려면 은퇴를 쓰세요.`;
+  $('ovlConfirm').classList.add('show');
+  $('cfYes').onclick=()=>{
+    $('ovlConfirm').classList.remove('show');
+    const s=st(c.id);
+    if(!s.ann.includes('끄기'))s.ann.push('끄기');
+    touch(s); cacheState(); setDirty(true);
+    for(let i=queue.length-1;i>qPos;i--){ if(queue[i].node===c.node)queue.splice(i,1); }
+    removeCurFromQueue(); toast('노드 끄기 기록 — 루틴이 수거해요');
+  };
+};
+$('cfNo').onclick=()=>$('ovlConfirm').classList.remove('show');
+$('cTagAdd').onclick=(ev)=>{ ev.stopPropagation(); $('cTagInput').classList.add('on'); $('cTagInput').focus(); };
+$('cTagInput').onclick=(ev)=>ev.stopPropagation();
+$('cTagInput').addEventListener('change',()=>{
+  const c=cur(); if(!c)return;
+  const v=$('cTagInput').value.trim().replace(/^#/,'');
+  if(v){ const s=st(c.id); s.t=s.t||[];
+    if(!s.t.includes(v))s.t.push(v);
+    touch(s); cacheState(); setDirty(true); }
+  renderCardTags(c);
+});
+function removeCurFromQueue(){ queue.splice(qPos,1); undoSnap=null; updateUndo(); showCard(); }
+$('railFab').onclick=()=>{ $('rail').classList.add('open'); $('railScrim').classList.add('show'); };
+$('railScrim').onclick=()=>{ $('rail').classList.remove('open'); $('railScrim').classList.remove('show'); };
+
+/* ═══════════════ 카드 탭·스와이프 ═══════════════ */
+let lastSwipeAt=0;
+$('card').addEventListener('click',()=>{ if(Date.now()-lastSwipeAt<450)return; if(!revealed)reveal(); });
+$('gAgain').onclick=()=>rate(1); $('gHard').onclick=()=>rate(2);
+$('gGood').onclick=()=>rate(3); $('gEasy').onclick=()=>rate(4);
+$('btnUndo').onclick=doUndo;
+$('btnHome').onclick=()=>{ push(); go('scrHome'); };
+let swipeOn = lsGet(K_SWIPE)==='1';
+let tX=null,tY=null;
+$('card').addEventListener('touchstart',e=>{ tX=e.touches[0].clientX; tY=e.touches[0].clientY; },{passive:true});
+$('card').addEventListener('touchend',e=>{
+  if(!swipeOn||!revealed||tX==null)return;
+  const dx=e.changedTouches[0].clientX-tX, dy=e.changedTouches[0].clientY-tY;
+  if(Math.abs(dx)>70&&Math.abs(dy)<50){ lastSwipeAt=Date.now(); // 뒤따르는 synthetic click이 다음 카드를 선공개하지 않게
+    if(dx<0)rate(1); else if(!itemMarks.some(Boolean))rate(3); }
+  tX=null;
+},{passive:true});
+
+/* ═══════════════ 화면 전환 ═══════════════ */
+function go(id){
+  document.querySelectorAll('.scr').forEach(s=>s.classList.toggle('on',s.id===id));
+  $('rail').classList.remove('open'); $('railScrim').classList.remove('show');
+  const railShow = id==='scrSolve';
+  $('rail').style.display=railShow?'flex':'none';
+  $('railFab').style.display='';
+  if(!railShow)$('railFab').style.display='none';
+  if(id==='scrHome')renderHome();
+  if(id==='scrList')renderList(true);
+  if(id==='scrStats')renderStats();
+  if(id==='scrWeak')renderWeak();
+  if(id==='scrFlags')renderFlags();
+}
+document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
+
+/* ═══════════════ 홈 ═══════════════ */
+function presetDesc(p){
+  const sc=p.scope, parts=[];
+  parts.push(sc.subj.length?sc.subj.map(s=>s.split('.')[1]).join('·'):'전과목');
+  if(sc.tags.length)parts.push('#'+sc.tags.slice(0,2).join(' #')+(sc.tags.length>2?'…':''));
+  if(sc.typ.length)parts.push(sc.typ.join('·'));
+  parts.push({due:'due만',new:'신규만',all:'전부',weak:'약점만'}[sc.status]);
+  parts.push({shuffle:'셔플',doc:'문서순',weighted:'가중'}[p.order]);
+  parts.push(p.limit?p.limit+'장':'전량');
+  if(p.bury)parts.push('분산');
+  return parts.join(' · ');
+}
+function renderHome(){
+  let due=0,nw=0;
+  for(const c of DATA){ if(isDue(c))due++; else if(isNew(c))nw++; }
+  $('hSub').textContent=`전체 due ${due} · 신규 ${nw} · 총 ${DATA.length}장`;
+  const box=$('presetList'); box.innerHTML='';
+  for(const p of presets){
+    const pool=scopePool(p.scope, p.scope.status==='new'?'new':p.scope.status).length;
+    const el=document.createElement('div'); el.className='preset';
+    el.innerHTML=`<div class="p-body"><div class="p-name">${esc(p.name)}</div>
+      <div class="p-desc">${esc(presetDesc(p))}</div></div>
+      <span class="p-cnt">${pool}</span>
+      <button class="p-edit"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>`;
+    el.querySelector('.p-body').parentElement.onclick=(e)=>{ if(e.target.closest('.p-edit'))return; startSession(p); };
+    el.querySelector('.p-edit').onclick=(e)=>{ e.stopPropagation(); openPresetEditor(p); };
+    box.appendChild(el);
+  }
+  $('thB').classList.toggle('on',theme==='b');
+  $('thC').classList.toggle('on',theme==='c');
+  $('tglSwipe').classList.toggle('on',swipeOn);
+  counts();
+}
+$('btnNewPreset').onclick=()=>openPresetEditor(null);
+$('btnSync').onclick=async()=>{ if(!cfg||!cfg.token){openSetup();return;} await push(true); if(!dirty)toast('저장 완료'); };
+$('btnBackup').onclick=()=>{
+  const blob=new Blob([JSON.stringify(state)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`cards-state-백업-${todayKey()}.json`; a.click();
+};
+$('btnSetup').onclick=openSetup;
+$('tglSwipe').onclick=()=>{ swipeOn=!swipeOn; lsSet(K_SWIPE,swipeOn?'1':'0'); $('tglSwipe').classList.toggle('on',swipeOn); };
+
+/* 테마 */
+let theme=lsGet(K_THEME)||'b';
+function applyTheme(){ document.documentElement.dataset.theme=theme; lsSet(K_THEME,theme);
+  const mc=document.querySelector('meta[name=theme-color]');
+  const col=theme==='b'?'#13151A':'#F3EDDE';
+  if(mc)mc.content=col; else{const m=document.createElement('meta');m.name='theme-color';m.content=col;document.head.appendChild(m);} }
+$('thB').onclick=()=>{theme='b';applyTheme();renderHome();};
+$('thC').onclick=()=>{theme='c';applyTheme();renderHome();};
+
+/* ═══════════════ 프리셋 편집기 ═══════════════ */
+let peTarget=null, peState=null;
+function chipSet(box, all, sel, searchable){
+  box.innerHTML='';
+  for(const v of all){
+    const b=document.createElement('button'); b.className='chip'+(sel.includes(v)?' on':''); b.textContent=v;
+    b.onclick=()=>{ const i=sel.indexOf(v); i>=0?sel.splice(i,1):sel.push(v); b.classList.toggle('on'); };
+    box.appendChild(b);
+  }
+}
+function segSet(box, val, cb){
+  [...box.children].forEach(b=>{
+    b.classList.toggle('on',b.dataset.v===val);
+    b.onclick=()=>{ [...box.children].forEach(x=>x.classList.remove('on')); b.classList.add('on'); cb(b.dataset.v); };
+  });
+}
+function openPresetEditor(p){
+  peTarget=p;
+  peState = p?JSON.parse(JSON.stringify(p)) :
+    {id:'p'+Date.now(), name:'', scope:{subj:[],tags:[],typ:[],status:'due'}, order:'shuffle', weights:{}, limit:null, bury:true, newAfter:false};
+  $('peTitle').textContent=p?'프리셋 편집':'새 프리셋';
+  $('peName').value=peState.name;
+  chipSet($('peSubj'), SUBJECTS, peState.scope.subj);
+  renderPeTags('');
+  chipSet($('peTyps'), ALLTYPS, peState.scope.typ);
+  segSet($('peStatus'), peState.scope.status, v=>peState.scope.status=v);
+  segSet($('peOrder'), peState.order, v=>{peState.order=v; $('peWtField').style.display=v==='weighted'?'block':'none';});
+  $('peWtField').style.display=peState.order==='weighted'?'block':'none';
+  const wg=$('peWts'); wg.innerHTML='';
+  for(const s of SUBJECTS){
+    const c=document.createElement('div'); c.className='wt-cell';
+    c.innerHTML=`<span>${s.split('.')[1]}</span>`;
+    const inp=document.createElement('input'); inp.type='number'; inp.inputMode='numeric'; inp.min=0;
+    inp.value=(peState.weights&&peState.weights[s])||'';
+    inp.onchange=()=>{ peState.weights=peState.weights||{}; peState.weights[s]=+inp.value||0; };
+    c.appendChild(inp); wg.appendChild(c);
+  }
+  $('peLimit').value=peState.limit||'';
+  $('peBury').classList.toggle('on',!!peState.bury);
+  $('peNewAfter').classList.toggle('on',!!peState.newAfter);
+  $('peBury').onclick=()=>{peState.bury=!peState.bury;$('peBury').classList.toggle('on');};
+  $('peNewAfter').onclick=()=>{peState.newAfter=!peState.newAfter;$('peNewAfter').classList.toggle('on');};
+  $('peDelete').style.display = p&&p.id!=='daily' ? 'block':'none';
+  $('ovlPreset').classList.add('show');
+}
+function renderPeTags(q){
+  const ut=new Set(); for(const [id,s] of Object.entries(state.cards)){ (s.t||[]).forEach(t=>ut.add(t)); }
+  const all=[...new Set([...ut, ...ALLTAGS])]; // 사용자 태그 우선 노출
+  const list = q ? all.filter(t=>t.includes(q)) : all.slice(0,40);
+  chipSet($('peTags'), [...new Set([...peState.scope.tags, ...list])], peState.scope.tags);
+}
+$('peTagSearch').addEventListener('input',e=>renderPeTags(e.target.value.trim()));
+$('peCancel').onclick=()=>$('ovlPreset').classList.remove('show');
+$('peDelete').onclick=()=>{
+  presets=presets.filter(x=>x.id!==peTarget.id); savePresets();
+  $('ovlPreset').classList.remove('show'); renderHome();
+};
+$('peSave').onclick=()=>{
+  peState.name=$('peName').value.trim()||'이름 없는 프리셋';
+  peState.limit=+$('peLimit').value||null;
+  if(peState.order==='weighted' && !peState.limit){ // 가중 × 전량 = 비율 무의미 (스펙) — 분량 필수
+    $('peLimit').focus(); toast('가중 셔플은 분량(N장)과 함께 써야 해요'); return; }
+  const i=presets.findIndex(x=>x.id===peState.id);
+  if(i>=0)presets[i]=peState; else presets.push(peState);
+  savePresets(); $('ovlPreset').classList.remove('show'); renderHome();
+};
+
+/* ═══════════════ 목록 ═══════════════ */
+let listShown=0, listSubj='전체';
+function cardRow(c, extraMeta){
+  const s=state.cards[c.id];
+  const el=document.createElement('div'); el.className='lrow';
+  const r=s&&s.fsrs?retrievability(s.fsrs):null;
+  el.innerHTML=`<div class="lf">${esc(c.front)}</div><div class="lb">→ ${esc(c.back)}</div>
+    <div class="lmeta"><span class="m">${esc(c.typ)}</span>
+    ${s&&s.fsrs?`<span class="m">S ${s.fsrs.stability.toFixed(1)}일</span><span class="m">R ${r!=null?Math.round(r*100)+'%':'—'}</span>`:'<span class="m">신규</span>'}
+    ${s&&s.miss?`<span class="m warn">틀림 ${s.miss}</span>`:''}
+    ${s&&s.flag!=null?`<span class="m warn">⚑${s.flag?' '+esc(s.flag):''}</span>`:''}
+    ${(s&&s.ann&&s.ann.length)?`<span class="m">@${s.ann.join('·')}</span>`:''}
+    ${extraMeta||''}</div>`;
+  return el;
+}
+function renderList(reset){
+  if(reset)listShown=0;
+  const q=$('qSearch').value.trim().toLowerCase(), sort=$('qSort').value;
+  const showRet=$('tglRetired').classList.contains('on');
+  let rows=DATA.filter(c=>{
+    if(showRet!==retired(c))return false;
+    if(listSubj!=='전체'&&c.subj!==listSubj)return false;
+    if(q && !(c.front.toLowerCase().includes(q)||c.back.toLowerCase().includes(q)||(c.tags||[]).concat(userTags(c.id)).some(t=>t.toLowerCase().includes(q))))return false;
+    return true;
+  });
+  if(sort==='risk'){ rows=riskSort(rows); }
+  else if(sort==='miss'){ rows.sort((a,b)=>((state.cards[b.id]||{}).miss||0)-((state.cards[a.id]||{}).miss||0)); }
+  const body=$('listBody');
+  if(reset)body.innerHTML='';
+  const page=rows.slice(listShown, listShown+120);
+  for(const c of page){
+    const el=cardRow(c, showRet?'<button data-rid="'+c.id+'">복구</button>':'');
+    if(showRet)el.querySelector('button').onclick=()=>{ const s=st(c.id); s.retired=false; touch(s);
+      cacheState(); setDirty(true); renderList(true); toast('복구했어요'); };
+    body.appendChild(el);
+  }
+  listShown+=page.length;
+  $('listMore').style.display = listShown<rows.length?'block':'none';
+  if(!rows.length)body.innerHTML='<div class="empty-note">해당하는 카드가 없어요</div>';
+  const chips=$('qSubjChips'); chips.innerHTML='';
+  for(const s of ['전체',...SUBJECTS]){
+    const b=document.createElement('button'); b.className='chip'+(listSubj===s?' on':''); b.textContent=s;
+    b.onclick=()=>{listSubj=s;renderList(true);}; chips.appendChild(b);
+  }
+}
+$('qSearch').addEventListener('input',()=>renderList(true));
+$('qSort').addEventListener('change',()=>renderList(true));
+$('tglRetired').onclick=function(){ this.classList.toggle('on'); renderList(true); };
+$('listMore').onclick=()=>renderList(false);
+
+/* ═══════════════ 통계 ═══════════════ */
+function renderStats(){
+  const tk=todayKey(), tmk=tomorrowKey();
+  let todayN=0, todayNew=0;
+  const seenToday=new Set();
+  for(const e of state.log){ if(dayKey(new Date(e[1]))===tk){ todayN++; } }
+  for(const [id,s] of Object.entries(state.cards)){ if(s.d===tk&&s.fsrs&&s.fsrs.reps===1)todayNew++; }
+  let due=0,nw=0,ret=0;
+  const bySubj={};
+  for(const c of DATA){
+    const s=state.cards[c.id];
+    if(s&&s.retired){ret++;continue;}
+    if(isDue(c)){due++; bySubj[c.subj]=(bySubj[c.subj]||0)+1;}
+    else if(isNew(c))nw++;
+  }
+  const tmr=tomorrowCount(null);
+  const learned=DATA.length-nw-ret;
+  const g=(k,v,s)=>`<div class="stat"><div class="k">${k}</div><div class="v">${v}${s?`<small> ${s}</small>`:''}</div></div>`;
+  let h='<div class="stat-grid">'
+    +g('오늘 풀이',todayN,'회')+g('오늘 신규',todayNew,'장')
+    +g('due 남음',due,'장')+g('내일 예상','~'+tmr,'장')
+    +g('학습 진입',learned,`/ ${DATA.length}`)+g('은퇴',ret,'장')
+    +'</div>';
+  h+='<div class="bar-list">';
+  const mx=Math.max(1,...Object.values(bySubj));
+  for(const s of SUBJECTS){ const v=bySubj[s]||0;
+    h+=`<div class="bl-row"><span class="n">${s.split('.')[1]}</span><span class="bar"><i style="width:${v/mx*100}%"></i></span><span class="c">${v}</span></div>`; }
+  h+='</div>';
+  h+=`<div class="empty-note" style="padding:10px">리뷰 로그 ${state.log.length}건 (전량 보존 — 스케줄러 최적화 근간)</div>`;
+  $('statsBody').innerHTML=h;
+}
+
+/* ═══════════════ 약점 ═══════════════ */
+function renderWeak(){
+  const body=$('weakBody'); body.innerHTML='';
+  const low=[], missed=[];
+  for(const c of DATA){
+    const s=state.cards[c.id]; if(!s||s.retired)continue;
+    if(s.fsrs&&s.fsrs.reps>=2&&s.fsrs.stability<7)low.push([c,s.fsrs.stability]);
+    if(s.miss>=1)missed.push([c,s.miss]);
+  }
+  low.sort((a,b)=>a[1]-b[1]); missed.sort((a,b)=>b[1]-a[1]);
+  const sec=(t,arr,fmt)=>{
+    const d=document.createElement('div');
+    d.innerHTML=`<div class="rail-grp" style="margin:8px 4px 8px">${t}</div>`;
+    if(!arr.length)d.innerHTML+='<div class="empty-note" style="padding:14px">아직 없어요</div>';
+    for(const [c,v] of arr.slice(0,50))d.appendChild(cardRow(c,`<span class="m warn">${fmt(v)}</span>`));
+    body.appendChild(d);
+  };
+  sec('낮은 안정도에 머무는 카드 (2회+ 복습, S<7일)', low, v=>'S '+v.toFixed(1)+'일');
+  sec('누적 틀림 상위', missed, v=>'틀림 '+v);
+}
+
+/* ═══════════════ 플래그 ═══════════════ */
+function renderFlags(){
+  const body=$('flagsBody'); body.innerHTML='';
+  const rows=[];
+  for(const c of DATA){ const s=state.cards[c.id];
+    if(s&&(s.flag!=null||(s.ann&&s.ann.length)))rows.push(c); }
+  if(!rows.length){ body.innerHTML='<div class="empty-note">플래그·@주석 카드가 없어요<br>수거는 매일 저녁 루틴이 자동으로 해요</div>'; return; }
+  for(const c of rows){
+    const el=cardRow(c,'<button data-cid="'+c.id+'">해제</button>');
+    el.querySelector('button[data-cid]').onclick=()=>{ const s=st(c.id); s.flag=null; s.ann=[]; touch(s);
+      cacheState(); setDirty(true); renderFlags(); };
+    body.appendChild(el);
+  }
+}
+
+/* ═══════════════ 셋업 ═══════════════ */
+function openSetup(){ $('cfgToken').value=(cfg&&cfg.token)||''; $('cfgErr').style.display='none'; $('ovlSetup').classList.add('show'); }
+$('setupClose').onclick=()=>$('ovlSetup').classList.remove('show');
+$('btnConnect').onclick=async()=>{
+  const tok=$('cfgToken').value.trim();
+  if(!tok){$('cfgErr').textContent='토큰을 입력해 주세요';$('cfgErr').style.display='block';return;}
+  cfg={owner:BUILTIN.owner,repo:BUILTIN.repo,token:tok};
+  $('btnConnect').disabled=true;
+  try{
+    const r=await fetch(`https://api.github.com/repos/${cfg.owner}/${cfg.repo}`,{headers:ghHeaders(),cache:'no-store'});
+    if(!r.ok)throw 0;
+    saveCfg(); $('ovlSetup').classList.remove('show'); hideBanner();
+    await loadState(); toast('연결 완료'); if(dirty)push(true);
+    if(curPreset) startSession(curPreset); // 원격 상태 기준으로 큐 재구성 (신규 나열 → due 복습 교정)
+  }catch(e){
+    $('cfgErr').textContent='연결 실패 — 토큰 권한(Contents RW)과 네트워크를 확인해 주세요';
+    $('cfgErr').style.display='block';
+  }finally{ $('btnConnect').disabled=false; }
+};
+
+/* ═══════════════ 토스트 ═══════════════ */
+let toastT=null;
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1800); }
+
+/* ═══════════════ 부트 — 열면 바로 첫 카드 ═══════════════ */
+(async function(){
+  applyTheme();
+  loadCfg(); loadPresets();
+  await loadData();
+  if(!DATA.length){
+    $('loading').textContent='카드 데이터를 못 불러왔어요 — 네트워크 확인 후 새로고침';
+    return;
+  }
+  await loadState();
+  $('loading').style.display='none';
+  if(cfg===null||!cfg.token) openSetup();
+  const lastId=lsGet(K_LASTP);
+  const p=presets.find(x=>x.id===lastId)||presets[0];
+  startSession(p);   // 브리핑 없이 바로 첫 카드
+})();
+</script>
+</body>
+</html>

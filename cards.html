@@ -334,7 +334,7 @@ input:focus,select:focus{border-color:var(--accent);}
         </div>
         <div class="h-sec">신규 투입 — 수강일 오래된 대주제부터</div>
         <div id="planList"></div>
-        <div class="tgl-row" style="padding-top:6px"><span style="font-size:13px;color:var(--mute)">하루 신규 상한</span>
+        <div class="tgl-row" style="padding-top:6px"><span style="font-size:13px;color:var(--mute)">하루 신규 권장량 (체크포인트 표시용)</span>
           <input id="intakeCap" type="number" inputmode="numeric" min="0" style="width:80px;text-align:center"></div>
         <div class="h-row">
           <button class="h-tab" data-go="scrList">목록</button>
@@ -2517,6 +2517,7 @@ const INTAKE_PLAN=[ // [과목|대주제, 수강일] — 누적복습 수강 기
   ["6.과학|지구와 우주","08-17"],
 ];
 const PLAN_RANK=new Map(INTAKE_PLAN.map((x,i)=>[x[0],i]));
+const PLAN_DATE=new Map(INTAKE_PLAN);
 
 /* ═══════════════ FSRS ═══════════════ */
 const engine = FSRS.fsrs(FSRS.generatorParameters({
@@ -2856,14 +2857,20 @@ function newPoolNow(){ // 신규 이어가기 풀 (투입 순서 정렬 + 형제
   if(curPreset.bury) pool=buryFilter(pool, nodesRatedToday());
   return pool;
 }
-function capLeft(){ return intake.cap ? Math.max(0, intake.cap-newToday()) : Infinity; }
-function extendWithNew(ignoreCap){ // 복습 소진 → 신규 이어가기 (투입 순서. 상한은 자기 조절용 — 넘겨서 계속 가능)
+let curTopic=null; // 방금 투입한 대주제 키
+function nextTopic(){ // 다음 투입 대상 = 남은 신규 중 계획 최우선 대주제
+  const pool=newPoolNow();
+  if(!pool.length) return null;
+  const k=tagKey(pool[0]);
+  return {key:k, cards:pool.filter(c=>tagKey(c)===k), date:PLAN_DATE.get(k)||'', label:hoedokLabel(k)};
+}
+function extendWithNew(){ // 신규 = 대주제 한 개씩 — 끝나면 체크포인트에서 다음 주제·장수 보고 선택
+  const nt=nextTopic();
   phase='new';
-  let pool=newPoolNow();
-  if(!ignoreCap && intake.cap && capLeft()<pool.length) pool=pool.slice(0, capLeft());
-  queue=pool; qPos=0;
+  if(!nt){ renderSummary(true); return; }
+  curTopic=nt.key;
+  queue=nt.cards; qPos=0;
   undoSnap=null; updateUndo(); // 스냅샷은 이전 큐 좌표라 phase 경계에서 폐기
-  if(!queue.length){ renderSummary(true); return; }
   showCard();
 }
 
@@ -3000,21 +3007,22 @@ function renderSummary(final){
   $('revealHint').style.display='none'; $('phaseLine').textContent='';
   const sm=$('summary'); sm.style.display='flex';
   const tmr=tomorrowCount(curPreset?curPreset.scope:null);
-  const newPool=curPreset?newPoolNow().length:0;
-  const capped = final && newPool>0 && intake.cap && capLeft()===0; // 오늘 신규 몫 소진
+  const nt=curPreset?nextTopic():null;
+  const nToday=newToday();
   const hp=hoedokPending();
   const hpLine = hp.length
     ? `<div class="det" style="margin-top:6px">📖 읽을 것: ${hp.slice(0,3).map(hoedokLabel).map(esc).join(' · ')}${hp.length>3?` 외 ${hp.length-3}`:''}</div>` : '';
-  sm.innerHTML=`<div class="big">${capped?'오늘 신규 몫 끝':final?'오늘은 여기까지':'복습 끝!'}</div>
-    <div class="det">오늘 ${sessionDone}장 풀었어요${newServed?` (신규 ${newServed})`:''}${intake.cap?` · 신규 ${newToday()}/${intake.cap}`:''}<br>내일 예상 복습 ~${tmr}장 · 남은 신규 ${newPool}장</div>
+  const capNote = nToday ? ` · 오늘 신규 ${nToday}${intake.cap?(nToday>intake.cap?` <b>(권장 ${intake.cap} 넘김)</b>`:`/${intake.cap}`):''}` : '';
+  const big = phase==='new'
+    ? (nt||curTopic ? (curTopic&&TAGMETA[curTopic]?`「${esc(TAGMETA[curTopic].tag)}」 끝`:'복습 끝!') : '전량 투입 완료 🎉')
+    : (final ? '오늘은 여기까지' : '복습 끝!');
+  sm.innerHTML=`<div class="big">${big}</div>
+    <div class="det">오늘 ${sessionDone}장 풀었어요${capNote}<br>내일 예상 복습 ~${tmr}장</div>
     ${hpLine}
     <div class="actions">
-      ${!final&&newPool?'<button class="btn-primary" id="smNew">신규 계속</button>':''}
-      ${final&&newPool&&!capped&&curPreset?'<button class="btn-primary" id="smNew">신규 더 풀기</button>':''}
-      ${capped&&curPreset?'<button class="btn-ghost" id="smOver">상한 넘겨 계속</button>':''}
+      ${nt?`<button class="btn-primary" id="smNew">${phase==='new'?'다음':'신규 시작'}: ${esc(nt.label)} (${nt.cards.length}장)</button>`:''}
       <button class="btn-ghost" id="smHome">홈</button></div>`;
   const bn=$('smNew'); if(bn)bn.onclick=()=>{ $('summary').style.display='none'; extendWithNew(); };
-  const ov=$('smOver'); if(ov)ov.onclick=()=>{ $('summary').style.display='none'; extendWithNew(true); };
   $('smHome').onclick=()=>{ push(); go('scrHome'); };
   counts(); push(); // 세션 경계 = 배치 push 시점
 }
@@ -3183,7 +3191,7 @@ function renderIntake(){ // 투입 계획 미리보기 — 남은 신규가 있�
   $('intakeCap').value=intake.cap||'';
 }
 $('intakeCap').addEventListener('change',()=>{ intake.cap=+$('intakeCap').value||null; saveIntake();
-  toast(intake.cap?`하루 신규 ${intake.cap}장`:'신규 상한 없음'); });
+  toast(intake.cap?`권장 ${intake.cap}장 — 체크포인트에 표시돼요`:'권장량 없음'); });
 $('btnNewPreset').onclick=()=>openPresetEditor(null);
 $('btnSync').onclick=async()=>{ if(!cfg||!cfg.token){openSetup();return;} await push(true); if(!dirty)toast('저장 완료'); };
 $('btnBackup').onclick=()=>{

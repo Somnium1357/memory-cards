@@ -332,11 +332,10 @@ input:focus,select:focus{border-color:var(--accent);}
           <div class="h-sec">회독 대기 — 카드가 진입한 대주제</div>
           <div id="hoedokList"></div>
         </div>
-        <div class="h-sec">신규 투입</div>
-        <div class="mini-chips" id="intakeOrder" style="max-height:none"></div>
-        <div class="tgl-row" style="padding-top:6px"><button class="h-tool" id="intakeReset" style="flex:0 0 auto;padding:8px 14px">순서 바꾸기</button>
-          <span style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mute)">하루 신규 상한
-          <input id="intakeCap" type="number" inputmode="numeric" min="0" style="width:80px;text-align:center"></span></div>
+        <div class="h-sec">신규 투입 — 수강일 오래된 대주제부터</div>
+        <div id="planList"></div>
+        <div class="tgl-row" style="padding-top:6px"><span style="font-size:13px;color:var(--mute)">하루 신규 상한</span>
+          <input id="intakeCap" type="number" inputmode="numeric" min="0" style="width:80px;text-align:center"></div>
         <div class="h-row">
           <button class="h-tab" data-go="scrList">목록</button>
           <button class="h-tab" data-go="scrStats">통계</button>
@@ -2455,6 +2454,69 @@ const PUSH_EVERY_N=20, PUSH_EVERY_MS=5*60*1000, STALE_MS=10*60*1000;
 const PAIR_TYPES=new Set(['정의','기준','동치','근사','표기','전거','대응']); // 방향 버튼 노출 대상(양방향 쌍)
 const TERM_TYPES=new Set(['동치','표기','전거','예시','대응','연쇄','종류','구성','단계','표']);
 const SUBJECTS=['1.국어','2.수학','3.영어','4.사회','5.도덕','6.과학','7.체육','8.음악','9.미술','13.총창'];
+const INTAKE_PLAN=[ // [과목|대주제, 수강일] — 누적복습 수강 기록 근사 매칭 (2026-08-19, 오래된 것부터)
+  ["3.영어|언어 습득 이론","06-05"],
+  ["3.영어|교수법","06-07"],
+  ["6.과학|기본이론","06-09"],
+  ["3.영어|학습자 변인","06-11"],
+  ["8.음악|전통 음악","06-14"],
+  ["7.체육|학습과제","06-15"],
+  ["4.사회|사회과 교수·학습 모형","06-16"],
+  ["8.음악|서양 음악","06-16"],
+  ["6.과학|과학 학습 모형","06-18"],
+  ["3.영어|기능별 언어 지도","06-19"],
+  ["3.영어|요소별 언어 지도","06-19"],
+  ["3.영어|수업 활동","06-19"],
+  ["4.사회|사회과 수업 기법","06-19"],
+  ["7.체육|평가","06-22"],
+  ["7.체육|수업 관리","06-22"],
+  ["2.수학|도형과 측정","06-27"],
+  ["3.영어|교사 언어","06-28"],
+  ["7.체육|체육 수업 모형","06-28"],
+  ["8.음악|음악 교육론","06-28"],
+  ["13.총창|교육과정의 성격","06-29"],
+  ["13.총창|Ⅰ. 교육과정 구성의 방향","06-29"],
+  ["13.총창|Ⅱ. 학교 교육과정 설계와 운영","06-29"],
+  ["13.총창|Ⅲ. 학교급별 교육과정 편성·운영의 기준","06-29"],
+  ["13.총창|Ⅳ. 학교 교육과정 지원","06-29"],
+  ["13.총창|창의적 체험활동","06-29"],
+  ["3.영어|평가","07-01"],
+  ["3.영어|교육과정","07-01"],
+  ["4.사회|역사, 지리 영역 지도","07-02"],
+  ["9.미술|조형 요소와 원리","07-04"],
+  ["2.수학|수학의 가치와 특성","07-05"],
+  ["4.사회|사회과 교육의 목표","07-05"],
+  ["4.사회|사회과 교육의 본질에 대한 유형","07-05"],
+  ["4.사회|사회과 교육과정의 내용 구성 원리","07-05"],
+  ["2.수학|수학 수업 모형","07-06"],
+  ["5.도덕|교과서 편찬 방향","07-07"],
+  ["6.과학|물질","07-07"],
+  ["9.미술|입체와 공예","07-07"],
+  ["1.국어|기초 문식성","07-11"],
+  ["9.미술|디자인과 매체","07-11"],
+  ["2.수학|폴리아","07-12"],
+  ["9.미술|감상","07-12"],
+  ["5.도덕|도덕 수업 모형","07-14"],
+  ["9.미술|전통 미술","07-18"],
+  ["6.과학|생명","07-21"],
+  ["1.국어|문법","07-22"],
+  ["5.도덕|도덕 교육의 관점","07-22"],
+  ["5.도덕|도덕과 평가 방법","07-22"],
+  ["9.미술|평면 표현","07-23"],
+  ["5.도덕|도덕 교육의 이론적 기초","07-24"],
+  ["5.도덕|도덕과의 기능","07-29"],
+  ["5.도덕|도덕과 교수·학습 방법","07-29"],
+  ["9.미술|미술 교육론","07-29"],
+  ["1.국어|읽기","07-30"],
+  ["4.사회|3~4학년군 각론","08-01"],
+  ["6.과학|운동과 에너지","08-06"],
+  ["7.체육|3, 4학년군 운동","08-08"],
+  ["4.사회|5~6학년군 각론","08-10"],
+  ["2.수학|수와 연산","08-11"],
+  ["1.국어|쓰기","08-14"],
+  ["6.과학|지구와 우주","08-17"],
+];
+const PLAN_RANK=new Map(INTAKE_PLAN.map((x,i)=>[x[0],i]));
 
 /* ═══════════════ FSRS ═══════════════ */
 const engine = FSRS.fsrs(FSRS.generatorParameters({
@@ -2627,17 +2689,14 @@ function loadCfg(){
 function saveCfg(){ lsSet(K_CFG, JSON.stringify(cfg)); }
 
 /* ═══════════════ 신규 투입 계획 (과목 순서 + 하루 상한) + 회독 대기 큐 ═══════════════ */
-// 기본 투입 순서 = 수강 기록 기반 "오래 방치된 과목 먼저" (누적복습 data.json 실측 2026-08-19:
-// 음악 종강 6/28·영어 7/01·총창 6/29 — 최고령 / 미술 7/31·수학 중앙 7/12 / 이하 중앙값 순.
-// 잊은 과목일수록 일찍 넣어야 시험까지 반복 횟수를 확보한다. 홈에서 언제든 재설정 가능.)
-let intake={order:['8.음악','3.영어','13.총창','9.미술','2.수학','6.과학','5.도덕','7.체육','1.국어','4.사회'], cap:130};
+let intake={order:[...SUBJECTS], cap:130}; // order는 유보 필드 — 신규 순서 정본은 INTAKE_PLAN(수강일 기반)
 function loadIntake(){ const v=lsGet(K_INTAKE);
   if(v){ try{ const o=JSON.parse(v);
     if(Array.isArray(o.order)&&o.order.length)intake.order=o.order;
     if(o.cap!==undefined)intake.cap=o.cap; }catch(e){} } }
 function saveIntake(){ lsSet(K_INTAKE, JSON.stringify(intake)); }
-function subjRank(s){ const i=intake.order.indexOf(s); return i<0?99:i; }
-function newSort(a,b){ return subjRank(a.subj)-subjRank(b.subj) || a._i-b._i; } // 신규 = 투입 순서 → 문서순
+function planRank(k){ const r=PLAN_RANK.get(k); return r===undefined?9999:r; } // 계획에 없는 새 대주제는 맨 뒤
+function newSort(a,b){ return planRank(tagKey(a))-planRank(tagKey(b)) || a._i-b._i; } // 신규 = 수강일 오래된 대주제 → 문서순
 function newToday(){ // 오늘 처음 투입된 카드 수 (생애 첫 채점이 오늘)
   const tk=todayKey(); let n=0;
   for(const id in state.cards){ const s=state.cards[id];
@@ -2649,8 +2708,7 @@ function hoedokPending(){ // 회독 대기 = 카드가 진입했는데 아직 �
   const entered=new Set();
   for(const c of DATA){ const s=state.cards[c.id]; if(s&&s.fsrs)entered.add(tagKey(c)); }
   return [...entered].filter(k=>!state.hoedok[k]&&TAGMETA[k])
-    .sort((a,b)=>{const A=TAGMETA[a],B=TAGMETA[b];
-      return subjRank(A.subj)-subjRank(B.subj)||A.i0-B.i0;});
+    .sort((a,b)=>planRank(a)-planRank(b)||TAGMETA[a].i0-TAGMETA[b].i0);
 }
 function markHoedok(k){ if(!state.hoedok)state.hoedok={};
   state.hoedok[k]=todayKey(); cacheState(); setDirty(true); }
@@ -3108,23 +3166,22 @@ function renderHoedok(){ // 회독 대기 — 카드가 진입한 대주제, 읽
     box.appendChild(el);
   }
 }
-let orderSeq=null; // 순서 재설정 중이면 배열
-function renderIntake(){
-  const box=$('intakeOrder'); box.innerHTML='';
-  for(const s of intake.order){
-    const b=document.createElement('button'); b.className='chip'+(orderSeq&&orderSeq.includes(s)?' on':'');
-    const r=orderSeq?orderSeq.indexOf(s):intake.order.indexOf(s);
-    b.textContent=(r>=0?(r+1)+' ':'')+s.split('.')[1];
-    b.onclick=()=>{ if(!orderSeq)return; // 재설정 모드에서만 반응
-      if(!orderSeq.includes(s))orderSeq.push(s);
-      if(orderSeq.length===SUBJECTS.length){ intake.order=orderSeq; orderSeq=null; saveIntake(); toast('투입 순서 저장'); }
-      renderIntake(); };
-    box.appendChild(b);
+function renderIntake(){ // 투입 계획 미리보기 — 남은 신규가 있는 대주제, 수강일 오래된 순
+  const box=$('planList'); box.innerHTML='';
+  const intro={};
+  for(const c of DATA){ const s=state.cards[c.id]; if(s&&s.fsrs){ const k=tagKey(c); intro[k]=(intro[k]||0)+1; } }
+  let shown=0;
+  for(const [k,date] of INTAKE_PLAN){
+    const m=TAGMETA[k]; if(!m)continue;
+    const left=m.n-(intro[k]||0); if(left<=0)continue;
+    const el=document.createElement('div'); el.className='hd-row';
+    el.innerHTML=`<span class="t">${shown===0?'▶ ':''}${esc(m.subj.split('.')[1]+' · '+m.tag)} <small>${intro[k]?left+'장 남음':m.n+'장'} · ${date} 수강</small></span>`;
+    box.appendChild(el);
+    if(++shown>=6)break;
   }
-  $('intakeReset').textContent = orderSeq ? `탭한 순서대로 (${orderSeq.length}/9)` : '순서 바꾸기';
-  $('intakeCap').value = intake.cap||'';
+  if(!shown)box.innerHTML='<div class="empty-note" style="padding:10px">전량 투입 완료 🎉</div>';
+  $('intakeCap').value=intake.cap||'';
 }
-$('intakeReset').onclick=()=>{ orderSeq = orderSeq?null:[]; renderIntake(); };
 $('intakeCap').addEventListener('change',()=>{ intake.cap=+$('intakeCap').value||null; saveIntake();
   toast(intake.cap?`하루 신규 ${intake.cap}장`:'신규 상한 없음'); });
 $('btnNewPreset').onclick=()=>openPresetEditor(null);

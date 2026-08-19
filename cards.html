@@ -226,6 +226,7 @@ input:focus,select:focus{border-color:var(--accent);}
 .bl-row .bar{flex:1;height:6px;border-radius:99px;background:var(--sunken);overflow:hidden;}
 .bl-row .bar i{display:block;height:100%;background:var(--accent);border-radius:99px;}
 .bl-row .c{flex:0 0 40px;text-align:right;color:var(--mute);font-size:12px;}
+.list-note{font-size:12px;font-weight:700;color:var(--mute);padding:2px 4px 10px;}
 .search-row{display:flex;gap:8px;margin-bottom:10px;}
 .search-row input{flex:1;}
 .chip-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;}
@@ -278,6 +279,113 @@ input:focus,select:focus{border-color:var(--accent);}
   background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:999px;font-size:13px;font-weight:600;
   opacity:0;transition:all .22s;z-index:99;box-shadow:var(--shadow);white-space:nowrap;max-width:88vw;overflow:hidden;text-overflow:ellipsis;}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+/* ══ 카드 상세 시트 ══ */
+.sheet.wide{max-width:520px;}
+.cs-scope{font-size:11px;font-weight:700;color:var(--faint);letter-spacing:.02em;margin-bottom:6px;}
+.cs-front{font-size:17px;font-weight:700;line-height:1.55;letter-spacing:-.2px;}
+.cs-back{font-size:15px;line-height:1.65;color:var(--ink2);margin-top:10px;
+  padding-top:10px;border-top:1px solid var(--line);white-space:pre-wrap;}
+.cs-items{margin-top:8px;display:flex;flex-direction:column;gap:4px;}
+.cs-items div{font-size:14px;color:var(--ink2);line-height:1.5;padding-left:14px;text-indent:-14px;}
+.cs-note{margin-top:10px;font-size:12.5px;line-height:1.6;color:var(--mute);
+  background:var(--sunken);border-radius:12px;padding:9px 12px;}
+.cs-sec{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--faint);margin:18px 2px 8px;}
+.cs-facts{display:flex;flex-wrap:wrap;gap:6px;}
+.cs-facts .f{font-size:11.5px;font-weight:700;color:var(--mute);background:var(--surface2);
+  padding:4px 10px;border-radius:999px;}
+.cs-facts .f b{color:var(--ink2);font-weight:800;}
+.cs-facts .f.warn{color:var(--again);background:var(--again-dim);}
+.cs-facts .f.ok{color:var(--good);background:var(--good-dim);}
+.cs-hist{background:var(--sunken);border-radius:12px;padding:4px 12px;max-height:172px;overflow-y:auto;}
+.cs-hrow{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--mute);
+  padding:7px 0;border-bottom:1px solid var(--line);}
+.cs-hrow:last-child{border-bottom:none;}
+.cs-hrow .r{font-weight:800;}
+.cs-hrow .r1{color:var(--again);} .cs-hrow .r2{color:var(--hard);}
+.cs-hrow .r3{color:var(--good);} .cs-hrow .r4{color:var(--easy);}
+.cs-hrow .sp{margin-left:auto;font-variant-numeric:tabular-nums;}
+.cs-acts{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.cs-act{padding:12px 8px;border-radius:13px;background:var(--surface2);font-size:13.5px;font-weight:700;
+  color:var(--ink2);display:flex;align-items:center;justify-content:center;gap:6px;min-height:46px;}
+.cs-act:active{background:var(--sunken);}
+.cs-act.on{background:var(--accent-dim);color:var(--accent);}
+.cs-act.danger{color:var(--again);}
+.cs-tags{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+.cs-tags .utag{font-size:11.5px;font-weight:700;color:var(--accent);background:var(--accent-dim);
+  padding:4px 10px;border-radius:999px;}
+.cs-tags .utag.ann{color:var(--hard);background:var(--hard-dim);}
+.cs-tags .tg{font-size:11.5px;font-weight:700;color:var(--mute);background:var(--surface2);
+  padding:4px 10px;border-radius:999px;}
+.cs-row{display:flex;gap:7px;align-items:center;}
+.cs-row input{flex:1;}
+.cs-row button{flex:0 0 auto;padding:10px 14px;border-radius:12px;background:var(--surface2);
+  font-size:13px;font-weight:700;color:var(--ink2);}
+
+/* ══ 목록 도구 ══ */
+.list-tools{display:flex;gap:7px;align-items:center;margin-bottom:8px;}
+.list-tools button{padding:9px 13px;border-radius:12px;font-size:12.5px;font-weight:700;
+  background:var(--surface);color:var(--ink2);box-shadow:var(--shadow-sm);white-space:nowrap;}
+.list-tools button.on{background:var(--accent);color:var(--accent-ink);}
+.list-tools .grow{flex:1;}
+.op-help{font-size:11.5px;line-height:1.75;color:var(--mute);background:var(--sunken);
+  border-radius:12px;padding:10px 13px;margin-bottom:9px;display:none;}
+.op-help.on{display:block;}
+.op-help code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--accent);
+  background:var(--accent-dim);padding:1px 5px;border-radius:5px;}
+.lrow{position:relative;cursor:pointer;transition:background .12s;}
+.lrow:active{background:var(--surface2);}
+@media (min-width:700px){ .lrow:hover{background:var(--surface2);} .stat-grid{grid-template-columns:repeat(4,1fr);} }
+.lrow.sel{outline:2px solid var(--accent);outline-offset:-2px;}
+.lrow .ck{position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:7px;
+  border:2px solid var(--line);display:none;}
+#listBody.picking .lrow .ck{display:block;}
+#listBody.picking .lrow.sel .ck{background:var(--accent);border-color:var(--accent);}
+.bulkbar{position:sticky;bottom:0;z-index:5;display:none;gap:6px;flex-wrap:wrap;
+  background:var(--surface);border-radius:16px;padding:10px;box-shadow:var(--shadow);margin-top:10px;}
+.bulkbar.on{display:flex;}
+.bulkbar .n{font-size:12.5px;font-weight:800;color:var(--accent);align-self:center;padding:0 6px;}
+.bulkbar button{padding:9px 12px;border-radius:11px;background:var(--surface2);font-size:12.5px;font-weight:700;color:var(--ink2);}
+
+/* ══ 차트 ══ */
+.card-box{background:var(--surface);border-radius:16px;padding:14px 16px 12px;margin-bottom:12px;box-shadow:var(--shadow-sm);}
+.card-box h3{font-size:13px;font-weight:800;letter-spacing:-.1px;margin-bottom:2px;}
+.card-box .cap{font-size:11.5px;color:var(--mute);margin-bottom:12px;line-height:1.5;}
+.chart{display:flex;align-items:flex-end;gap:2px;height:104px;}
+.chart .col{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:1px;height:100%;}
+.chart .col i{display:block;background:var(--accent);border-radius:3px 3px 0 0;min-height:0;}
+.chart .col i.b2{background:var(--good);border-radius:0;}
+.chart .col.today i{background:var(--hard);}
+.chart .col.zero i{background:var(--line);}
+.xaxis{display:flex;gap:2px;margin-top:6px;}
+.xaxis span{flex:1;min-width:0;text-align:center;font-size:9.5px;font-weight:700;color:var(--faint);
+  overflow:hidden;white-space:nowrap;}
+.legend{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;}
+.legend span{font-size:11px;font-weight:700;color:var(--mute);display:flex;align-items:center;gap:5px;}
+.legend i{width:9px;height:9px;border-radius:3px;display:block;}
+.sbar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--sunken);}
+.sbar i{display:block;height:100%;}
+.heat{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,1fr);gap:3px;}
+.heat i{display:block;width:100%;aspect-ratio:1;border-radius:3px;background:var(--sunken);}
+.heat i.l1{background:var(--accent-dim);} .heat i.l2{background:color-mix(in srgb,var(--accent) 45%,transparent);}
+.heat i.l3{background:color-mix(in srgb,var(--accent) 72%,transparent);} .heat i.l4{background:var(--accent);}
+.big-num{display:flex;align-items:baseline;gap:6px;}
+.big-num b{font-size:26px;font-weight:800;letter-spacing:-.6px;}
+.big-num small{font-size:12px;color:var(--mute);font-weight:600;}
+
+/* ══ 홈 오늘 블록 ══ */
+.today-box{background:var(--surface);border-radius:18px;padding:15px 17px 13px;box-shadow:var(--shadow);margin-bottom:6px;}
+.today-top{display:flex;align-items:center;gap:12px;}
+.today-top .lead{flex:1;min-width:0;}
+.today-top .lead .k{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--faint);}
+.today-grid{display:flex;gap:14px;margin-top:10px;flex-wrap:wrap;}
+.today-grid div{font-size:12px;font-weight:700;color:var(--mute);}
+.today-grid div b{display:block;font-size:17px;font-weight:800;color:var(--ink);letter-spacing:-.3px;margin-top:1px;}
+.wk{display:flex;align-items:flex-end;gap:3px;height:34px;flex:0 0 auto;width:106px;}
+.wk i{flex:1;background:var(--accent-dim);border-radius:2px;min-height:2px;}
+.wk i.on{background:var(--accent);}
+.kbd-note{font-size:11.5px;color:var(--faint);line-height:1.7;margin:12px 4px 0;}
+.kbd-note kbd{font-family:inherit;font-size:11px;font-weight:800;color:var(--mute);background:var(--surface2);
+  border-radius:6px;padding:2px 6px;margin:0 1px;}
 #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
   background:var(--bg);z-index:50;font-size:14px;color:var(--mute);font-weight:600;}
 </style>
@@ -324,6 +432,7 @@ input:focus,select:focus{border-color:var(--accent);}
     <!-- 홈 -->
     <div class="scr" id="scrHome">
       <div class="home-wrap"><div class="home-inner">
+        <div class="today-box" id="todayBox"></div>
         <div class="h-title">세션</div>
         <div class="h-sub" id="hSub"></div>
         <div id="presetList"></div>
@@ -352,6 +461,9 @@ input:focus,select:focus{border-color:var(--accent);}
           <button class="h-tool" id="btnSetup">GitHub 연결</button>
         </div>
         <div class="tgl-row" style="margin-top:10px"><span style="font-size:13px;color:var(--mute)">스와이프 채점 (좌 다시 · 우 알맞음)</span><div class="tgl" id="tglSwipe"></div></div>
+        <div class="tgl-row"><span style="font-size:13px;color:var(--mute)">키보드 단축키 (PC)</span><div class="tgl" id="tglKbd"></div></div>
+        <div class="kbd-note"><kbd>Space</kbd> 정답 공개 → 알맞음 · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> 채점 ·
+          <kbd>U</kbd> 되돌리기 · <kbd>B</kbd> 내일로 · <kbd>F</kbd> 플래그 · <kbd>H</kbd> 홈 · <kbd>/</kbd> 목록 검색 · <kbd>Esc</kbd> 닫기</div>
       </div></div>
     </div>
 
@@ -359,11 +471,38 @@ input:focus,select:focus{border-color:var(--accent);}
     <div class="scr" id="scrList">
       <div class="sub-head"><button class="tb-btn" data-go="scrHome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title">카드 목록</div></div>
       <div class="sub-body"><div class="sub-inner">
-        <div class="search-row"><input id="qSearch" type="search" placeholder="검색 (앞면·뒷면·태그)"><select id="qSort"><option value="doc">문서순</option><option value="risk">위험도순</option><option value="miss">틀림순</option></select></div>
+        <div class="search-row"><input id="qSearch" type="search" placeholder="검색 (앞면·뒷면·태그)"><select id="qSort"><option value="doc">문서순</option><option value="recent">최근 푼 순</option><option value="risk">위험도순</option><option value="miss">틀림순</option></select></div>
+        <div class="list-tools">
+          <button id="btnSolveList">이 결과 풀기</button>
+          <button id="btnPick">선택</button>
+          <span class="grow"></span>
+          <button id="btnOpHelp" title="검색 연산자">연산자 ⓘ</button>
+        </div>
+        <div class="op-help" id="opHelp">
+          <code>is:due</code> 복습 예정 · <code>is:new</code> 신규 · <code>is:weak</code> 약점 ·
+          <code>is:leech</code> 누수 · <code>is:flag</code> 플래그 · <code>is:ann</code> @주석 ·
+          <code>is:buried</code> 미룸<br>
+          <code>tag:음운</code> 태그 · <code>typ:정의</code> 유형 · <code>subj:국어</code> 과목 ·
+          <code>rated:3</code> 최근 3일 채점 · <code>-is:new</code> 부정<br>
+          여러 조건은 띄어쓰기로 AND. 따옴표 없는 나머지 말은 앞·뒤·태그 본문 검색.
+        </div>
         <div class="chip-row" id="qSubjChips"></div>
+        <div class="tgl-row" style="padding:2px 2px 0"><span style="font-size:13px;color:var(--mute)">오늘 푼 카드만</span><div class="tgl" id="tglToday"></div></div>
         <div class="tgl-row" style="padding:2px 2px 8px"><span style="font-size:13px;color:var(--mute)">은퇴 카드만</span><div class="tgl" id="tglRetired"></div></div>
+        <div id="listNote" class="list-note" style="display:none"></div>
         <div id="listBody"></div>
         <button class="more-btn" id="listMore" style="display:none">더 보기</button>
+        <div class="bulkbar" id="bulkBar">
+          <span class="n" id="bulkN">0장</span>
+          <button data-bulk="retire">은퇴</button>
+          <button data-bulk="restore">복구</button>
+          <button data-bulk="flag">플래그</button>
+          <button data-bulk="unflag">플래그 해제</button>
+          <button data-bulk="bury">내일로</button>
+          <button data-bulk="tag">태그 부착</button>
+          <input id="bulkTag" type="text" maxlength="16" placeholder="태그 입력 후 Enter" style="display:none;flex:1;min-width:130px">
+          <button data-bulk="none">선택 해제</button>
+        </div>
       </div></div>
     </div>
 
@@ -392,6 +531,7 @@ input:focus,select:focus{border-color:var(--accent);}
     <button class="rbtn" id="rRetire"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>은퇴</button>
     <button class="rbtn" id="rFlag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4a1 1 0 0 1 1-1h11l-2 4 2 4H5"/></svg>플래그<span class="st">●</span></button>
     <div id="flagMemoRow"><input id="flagMemo" type="text" placeholder="메모 (선택)" maxlength="120"></div>
+    <button class="rbtn" id="rBury"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="9"/></svg>내일로</button>
     <div class="rail-grp">추가</div>
     <button class="rbtn ann" data-ann="지도"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 8l10 5 10-5-10-5z"/><path d="M6 10.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-5.5"/></svg>지도<span class="st">●</span></button>
     <button class="rbtn ann" data-ann="사례"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>사례<span class="st">●</span></button>
@@ -440,6 +580,9 @@ input:focus,select:focus{border-color:var(--accent);}
   <div class="tgl-row"><span>복습 소진 후 신규 이어가기</span><div class="tgl" id="peNewAfter"></div></div>
   <div class="btn-row"><button class="btn-ghost" id="peDelete" style="color:var(--again)">삭제</button><button class="btn-ghost" id="peCancel">취소</button><button class="btn-primary" id="peSave">저장</button></div>
 </div></div>
+
+<!-- 카드 상세 -->
+<div class="ovl" id="ovlCard"><div class="sheet wide" id="csSheet"></div></div>
 
 <div id="toast"></div>
 
@@ -2445,7 +2588,8 @@ const BUILTIN = { owner:'Somnium1357', repo:'memory-cards' };
 const DATA_PATH='cards-data.json', STATE_PATH='cards-state.json';
 const K_CFG='cards_cfg_v1', K_STATE='cards_state_cache_v1', K_DIRTY='cards_dirty_v1',
       K_THEME='cards_theme_v1', K_PRESETS='cards_presets_v1', K_LASTP='cards_last_preset_v1',
-      K_DATA='cards_data_cache_v1', K_SWIPE='cards_swipe_v1', K_INTAKE='cards_intake_v1';
+      K_DATA='cards_data_cache_v1', K_SWIPE='cards_swipe_v1', K_INTAKE='cards_intake_v1',
+      K_KBD='cards_kbd_v1';
 const OLD_CFG='review_cfg_v1';            // 관리앱(같은 오리진)의 토큰 재사용
 const DAY_CUT=4;                          // 하루 경계 = 새벽 4시
 const EXAM_DAY='2026-11-07';              // due 최대 클램프
@@ -2582,7 +2726,8 @@ let DATA=[], BYID={}, ALLTAGS=[], ALLTYPS=[], TAGMETA={};
 let state={cards:{},log:[]}, sha=null, cfg=null;
 let dirty=false, pushing=false, ratedSincePush=0, lastPushAt=Date.now();
 let queue=[], qPos=0, revealed=false, itemMarks=[], curPreset=null, phase='review',
-    sessionDone=0, undoSnap=null, newServed=0;
+    sessionDone=0, undoSnap=null, newServed=0, shownAt=0;
+const MS_CAP=120000;                       // 응답 시간 상한 (자리 비움이 통계를 오염시키지 않게 — Anki도 상한을 둔다)
 
 function st(id){ // 카드 상태 엔트리 (없으면 생성)
   let s=state.cards[id];
@@ -2598,13 +2743,36 @@ function isWeak(c){ const s=state.cards[c.id]; if(!s||s.retired) return false;
   return (s.fsrs && s.fsrs.reps>=2 && s.fsrs.stability<7) || s.miss>=2; }
 function retired(c){ const s=state.cards[c.id]; return !!(s && s.retired); }
 function offed(c){ const s=state.cards[c.id]; return !!(s && s.ann && s.ann.includes('끄기')); }
+const LEECH_MISS=8;                        // 누수 = 누적 틀림 8회 (Anki lapse 기본 임계). 자동 은퇴는 않고 표시만.
+function buried(c){ const s=state.cards[c.id]; return !!(s && s.by===todayKey()); } // 미룸은 그날 하루만
+function isLeech(c){ const s=state.cards[c.id]; return !!(s && (s.miss||0)>=LEECH_MISS && !s.retired); }
+/* 카드 단위 조작 — 상태 필드는 카드 엔트리에 얹히므로 mergeState(u 최신 우선)가 그대로 처리 */
+function buryCard(c){ const s=st(c.id); s.by=todayKey(); touch(s); cacheState(); setDirty(true); }
+function unburyCard(c){ const s=st(c.id); s.by=''; touch(s); cacheState(); setDirty(true); }
+function forgetCard(c){ const s=st(c.id); s.fsrs=null; s.d=''; touch(s); cacheState(); setDirty(true); }
+function setDueDays(c,n){ // due를 n일 뒤로 (FSRS 상태가 있는 카드만) — 시험일 클램프 유지
+  const s=st(c.id); if(!s.fsrs) return false;
+  let d=new Date(Date.now()+n*86400000);
+  if(d>EXAM_END) d=new Date(EXAM_END);
+  s.fsrs={...s.fsrs, due:d.toISOString()}; touch(s); cacheState(); setDirty(true); return true;
+}
+function retireCard(c,v){ const s=st(c.id); s.retired=v; touch(s); cacheState(); setDirty(true); }
+function setFlag(c,v){ const s=st(c.id); s.flag=v; touch(s); cacheState(); setDirty(true); }
+function addTag(c,t){ const s=st(c.id); s.t=s.t||[]; if(!s.t.includes(t))s.t.push(t);
+  touch(s); cacheState(); setDirty(true); }
 
 /* ═══════════════ localStorage (전량 try/catch — 쿼터 초과 시 온라인 전용으로 진행) ═══════════════ */
 function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } }
 function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
 let cacheWarned=false;
-function cacheState(){ // 상태 캐시가 데이터 캐시보다 우선 — 쿼터 초과 시 데이터 캐시를 비우고 재시도
+let cacheTimer=null;
+function cacheState(){ // 연타·일괄 조작에서 직렬화가 반복되지 않게 200ms로 합침 (이탈·push 직전엔 flush)
+  if(cacheTimer)return;
+  cacheTimer=setTimeout(()=>{ cacheTimer=null; cacheStateNow(); },200);
+}
+function cacheFlush(){ if(cacheTimer){ clearTimeout(cacheTimer); cacheTimer=null; } cacheStateNow(); }
+function cacheStateNow(){ // 상태 캐시가 데이터 캐시보다 우선 — 쿼터 초과 시 데이터 캐시를 비우고 재시도
   const j=JSON.stringify(state);
   if(lsSet(K_STATE,j)) return;
   lsDel(K_DATA);
@@ -2672,6 +2840,7 @@ async function push(force){ // 배치 push — 옵티미스틱: 실패해도 로
   if(!cfg||!cfg.token){ return; }
   if(pushing){ return; }
   if(!dirty && !force){ return; }
+  cacheFlush();
   pushing=true;
   try{
     await ghPutState();
@@ -2688,7 +2857,8 @@ function afterRate(){ // 채점 후 배치 훅
   if(ratedSincePush>=PUSH_EVERY_N) push();
 }
 setInterval(()=>{ if(dirty && Date.now()-lastPushAt>PUSH_EVERY_MS) push(); updateSaveUI(); }, 30*1000);
-document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden' && dirty) push(); });
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState!=='hidden')return;
+  cacheFlush(); if(dirty) push(); });
 
 /* 저장 표시 — 평상시 무표시, 이상 시에만 */
 function updateSaveUI(){
@@ -2840,7 +3010,7 @@ function savePresets(){ lsSet(K_PRESETS, JSON.stringify(presets)); }
 /* ═══════════════ 큐 = 3축 합성: 범위 → 선발(위험도 R순) → 제시 순서 ═══════════════ */
 function userTags(id){ const s=state.cards[id]; return (s&&Array.isArray(s.t))?s.t:[]; }
 function inScope(c,sc){
-  if(retired(c)||offed(c)) return false;
+  if(retired(c)||offed(c)||buried(c)) return false;   // 미룸 = 오늘 큐에서만 빠짐 (due는 그대로)
   if(sc.subj.length && !sc.subj.includes(c.subj)) return false;
   if(sc.tags.length && !(c.tags||[]).concat(userTags(c.id)).some(t=>sc.tags.includes(t))) return false;
   if(sc.typ.length && !sc.typ.includes(c.typ)) return false;
@@ -2960,7 +3130,7 @@ function counts(){ // 상단 바 = 현재 세션 범위 기준 (스펙)
 function showCard(){
   const c=cur();
   if(!c){ showSummaryOrNew(); return; }
-  revealed=false; itemMarks=(c.items||[]).map(()=>false);
+  revealed=false; itemMarks=(c.items||[]).map(()=>false); shownAt=Date.now();
   $('summary').style.display='none'; $('cardZone').style.display='flex';
   $('revealHint').style.display='block';
   const m=c.front.match(/^〔([^〕]*)〕\s*(.*)$/s);
@@ -3044,8 +3214,11 @@ function rate(num){
     if(nc.due>EXAM_END) nc.due=EXAM_END;   // 시험일 클램프
     s.fsrs=fsrsSerialize(nc); s.d=tk;
   }                                        // 재출 채점은 로그만 (이중 반영 방지)
-  const extra = hasItems? {items:itemMarks.map(x=>x?'x':'o').join('')} : null;
-  state.log.push(extra?[c.id,now.toISOString(),num,extra]:[c.id,now.toISOString(),num]);
+  const extra = {};
+  if(hasItems) extra.items=itemMarks.map(x=>x?'x':'o').join('');
+  if(shownAt) extra.ms=Math.min(Date.now()-shownAt, MS_CAP);   // 응답 시간 (FSRS 최적화·약점 분석용)
+  const hasExtra=Object.keys(extra).length>0;
+  state.log.push(hasExtra?[c.id,now.toISOString(),num,extra]:[c.id,now.toISOString(),num]);
   if(num===1){ s.miss=(s.miss||0)+1;
     queue.splice(Math.min(qPos+1+REQUEUE_GAP, queue.length), 0, c); } // 10장 뒤 재출
   touch(s); afterRate();
@@ -3124,9 +3297,14 @@ $('flagMemo').addEventListener('change',()=>{
   const c=cur(); if(!c)return; const s=st(c.id);
   if(s.flag!=null){ s.flag=$('flagMemo').value; touch(s); cacheState(); setDirty(true); }
 });
+function dropFromQueue(id){ for(let i=queue.length-1;i>qPos;i--){ if(queue[i].id===id)queue.splice(i,1); } }
+$('rBury').onclick=()=>{
+  const c=cur(); if(!c)return;
+  buryCard(c); dropFromQueue(c.id); removeCurFromQueue(); toast('내일로 — 오늘 큐에서 빠져요');
+};
 $('rRetire').onclick=()=>{
   const c=cur(); if(!c)return;
-  const s=st(c.id); s.retired=true; touch(s); cacheState(); setDirty(true);
+  retireCard(c,true); dropFromQueue(c.id);   // 재출 대기분도 함께 정리
   removeCurFromQueue(); toast('은퇴 — 목록에서 복구 가능');
 };
 $('rOff').onclick=()=>{ // 끄기 = 노드 단위 중단 → 오터치 가드 (확인 다이얼로그)
@@ -3204,6 +3382,33 @@ function presetDesc(p){
   if(p.bury)parts.push('분산');
   return parts.join(' · ');
 }
+function renderToday(){ // 홈 첫 화면 = 오늘 한 일 (통계 탭까지 안 들어가도 보이게)
+  const by=dailyStats(), tk=todayKey(), t=by[tk]||{n:0,nw:0,ms:0};
+  const d=new Date(), wdays=['일','월','화','수','목','금','토'];
+  let due=0, learned=0;
+  for(const c of DATA){ const s=state.cards[c.id];
+    if(s&&s.retired)continue;
+    if(isDue(c)&&!buried(c))due++;
+    if(!isNew(c))learned++; }
+  const wk=[]; let mx=1;
+  for(let i=6;i>=0;i--){ const v=(by[dayKeyOffset(-i)]||{n:0}).n; wk.push(v); if(v>mx)mx=v; }
+  const bars=wk.map((v,i)=>`<i class="${i===6?'on':''}" style="height:${Math.max(2,Math.round(v/mx*100))}%" title="${v}회"></i>`).join('');
+  const lead = t.n
+    ? `<div class="big-num"><b>${t.n}</b><small>회 채점 · 신규 ${t.nw}장 · ${fmtMin(t.ms)}</small></div>`
+    : `<div class="big-num"><b>0</b><small>회 — 아래 세션을 눌러 시작하세요</small></div>`;
+  $('todayBox').innerHTML=`
+    <div class="today-top">
+      <div class="lead"><div class="k">오늘 · ${d.getMonth()+1}/${d.getDate()} (${wdays[d.getDay()]})</div>${lead}</div>
+      <div class="wk">${bars}</div>
+    </div>
+    <div class="today-grid">
+      <div>남은 복습<b>${due}</b></div>
+      <div>내일 예상<b>~${tomorrowCount(null)}</b></div>
+      <div>학습 진입<b>${learned.toLocaleString()}<span style="font-size:12px;color:var(--mute)"> / ${DATA.length.toLocaleString()}</span></b></div>
+      <div style="margin-left:auto;align-self:flex-end"><button class="h-tool" style="padding:8px 12px" data-go="scrStats">통계 자세히</button></div>
+    </div>`;
+  $('todayBox').querySelector('[data-go]').onclick=()=>go('scrStats');
+}
 function renderHome(){
   let due=0,nw=0;
   for(const c of DATA){ if(isDue(c))due++; else if(isNew(c))nw++; }
@@ -3223,6 +3428,8 @@ function renderHome(){
   $('thB').classList.toggle('on',theme==='b');
   $('thC').classList.toggle('on',theme==='c');
   $('tglSwipe').classList.toggle('on',swipeOn);
+  $('tglKbd').classList.toggle('on',kbdOn);
+  renderToday();
   renderHoedok(); renderIntake();
   counts();
 }
@@ -3272,6 +3479,37 @@ $('btnBackup').onclick=()=>{
 };
 $('btnSetup').onclick=openSetup;
 $('tglSwipe').onclick=()=>{ swipeOn=!swipeOn; lsSet(K_SWIPE,swipeOn?'1':'0'); $('tglSwipe').classList.toggle('on',swipeOn); };
+$('tglKbd').onclick=()=>{ kbdOn=!kbdOn; lsSet(K_KBD,kbdOn?'1':'0'); $('tglKbd').classList.toggle('on',kbdOn); };
+
+/* ═══════════════ 키보드 (PC 전용 보조 — 터치 흐름은 그대로) ═══════════════ */
+let kbdOn = lsGet(K_KBD)!=='0';
+document.addEventListener('keydown',e=>{
+  if(!kbdOn || e.metaKey || e.ctrlKey || e.altKey)return;
+  const t=e.target, tag=t&&t.tagName;
+  const typing = tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT';
+  const ovl=document.querySelector('.ovl.show');
+  if(e.key==='Escape'){
+    if(ovl){ if(ovl.id==='ovlCard')closeCardSheet(); else ovl.classList.remove('show'); e.preventDefault(); }
+    else if($('rail').classList.contains('open')){ $('rail').classList.remove('open'); $('railScrim').classList.remove('show'); }
+    else if(typing){ t.blur(); }
+    return;
+  }
+  if(typing||ovl)return;
+  const k=e.key.toLowerCase();
+  if(k==='/'){ e.preventDefault(); go('scrList'); $('qSearch').focus(); return; }
+  if(k==='h'){ e.preventDefault(); push(); go('scrHome'); return; }
+  if(!$('scrSolve').classList.contains('on'))return;
+  if($('summary').style.display!=='none'){          // 요약 화면 = Enter/Space가 [다음]
+    if(k===' '||k==='enter'){ e.preventDefault(); const b=$('smNew'); if(b)b.click(); }
+    return;
+  }
+  if(k===' '||k==='enter'){ e.preventDefault();
+    if(!revealed)reveal(); else if(!itemMarks.some(Boolean))rate(3); return; }
+  if(k>='1'&&k<='4'){ if(revealed)rate(+k); return; }
+  if(k==='u'){ doUndo(); return; }
+  if(k==='b'){ $('rBury').click(); return; }
+  if(k==='f'){ $('rFlag').click(); return; }
+});
 
 /* 테마 */
 let theme=lsGet(K_THEME)||'b';
@@ -3349,8 +3587,139 @@ $('peSave').onclick=()=>{
   savePresets(); $('ovlPreset').classList.remove('show'); renderHome();
 };
 
+/* ═══════════════ 카드 상세 시트 ═══════════════ */
+let csCard=null, csRefresh=null;
+function fmtDur(ms){ if(ms==null)return ''; const sec=ms/1000;
+  return sec<10?sec.toFixed(1)+'초':Math.round(sec)+'초'; }
+function fmtDay(ts){ const d=new Date(ts);
+  return `${d.getFullYear()%100}/${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+function cardHistory(id){ const out=[];
+  for(let i=state.log.length-1;i>=0;i--){ const e=state.log[i]; if(e[0]===id)out.push(e); if(out.length>=40)break; }
+  return out;
+}
+function askConfirm(title, desc, yesLabel, onYes){
+  $('cfTitle').textContent=title; $('cfDesc').textContent=desc;
+  $('cfYes').textContent=yesLabel||'확인';
+  $('ovlConfirm').classList.add('show');
+  $('cfYes').onclick=()=>{ $('ovlConfirm').classList.remove('show'); onYes(); };
+}
+function openCardSheet(c, refresh){ csCard=c; csRefresh=refresh||null; renderCardSheet(); $('ovlCard').classList.add('show'); }
+function closeCardSheet(){ $('ovlCard').classList.remove('show'); const r=csRefresh; csCard=null; csRefresh=null; if(r)r(); }
+function renderCardSheet(){
+  const c=csCard; if(!c)return;
+  const s=state.cards[c.id]||{}, f=s.fsrs, r=retrievability(f);
+  const m=c.front.match(/^〔([^〕]*)〕\s*(.*)$/s);
+  const hist=cardHistory(c.id);
+  const hasItems=Array.isArray(c.items)&&c.items.length>=2;
+  const dueTxt = f? (()=>{ const dk=dayKey(new Date(f.due));
+      const dd=Math.round((new Date(f.due)-new Date())/86400000);
+      return dk<=todayKey()? '오늘 (밀림)' : (dd<=0?'오늘':dd+'일 뒤'); })() : '—';
+  const facts=[];
+  facts.push(`<span class="f">${esc(c.typ)}</span>`);
+  if(!f) facts.push('<span class="f">신규</span>');
+  else{
+    facts.push(`<span class="f">복습 <b>${f.reps}</b>회</span>`);
+    facts.push(`<span class="f">S <b>${f.stability.toFixed(1)}</b>일</span>`);
+    facts.push(`<span class="f">D <b>${f.difficulty.toFixed(1)}</b></span>`);
+    facts.push(`<span class="f">R <b>${r!=null?Math.round(r*100)+'%':'—'}</b></span>`);
+    facts.push(`<span class="f ${dueTxt.indexOf('밀림')>=0?'warn':'ok'}">다음 ${dueTxt}</span>`);
+  }
+  if(s.miss) facts.push(`<span class="f ${isLeech(c)?'warn':''}">틀림 <b>${s.miss}</b></span>`);
+  if(isLeech(c)) facts.push('<span class="f warn">⚠ 누수</span>');
+  if(s.retired) facts.push('<span class="f warn">은퇴</span>');
+  if(buried(c)) facts.push('<span class="f warn">오늘 미룸</span>');
+  const tags=[...(c.tags||[]).map(t=>`<span class="tg">${esc(t)}</span>`),
+    ...userTags(c.id).map(t=>`<button class="utag" data-untag="${esc(t)}">#${esc(t)} ✕</button>`),
+    ...((s.ann||[]).map(t=>`<button class="utag ann" data-unann="${esc(t)}">@${esc(t)} ✕</button>`))];
+  $('csSheet').innerHTML=`
+    <div class="cs-scope">${esc(m?m[1]:c.subj)}</div>
+    <div class="cs-front">${esc(m?m[2]:c.front)}</div>
+    ${hasItems?`<div class="cs-items">${c.items.map(i=>`<div>· ${esc(i)}</div>`).join('')}</div>`
+              :`<div class="cs-back">${esc(c.back)}</div>`}
+    ${c.note?`<div class="cs-note"><b>보충 </b>${esc(c.note)}</div>`:''}
+    <div class="cs-sec">상태</div>
+    <div class="cs-facts">${facts.join('')}</div>
+    <div class="cs-sec">태그</div>
+    <div class="cs-tags">${tags.join('')||'<span class="tg">없음</span>'}</div>
+    <div class="cs-row" style="margin-top:8px"><input id="csTagIn" type="text" maxlength="16" placeholder="태그 부착"><button id="csTagAdd">부착</button></div>
+    <div class="cs-sec">풀이 이력${hist.length?` · ${hist.length}건`:''}</div>
+    ${hist.length?`<div class="cs-hist">${hist.map(e=>{
+        const ex=e[3]||{};
+        return `<div class="cs-hrow"><span class="r r${e[2]}">${RATE_NAME[e[2]]||e[2]}</span>
+          <span>${fmtDay(e[1])}</span>
+          ${ex.items?`<span style="color:var(--faint)">${esc(ex.items)}</span>`:''}
+          <span class="sp">${ex.ms!=null?fmtDur(ex.ms):''}</span></div>`; }).join('')}</div>`
+      :'<div class="cs-hist"><div class="cs-hrow">아직 푼 적 없어요</div></div>'}
+    <div class="cs-sec">조작</div>
+    <div class="cs-acts">
+      <button class="cs-act" id="csSolve">지금 이 카드 풀기</button>
+      <button class="cs-act ${s.flag!=null?'on':''}" id="csFlag">${s.flag!=null?'플래그 해제':'플래그'}</button>
+      <button class="cs-act ${buried(c)?'on':''}" id="csBury">${buried(c)?'미룸 취소':'내일로 미루기'}</button>
+      <button class="cs-act ${s.retired?'on':''}" id="csRetire">${s.retired?'은퇴 복구':'은퇴'}</button>
+    </div>
+    ${s.flag!=null?`<div class="cs-row" style="margin-top:8px"><input id="csMemo" type="text" maxlength="120" placeholder="플래그 메모 (루틴 수거가 읽어요)" value="${esc(s.flag||'')}"><button id="csMemoSave">저장</button></div>`:''}
+    <div class="cs-sec">일정 손보기</div>
+    <div class="cs-row"><input id="csDueN" type="number" inputmode="numeric" min="0" max="90" placeholder="며칠 뒤"><button id="csDueSet">다음 복습 옮기기</button></div>
+    <div class="cs-acts" style="margin-top:7px">
+      <button class="cs-act danger" id="csForget">처음부터 다시</button>
+      <button class="cs-act" id="csClose">닫기</button>
+    </div>`;
+  const rr=()=>renderCardSheet();
+  $('csSheet').querySelectorAll('[data-untag]').forEach(b=>b.onclick=()=>{
+    const s2=st(c.id); s2.t=(s2.t||[]).filter(x=>x!==b.dataset.untag); touch(s2); cacheState(); setDirty(true); rr(); });
+  $('csSheet').querySelectorAll('[data-unann]').forEach(b=>b.onclick=()=>{
+    const s2=st(c.id); s2.ann=(s2.ann||[]).filter(x=>x!==b.dataset.unann); touch(s2); cacheState(); setDirty(true); rr(); });
+  const addT=()=>{ const v=$('csTagIn').value.trim().replace(/^#/,''); if(!v)return; addTag(c,v); rr(); };
+  $('csTagAdd').onclick=addT;
+  $('csTagIn').addEventListener('keydown',e=>{ if(e.key==='Enter'){e.preventDefault();addT();} });
+  $('csFlag').onclick=()=>{ setFlag(c, (state.cards[c.id]||{}).flag!=null?null:''); rr(); };
+  const mb=$('csMemoSave'); if(mb)mb.onclick=()=>{ setFlag(c,$('csMemo').value); toast('메모 저장'); };
+  $('csBury').onclick=()=>{ buried(c)?unburyCard(c):buryCard(c); rr(); };
+  $('csRetire').onclick=()=>{ retireCard(c, !(state.cards[c.id]||{}).retired); rr(); };
+  $('csSolve').onclick=()=>{ closeCardSheet(); startAdHoc([c], '카드 1장'); };
+  $('csDueSet').onclick=()=>{ const n=+$('csDueN').value;
+    if(!$('csDueN').value.trim()||!isFinite(n)||n<0){ toast('며칠 뒤인지 숫자로'); return; }
+    if(setDueDays(c,n)){ toast(n===0?'오늘로 옮겼어요':`${n}일 뒤로 옮겼어요`); rr(); }
+    else toast('아직 안 푼 카드예요 — 옮길 일정이 없어요'); };
+  $('csForget').onclick=()=>askConfirm('처음부터 다시',
+    'FSRS 상태(안정도·난이도·다음 일정)를 지우고 신규 카드로 되돌립니다. 풀이 이력과 틀림 횟수는 남아요. 되돌릴 수 없습니다.',
+    '초기화', ()=>{ forgetCard(c); toast('신규로 되돌렸어요'); rr(); });
+  $('csClose').onclick=closeCardSheet;
+}
+$('ovlCard').onclick=(e)=>{ if(e.target===$('ovlCard'))closeCardSheet(); };
+function startAdHoc(cards, label){ // 임시 큐 = 목록·상세에서 바로 풀기 (채점은 정규 — 스펙)
+  if(!cards.length){ toast('풀 카드가 없어요'); return; }
+  curPreset={id:'adhoc', name:label||'임시 세션', scope:{subj:[],tags:[],typ:[],status:'all'},
+    order:'shuffle', limit:null, bury:false, newAfter:false};
+  queue=cards.slice(); qPos=0; sessionDone=0; newServed=0; phase='review';
+  undoSnap=null; updateUndo(); go('scrSolve'); showCard();
+  toast(`${cards.length}장 임시 세션 — 채점은 정규로 반영돼요`);
+}
+
 /* ═══════════════ 목록 ═══════════════ */
-let listShown=0, listSubj='전체';
+let listShown=0, listSubj='전체', listRows=[], picking=false;
+const picked=new Set();
+const RATE_NAME={1:'Again',2:'Hard',3:'Good',4:'Easy'};
+let lastRevIdx=null, lastRevIdxLen=-1, lastRevLog=null;
+function lastRevMap(){ // 카드별 마지막 리뷰 [ts, rating] — 로그가 늘어난 만큼만 갱신
+  if(lastRevIdx && lastRevLog===state.log && lastRevIdxLen===state.log.length) return lastRevIdx;
+  if(!lastRevIdx || lastRevLog!==state.log || lastRevIdxLen>state.log.length){ // 병합·재로드로 로그가 통째로 갈리면 재구축
+    lastRevIdx={}; lastRevIdxLen=0; lastRevLog=state.log; }
+  for(let i=lastRevIdxLen;i<state.log.length;i++){
+    const e=state.log[i], t=Date.parse(e[1]);
+    if(!isFinite(t))continue;
+    const p=lastRevIdx[e[0]];
+    if(!p||t>=p[0]) lastRevIdx[e[0]]=[t,e[2]];
+  }
+  lastRevIdxLen=state.log.length;
+  return lastRevIdx;
+}
+function fmtAgo(t){
+  const m=Math.floor((Date.now()-t)/60000);
+  if(m<1)return '방금'; if(m<60)return m+'분 전';
+  const h=Math.floor(m/60); if(h<24)return h+'시간 전';
+  const d=new Date(t); return `${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 function cardRow(c, extraMeta){
   const s=state.cards[c.id];
   const el=document.createElement('div'); el.className='lrow';
@@ -3359,74 +3728,269 @@ function cardRow(c, extraMeta){
     <div class="lmeta"><span class="m">${esc(c.typ)}</span>
     ${s&&s.fsrs?`<span class="m">S ${s.fsrs.stability.toFixed(1)}일</span><span class="m">R ${r!=null?Math.round(r*100)+'%':'—'}</span>`:'<span class="m">신규</span>'}
     ${s&&s.miss?`<span class="m warn">틀림 ${s.miss}</span>`:''}
+    ${isLeech(c)?'<span class="m warn">⚠ 누수</span>':''}
+    ${buried(c)?'<span class="m">오늘 미룸</span>':''}
     ${s&&s.flag!=null?`<span class="m warn">⚑${s.flag?' '+esc(s.flag):''}</span>`:''}
     ${(s&&s.ann&&s.ann.length)?`<span class="m">@${s.ann.join('·')}</span>`:''}
     ${extraMeta||''}</div>`;
   return el;
 }
+function parseQuery(q){ // 검색 = 연산자 AND + 나머지 낱말 본문 검색
+  const LR=lastRevMap(), preds=[], words=[];
+  let forceRet=false;
+  for(let raw of q.split(/\s+/).filter(Boolean)){
+    let neg=false, t=raw.toLowerCase();
+    if(t[0]==='-'){ neg=true; t=t.slice(1); }
+    const i=t.indexOf(':'), k=i>0?t.slice(0,i):'', v=i>0?t.slice(i+1):'';
+    let fn=null;
+    if(v){
+      if(k==='is'){
+        if(v==='due')fn=c=>isDue(c);
+        else if(v==='new')fn=c=>isNew(c);
+        else if(v==='weak')fn=c=>isWeak(c);
+        else if(v==='leech')fn=c=>isLeech(c);
+        else if(v==='buried')fn=c=>buried(c);
+        else if(v==='flag')fn=c=>{const s=state.cards[c.id]; return !!(s&&s.flag!=null);};
+        else if(v==='ann')fn=c=>{const s=state.cards[c.id]; return !!(s&&s.ann&&s.ann.length);};
+        else if(v==='retired'||v==='suspended'){ fn=c=>retired(c); if(!neg)forceRet=true; }
+      }
+      else if(k==='tag')fn=c=>(c.tags||[]).concat(userTags(c.id)).some(x=>x.toLowerCase().includes(v));
+      else if(k==='typ')fn=c=>(c.typ||'').toLowerCase().includes(v);
+      else if(k==='subj')fn=c=>(c.subj||'').toLowerCase().includes(v);
+      else if(k==='rated'){ const n=Math.max(1,+v||1);
+        fn=c=>{ const lr=LR[c.id]; return !!lr && (Date.now()-lr[0]) < n*86400000; }; }
+    }
+    if(fn) preds.push(neg?(c=>!fn(c)):fn);
+    else words.push(raw.toLowerCase());   // 연산자가 아니면 그냥 낱말
+  }
+  return {preds, words, forceRet};
+}
 function renderList(reset){
   if(reset)listShown=0;
-  const q=$('qSearch').value.trim().toLowerCase(), sort=$('qSort').value;
-  const showRet=$('tglRetired').classList.contains('on');
+  const raw=$('qSearch').value.trim(), sort=$('qSort').value;
+  const {preds, words, forceRet}=parseQuery(raw);
+  const showRet=forceRet || $('tglRetired').classList.contains('on');
+  const todayOnly=$('tglToday').classList.contains('on');
+  const LR=lastRevMap(), tk=todayKey();
   let rows=DATA.filter(c=>{
     if(showRet!==retired(c))return false;
+    if(todayOnly && !(LR[c.id] && dayKey(new Date(LR[c.id][0]))===tk))return false;
     if(listSubj!=='전체'&&c.subj!==listSubj)return false;
-    if(q && !(c.front.toLowerCase().includes(q)||c.back.toLowerCase().includes(q)||(c.tags||[]).concat(userTags(c.id)).some(t=>t.toLowerCase().includes(q))))return false;
+    for(const f of preds){ if(!f(c))return false; }
+    for(const w of words){
+      if(!(c.front.toLowerCase().includes(w)||c.back.toLowerCase().includes(w)
+          ||(c.tags||[]).concat(userTags(c.id)).some(t=>t.toLowerCase().includes(w))))return false;
+    }
     return true;
   });
   if(sort==='risk'){ rows=riskSort(rows); }
   else if(sort==='miss'){ rows.sort((a,b)=>((state.cards[b.id]||{}).miss||0)-((state.cards[a.id]||{}).miss||0)); }
+  else if(sort==='recent'){ rows.sort((a,b)=>((LR[b.id]||[0])[0])-((LR[a.id]||[0])[0])); }
+  listRows=rows;
+  const showRev = todayOnly || sort==='recent';
+  const note=$('listNote');
+  if(todayOnly){ let n=0; for(const e of state.log) if(dayKey(new Date(e[1]))===tk)n++;
+    note.textContent=`오늘 푼 카드 ${rows.length}장 · 채점 ${n}회 (하루 경계 새벽 ${DAY_CUT}시)`;
+    note.style.display='block'; }
+  else if(raw){ note.textContent=`${rows.length}장`; note.style.display='block'; }
+  else note.style.display='none';
+  $('btnSolveList').textContent = `이 결과 풀기${rows.length?` (${Math.min(rows.length,300)})`:''}`;
   const body=$('listBody');
   if(reset)body.innerHTML='';
   const page=rows.slice(listShown, listShown+120);
   for(const c of page){
-    const el=cardRow(c, showRet?'<button data-rid="'+c.id+'">복구</button>':'');
-    if(showRet)el.querySelector('button').onclick=()=>{ const s=st(c.id); s.retired=false; touch(s);
-      cacheState(); setDirty(true); renderList(true); toast('복구했어요'); };
+    const lr=showRev?LR[c.id]:null;
+    const revMeta=lr?`<span class="m${lr[1]===1?' warn':''}">${fmtAgo(lr[0])} · ${RATE_NAME[lr[1]]||lr[1]}</span>`:'';
+    const el=cardRow(c, revMeta);
+    el.insertAdjacentHTML('beforeend','<span class="ck"></span>');
+    if(picked.has(c.id))el.classList.add('sel');
+    el.onclick=()=>{
+      if(picking){ if(picked.has(c.id)){picked.delete(c.id); el.classList.remove('sel');}
+                   else {picked.add(c.id); el.classList.add('sel');} syncBulk(); }
+      else openCardSheet(c, ()=>renderList(true));
+    };
     body.appendChild(el);
   }
   listShown+=page.length;
   $('listMore').style.display = listShown<rows.length?'block':'none';
-  if(!rows.length)body.innerHTML='<div class="empty-note">해당하는 카드가 없어요</div>';
+  if(!rows.length)body.innerHTML=`<div class="empty-note">${todayOnly?'오늘 푼 카드가 아직 없어요':'해당하는 카드가 없어요'}</div>`;
   const chips=$('qSubjChips'); chips.innerHTML='';
-  for(const s of ['전체',...SUBJECTS]){
-    const b=document.createElement('button'); b.className='chip'+(listSubj===s?' on':''); b.textContent=s;
-    b.onclick=()=>{listSubj=s;renderList(true);}; chips.appendChild(b);
+  for(const sj of ['전체',...SUBJECTS]){
+    const b=document.createElement('button'); b.className='chip'+(listSubj===sj?' on':''); b.textContent=sj;
+    b.onclick=()=>{listSubj=sj;renderList(true);}; chips.appendChild(b);
   }
+}
+/* 일괄 선택 */
+function syncBulk(){
+  $('bulkN').textContent=picked.size+'장';
+  $('bulkBar').classList.toggle('on', picking);
+  $('listBody').classList.toggle('picking', picking);
+  $('btnPick').classList.toggle('on', picking);
+  $('btnPick').textContent = picking?'선택 끝':'선택';
+}
+function pickedCards(){ return listRows.filter(c=>picked.has(c.id)); }
+function bulkDo(kind){
+  const cs=pickedCards();
+  if(kind==='none'){ picked.clear(); renderList(true); syncBulk(); return; }
+  if(!cs.length){ toast('먼저 카드를 골라주세요'); return; }
+  if(kind==='tag'){ const inp=$('bulkTag'); inp.style.display='block'; inp.focus(); return; }
+  const run=()=>{
+    for(const c of cs){
+      if(kind==='retire')retireCard(c,true);
+      else if(kind==='restore')retireCard(c,false);
+      else if(kind==='flag')setFlag(c,(state.cards[c.id]||{}).flag!=null?(state.cards[c.id].flag):'');
+      else if(kind==='unflag')setFlag(c,null);
+      else if(kind==='bury')buryCard(c);
+    }
+    const lbl={retire:'은퇴',restore:'복구',flag:'플래그',unflag:'플래그 해제',bury:'내일로'}[kind];
+    picked.clear(); renderList(true); syncBulk(); toast(`${cs.length}장 ${lbl}`);
+  };
+  if(kind==='retire'&&cs.length>=20)
+    askConfirm('한꺼번에 은퇴', `${cs.length}장을 은퇴시킵니다. 목록에서 복구할 수 있어요.`, '은퇴', run);
+  else run();
 }
 $('qSearch').addEventListener('input',()=>renderList(true));
 $('qSort').addEventListener('change',()=>renderList(true));
 $('tglRetired').onclick=function(){ this.classList.toggle('on'); renderList(true); };
+$('tglToday').onclick=function(){ this.classList.toggle('on');
+  if(this.classList.contains('on') && $('qSort').value==='doc') $('qSort').value='recent'; // 푼 순서로 되짚는 게 기본 의도
+  renderList(true); };
 $('listMore').onclick=()=>renderList(false);
+$('btnOpHelp').onclick=()=>$('opHelp').classList.toggle('on');
+$('btnPick').onclick=()=>{ picking=!picking; if(!picking)picked.clear(); renderList(true); syncBulk(); };
+$('bulkBar').querySelectorAll('[data-bulk]').forEach(b=>b.onclick=()=>bulkDo(b.dataset.bulk));
+$('bulkTag').addEventListener('keydown',e=>{
+  if(e.key!=='Enter')return;
+  const v=e.target.value.trim().replace(/^#/,''); const cs=pickedCards();
+  if(v&&cs.length){ for(const c of cs)addTag(c,v); toast(`${cs.length}장에 #${v}`); }
+  e.target.value=''; e.target.style.display='none'; picked.clear(); renderList(true); syncBulk();
+});
+$('btnSolveList').onclick=()=>{
+  const cs=listRows.filter(c=>!retired(c)&&!offed(c)&&!buried(c)).slice(0,300); // 미룬 카드는 오늘 빼는 게 일관
+  if(!cs.length){ toast('풀 수 있는 카드가 없어요'); return; }
+  startAdHoc(riskSort(cs), '목록 세션');
+};
 
 /* ═══════════════ 통계 ═══════════════ */
+/* 로그 집계 — 하루 경계(4시) 기준 일별 통계. 신규 = 그 카드의 첫 로그 항목 */
+function dailyStats(){
+  const by={}, firstSeen=new Set();
+  for(const e of state.log){
+    const k=dayKey(new Date(e[1]));
+    const d=by[k]||(by[k]={n:0,nw:0,ms:0,msN:0,r:[0,0,0,0,0]});
+    d.n++; d.r[e[2]]=(d.r[e[2]]||0)+1;
+    if(!firstSeen.has(e[0])){ firstSeen.add(e[0]); d.nw++; }
+    const ex=e[3];
+    if(ex&&typeof ex.ms==='number'){ d.ms+=ex.ms; d.msN++; }
+  }
+  return by;
+}
+function dayKeyOffset(n){ return dayKey(new Date(Date.now()+n*86400000)); }
+function fmtMin(ms){ if(!ms)return '0분'; const m=ms/60000;
+  return m<1?Math.round(ms/1000)+'초':(m<60?Math.round(m)+'분':(m/60).toFixed(1)+'시간'); }
+function barChart(cols, opt){ // cols=[{a,b,label,title,cls}] a=주(아래)·b=부(위)
+  const mx=Math.max(1,...cols.map(c=>(c.a||0)+(c.b||0)));
+  const bars=cols.map(c=>{
+    const ha=Math.round((c.a||0)/mx*100), hb=Math.round((c.b||0)/mx*100);
+    return `<div class="col ${c.cls||''} ${(c.a||0)+(c.b||0)?'':'zero'}" title="${esc(c.title||'')}">
+      ${hb?`<i class="b2" style="height:${hb}%"></i>`:''}
+      <i style="height:${(c.a||0)?Math.max(ha,2):((c.a||0)+(c.b||0)?0:2)}%"></i></div>`;
+  }).join('');
+  const ax=cols.map(c=>`<span>${esc(c.label||'')}</span>`).join('');
+  return `<div class="chart" style="${opt&&opt.h?`height:${opt.h}px`:''}">${bars}</div><div class="xaxis">${ax}</div>`;
+}
 function renderStats(){
-  const tk=todayKey(), tmk=tomorrowKey();
-  let todayN=0, todayNew=0;
-  const seenToday=new Set();
-  for(const e of state.log){ if(dayKey(new Date(e[1]))===tk){ todayN++; } }
-  for(const [id,s] of Object.entries(state.cards)){ if(s.d===tk&&s.fsrs&&s.fsrs.reps===1)todayNew++; }
-  let due=0,nw=0,ret=0;
+  const tk=todayKey(), by=dailyStats();
+  const today=by[tk]||{n:0,nw:0,ms:0,msN:0,r:[0,0,0,0,0]};
+  let due=0,nw=0,ret=0,bur=0,learned=0;
   const bySubj={};
   for(const c of DATA){
     const s=state.cards[c.id];
     if(s&&s.retired){ret++;continue;}
-    if(isDue(c)){due++; bySubj[c.subj]=(bySubj[c.subj]||0)+1;}
-    else if(isNew(c))nw++;
+    if(buried(c))bur++;
+    const e=bySubj[c.subj]||(bySubj[c.subj]={tot:0,done:0,due:0});
+    e.tot++;
+    if(isNew(c))nw++; else { learned++; e.done++; }
+    if(isDue(c)){ due++; e.due++; }
   }
   const tmr=tomorrowCount(null);
-  const learned=DATA.length-nw-ret;
-  const g=(k,v,s)=>`<div class="stat"><div class="k">${k}</div><div class="v">${v}${s?`<small> ${s}</small>`:''}</div></div>`;
+  const g=(k,v,sm)=>`<div class="stat"><div class="k">${k}</div><div class="v">${v}${sm?`<small> ${sm}</small>`:''}</div></div>`;
   let h='<div class="stat-grid">'
-    +g('오늘 풀이',todayN,'회')+g('오늘 신규',todayNew,'장')
+    +g('오늘 채점',today.n,'회')+g('오늘 신규',today.nw,'장')
+    +g('오늘 학습시간',fmtMin(today.ms),'')+g('평균 응답',today.msN?fmtDur(Math.round(today.ms/today.msN)):'—','')
     +g('due 남음',due,'장')+g('내일 예상','~'+tmr,'장')
-    +g('학습 진입',learned,`/ ${DATA.length}`)+g('은퇴',ret,'장')
+    +g('학습 진입',learned,`/ ${DATA.length}`)+g('은퇴 · 미룸',`${ret} · ${bur}`,'장')
     +'</div>';
-  h+='<div class="bar-list">';
-  const mx=Math.max(1,...Object.values(bySubj));
-  for(const s of SUBJECTS){ const v=bySubj[s]||0;
-    h+=`<div class="bl-row"><span class="n">${s.split('.')[1]}</span><span class="bar"><i style="width:${v/mx*100}%"></i></span><span class="c">${v}</span></div>`; }
-  h+='</div>';
+
+  /* due 예보 14일 */
+  const fc={}; let overdue=0;
+  for(const c of DATA){ const s=state.cards[c.id];
+    if(!s||!s.fsrs||s.retired)continue;
+    const k=dayKey(new Date(s.fsrs.due));
+    if(k<=tk)overdue++; else fc[k]=(fc[k]||0)+1; }
+  const fcols=[];
+  for(let i=0;i<14;i++){ const k=dayKeyOffset(i), d=new Date(Date.now()+i*86400000);
+    const v=i===0?overdue:(fc[k]||0);
+    fcols.push({a:v, cls:i===0?'today':'', label:i%2===0?`${d.getMonth()+1}/${d.getDate()}`:'',
+      title:`${k} · ${v}장${i===0?' (밀린 것 포함)':''}`}); }
+  const wk1=fcols.slice(0,7).reduce((a,c)=>a+c.a,0);
+  h+=`<div class="card-box"><h3>앞으로의 복습 부하</h3>
+    <div class="cap">14일 예보 — 오늘 칸은 밀린 것까지. 앞 7일 합계 <b>${wk1}장</b>. 신규를 얼마나 넣을지 여기 보고 정하세요.</div>
+    ${barChart(fcols)}</div>`;
+
+  /* 최근 28일 풀이량 */
+  const acols=[];
+  for(let i=27;i>=0;i--){ const k=dayKeyOffset(-i), d=new Date(Date.now()-i*86400000);
+    const e=by[k]||{n:0,nw:0};
+    acols.push({a:e.n-e.nw, b:e.nw, cls:i===0?'today':'',
+      label:(i%7===0)?`${d.getMonth()+1}/${d.getDate()}`:'', title:`${k} · 총 ${e.n}회 (신규 ${e.nw})`}); }
+  const tot28=acols.reduce((a,c)=>a+c.a+c.b,0), act=acols.filter(c=>c.a+c.b>0).length;
+  h+=`<div class="card-box"><h3>최근 4주 풀이량</h3>
+    <div class="cap">총 ${tot28}회 · 푼 날 ${act}일 · 하루 평균 ${act?Math.round(tot28/act):0}회</div>
+    ${barChart(acols)}
+    <div class="legend"><span><i style="background:var(--accent)"></i>복습</span><span><i style="background:var(--good)"></i>신규</span></div></div>`;
+
+  /* 12주 히트맵 */
+  let heat='';
+  const start=new Date(Date.now()-83*86400000);
+  for(let i=0;i<84;i++){ const d=new Date(start.getTime()+i*86400000), k=dayKey(d);
+    const v=(by[k]||{n:0}).n;
+    const lv=v===0?0:(v<10?1:(v<40?2:(v<100?3:4)));
+    heat+=`<i class="l${lv}" title="${k} · ${v}회"></i>`; }
+  h+=`<div class="card-box"><h3>12주 달력</h3><div class="cap">세로 한 칸 = 하루, 색이 진할수록 많이 푼 날</div>
+    <div class="heat">${heat}</div></div>`;
+
+  /* 채점 분포 · 참 유지율 (최근 30일, 복습만 — 신규 첫 대면 제외) */
+  const seen=new Set(); const R=[0,0,0,0,0]; let msSum=0,msN=0;
+  const cut=Date.now()-30*86400000;
+  for(const e of state.log){
+    const isFirst=!seen.has(e[0]); seen.add(e[0]);
+    if(Date.parse(e[1])<cut)continue;
+    if(!isFirst)R[e[2]]=(R[e[2]]||0)+1;
+    const ex=e[3]; if(ex&&typeof ex.ms==='number'){ msSum+=ex.ms; msN++; }
+  }
+  const rtot=R[1]+R[2]+R[3]+R[4];
+  const pct=n=>rtot?Math.round(n/rtot*100):0;
+  h+=`<div class="card-box"><h3>채점 분포 · 참 유지율</h3>
+    <div class="cap">최근 30일 복습 ${rtot}회 (신규 첫 대면 제외)</div>
+    <div class="big-num"><b>${rtot?Math.round((rtot-R[1])/rtot*100):0}%</b><small>다시를 안 누른 비율 — 목표 유지율 90%</small></div>
+    <div class="sbar" style="margin-top:12px">
+      <i style="width:${pct(R[1])}%;background:var(--again)"></i><i style="width:${pct(R[2])}%;background:var(--hard)"></i>
+      <i style="width:${pct(R[3])}%;background:var(--good)"></i><i style="width:${pct(R[4])}%;background:var(--easy)"></i></div>
+    <div class="legend">
+      <span><i style="background:var(--again)"></i>다시 ${R[1]}</span><span><i style="background:var(--hard)"></i>어려움 ${R[2]}</span>
+      <span><i style="background:var(--good)"></i>알맞음 ${R[3]}</span><span><i style="background:var(--easy)"></i>쉬움 ${R[4]}</span></div>
+    ${msN?`<div class="cap" style="margin:10px 0 0">응답 시간 평균 ${fmtDur(Math.round(msSum/msN))} · 기록된 채점 ${msN}회</div>`:
+      '<div class="cap" style="margin:10px 0 0">응답 시간은 이번 버전부터 기록돼요</div>'}</div>`;
+
+  /* 과목별 진도 */
+  h+='<div class="card-box"><h3>과목별 진도</h3><div class="cap">막대 = 학습 진입 비율 · 오른쪽 숫자 = 오늘 due</div><div class="bar-list" style="background:none;padding:4px 0;margin:0">';
+  for(const sj of SUBJECTS){ const e=bySubj[sj]||{tot:0,done:0,due:0};
+    const r=e.tot?Math.round(e.done/e.tot*100):0;
+    h+=`<div class="bl-row"><span class="n" style="min-width:52px">${esc(sj.split('.')[1]||sj)}</span>
+      <span class="bar" title="${e.done}/${e.tot}장"><i style="width:${r}%"></i></span>
+      <span class="c">${e.due?e.due:'·'}</span></div>`; }
+  h+='</div></div>';
   h+=`<div class="empty-note" style="padding:10px">리뷰 로그 ${state.log.length}건 (전량 보존 — 스케줄러 최적화 근간)</div>`;
   $('statsBody').innerHTML=h;
 }
@@ -3434,37 +3998,59 @@ function renderStats(){
 /* ═══════════════ 약점 ═══════════════ */
 function renderWeak(){
   const body=$('weakBody'); body.innerHTML='';
-  const low=[], missed=[];
+  const low=[], missed=[], leech=[];
   for(const c of DATA){
     const s=state.cards[c.id]; if(!s||s.retired)continue;
+    if(isLeech(c))leech.push([c,s.miss]);
+    else if(s.miss>=1)missed.push([c,s.miss]);
     if(s.fsrs&&s.fsrs.reps>=2&&s.fsrs.stability<7)low.push([c,s.fsrs.stability]);
-    if(s.miss>=1)missed.push([c,s.miss]);
   }
-  low.sort((a,b)=>a[1]-b[1]); missed.sort((a,b)=>b[1]-a[1]);
-  const sec=(t,arr,fmt)=>{
+  low.sort((a,b)=>a[1]-b[1]); missed.sort((a,b)=>b[1]-a[1]); leech.sort((a,b)=>b[1]-a[1]);
+  const sec=(t,arr,fmt,cap)=>{
     const d=document.createElement('div');
-    d.innerHTML=`<div class="rail-grp" style="margin:8px 4px 8px">${t}</div>`;
+    d.innerHTML=`<div class="rail-grp" style="margin:8px 4px 8px">${t}</div>`
+      +(cap?`<div class="cap" style="margin:-4px 4px 8px;font-size:11.5px;color:var(--mute)">${cap}</div>`:'');
     if(!arr.length)d.innerHTML+='<div class="empty-note" style="padding:14px">아직 없어요</div>';
-    for(const [c,v] of arr.slice(0,50))d.appendChild(cardRow(c,`<span class="m warn">${fmt(v)}</span>`));
+    for(const [c,v] of arr.slice(0,50)){
+      const el=cardRow(c, fmt?`<span class="m warn">${fmt(v)}</span>`:'');   // 카드 행이 이미 보여주는 값은 중복하지 않는다
+      el.onclick=()=>openCardSheet(c, renderWeak);
+      d.appendChild(el);
+    }
     body.appendChild(d);
   };
+  sec(`누수 카드 (틀림 ${LEECH_MISS}회 이상)`, leech, null,
+      '반복해서 무너지는 카드 — 카드 문구가 문제인지 보고, 아니면 쪼개거나 플래그로 수거 대상에 올리세요. 자동 은퇴는 하지 않습니다.');
   sec('낮은 안정도에 머무는 카드 (2회+ 복습, S<7일)', low, v=>'S '+v.toFixed(1)+'일');
-  sec('누적 틀림 상위', missed, v=>'틀림 '+v);
+  sec('누적 틀림 상위', missed, null);
 }
 
 /* ═══════════════ 플래그 ═══════════════ */
 function renderFlags(){
   const body=$('flagsBody'); body.innerHTML='';
-  const rows=[];
-  for(const c of DATA){ const s=state.cards[c.id];
-    if(s&&(s.flag!=null||(s.ann&&s.ann.length)))rows.push(c); }
-  if(!rows.length){ body.innerHTML='<div class="empty-note">플래그·@주석 카드가 없어요<br>수거는 매일 저녁 루틴이 자동으로 해요</div>'; return; }
-  for(const c of rows){
-    const el=cardRow(c,'<button data-cid="'+c.id+'">해제</button>');
-    el.querySelector('button[data-cid]').onclick=()=>{ const s=st(c.id); s.flag=null; s.ann=[]; touch(s);
-      cacheState(); setDirty(true); renderFlags(); };
-    body.appendChild(el);
-  }
+  const flagged=[], annd=[];
+  for(const c of DATA){ const s=state.cards[c.id]; if(!s)continue;
+    if(s.flag!=null)flagged.push(c);
+    if(s.ann&&s.ann.length)annd.push(c); }
+  if(!flagged.length&&!annd.length){
+    body.innerHTML='<div class="empty-note">플래그·@주석 카드가 없어요<br>풀이 중 사이드바에서 달면 여기 모입니다</div>'; return; }
+  body.innerHTML='<div class="op-help on" style="margin-bottom:12px">매일 저녁 루틴이 여기 있는 플래그·@주석을 수거해 spec에 반영하고 클리어합니다. '
+    +'<b>수거 전에 해제하면 그 요청은 사라져요</b> — 취소할 때만 쓰세요. 카드를 탭하면 내용·이력·메모를 볼 수 있어요.</div>';
+  const sec=(title,arr,tail)=>{
+    if(!arr.length)return;
+    const d=document.createElement('div');
+    d.innerHTML=`<div class="rail-grp" style="margin:8px 4px 8px">${title} · ${arr.length}장</div>`;
+    for(const c of arr){
+      const el=cardRow(c, tail(c));
+      el.onclick=()=>openCardSheet(c, renderFlags);
+      const b=el.querySelector('button[data-cid]');
+      if(b)b.onclick=(ev)=>{ ev.stopPropagation(); const s=st(c.id); s.flag=null; s.ann=[]; touch(s);
+        cacheState(); setDirty(true); renderFlags(); toast('해제했어요'); };
+      d.appendChild(el);
+    }
+    body.appendChild(d);
+  };
+  sec('⚑ 플래그', flagged, c=>'<button data-cid="'+c.id+'">해제</button>');
+  sec('@ 주석 (교재 유입·방향·끄기 요청)', annd, c=>'<button data-cid="'+c.id+'">해제</button>');
 }
 
 /* ═══════════════ 셋업 ═══════════════ */

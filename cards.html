@@ -2545,7 +2545,7 @@ const PLAN_DATE=new Map(INTAKE_PLAN);
 /* ═══════════════ FSRS ═══════════════ */
 const engine = FSRS.fsrs(FSRS.generatorParameters({
   request_retention: 0.90,
-  enable_fuzz: false,
+  enable_fuzz: true,    // 버스트 투입 시 due 뭉침 방지 (동하 승인 2026-08-19)
   enable_short_term: false,   // 당일 재출은 앱 큐 로직 소관 (스펙)
 }));
 const EXAM_END = new Date(EXAM_DAY+'T12:00:00+09:00');

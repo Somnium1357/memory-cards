@@ -2730,8 +2730,6 @@ async function loadData(){
   BYID={}; const tags=new Set(), typs=new Set();
   DATA.forEach((c,i)=>{ c._i=i; BYID[c.id]=c; (c.tags||[]).forEach(t=>tags.add(t)); typs.add(c.typ); });
   ALLTAGS=[...tags].sort(); ALLTYPS=[...typs].sort();
-  const sibCnt={}; // 노드 내 형제 순번 (신규 라운드 배치용: 쌍을 세션 안에서 떨어뜨린다)
-  for(const c of DATA){ c._sib=sibCnt[c.node]||0; sibCnt[c.node]=c._sib+1; }
   TAGMETA={}; // 과목|대주제 → 첫 카드 위치·장수 (회독 대기 큐용)
   for(const c of DATA){ const k=tagKey(c);
     if(!TAGMETA[k])TAGMETA[k]={subj:c.subj, tag:(c.tags&&c.tags[0])||'(기타)', i0:c._i, n:0};
@@ -2855,14 +2853,12 @@ function startSession(p){
   if(!queue.length){ showSummaryOrNew(); } else showCard();
 }
 let curTopic=null; // 방금 투입한 대주제 키
-function nextTopic(){ // 다음 투입 대상 = 계획 최우선 대주제, 통째로 (중간에 안 자름 — 동하 확정)
-  const pool=scopePool(curPreset.scope,'new').sort(newSort);
+function nextTopic(){ // 다음 투입 = 계획 최우선 대주제의 오늘 한 바퀴(개념당 1장) — 바퀴는 중간에 안 자른다
+  let pool=scopePool(curPreset.scope,'new').sort(newSort);
+  if(curPreset.bury) pool=buryFilter(pool, nodesRatedToday()); // 쌍은 다음날로 (A → 내일 A' — 동하 승인)
   if(!pool.length) return null;
   const k=tagKey(pool[0]);
-  // 라운드 배치: 각 개념(노드)의 1번째 카드 전부 → 2번째(뒤집기 쌍) 전부 → … —
-  // 쌍이 같은 세션에 있되 수십 장 간격으로 떨어져 "방금 봐서 맞히는" 누설을 줄인다
-  const cards=pool.filter(c=>tagKey(c)===k).sort((a,b)=>(a._sib-b._sib)||(a._i-b._i));
-  return {key:k, cards, date:PLAN_DATE.get(k)||'', label:hoedokLabel(k)};
+  return {key:k, cards:pool.filter(c=>tagKey(c)===k), date:PLAN_DATE.get(k)||'', label:hoedokLabel(k)};
 }
 function extendWithNew(){ // 신규 = 대주제 한 개씩 — 끝나면 체크포인트에서 다음 주제·장수 보고 선택
   const nt=nextTopic();

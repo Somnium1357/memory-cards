@@ -470,6 +470,24 @@ input:focus,select:focus{border-color:var(--accent);}
 .u-row .rd.on{background:var(--good-dim);color:var(--good);}
 .u-row .act{flex:0 0 auto;font-size:11.5px;font-weight:800;color:var(--accent);
   background:var(--accent-dim);padding:6px 10px;border-radius:9px;}
+.fold{border-top:1px solid var(--line);margin-top:14px;padding-top:10px;}
+.fold summary{font-size:12.5px;font-weight:800;color:var(--mute);cursor:pointer;list-style:none;
+  padding:6px 2px;}
+.fold summary::-webkit-details-marker{display:none;}
+.fold summary::before{content:"▸ ";color:var(--faint);}
+.fold[open] summary::before{content:"▾ ";}
+.tr-row{display:flex;align-items:center;gap:8px;padding:9px 6px;border-radius:10px;cursor:pointer;}
+.tr-row:active{background:var(--surface2);}
+.tr-row .cbx{flex:0 0 auto;width:19px;height:19px;border-radius:6px;border:2px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:transparent;}
+.tr-row.on .cbx{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
+.tr-row.part .cbx{border-color:var(--accent);color:var(--accent);}
+.tr-row .nm{flex:1;min-width:0;font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tr-row .ct{flex:0 0 auto;font-size:11px;font-weight:700;color:var(--mute);}
+.tr-row .ct .due{color:var(--accent);margin-left:6px;}
+.tr-row .tw{flex:0 0 auto;width:20px;text-align:center;color:var(--faint);font-size:11px;}
+.tr-lv1{padding-left:22px;} .tr-lv2{padding-left:46px;}
+.tr-lv1 .nm{font-weight:600;font-size:13px;} .tr-lv2 .nm{font-weight:500;font-size:12.5px;color:var(--ink2);}
 .kbd-note kbd{font-family:inherit;font-size:11px;font-weight:800;color:var(--mute);background:var(--surface2);
   border-radius:6px;padding:2px 6px;margin:0 1px;}
 #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
@@ -675,22 +693,22 @@ input:focus,select:focus{border-color:var(--accent);}
   <h2 id="nsTitle">새 세션</h2>
   <p class="desc">범위(무엇을)와 방식(어떻게)을 고릅니다. 방식 템플릿을 누르면 아래가 채워져요.</p>
   <div class="field"><label>이름</label><input id="nsName" type="text" maxlength="24" placeholder="예: D28 인출"></div>
-  <div class="field"><label>방식 템플릿</label><div class="mini-chips" id="nsTpl"></div>
+  <div class="field"><label>방식</label><div class="mini-chips" id="nsTpl"></div>
     <div class="desc" id="nsTplDesc" style="margin:6px 2px 0"></div></div>
-  <div class="field"><label>범위</label>
-    <div class="seg" id="nsKind"><button data-v="all">전체</button><button data-v="units">단위 선택</button></div></div>
-  <div class="field" id="nsUnitField" style="display:none">
-    <div class="cs-row"><input id="nsUnitLabel" type="text" readonly><button id="nsPickUnits">고르기</button></div></div>
-  <div class="field"><label>과목 (비우면 전체)</label><div class="mini-chips" id="nsSubj"></div></div>
-  <div class="field"><label>유형 (비우면 전체)</label><div class="mini-chips" id="nsTyps"></div></div>
-  <div class="field"><label>상태</label><div class="seg" id="nsStatus">
-    <button data-v="due">due만</button><button data-v="new">신규만</button><button data-v="all">전부</button><button data-v="weak">약점만</button></div></div>
-  <div class="field"><label>제시 순서</label><div class="seg" id="nsOrder">
-    <button data-v="shuffle">셔플</button><button data-v="doc">문서순</button><button data-v="weighted">가중 셔플</button></div></div>
-  <div class="field" id="nsWtField" style="display:none"><label>과목 가중치 (배점 비율)</label><div class="wt-grid" id="nsWts"></div></div>
-  <div class="field"><label>분량 (비우면 전량)</label><input id="nsLimit" type="number" inputmode="numeric" min="1" placeholder="전량"></div>
-  <div class="tgl-row"><span>방향 분산 (역방향은 도입 +2~3일 뒤)</span><div class="tgl" id="nsBury"></div></div>
-  <div class="tgl-row"><span>복습 소진 후 신규 이어가기</span><div class="tgl" id="nsNewAfter"></div></div>
+  <details class="fold" id="nsFold"><summary>세부 설정</summary>
+    <div class="field" style="margin-top:12px"><label>상태</label><div class="mini-chips" id="nsStatus"></div></div>
+    <div class="field"><label>제시 순서</label><div class="seg" id="nsOrder">
+      <button data-v="shuffle">셔플</button><button data-v="doc">문서순</button><button data-v="weighted">가중 셔플</button></div></div>
+    <div class="field" id="nsWtField" style="display:none"><label>과목 가중치 (배점 비율)</label><div class="wt-grid" id="nsWts"></div></div>
+    <div class="field"><label>분량 (비우면 전량)</label><input id="nsLimit" type="number" inputmode="numeric" min="1" placeholder="전량"></div>
+    <div class="field"><label>내용 채우기</label><div class="seg" id="nsMode">
+      <button data-v="auto">자동 충전</button><button data-v="manual">직접 추가</button></div>
+      <div class="desc" style="margin:6px 2px 0">자동 충전 = 범위 전체에서 매일 다시 채움 · 직접 추가 = 세션 화면에서 넣고 잔량은 이월</div></div>
+    <div class="field"><label>유형 (비우면 전체)</label><div class="mini-chips" id="nsTyps"></div></div>
+    <div class="field"><label>과목 (비우면 전체)</label><div class="mini-chips" id="nsSubj"></div></div>
+    <div class="tgl-row"><span>방향 분산 (역방향은 도입 +2~3일 뒤)</span><div class="tgl" id="nsBury"></div></div>
+    <div class="tgl-row"><span>복습 소진 후 신규 이어가기</span><div class="tgl" id="nsNewAfter"></div></div>
+  </details>
   <div class="btn-row"><button class="btn-ghost" id="nsDelete" style="color:var(--again)">삭제</button><button class="btn-ghost" id="nsCancel">취소</button><button class="btn-primary" id="nsSave">만들기</button></div>
 </div></div>
 
@@ -698,8 +716,8 @@ input:focus,select:focus{border-color:var(--accent);}
 <div class="ovl" id="ovlPick"><div class="sheet wide">
   <h2 id="pkTitle">단위 고르기</h2>
   <p class="desc" id="pkDesc"></p>
-  <input id="pkSearch" type="search" placeholder="단위 검색" style="width:100%;margin-bottom:8px">
-  <div id="pkList" style="max-height:44vh;overflow-y:auto"></div>
+  <input id="pkSearch" type="search" placeholder="과목·대주제·중주제 검색" style="width:100%;margin-bottom:8px">
+  <div id="pkList" style="max-height:46vh;overflow-y:auto"></div>
   <div class="btn-row"><button class="btn-ghost" id="pkCancel">취소</button><button class="btn-primary" id="pkOk">확인</button></div>
 </div></div>
 
@@ -3172,23 +3190,24 @@ async function loadState(){
    전체 범위 세션은 날이 바뀌면 스스로 다시 채우고, 단위 고정 세션은 잔량을 이월한다.
    「일일 복습」도 그중 하나일 뿐 — 코드에 특별 취급 없음. */
 const HOW_TPL=[
-  {key:'daily',    name:'일일 복습',   desc:'due 전량 · 셔플 · 방향 분산 · 신규 이어가기',
-   how:{status:'due', order:'shuffle', weights:{}, limit:null, bury:true,  newAfter:true}},
-  {key:'retrieve', name:'전량 인출',   desc:'범위 전부 · 셔플 · 분산 없음 (D28 최종 인출)',
-   how:{status:'all', order:'shuffle', weights:{}, limit:null, bury:false, newAfter:false}},
-  {key:'read',     name:'통독',        desc:'범위 전부 · 문서순 · 분산 없음',
-   how:{status:'all', order:'doc',     weights:{}, limit:null, bury:false, newAfter:false}},
-  {key:'weak',     name:'약점 몰아풀기',desc:'약점만 · 위험도 순 · 50장',
-   how:{status:'weak',order:'shuffle', weights:{}, limit:50,   bury:false, newAfter:false}},
-  {key:'intake',   name:'신규 투입',   desc:'신규만 · 문서순 · 방향 분산',
-   how:{status:'new', order:'doc',     weights:{}, limit:null, bury:true,  newAfter:false}},
-  {key:'exam',     name:'배점 가중',   desc:'due · 과목 가중 셔플 · 100장',
-   how:{status:'due', order:'weighted',weights:{}, limit:100,  bury:true,  newAfter:false}},
+  {key:'daily',    name:'일일 복습',   mode:'auto',   desc:'due · 셔플 · 방향 분산 · 신규 이어가기 — 매일 스스로 채워집니다',
+   how:{status:['due'], order:'shuffle', weights:{}, limit:null, bury:true,  newAfter:true}},
+  {key:'retrieve', name:'전량 인출',   mode:'manual', desc:'전체 · 셔플 — 범위를 직접 넣고, 못 푼 건 다음날로 이월 (D28)',
+   how:{status:['all'], order:'shuffle', weights:{}, limit:null, bury:false, newAfter:false}},
+  {key:'read',     name:'통독',        mode:'manual', desc:'전체 · 문서순 — 범위를 직접 넣습니다',
+   how:{status:['all'], order:'doc',     weights:{}, limit:null, bury:false, newAfter:false}},
+  {key:'weak',     name:'약점 몰아풀기',mode:'auto',   desc:'약점 · 위험도 순 · 50장',
+   how:{status:['weak'],order:'shuffle', weights:{}, limit:50,   bury:false, newAfter:false}},
+  {key:'intake',   name:'신규 투입',   mode:'manual', desc:'신규 · 문서순 · 방향 분산 — 범위를 직접 넣습니다',
+   how:{status:['new'], order:'doc',     weights:{}, limit:null, bury:true,  newAfter:false}},
+  {key:'exam',     name:'배점 가중',   mode:'auto',   desc:'due · 과목 가중 셔플 · 100장',
+   how:{status:['due'], order:'weighted',weights:{}, limit:100,  bury:true,  newAfter:false}},
 ];
 let sessions=[], curSess=null, viewSess=null;
-function newSessObj(name, how, scope){
+function newSessObj(name, how, scope, mode){
   return {id:'s'+Date.now()+Math.floor(Math.random()*1000), name:name||'새 세션',
-    how:JSON.parse(JSON.stringify(how)), scope:Object.assign({units:[],subj:[],tags:[],typ:[]}, scope||{}),
+    how:JSON.parse(JSON.stringify(how)), mode:mode||'auto',
+    scope:Object.assign({units:[],mids:[],subj:[],tags:[],typ:[]}, scope||{}),
     q:[], done:0, day:'', lastScore:null, createdAt:Date.now(), lastAt:0};
 }
 function loadSessions(){
@@ -3206,18 +3225,22 @@ function loadSessions(){
     }catch(e){ migrated=[]; } }
     sessions = migrated.length?migrated:[newSessObj('일일 복습', HOW_TPL[0].how, {})];
   }
-  for(const x of sessions){ x.scope=Object.assign({units:[],subj:[],tags:[],typ:[]},x.scope||{}); x.q=x.q||[]; }
+  for(const x of sessions){
+    x.scope=Object.assign({units:[],mids:[],subj:[],tags:[],typ:[]},x.scope||{}); x.q=x.q||[];
+    if(!x.mode) x.mode=(x.scope.units&&x.scope.units.length)?'manual':'auto';   // 옛 세션 승계
+    x.how.status=stArr(x.how.status);
+  }
 }
 let sessSaveT=null;
 function saveSessions(){ lsSet(K_SESS, JSON.stringify(sessions)); }
 function saveSessionsSoon(){ if(sessSaveT)return; sessSaveT=setTimeout(()=>{ sessSaveT=null; saveSessions(); },400); }
 function saveSessionsFlush(){ if(sessSaveT){ clearTimeout(sessSaveT); sessSaveT=null; } saveSessions(); }
-function isFixed(sx){ return !!(sx.scope.units && sx.scope.units.length); }  // 단위 고정 = 이월, 전체 = 자동 충전
+function isFixed(sx){ return sx.mode==='manual'; }   // 직접 추가 = 잔량 이월 / 자동 충전 = 매일 재조립
 function asPreset(sx){   // 큐 조립기·카운터가 쓰는 형태로 변환 (기존 로직 재사용)
   return {id:sx.id, name:sx.name, order:sx.how.order, weights:sx.how.weights||{},
     limit:sx.how.limit, bury:sx.how.bury, newAfter:sx.how.newAfter,
     scope:{subj:sx.scope.subj||[], tags:sx.scope.tags||[], typ:sx.scope.typ||[],
-           units:sx.scope.units||[], status:sx.how.status}};
+           units:sx.scope.units||[], mids:sx.scope.mids||[], status:sx.how.status}};
 }
 function sessCards(sx){ return (sx.q||[]).map(id=>BYID[id]).filter(Boolean); }  // 사라진 카드는 조용히 탈락
 function refillSess(sx){ // 전체 범위 세션은 날이 바뀌면 스스로 다시 채운다
@@ -3227,16 +3250,21 @@ function refillSess(sx){ // 전체 범위 세션은 날이 바뀌면 스스로 �
   sx.day=todayKey(); saveSessionsSoon();
 }
 function sessRemain(sx){ return (curSess&&curSess.id===sx.id) ? queue.length-qPos : (sx.q||[]).length; }
-function addUnitsToSess(sx, units){ // 내용 추가 = 그 단위 카드를 큐 뒤에 붙인다 (중복 제외)
+function addScopeToSess(sx, sel){ // 내용 추가 — sel={units:[],mids:[]}
   const have=new Set(sx.q);
-  const p=asPreset(sx); p.scope=Object.assign({},p.scope,{units:units.slice()});
+  const p=asPreset(sx);
+  p.scope=Object.assign({},p.scope,{units:(sel.units||[]).slice(), mids:(sel.mids||[]).slice()});
   const add=buildQueue(p, sx.how.status).map(c=>c.id).filter(id=>!have.has(id));
-  sx.scope.units=[...new Set([...(sx.scope.units||[]), ...units])];
+  if(isFixed(sx)){                       // 직접 추가 세션만 범위가 늘어난다 (이월 대상)
+    sx.scope.units=[...new Set([...(sx.scope.units||[]), ...(sel.units||[])])];
+    sx.scope.mids=[...new Set([...(sx.scope.mids||[]), ...(sel.mids||[])])];
+  }                                      // 자동 충전 세션은 오늘 큐에만 얹고 범위는 그대로
   sx.q=[...sx.q, ...add];
   if(curSess&&curSess.id===sx.id){ for(const id of add){ if(BYID[id])queue.push(BYID[id]); } counts(); }
   sx.day=todayKey(); saveSessionsFlush();
   return add.length;
 }
+function addUnitsToSess(sx, units){ return addScopeToSess(sx,{units:units,mids:[]}); }
 function syncSessQueue(){ // 진행 중 세션의 남은 큐를 저장 (새로고침·탭 종료에도 살아남게)
   if(!curSess) return;
   curSess.q=queue.slice(qPos).map(c=>c.id);
@@ -3251,20 +3279,31 @@ function deleteSess(sx){ sessions=sessions.filter(x=>x.id!==sx.id);
 function userTags(id){ const s=state.cards[id]; return (s&&Array.isArray(s.t))?s.t:[]; }
 function inScope(c,sc){
   if(retired(c)||offed(c)||buried(c)) return false;   // 미룸 = 오늘 큐에서만 빠짐 (due는 그대로)
-  if(sc.units && sc.units.length && !sc.units.includes(tagKey(c))) return false;   // 단위 고정 범위
+  const us=sc.units, ms=sc.mids;                       // 트리 선택 = 단위 통째 or 중주제 낱개
+  if((us&&us.length)||(ms&&ms.length)){
+    const k=tagKey(c);
+    const hitU=us&&us.includes(k);
+    const hitM=ms&&ms.length&&ms.includes(k+'||'+((c.tags||[])[1]||''));
+    if(!hitU&&!hitM) return false;
+  }
   if(sc.subj.length && !sc.subj.includes(c.subj)) return false;
   if(sc.tags.length && !(c.tags||[]).concat(userTags(c.id)).some(t=>sc.tags.includes(t))) return false;
   if(sc.typ.length && !sc.typ.includes(c.typ)) return false;
   return true;
 }
+function stArr(v){ // 상태는 배열 — 옛 단일값도 받는다
+  const a=Array.isArray(v)?v.slice():[v||'due'];
+  return a.includes('all')?['all']:(a.length?a:['due']);
+}
+function stHas(v,k){ return stArr(v).includes(k); }
+function stOnly(v,k){ const a=stArr(v); return a.length===1&&a[0]===k; }
+function matchStatus(c, st){
+  const a=stArr(st);
+  if(a.includes('all')) return true;
+  return a.some(k=> k==='due'?isDue(c) : k==='new'?isNew(c) : k==='weak'?isWeak(c) : false);
+}
 function scopePool(sc, status){
-  return DATA.filter(c=>{
-    if(!inScope(c,sc)) return false;
-    if(status==='due') return isDue(c);
-    if(status==='new') return isNew(c);
-    if(status==='weak') return isWeak(c);
-    return true; // all
-  });
+  return DATA.filter(c=> inScope(c,sc) && matchStatus(c,status));
 }
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 function riskSort(pool){ // 선발 기본 = 위험도 우선(R 낮은 순). 신규(R 없음)는 문서순으로 뒤에.
@@ -3318,7 +3357,7 @@ function againPending(sc){ // 오늘 마지막 채점이 Again인 카드 = "그�
 }
 function buildQueue(p, status){
   let pool=scopePool(p.scope, status);
-  if(p.bury && status==='new') pool=dirFilter(pool);   // 방향 분산은 신규 투입 시점에만
+  if(p.bury) pool=pool.filter(c=>!isNew(c)||!isRev(c)||revReady(c)); // 방향 분산은 신규분에만
   // 선발: 문서순 세션=앞에서 N(통독 의도) / 그 외=위험도 R순, 가중=쿼터 배분 후 쿼터 내 R순
   let sel;
   if(p.order==='doc'){ pool.sort((a,b)=>a._i-b._i); sel=pool; }
@@ -3340,7 +3379,7 @@ function buildQueue(p, status){
   if(p.order!=='doc') shuffle(sel);
   else sel.sort((a,b)=>a._i-b._i);
   // 틀림 재출 복원: 오늘 Again으로 끝난 카드는 그날 맞출 때까지 큐 뒤에 복귀 (복습 성격 세션만)
-  if(status!=='new'){
+  if(!stOnly(status,'new')){
     const inSel=new Set(sel.map(c=>c.id));
     for(const c of againPending(p.scope)){ if(!inSel.has(c.id)) sel.push(c); }
   }
@@ -3350,7 +3389,7 @@ function playSess(sx){          // 세션 화면의 [이어가기] — 남은 �
   curSess=sx; viewSess=sx; curPreset=asPreset(sx);
   refillSess(sx);
   queue=sessCards(sx); qPos=0;
-  phase = sx.how.status==='new' ? 'new' : 'review';
+  phase = stOnly(sx.how.status,'new') ? 'new' : 'review';
   sessionDone=0; newServed=0; undoSnap=null; updateUndo(); sessReset();
   go('scrSolve');
   if(!queue.length){ finishSess(); } else showCard();
@@ -3743,10 +3782,13 @@ function renderToday(){ // 홈 첫 화면 = 오늘 한 일 (통계 탭까지 안
 }
 function sessDesc(sx){
   const parts=[];
-  parts.push(isFixed(sx)?`단위 ${sx.scope.units.length}개`:'전체');
+  if(isFixed(sx)){
+    const n=(sx.scope.units||[]).length+(sx.scope.mids||[]).length;
+    parts.push(n?`직접 추가 · 범위 ${n}`:'직접 추가');
+  } else parts.push('자동 충전');
   if((sx.scope.subj||[]).length)parts.push(sx.scope.subj.map(x=>x.split('.')[1]).join('·'));
   if((sx.scope.typ||[]).length)parts.push(sx.scope.typ.join('·'));
-  parts.push({due:'due만',new:'신규만',all:'전부',weak:'약점만'}[sx.how.status]||sx.how.status);
+  parts.push(stArr(sx.how.status).map(k=>({due:'due',new:'신규',all:'전체',weak:'약점'}[k]||k)).join('+'));
   parts.push({shuffle:'셔플',doc:'문서순',weighted:'가중 셔플'}[sx.how.order]||sx.how.order);
   if(sx.how.limit)parts.push(sx.how.limit+'장');
   if(sx.how.bury)parts.push('방향 분산');
@@ -3833,7 +3875,7 @@ function renderSession(){
   if(!isFixed(sx)) refillSess(sx);
   const remain=sessRemain(sx);
   const live=curSess&&curSess.id===sx.id;
-  const nt=(sx.how.newAfter||sx.how.status==='new')?(()=>{ const keep=curPreset; curPreset=asPreset(sx);
+  const nt=(sx.how.newAfter||stHas(sx.how.status,'new'))?(()=>{ const keep=curPreset; curPreset=asPreset(sx);
       const t=nextTopic(); curPreset=keep; return t; })():null;
   let h=`<button class="ss-go" id="ssGo"${remain?'':' disabled'}>${remain?`이어가기 · ${remain}장`:'남은 카드 없음'}</button>
     <div class="ss-line"><span>${esc(sessDesc(sx))}</span></div>`;
@@ -3846,18 +3888,27 @@ function renderSession(){
   body.innerHTML=h;
   $('ssGo').onclick=()=>{ if(live){ go('scrSolve'); showCard(); } else playSess(sx); };
   const bn=$('ssNew'); if(bn)bn.onclick=()=>{ if(!live)playSess(sx); curPreset=asPreset(sx); extendWithNew(); };
-  $('ssAdd').onclick=()=>openUnitPick({title:'내용 추가', desc:'고른 단위의 카드가 이 세션 큐 뒤에 붙습니다.',
-    selected:[], onOk:(sel)=>{ if(!sel.length)return;
-      const n=addUnitsToSess(sx, sel); toast(n?`${n}장 추가`:'추가할 카드가 없어요'); renderSession(); }});
+  $('ssAdd').onclick=()=>openUnitPick({title:'내용 추가',
+    desc:isFixed(sx)?'고른 범위가 이 세션에 들어오고, 못 푼 잔량은 다음날로 이월됩니다.'
+                    :'자동 충전 세션이라 오늘 큐에만 얹습니다 (범위는 그대로).',
+    selected:{units:[],mids:[]},
+    onOk:(sel)=>{ if(!sel.units.length&&!sel.mids.length)return;
+      const n=addScopeToSess(sx, sel); toast(n?`${n}장 추가`:'추가할 카드가 없어요'); renderSession(); }});
   const ub=$('ssUnits'); const stats=unitStatsAll();
-  let keys;
-  if(isFixed(sx)) keys=sx.scope.units.slice();
-  else { const seen={}; for(const id of (live?queue.slice(qPos).map(c=>c.id):sx.q)){ const c=BYID[id]; if(c)seen[tagKey(c)]=(seen[tagKey(c)]||0)+1; }
-         keys=Object.keys(seen).sort((a,b)=>seen[b]-seen[a]).slice(0,8); }
+  // 큐에 실제로 든 단위 + (직접 추가 세션이면) 지정 범위
+  const seen={};
+  for(const id of (live?queue.slice(qPos).map(c=>c.id):sx.q)){ const c=BYID[id]; if(c)seen[tagKey(c)]=(seen[tagKey(c)]||0)+1; }
+  let keys=Object.keys(seen);
+  if(isFixed(sx)){
+    for(const k of (sx.scope.units||[])) if(!seen[k])keys.push(k);
+    for(const mk of (sx.scope.mids||[])){ const k=mk.split('||')[0]; if(!seen[k]&&!keys.includes(k))keys.push(k); }
+  } else keys=keys.sort((a,b)=>seen[b]-seen[a]).slice(0,8);
   keys.sort((a,b)=>planRank(a)-planRank(b));
   for(const k of keys){ if(!TAGMETA[k])continue;
-    ub.appendChild(unitRow(k, stats[k]||{n:0,due:0,nw:0,last:0},
-      {action:'먼저 풀기', rerender:renderSession, onAction:(kk)=>playUnitFirst(sx,kk)})); }
+    const inQ=seen[k]||0;
+    const row=unitRow(k, stats[k]||{n:0,due:0,nw:0,last:0},
+      {action:inQ?`먼저 풀기 (${inQ})`:null, rerender:renderSession, onAction:(kk)=>playUnitFirst(sx,kk)});
+    ub.appendChild(row); }
   if(!keys.length)ub.innerHTML='<div class="empty-note" style="padding:16px">아직 내용이 없어요 — 아래에서 단위를 넣으세요</div>';
 }
 function playUnitFirst(sx, k){   // 세션 큐에서 그 단위를 앞으로 끌어와 바로 푼다
@@ -3895,22 +3946,75 @@ $('uSearch').addEventListener('input',()=>renderUnits());
 $('uSort').addEventListener('change',()=>renderUnits());
 $('uNone').onclick=()=>{ uPicked.clear(); renderUnits(); };
 $('uNewSess').onclick=()=>{ const sel=[...uPicked];
-  openSessEditor(null, {units:sel, tpl:'retrieve', name:sel.length===1?hoedokLabel(sel[0]):'인출 세션'}); };
+  openSessEditor(null, {units:sel, tpl:'retrieve', name:sel.length===1?hoedokLabel(sel[0]):'인출 세션'});
+  uPicked.clear(); };
 $('uAddSess').onclick=()=>{
   const sel=[...uPicked]; if(!sel.length)return;
   if(!sessions.length){ toast('세션이 없어요 — 새 세션으로 만드세요'); return; }
-  openSessPick(sx=>{ const n=addUnitsToSess(sx, sel); uPicked.clear(); renderUnits();
-    toast(`${esc(sx.name)}에 ${n}장 추가`); });
+  openSessPick(sx=>{ const n=addScopeToSess(sx, {units:sel, mids:[]}); uPicked.clear(); renderUnits();
+    toast(`${sx.name}에 ${n}장 추가`); });
 };
 function openSessPick(cb){   // 어느 세션에 넣을지
   openUnitPick({title:'어느 세션에', desc:'고른 단위를 넣을 세션을 고르세요.', sessions:true, onPick:cb});
 }
 
 /* ═══════════════ 단위·세션 선택기 ═══════════════ */
-let pkSel=[], pkOnOk=null, pkMode='units', pkOnPick=null;
+let pkSel={units:[],mids:[]}, pkOnOk=null, pkMode='units', pkOnPick=null, pkOpen={};
+let TREE=null;
+function buildTree(){                     // 과목 → 단위(대주제) → 중주제
+  if(TREE)return TREE;
+  const byUnit={};
+  for(const c of DATA){
+    const k=tagKey(c); if(!TAGMETA[k])continue;
+    const u=byUnit[k]||(byUnit[k]={key:k, subj:c.subj, label:hoedokLabel(k), n:0, mids:{}});
+    u.n++;
+    const mid=(c.tags||[])[1]||'(기타)';
+    u.mids[mid]=(u.mids[mid]||0)+1;
+  }
+  const bySubj={};
+  for(const k of Object.keys(byUnit).sort((x,y)=>planRank(x)-planRank(y))){
+    const u=byUnit[k];
+    (bySubj[u.subj]=bySubj[u.subj]||[]).push(u);
+  }
+  TREE=SUBJECTS.filter(sj=>bySubj[sj]).map(sj=>({subj:sj, label:sj.split('.')[1]||sj,
+    units:bySubj[sj], n:bySubj[sj].reduce((a,u)=>a+u.n,0)}));
+  return TREE;
+}
+function midKey(unitKey, mid){ return unitKey+'||'+(mid==='(기타)'?'':mid); }
+function pkUnitState(u){                  // 0=없음 1=일부 2=전체
+  if(pkSel.units.includes(u.key))return 2;
+  const ms=Object.keys(u.mids).filter(m=>pkSel.mids.includes(midKey(u.key,m)));
+  return ms.length? (ms.length===Object.keys(u.mids).length?2:1) : 0;
+}
+function pkSubjState(node){
+  const st=node.units.map(pkUnitState);
+  if(st.every(x=>x===2))return 2;
+  return st.some(x=>x>0)?1:0;
+}
+function pkToggleUnit(u, on){
+  pkSel.units=pkSel.units.filter(k=>k!==u.key);
+  pkSel.mids=pkSel.mids.filter(k=>!k.startsWith(u.key+'||'));
+  if(on)pkSel.units.push(u.key);
+}
+function pkToggleMid(u, mid, on){
+  const mk=midKey(u.key,mid);
+  if(pkSel.units.includes(u.key)){        // 단위 전체 선택을 중주제 낱개로 펼쳐서 뺀다
+    pkSel.units=pkSel.units.filter(k=>k!==u.key);
+    for(const m of Object.keys(u.mids)) if(!pkSel.mids.includes(midKey(u.key,m))) pkSel.mids.push(midKey(u.key,m));
+  }
+  pkSel.mids=pkSel.mids.filter(k=>k!==mk);
+  if(on)pkSel.mids.push(mk);
+}
+function pkCount(){                       // 고른 범위의 카드 수
+  const sc={units:pkSel.units, mids:pkSel.mids, subj:[], tags:[], typ:[]};
+  if(!pkSel.units.length&&!pkSel.mids.length)return 0;
+  let n=0; for(const c of DATA){ if(inScope(c,sc))n++; }
+  return n;
+}
 function openUnitPick(o){
   pkMode=o.sessions?'sessions':'units';
-  pkSel=(o.selected||[]).slice(); pkOnOk=o.onOk||null; pkOnPick=o.onPick||null;
+  pkSel={units:((o.selected&&o.selected.units)||[]).slice(), mids:((o.selected&&o.selected.mids)||[]).slice()};
+  pkOnOk=o.onOk||null; pkOnPick=o.onPick||null;
   $('pkTitle').textContent=o.title||'고르기';
   $('pkDesc').textContent=o.desc||'';
   $('pkSearch').style.display=pkMode==='sessions'?'none':'block';
@@ -3933,21 +4037,47 @@ function renderPick(){
   }
   const q=$('pkSearch').value.trim().toLowerCase();
   const stats=unitStatsAll();
-  const keys=Object.keys(TAGMETA).filter(k=>!q||hoedokLabel(k).toLowerCase().includes(q))
-    .sort((a,b)=>planRank(a)-planRank(b)).slice(0,120);
-  for(const k of keys){
-    const st2=stats[k];
-    const el=document.createElement('div'); el.className='u-row'+(pkSel.includes(k)?' sel':'');
-    el.innerHTML=`<div class="t"><div class="nm">${esc(hoedokLabel(k))}</div>
-      <div class="mt"><span>총 ${st2.n}</span>${st2.due?`<span class="due">due ${st2.due}</span>`:''}${st2.nw?`<span class="nw">신규 ${st2.nw}</span>`:''}</div></div>`;
-    el.onclick=()=>{ const i=pkSel.indexOf(k); i>=0?pkSel.splice(i,1):pkSel.push(k); renderPick(); };
+  const row=(cls, on, part, tw, name, cnt, due, onClick, onTw)=>{
+    const el=document.createElement('div');
+    el.className='tr-row '+cls+(on?' on':'')+(part?' part':'');
+    el.innerHTML=`<span class="tw">${tw||''}</span><span class="cbx">${on?'✓':(part?'–':'')}</span>
+      <span class="nm">${esc(name)}</span>
+      <span class="ct">${cnt}${due?`<span class="due">due ${due}</span>`:''}</span>`;
+    el.onclick=(e)=>{ if(onTw&&e.target.classList.contains('tw')){ onTw(); return; } onClick(); };
     box.appendChild(el);
+  };
+  for(const node of buildTree()){
+    const units=node.units.filter(u=>!q || node.label.toLowerCase().includes(q)
+      || u.label.toLowerCase().includes(q) || Object.keys(u.mids).some(m=>m.toLowerCase().includes(q)));
+    if(!units.length)continue;
+    const sSt=pkSubjState({units});
+    const open = q? true : !!pkOpen[node.subj];
+    row('', sSt===2, sSt===1, open?'▾':'▸', node.label, node.n, 0,
+      ()=>{ const all=sSt!==2; for(const u of units)pkToggleUnit(u, all); renderPick(); },
+      ()=>{ pkOpen[node.subj]=!pkOpen[node.subj]; renderPick(); });
+    if(!open)continue;
+    for(const u of units){
+      const uSt=pkUnitState(u), mids=Object.keys(u.mids);
+      const uOpen = q? true : !!pkOpen[u.key];
+      const st2=stats[u.key]||{due:0};
+      row('tr-lv1', uSt===2, uSt===1, mids.length>1?(uOpen?'▾':'▸'):'', u.label.replace(/^[^·]+· /,''), u.n, st2.due,
+        ()=>{ pkToggleUnit(u, uSt!==2); renderPick(); },
+        mids.length>1?()=>{ pkOpen[u.key]=!pkOpen[u.key]; renderPick(); }:null);
+      if(!uOpen||mids.length<2)continue;
+      for(const m of mids){
+        const on=pkSel.units.includes(u.key)||pkSel.mids.includes(midKey(u.key,m));
+        row('tr-lv2', on, false, '', m, u.mids[m], 0, ()=>{ pkToggleMid(u,m,!on); renderPick(); }, null);
+      }
+    }
   }
-  $('pkOk').textContent=`확인 (${pkSel.length})`;
+  if(!box.children.length)box.innerHTML='<div class="empty-note">해당하는 게 없어요</div>';
+  const n=pkCount();
+  $('pkOk').textContent=n?`확인 (${n}장)`:'확인';
 }
 $('pkSearch').addEventListener('input',renderPick);
 $('pkCancel').onclick=()=>$('ovlPick').classList.remove('show');
-$('pkOk').onclick=()=>{ $('ovlPick').classList.remove('show'); pkOnOk&&pkOnOk(pkSel.slice()); };
+$('pkOk').onclick=()=>{ $('ovlPick').classList.remove('show');
+  pkOnOk&&pkOnOk({units:pkSel.units.slice(), mids:pkSel.mids.slice()}); };
 $('ovlPick').onclick=(e)=>{ if(e.target===$('ovlPick'))$('ovlPick').classList.remove('show'); };
 
 $('intakeCap').addEventListener('change',()=>{ intake.cap=+$('intakeCap').value||null; saveIntake();
@@ -4028,42 +4158,56 @@ function segSet(box, val, cb){
 }
 
 /* ═══════════════ 세션 조립기 (범위 × 방식) ═══════════════ */
-let nsTarget=null, nsState=null, nsKind='all';
+let nsTarget=null, nsState=null;
 function openSessEditor(sx, seed){
   nsTarget=sx;
+  const tpl=HOW_TPL.find(t=>t.key===((seed&&seed.tpl)||'daily'))||HOW_TPL[0];
   nsState = sx ? JSON.parse(JSON.stringify(sx))
-    : newSessObj((seed&&seed.name)||'', (HOW_TPL.find(t=>t.key===((seed&&seed.tpl)||'daily'))||HOW_TPL[0]).how,
-                 {units:(seed&&seed.units)||[]});
+    : newSessObj((seed&&seed.name)||'', tpl.how, {units:(seed&&seed.units)||[], mids:[]},
+                 (seed&&seed.units&&seed.units.length)?'manual':tpl.mode);
+  nsState.how.status=stArr(nsState.how.status);
   $('nsTitle').textContent=sx?'세션 설정':'새 세션';
   $('nsSave').textContent=sx?'저장':'만들기';
   $('nsDelete').style.display=sx?'block':'none';
   $('nsName').value = sx?sx.name:((seed&&seed.name)||'');
-  nsKind = isFixed(nsState)?'units':'all';
-  // 방식 템플릿 칩
+  $('nsFold').open=false;
   const tb=$('nsTpl'); tb.innerHTML='';
   for(const t of HOW_TPL){
     const b=document.createElement('button'); b.className='chip'; b.textContent=t.name;
-    b.onclick=()=>{ nsState.how=JSON.parse(JSON.stringify(t.how));
+    b.onclick=()=>{ nsState.how=JSON.parse(JSON.stringify(t.how)); nsState.mode=t.mode;
       if(!$('nsName').value.trim())$('nsName').value=t.name;
-      $('nsTplDesc').textContent=t.desc; syncSessEditor(); };
+      $('nsTplDesc').textContent=t.desc;
+      [...tb.children].forEach(x=>x.classList.remove('on')); b.classList.add('on');
+      syncSessEditor(); };
     tb.appendChild(b);
   }
-  $('nsTplDesc').textContent='';
+  if(!sx){ const i=HOW_TPL.indexOf(tpl); tb.children[i].classList.add('on'); $('nsTplDesc').textContent=tpl.desc; }
+  else $('nsTplDesc').textContent='';
   chipSet($('nsSubj'), SUBJECTS, nsState.scope.subj);
   chipSet($('nsTyps'), ALLTYPS, nsState.scope.typ);
-  segSet($('nsKind'), nsKind, v=>{
-    nsKind=v;
-    if(v==='all')nsState.scope.units=[];
-    syncSessEditor();
-  });
   syncSessEditor();
   $('ovlSess').classList.add('show');
 }
 function syncSessEditor(){
   const h=nsState.how;
-  segSet($('nsStatus'), h.status, v=>{h.status=v;});
+  // 상태 = 단어 칩 (due·신규·약점은 겹쳐 고르고, 전체는 배타)
+  const sb=$('nsStatus'); sb.innerHTML='';
+  for(const [k,label] of [['due','due'],['new','신규'],['weak','약점'],['all','전체']]){
+    const on=stHas(h.status,k);
+    const b=document.createElement('button'); b.className='chip'+(on?' on':''); b.textContent=label;
+    b.onclick=()=>{
+      let a=stArr(h.status);
+      if(k==='all') a=['all'];
+      else { a=a.filter(x=>x!=='all');
+        a.includes(k)? a=a.filter(x=>x!==k) : a.push(k);
+        if(!a.length)a=['all']; }
+      h.status=a; syncSessEditor();
+    };
+    sb.appendChild(b);
+  }
   segSet($('nsOrder'), h.order, v=>{h.order=v; $('nsWtField').style.display=v==='weighted'?'block':'none';});
   $('nsWtField').style.display=h.order==='weighted'?'block':'none';
+  segSet($('nsMode'), nsState.mode||'auto', v=>{ nsState.mode=v; });
   const wg=$('nsWts'); wg.innerHTML='';
   for(const sj of SUBJECTS){
     const c=document.createElement('div'); c.className='wt-cell';
@@ -4076,15 +4220,9 @@ function syncSessEditor(){
   $('nsLimit').value=h.limit||'';
   $('nsBury').classList.toggle('on',!!h.bury);
   $('nsNewAfter').classList.toggle('on',!!h.newAfter);
-  $('nsUnitField').style.display=nsKind==='units'?'block':'none';
-  const us=nsState.scope.units||[];
-  $('nsUnitLabel').value = us.length? (us.length===1?hoedokLabel(us[0]):`단위 ${us.length}개`) : '고른 단위 없음';
-  [...$('nsKind').children].forEach(b=>b.classList.toggle('on', b.dataset.v===nsKind));
 }
 $('nsBury').onclick=()=>{ nsState.how.bury=!nsState.how.bury; $('nsBury').classList.toggle('on'); };
 $('nsNewAfter').onclick=()=>{ nsState.how.newAfter=!nsState.how.newAfter; $('nsNewAfter').classList.toggle('on'); };
-$('nsPickUnits').onclick=()=>openUnitPick({title:'범위로 쓸 단위', desc:'여러 개 고를 수 있어요.',
-  selected:nsState.scope.units, onOk:(sel)=>{ nsState.scope.units=sel; syncSessEditor(); }});
 $('nsCancel').onclick=()=>$('ovlSess').classList.remove('show');
 $('ovlSess').onclick=(e)=>{ if(e.target===$('ovlSess'))$('ovlSess').classList.remove('show'); };
 $('nsDelete').onclick=()=>{
@@ -4097,9 +4235,7 @@ $('nsSave').onclick=()=>{
   const h=nsState.how;
   h.limit=+$('nsLimit').value||null;
   if(h.order==='weighted' && !h.limit){ $('nsLimit').focus(); toast('가중 셔플은 분량(N장)과 함께 써야 해요'); return; }
-  if(nsKind==='all') nsState.scope.units=[];
   nsState.name=$('nsName').value.trim()||'이름 없는 세션';
-  if(nsKind==='units' && !nsState.scope.units.length){ toast('단위를 골라주세요'); return; }
   if(nsTarget){
     const keepQ=nsTarget.q, keepDone=nsTarget.done, keepScore=nsTarget.lastScore;
     Object.assign(nsTarget, nsState, {q:keepQ, done:keepDone, lastScore:keepScore});
@@ -4114,9 +4250,10 @@ $('nsSave').onclick=()=>{
     }
     if(curSess&&curSess.id===nsTarget.id) curPreset=asPreset(nsTarget);
   }else{
-    if(isFixed(nsState)){ const units=nsState.scope.units.slice(); nsState.scope.units=[];
-      sessions.push(nsState); addUnitsToSess(nsState, units); }
-    else { nsState.day=''; sessions.push(nsState); }
+    const units=(nsState.scope.units||[]).slice();
+    nsState.scope.units=[]; nsState.day='';
+    sessions.push(nsState);
+    if(units.length) addScopeToSess(nsState,{units:units,mids:[]});   // 단위 화면에서 온 경우
     viewSess=nsState;
   }
   saveSessionsFlush();

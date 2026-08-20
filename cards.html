@@ -376,6 +376,17 @@ input:focus,select:focus{border-color:var(--accent);}
 .op-help.on{display:block;}
 .op-help code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--accent);
   background:var(--accent-dim);padding:1px 5px;border-radius:5px;}
+.lh-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(98px,1fr));gap:8px;margin-bottom:14px;}
+.lh-tile{display:flex;flex-direction:column;align-items:flex-start;gap:1px;background:var(--surface);
+  border-radius:14px;padding:12px 14px;box-shadow:var(--shadow-sm);}
+.lh-tile .n{font-size:21px;font-weight:800;color:var(--ink);line-height:1.15;}
+.lh-tile .l{font-size:11.5px;font-weight:700;color:var(--mute);}
+.lh-tile.zero{opacity:.42;box-shadow:none;background:var(--sunken);cursor:default;}
+.lh-tile.zero .n{color:var(--faint);}
+.lh-note{font-size:12px;line-height:1.7;color:var(--mute);margin:2px 2px 9px;}
+.cond-row{display:none;gap:7px;margin-bottom:8px;}
+.cond-chip{display:flex;align-items:center;gap:8px;background:var(--accent);color:var(--accent-ink);
+  font-size:12.5px;font-weight:800;padding:7px 13px;border-radius:999px;}
 .lrow{position:relative;cursor:pointer;transition:background .12s;}
 .lrow:active{background:var(--surface2);}
 @media (min-width:700px){ .lrow:hover{background:var(--surface2);} .stat-grid{grid-template-columns:repeat(4,1fr);} }
@@ -616,7 +627,8 @@ input:focus,select:focus{border-color:var(--accent);}
       <div class="sub-head"><button class="tb-btn" data-go="scrHome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title">카드 목록</div></div>
       <div class="sub-body"><div class="sub-inner">
         <div class="search-row"><input id="qSearch" type="search" placeholder="검색 (앞면·뒷면·태그)"><select id="qSort"><option value="doc">문서순</option><option value="recent">최근 푼 순</option><option value="risk">위험도순</option><option value="miss">틀림순</option></select></div>
-        <div class="list-tools">
+        <div class="cond-row" id="condRow"></div>
+        <div class="list-tools" id="listTools">
           <button id="btnSolveList">이 결과 풀기</button>
           <button id="btnPick">선택</button>
           <span class="grow"></span>
@@ -630,9 +642,7 @@ input:focus,select:focus{border-color:var(--accent);}
           <code>rated:3</code> 최근 3일 채점 · <code>-is:new</code> 부정<br>
           여러 조건은 띄어쓰기로 AND. 따옴표 없는 나머지 말은 앞·뒤·태그 본문 검색.
         </div>
-        <div class="chip-row" id="qSubjChips"></div>
-        <div class="tgl-row" style="padding:2px 2px 0"><span style="font-size:13px;color:var(--mute)">오늘 푼 카드만</span><div class="tgl" id="tglToday"></div></div>
-        <div class="tgl-row" style="padding:2px 2px 8px"><span style="font-size:13px;color:var(--mute)">은퇴 카드만</span><div class="tgl" id="tglRetired"></div></div>
+        <div id="listHome"></div>
         <div id="listNote" class="list-note" style="display:none"></div>
         <div id="listBody"></div>
         <button class="more-btn" id="listMore" style="display:none">더 보기</button>
@@ -4060,7 +4070,7 @@ function go(id){
   if(id==='scrHome')renderHome();
   if(id==='scrSession')renderSession();
   if(id==='scrUnits')renderUnits();
-  if(id==='scrList'){ picking=false; picked.clear(); syncBulk(); renderList(true); }
+  if(id==='scrList'){ picking=false; picked.clear(); listCond=null; $('qSearch').value=''; syncBulk(); renderList(true); }
   if(id==='scrStats')renderStats();
   if(id==='scrWeak')renderWeak();
   if(id==='scrFlags')renderFlags();
@@ -4787,7 +4797,50 @@ function startAdHoc(cards, label, note){ // 목록·상세에서 바로 풀기 =
 }
 
 /* ═══════════════ 목록 ═══════════════ */
-let listShown=0, listSubj='전체', listRows=[], picking=false;
+let listShown=0, listRows=[], picking=false, listCond=null;
+/* 카드 목록은 「브라우징」이 아니라 「조건 → 결과」 화면이다 (동하 2026-08-21).
+   5,595장을 기본으로 깔면 아무도 안 훑는다. 조건이 없으면 목록 대신 진입 타일을 보여주고,
+   과목·단위 탐색은 단위 화면이 맡는다 (역할 분담 — 여기에 과목 칩을 되살리지 마라). */
+const LIST_CONDS=[
+  {g:'되짚기', k:'leech',   n:'누수',      f:c=>isLeech(c)},
+  {g:'되짚기', k:'flag',    n:'플래그',    f:c=>{const s=state.cards[c.id]; return !!(s&&s.flag!=null);}},
+  {g:'되짚기', k:'ann',     n:'@주석',     f:c=>{const s=state.cards[c.id]; return !!(s&&s.ann&&s.ann.length);}},
+  {g:'되짚기', k:'weak',    n:'약점',      f:c=>isWeak(c)},
+  {g:'오늘',   k:'today',   n:'오늘 푼',   f:null, today:true},
+  {g:'오늘',   k:'due',     n:'복습 예정', f:c=>isDue(c)},
+  {g:'오늘',   k:'buried',  n:'오늘 미룸', f:c=>buried(c)},
+  {g:'정리',   k:'retired', n:'은퇴',      f:c=>retired(c), ret:true},
+];
+function renderListHome(){       // 조건 없을 때 — 숫자 붙은 진입점. 전체 장수는 일부러 안 쓴다
+  const LR=lastRevMap(), tk=todayKey(), cnt={};
+  for(const c of DATA){
+    const ret=retired(c);
+    for(const x of LIST_CONDS){
+      if(!!x.ret!==ret) continue;
+      const ok = x.today ? !!(LR[c.id] && dayKey(new Date(LR[c.id][0]))===tk) : (x.f?x.f(c):true);
+      if(ok) cnt[x.k]=(cnt[x.k]||0)+1;
+    }
+  }
+  let h='';
+  for(const g of ['되짚기','오늘','정리']){
+    h+=`<div class="h-sec">${g}</div><div class="lh-grid">`;
+    for(const x of LIST_CONDS.filter(y=>y.g===g)){
+      const n=cnt[x.k]||0;
+      h+=`<button class="lh-tile${n?'':' zero'}" data-k="${x.k}"${n?'':' disabled'}>`
+       + `<span class="n">${n}</span><span class="l">${esc(x.n)}</span></button>`;
+    }
+    h+='</div>';
+  }
+  h+=`<div class="lh-note">특정 카드는 위에서 검색하세요. 과목·단위로 훑어보려면 단위 화면에서 고릅니다.</div>
+      <button class="more-btn" id="lhUnits">단위 화면으로</button>`;
+  const box=$('listHome'); box.innerHTML=h;
+  box.querySelectorAll('.lh-tile').forEach(b=>b.onclick=()=>{
+    listCond=b.dataset.k;
+    if(listCond==='today' && $('qSort').value==='doc') $('qSort').value='recent'; // 푼 순서로 되짚는 게 기본 의도
+    renderList(true);
+  });
+  $('lhUnits').onclick=()=>go('scrUnits');
+}
 const picked=new Set();
 const RATE_NAME={1:'Again',2:'Hard',3:'Good',4:'Easy'};
 let lastRevIdx=null, lastRevIdxLen=-1, lastRevLog=null;
@@ -4861,14 +4914,29 @@ function parseQuery(q){ // 검색 = 연산자 AND + 나머지 낱말 본문 검�
 function renderList(reset){
   if(reset)listShown=0;
   const raw=$('qSearch').value.trim(), sort=$('qSort').value;
+  const cond=LIST_CONDS.find(x=>x.k===listCond)||null;
+  const active=!!raw||!!cond;
+  $('listHome').style.display = active?'none':'block';
+  $('listTools').style.display = active?'flex':'none';
+  $('qSort').style.display = active?'':'none';
+  $('condRow').style.display = cond?'flex':'none';
+  if(!active){                    // 조건이 없으면 목록을 안 띄운다
+    $('listBody').innerHTML=''; $('listMore').style.display='none';
+    $('listNote').style.display='none'; $('opHelp').classList.remove('on');
+    picking=false; picked.clear(); syncBulk(); renderListHome(); return;
+  }
+  if(cond){
+    $('condRow').innerHTML=`<button class="cond-chip">${esc(cond.n)} <span>✕</span></button>`;
+    $('condRow').querySelector('button').onclick=()=>{ listCond=null; renderList(true); };
+  }
   const {preds, words, forceRet}=parseQuery(raw);
-  const showRet=forceRet || $('tglRetired').classList.contains('on');
-  const todayOnly=$('tglToday').classList.contains('on');
+  const showRet=forceRet || !!(cond&&cond.ret);
+  const todayOnly=!!(cond&&cond.today);
   const LR=lastRevMap(), tk=todayKey();
   let rows=DATA.filter(c=>{
     if(showRet!==retired(c))return false;
     if(todayOnly && !(LR[c.id] && dayKey(new Date(LR[c.id][0]))===tk))return false;
-    if(listSubj!=='전체'&&c.subj!==listSubj)return false;
+    if(cond&&cond.f&&!cond.f(c))return false;
     for(const f of preds){ if(!f(c))return false; }
     for(const w of words){
       if(!(c.front.toLowerCase().includes(w)||c.back.toLowerCase().includes(w)
@@ -4883,9 +4951,10 @@ function renderList(reset){
   const showRev = todayOnly || sort==='recent';
   const note=$('listNote');
   if(todayOnly){ let n=0; for(const e of state.log) if(dayKey(logDate(e))===tk)n++;
-    note.textContent=`오늘 푼 카드 ${rows.length}장 · 채점 ${n}회 (하루 경계 새벽 ${DAY_CUT}시)`;
+    note.textContent = raw ? `${rows.length}장 (오늘 푼 것 중)`   // 검색을 겹치면 전체 채점 횟수는 오해를 부른다
+      : `오늘 푼 카드 ${rows.length}장 · 채점 ${n}회 (하루 경계 새벽 ${DAY_CUT}시)`;
     note.style.display='block'; }
-  else if(raw){ note.textContent=`${rows.length}장`; note.style.display='block'; }
+  else if(raw||cond){ note.textContent=`${rows.length}장`; note.style.display='block'; }
   else note.style.display='none';
   $('btnSolveList').textContent = `이 결과 풀기${rows.length?` (${Math.min(rows.length,300)})`:''}`;
   const body=$('listBody');
@@ -4907,11 +4976,6 @@ function renderList(reset){
   listShown+=page.length;
   $('listMore').style.display = listShown<rows.length?'block':'none';
   if(!rows.length)body.innerHTML=`<div class="empty-note">${todayOnly?'오늘 푼 카드가 아직 없어요':'해당하는 카드가 없어요'}</div>`;
-  const chips=$('qSubjChips'); chips.innerHTML='';
-  for(const sj of ['전체',...SUBJECTS]){
-    const b=document.createElement('button'); b.className='chip'+(listSubj===sj?' on':''); b.textContent=sj;
-    b.onclick=()=>{listSubj=sj;renderList(true);}; chips.appendChild(b);
-  }
 }
 /* 일괄 선택 */
 function refreshList(){ // 상세·일괄 조작 후 되돌아올 때 보던 자리를 지킨다
@@ -4951,10 +5015,6 @@ function bulkDo(kind){
 }
 $('qSearch').addEventListener('input',()=>renderList(true));
 $('qSort').addEventListener('change',()=>renderList(true));
-$('tglRetired').onclick=function(){ this.classList.toggle('on'); renderList(true); };
-$('tglToday').onclick=function(){ this.classList.toggle('on');
-  if(this.classList.contains('on') && $('qSort').value==='doc') $('qSort').value='recent'; // 푼 순서로 되짚는 게 기본 의도
-  renderList(true); };
 $('listMore').onclick=()=>renderList(false);
 $('btnOpHelp').onclick=()=>$('opHelp').classList.toggle('on');
 $('btnPick').onclick=()=>{ picking=!picking; if(!picking)picked.clear(); renderList(true); syncBulk(); };

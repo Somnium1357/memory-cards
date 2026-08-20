@@ -56,22 +56,20 @@ input:focus,select:focus{border-color:var(--accent);}
 /* ══ 앱 골격 ══ */
 #app{display:flex;height:100%;}
 #main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative;}
-/* 넓은 가로 화면: 사이드바를 레이아웃에서 빼 오른쪽 여백 위에 띄운다.
-   → 풀이 열은 화면 정중앙, 좌우 여백이 실제로 같아진다 (동하 확정 2026-08-20) */
-@media (min-width:1113px) and (orientation:landscape){
+/* 폭 구간은 둘뿐이다 (동하 확정 2026-08-21).
+   1120px 이상 가로 = 사이드바를 레이아웃에서 빼 오른쪽 여백 위에 띄운다 → 풀이 열이 화면 정중앙.
+   그 미만 = 전부 ☰ 서랍. 어느 폭에서도 풀이 열은 정중앙이고 카드 폭(660px)이 안 줄어든다.
+   임계 1120 = 채점바 700px의 오른쪽 끝(W/2+350)이 사이드바 왼쪽 끝(W-210)에 닿지 않는 최소 폭. */
+@media (min-width:1120px) and (orientation:landscape){
   #rail{position:fixed;width:196px;flex:none;border-left:none;border-radius:20px;
     right:calc(14px + env(safe-area-inset-right));
     top:calc(58px + env(safe-area-inset-top));
     bottom:calc(14px + env(safe-area-inset-bottom));
     box-shadow:var(--shadow);padding:12px 10px;z-index:20;}
 }
-/* 그 사이 폭(사이드바가 자리를 차지하는 구간)에서는 왼쪽을 같은 만큼 비워 균형만 맞춘다 */
-@media (min-width:821px) and (max-width:1112px) and (orientation:landscape){
-  #main.railed{padding-left:clamp(0px, calc(100vw - 912px), 216px);}
-}
 #rail{flex:0 0 216px;border-left:1px solid var(--line);background:var(--surface);
   display:flex;flex-direction:column;padding:14px 12px calc(14px + env(safe-area-inset-bottom));overflow-y:auto;}
-@media (max-width:820px), (orientation:portrait){
+@media (max-width:1119px), (orientation:portrait){
   #rail{position:fixed;right:0;top:0;bottom:0;z-index:40;transform:translateX(105%);
     transition:transform .22s ease;box-shadow:var(--shadow);width:240px;}
   #rail.open{transform:none;}

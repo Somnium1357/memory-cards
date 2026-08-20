@@ -283,6 +283,9 @@ input:focus,select:focus{border-color:var(--accent);}
 .ovl{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);display:none;
   align-items:center;justify-content:center;padding:20px;}
 .ovl.show{display:flex;}
+/* 확인 다이얼로그는 다른 시트 위에서 열린다(조립기의 템플릿 덮어쓰기 등) — 항상 최상단 */
+#ovlConfirm{z-index:90;}
+#ovlPause{z-index:80;}
 .sheet{background:var(--surface);border-radius:22px;width:100%;max-width:430px;max-height:86vh;
   overflow-y:auto;-webkit-overflow-scrolling:touch;padding:22px;box-shadow:var(--shadow);}
 .sheet h2{font-size:19px;font-weight:800;font-family:var(--head-font);margin-bottom:4px;}
@@ -2852,11 +2855,12 @@ const MS_CAP=120000;                       // 응답 시간 상한 (자리 비�
 
 function st(id){ // 카드 상태 엔트리 (없으면 생성)
   let s=state.cards[id];
-  if(!s){ s={fsrs:null,miss:0,retired:false,flag:null,ann:[],u:'',d:''}; state.cards[id]=s; }
+  if(!s){ s={fsrs:null,miss:0,retired:false,flag:null,ann:[],u:'',d:'',lt:0}; state.cards[id]=s; }
   if(!Array.isArray(s.ann)) s.ann=[];
   return s;
 }
-function touch(s){ s.u=new Date().toISOString(); markDirty('sched'); }
+function touch(s){ s.u=new Date().toISOString(); markSchedUrgent(); }
+function touchRate(s){ s.u=new Date().toISOString(); markDirty('sched'); }  // 채점분은 로그가 정본이라 급하지 않다
 function touchFb(s){ s.u=new Date().toISOString(); markDirty('fb'); }
 function isDue(c){ const s=state.cards[c.id];
   return !!(s && s.fsrs && !s.retired && dayKey(new Date(s.fsrs.due))<=todayKey()); }
@@ -2908,14 +2912,23 @@ function cacheStateNow(){ // 파일 단위로 나눠 담는다 — 쿼터가 모
     showBanner('저장 공간 부족 — 로컬 백업이 안 돼요. 지금 저장을 눌러 커밋해 두세요', false); }
 }
 function setDirty(v){ dirty=v; v?lsSet(K_DIRTY,'1'):lsDel(K_DIRTY); updateSaveUI(); }
+let schedUrgent=false, lastSchedPush=Date.now();
+const SCHED_PUSH_MS=5*60*1000;      // 스케줄 스냅샷은 느슨하게 — 그 사이는 로그가 지킨다
 function markDirty(kind, wk){        // kind: sched|fb|sess|log
   if(kind==='log') dirtyLogs.add(wk||thisWeek());
   else dirtyFiles.add(kind);
   setDirty(true);
 }
+function markSchedUrgent(){          // 로그로 복원할 수 없는 변경(은퇴·미룸·초기화·태그)은 바로 올린다
+  schedUrgent=true; markDirty('sched');
+}
+function schedShouldPush(force){
+  return force || schedUrgent || document.visibilityState==='hidden'
+      || (Date.now()-lastSchedPush > SCHED_PUSH_MS);
+}
 
 /* ═══════════════ 상태 ↔ 파일 변환 ═══════════════ */
-const SCHED_KEYS=['fsrs','miss','retired','by','t','u','d'];
+const SCHED_KEYS=['fsrs','miss','retired','by','t','u','d','lt'];  // lt = 이 카드에 반영한 마지막 로그 시각(초)
 function splitState(){               // 메모리 state → 파일 두 벌 (스케줄 / 피드백)
   const sched={}, fb={};
   for(const id in state.cards){
@@ -2942,6 +2955,43 @@ function applyFiles(schedFile, fbFile){   // 파일 두 벌 → 메모리 state.
 }
 function sessFile(){ return {v:1, sessions:[...sessions, ...sessTomb], hoedok:state.hoedok||{},
   cap:intake.cap, capAt:intake.capAt||0}; }
+function applyLogEntry(sx, e){        // rate()와 같은 규칙으로 한 건 반영 (그날 첫 채점만 FSRS)
+  const ts=logTs(e), num=e[2], day=dayKey(new Date(ts));
+  if(sx.d!==day){
+    const fc = sx.fsrs?fsrsRevive(sx.fsrs):FSRS.createEmptyCard(new Date(ts));
+    const r=engine.next(fc, new Date(ts), RATING[num]);
+    const nc=r.card;
+    if(nc.due>EXAM_END) nc.due=EXAM_END;
+    sx.fsrs=fsrsSerialize(nc); sx.d=day;
+  }
+  if(num===1) sx.miss=(sx.miss||0)+1;
+  sx.lt=Math.round(ts/1000);
+}
+function replayLog(){                // 스냅샷 이후의 로그를 카드별로 따라잡는다
+  let n=0;
+  const byCard={};
+  for(const e of state.log){ (byCard[e[0]]=byCard[e[0]]||[]).push(e); }
+  for(const id in byCard){
+    const sx=state.cards[id]; if(!sx)continue;      // 스냅샷에 없는 카드 = 아래에서 신규로 생성
+    const lt=sx.lt||0;
+    for(const e of byCard[id]){ if(Math.round(logTs(e)/1000)>lt){ applyLogEntry(sx,e); n++; } }
+  }
+  for(const id in byCard){                          // 스냅샷에 아예 없던 카드(다른 기기 신규분)
+    if(state.cards[id])continue;
+    if(!BYID[id])continue;
+    const sx=st(id);
+    for(const e of byCard[id]) applyLogEntry(sx,e);
+    n+=byCard[id].length;
+  }
+  if(n){ lastRevIdx=null; firstRevIdx=null; markDirty('sched'); }
+  return n;
+}
+function oldestPendingWeek(){        // 스냅샷이 얼마나 낡았나 — 그 주까지 로그를 불러와야 한다
+  let min=0;
+  for(const id in state.cards){ const lt=state.cards[id].lt||0;
+    if(lt && (!min || lt<min)) min=lt; }
+  return min? weekKeyOf(new Date(min*1000)) : thisWeek();
+}
 function rebuildLog(){               // 주별 묶음 → 화면·통계가 쓰는 단일 배열
   const all=[];
   for(const wk in logWeeks) all.push(...logWeeks[wk]);
@@ -3061,15 +3111,17 @@ function mergeSessInto(remote){
   state.hoedok={...((remote&&remote.hoedok)||{}), ...(state.hoedok||{})};
   if(remote && (remote.capAt||0) > (intake.capAt||0)){ intake.cap=remote.cap; intake.capAt=remote.capAt; }
 }
-async function pushAll(){             // 바뀐 파일만 올린다
-  if(dirtyFiles.has('sched')) await ghPut(SCHED_PATH, ()=>splitState().sched, mergeSchedInto);
-  dirtyFiles.delete('sched');
-  if(dirtyFiles.has('fb'))    await ghPut(FB_PATH,    ()=>splitState().fb,    mergeFbInto);
-  dirtyFiles.delete('fb');
+async function pushAll(force){        // 바뀐 파일만 올린다 (로그 우선 — 스케줄은 파생 스냅샷)
   for(const wk of [...dirtyLogs]){
     await ghPut(logPath(wk), ()=>({v:2, week:wk, log:logWeeks[wk]||[]}), (rm)=>mergeLogInto(rm, wk));
     dirtyLogs.delete(wk);
   }
+  if(dirtyFiles.has('sched') && schedShouldPush(force)){
+    await ghPut(SCHED_PATH, ()=>splitState().sched, mergeSchedInto);
+    dirtyFiles.delete('sched'); schedUrgent=false; lastSchedPush=Date.now();
+  }
+  if(dirtyFiles.has('fb'))    await ghPut(FB_PATH,    ()=>splitState().fb,    mergeFbInto);
+  dirtyFiles.delete('fb');
   if(dirtyFiles.has('sess'))  await ghPut(SESS_PATH,  sessFile,             mergeSessInto);
   dirtyFiles.delete('sess');
 }
@@ -3080,7 +3132,7 @@ async function push(force){ // 배치 push — 옵티미스틱: 실패해도 로
   cacheFlush();
   pushing=true;
   try{
-    await pushAll();
+    await pushAll(force);
     setDirty(false); ratedSincePush=0; lastPushAt=Date.now(); hideBanner();
   }catch(e){
     const msg = e&&e.code==='auth' ? '토큰이 만료됐어요 — GitHub 연결에서 갱신'
@@ -3121,6 +3173,7 @@ async function refreshRemote(){     // 포그라운드 복귀 시 원격 상태 
       if(fb) mergeFbInto(fb);
       if(wk) mergeLogInto(wk, thisWeek()); else rebuildLog();
       if(sess) mergeSessInto(sess);
+      replayLog();                    // 다른 기기가 올린 로그를 내 스냅샷에 반영
       lastRevIdx=null; firstRevIdx=null; cacheState();
       for(const sx of sessions){ if(!isFixed(sx)) sx.day=''; }   // 자동 충전 세션은 새 상태로 다시 채운다
       pruneSolvedFromQueues();
@@ -3299,6 +3352,13 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
   }
   rebuildLog();
   if(!state.cards)state.cards={}; if(!state.hoedok)state.hoedok={};
+  {                                  // 스냅샷 이후 로그 따라잡기 (로그가 정본)
+    const need=[], oldest=oldestPendingWeek();
+    for(let i=0;i<5;i++){ const k=weekKeyOf(new Date(Date.now()-i*7*86400000)); need.push(k); if(k===oldest)break; }
+    if(need.some(k=>!logWeeks[k])) await loadWeeks(need);
+    const n=replayLog();
+    if(n) console.log('로그 재적용', n, '건');
+  }
   cleanupTempSessions();
   if(!sessions.length) sessions=[newSessObj('일일 복습', HOW_TPL[0].how, {}, 'auto')];
   normalizeSessions();
@@ -3385,6 +3445,14 @@ function asPreset(sx){   // 큐 조립기·카운터가 쓰는 형태로 변환 
            units:sx.scope.units||[], mids:sx.scope.mids||[], status:sx.how.status}};
 }
 function sessCards(sx){ return (sx.q||[]).map(id=>BYID[id]).filter(Boolean); }  // 사라진 카드는 조용히 탈락
+function applyOrder(sx){          // 남은 큐를 세션의 제시 순서에 맞춘다 (순서를 바꿨을 때)
+  const cards=sessCards(sx);
+  if(sx.how.order==='doc') cards.sort((a,b)=>a._i-b._i);
+  else shuffle(cards);
+  sx.q=cards.map(c=>c.id);
+  if(curSess&&curSess.id===sx.id){ queue=[...queue.slice(0,qPos), ...cards]; counts(); }
+  saveSessionsSoon();
+}
 function refillSess(sx){ // 전체 범위 세션은 날이 바뀌면 스스로 다시 채운다
   if(isFixed(sx)) return;
   if(sx.day===todayKey() && sx.q.length) return;
@@ -3504,13 +3572,32 @@ function revReady(c){ // 역방향 카드가 오늘 투입돼도 되는가
   return dayKey(new Date(intro+revDelay(c)*86400000)) <= todayKey();
 }
 function dirFilter(pool){ return pool.filter(c=>!isRev(c)||revReady(c)); }
+let todayRateIdx=null, todayRateLen=-1, todayRateDay='';
+function todayRatings(){          // 카드 → 오늘 마지막 채점 등급
+  const tk=todayKey();
+  if(todayRateIdx && todayRateLen===state.log.length && todayRateDay===tk) return todayRateIdx;
+  const m={};
+  for(let i=state.log.length-1;i>=0;i--){ const e=state.log[i];
+    if(dayKey(logDate(e))!==tk)break;
+    if(m[e[0]]===undefined) m[e[0]]=e[2];       // 뒤에서부터 = 그 카드의 오늘 마지막 채점
+  }
+  todayRateIdx=m; todayRateLen=state.log.length; todayRateDay=tk;
+  return m;
+}
+function settledToday(c){         // 오늘 처리 끝난 카드 = 마지막 채점이 「다시」가 아니다
+  const r=todayRatings()[c.id];
+  return r!==undefined && r!==1;
+}
+function dropSettled(list){ return list.filter(c=>!settledToday(c)); }
+/* 저장된 큐에서 지우지는 않는다 — 되돌리기가 그 카드를 되살릴 수 있어야 하므로,
+   「오늘 정리된 카드」는 세션을 시작·재개할 때(playSess)와 큐를 새로 짤 때(buildQueue) 거른다. */
 function againPending(sc){ // 오늘 마지막 채점이 Again인 카드 = "그날 맞출 때까지" 잔여분 (세션 재시작에도 복원)
   const tk=todayKey(), last={};
   for(const e of state.log){ if(dayKey(logDate(e))===tk) last[e[0]]=e[2]; }
   return DATA.filter(c=>last[c.id]===1 && inScope(c,sc));
 }
 function buildQueue(p, status){
-  let pool=scopePool(p.scope, status);
+  let pool=dropSettled(scopePool(p.scope, status));   // 오늘 이미 정리된 카드는 빼고 짠다
   if(p.bury) pool=pool.filter(c=>!isNew(c)||!isRev(c)||revReady(c)); // 방향 분산은 신규분에만
   // 선발: 문서순 세션=앞에서 N(통독 의도) / 그 외=위험도 R순, 가중=쿼터 배분 후 쿼터 내 R순
   let sel;
@@ -3542,9 +3629,9 @@ function buildQueue(p, status){
 function playSess(sx){          // 세션 화면의 [이어가기] — 남은 큐를 그대로 이어 푼다
   curSess=sx; viewSess=sx; curPreset=asPreset(sx);
   refillSess(sx);
-  queue=sessCards(sx); qPos=0;
+  queue=dropSettled(sessCards(sx)); qPos=0;          // 다른 세션에서 오늘 푼 것은 빼고 이어간다
   phase = stOnly(sx.how.status,'new') ? 'new' : 'review';
-  sessionDone=0; newServed=0; undoSnap=null; updateUndo(); sessReset();
+  sessionDone=0; newServed=0; undoSnap=null; undoStack=[]; updateUndo(); sessReset();
   go('scrSolve');
   if(!queue.length){ finishSess(); } else showCard();
 }
@@ -3579,7 +3666,7 @@ function extendWithNew(){ // 신규 = 대주제 한 개씩 — 끝나면 체크�
   if(!nt){ finishSess(); return; }
   curTopic=nt.key;
   queue=nt.cards; qPos=0;
-  undoSnap=null; updateUndo(); // 스냅샷은 이전 큐 좌표라 phase 경계에서 폐기
+  undoSnap=null; undoStack=[]; updateUndo(); // 스냅샷은 이전 큐 좌표라 phase 경계에서 폐기
   showCard();
 }
 
@@ -3666,11 +3753,11 @@ function syncGradeButtons(){
   ['gHard','gGood','gEasy'].forEach(id=>{ $(id).toggleAttribute('disabled',hasX); });
 }
 function intervalsPreview(c){ // 채점 버튼 위 다음 간격 미리보기
-  const s=st(c.id), now=new Date();
+  const s=st(c.id), now=new Date(Math.round(Date.now()/1000)*1000);  // 실제 채점과 같은 초 단위 — fuzz 결과가 어긋나지 않게
   const fc = s.fsrs?fsrsRevive(s.fsrs):FSRS.createEmptyCard(now);
   const firstToday = s.d!==todayKey();
   for(const [num,lab] of [[1,'giAgain'],[2,'giHard'],[3,'giGood'],[4,'giEasy']]){
-    if(!firstToday){ $(lab).textContent = num===1?'재출':'로그만'; continue; }
+    if(!firstToday){ $(lab).textContent = num===1?'다시 재출':'기록만'; continue; }
     try{
       const r=engine.next(fc, now, RATING[num]);
       let due=new Date(r.card.due); if(due>EXAM_END)due=EXAM_END;
@@ -3681,13 +3768,17 @@ function intervalsPreview(c){ // 채점 버튼 위 다음 간격 미리보기
 }
 function rate(num){
   const c=cur(); if(!c||!revealed)return;
-  const s=st(c.id), now=new Date(), tk=todayKey();
+  const s=st(c.id), tk=todayKey();
+  const ts=Math.round(Date.now()/1000), now=new Date(ts*1000);
+  // 🔴 채점 시각을 초로 끊는다 — FSRS fuzz 시드가 밀리초를 쓰기 때문에, 로그(초 단위)로 재계산할 때
+  //    같은 결과가 나오려면 처음부터 같은 값을 넣어야 한다 (로그 = 정본 구조의 전제)
   const hasItems=itemMarks.length>=2, anyX=itemMarks.some(Boolean);
   if(anyX && num!==1){ toast('빠뜨린 항목이 있어요 — 「다시」만 눌러요'); return; } // X 있으면 Again만
   const firstToday = s.d!==tk;
   undoSnap={ id:c.id, prev:JSON.parse(JSON.stringify(state.cards[c.id]||null)),
              logLen:state.log.length, qPos, phase, sessionDone, newServed,
              sess:{r:sess.r.slice(), ms:sess.ms, streak:sess.streak, best:sess.best} };
+  undoStack.push(undoSnap); if(undoStack.length>UNDO_MAX) undoStack.shift();
   if(firstToday){                          // 그날 첫 채점만 FSRS 반영
     const fc = s.fsrs?fsrsRevive(s.fsrs):FSRS.createEmptyCard(now);
     const r=engine.next(fc, now, RATING[num]);
@@ -3699,13 +3790,13 @@ function rate(num){
   if(hasItems) extra.items=itemMarks.map(x=>x?'x':'o').join('');
   if(shownAt) extra.ms=Math.min(Math.max(0,Date.now()-shownAt-pausedMs), MS_CAP); // 응답 시간 (쉰 시간 제외)
   const hasExtra=Object.keys(extra).length>0;
-  const ts=Math.round(now.getTime()/1000);          // v2 로그 = 초 단위 (ISO 문자열은 항목의 40%였다)
   pushLog(hasExtra?[c.id,ts,num,extra]:[c.id,ts,num]);
+  s.lt=ts;                                          // 여기까지 반영됨 — 재계산은 이 뒤부터
   sess.r[num]++; sess.ms+=extra.ms||0;
   if(num===1) sess.streak=0; else { sess.streak++; if(sess.streak>sess.best)sess.best=sess.streak; }
   if(num===1){ s.miss=(s.miss||0)+1;
     queue.splice(Math.min(qPos+1+REQUEUE_GAP, queue.length), 0, c); } // 10장 뒤 재출
-  touch(s); afterRate();
+  touchRate(s); afterRate();
   sessionDone++; if(phase==='new')newServed++;
   qPos++; updateUndo(); showCard(); syncSessQueue();
 }
@@ -3728,8 +3819,12 @@ function resumeSession(){
 $('btnPause').onclick=pauseSession;
 $('pzResume').onclick=resumeSession;
 $('pzHome').onclick=()=>{ resumeSession(); push(); go('scrHome'); };
-function updateUndo(){ $('btnUndo').toggleAttribute('disabled',!undoSnap); }
+const UNDO_MAX=30;                 // 되돌리기 깊이 (동하 요청 2026-08-20 — 1단계로는 부족)
+let undoStack=[];
+function updateUndo(){ $('btnUndo').toggleAttribute('disabled', !undoStack.length);
+  $('btnUndo').title = undoStack.length>1?`되돌리기 (${undoStack.length}단계)`:'되돌리기'; }
 function doUndo(){
+  undoSnap=undoStack.pop()||null;
   if(!undoSnap)return;
   const {id,prev,logLen}=undoSnap;
   if(prev===null) delete state.cards[id]; else state.cards[id]=prev;
@@ -3738,7 +3833,9 @@ function doUndo(){
   if(undoSnap.sess) sess=undoSnap.sess;
   // 재출 삽입 롤백: 큐에서 해당 카드의 뒤쪽 중복 제거
   for(let i=queue.length-1;i>qPos;i--){ if(queue[i]&&queue[i].id===id){queue.splice(i,1);break;} }
-  undoSnap=null; cacheState(); setDirty(true); updateUndo(); showCard(); toast('되돌렸어요');
+  undoSnap=null; todayRateIdx=null; cacheState(); setDirty(true); updateUndo(); showCard();
+  syncSessQueue();                 // 되돌린 카드가 저장된 세션 큐에도 돌아오게
+  toast(undoStack.length?`되돌렸어요 (${undoStack.length}단계 더)`:'되돌렸어요');
 }
 function showSummaryOrNew(){ finishSess(); }
 /* ═══════════════ 사이드바 ═══════════════ */
@@ -3811,7 +3908,7 @@ $('cTagInput').addEventListener('change',()=>{
     touch(s); cacheState(); setDirty(true); }
   renderCardTags(c);
 });
-function removeCurFromQueue(){ queue.splice(qPos,1); undoSnap=null; updateUndo(); showCard(); syncSessQueue(); }
+function removeCurFromQueue(){ queue.splice(qPos,1); undoSnap=null; undoStack=[]; updateUndo(); showCard(); syncSessQueue(); }
 $('railFab').onclick=()=>{ $('rail').classList.add('open'); $('railScrim').classList.add('show'); };
 $('railScrim').onclick=()=>{ $('rail').classList.remove('open'); $('railScrim').classList.remove('show'); };
 
@@ -4432,6 +4529,8 @@ $('nsSave').onclick=()=>{
   if(h.order==='weighted' && !h.limit){ $('nsLimit').focus(); toast('가중 셔플은 분량(N장)과 함께 써야 해요'); return; }
   nsState.name=$('nsName').value.trim()||'이름 없는 세션';
   if(nsTarget){
+    const orderChanged = nsTarget.how.order!==nsState.how.order;
+    const statusChanged = JSON.stringify(stArr(nsTarget.how.status))!==JSON.stringify(stArr(nsState.how.status));
     const keepQ=nsTarget.q, keepDone=nsTarget.done, keepScore=nsTarget.lastScore;
     Object.assign(nsTarget, nsState, {q:keepQ, done:keepDone, lastScore:keepScore});
     if(!isFixed(nsTarget)) nsTarget.day='';            // 범위가 바뀌었으면 다음 진입 때 다시 채운다
@@ -4446,6 +4545,8 @@ $('nsSave').onclick=()=>{
     }
     // 범위 없이 직접 추가로 바꾼 경우(자동 충전에서 전환 등)는 들고 있던 큐를 그대로 이월
     if(curSess&&curSess.id===nsTarget.id) curPreset=asPreset(nsTarget);
+    if(statusChanged && !isFixed(nsTarget)) nsTarget.day='';   // 상태가 바뀌면 다시 뽑는다
+    else if(orderChanged) applyOrder(nsTarget);                // 순서만 바뀌면 남은 큐를 재정렬
   }else{
     const units=(nsState.scope.units||[]).slice();
     nsState.scope.units=[]; nsState.day='';

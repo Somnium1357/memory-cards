@@ -141,6 +141,7 @@ input:focus,select:focus{border-color:var(--accent);}
 #cMeta.on{display:flex;}
 .typ-tag{font-size:11px;font-weight:700;color:var(--mute);background:var(--surface2);
   padding:3px 9px;border-radius:999px;}
+#cDir{display:none;color:var(--accent);background:var(--accent-dim);}
 #cHint{font-size:11px;color:var(--faint);font-weight:500;}
 #cTags{display:flex;gap:5px;flex-wrap:wrap;}
 #cTags .utag{font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-dim);
@@ -466,7 +467,7 @@ input:focus,select:focus{border-color:var(--accent);}
               <div id="cBack"></div>
               <div id="cItems"></div>
               <div id="cNote"></div>
-              <div id="cMeta"><span class="typ-tag" id="cTyp"></span><span id="cHint"></span><span id="cTags"></span><button class="typ-tag" id="cTagAdd">＋태그</button><input id="cTagInput" type="text" maxlength="16" placeholder="태그"><span id="annMarks"></span></div>
+              <div id="cMeta"><span class="typ-tag" id="cTyp"></span><span class="typ-tag" id="cDir">역방향</span><span id="cHint"></span><span id="cTags"></span><button class="typ-tag" id="cTagAdd">＋태그</button><input id="cTagInput" type="text" maxlength="16" placeholder="태그"><span id="annMarks"></span></div>
             </div>
           </div>
         </div>
@@ -2834,6 +2835,9 @@ function setDueDays(c,n){ // due를 n일 뒤로 (FSRS 상태가 있는 카드만
   if(d>EXAM_END) d=new Date(EXAM_END);
   s.fsrs={...s.fsrs, due:d.toISOString()}; touch(s); cacheState(); setDirty(true); return true;
 }
+function pairAlive(c){ // 같은 노드·같은 유형의 반대 방향 카드가 살아 있는가 (안내용 근사)
+  return DATA.some(x=>x!==c&&x.node===c.node&&x.typ===c.typ&&isRev(x)!==isRev(c)&&!retired(x));
+}
 function retireCard(c,v){ const s=st(c.id); s.retired=v; touch(s); cacheState(); setDirty(true); }
 function setFlag(c,v){ const s=st(c.id); s.flag=v; touch(s); cacheState(); setDirty(true); }
 function addTag(c,t){ const s=st(c.id); s.t=s.t||[]; if(!s.t.includes(t))s.t.push(t);
@@ -3283,6 +3287,7 @@ function reveal(){
   const n=$('cNote'); n.classList.toggle('on',!!c.note);
   if(c.note)n.innerHTML='<b>보충</b>'+esc(c.note);
   $('cTyp').textContent=c.typ;
+  $('cDir').style.display = isRev(c)?'inline-block':'none';   // 전방은 기본이라 무표시
   $('cHint').textContent = TERM_TYPES.has(c.typ)||((c.back||'').length<=14&&!c.back.includes('·'))
     ? '용어 답 — 표기까지 정확히' : '서술 답 — 요지 재현이면 정답';
   $('cBackWrap').classList.add('on');
@@ -3448,8 +3453,10 @@ $('rBury').onclick=()=>{
 };
 $('rRetire').onclick=()=>{
   const c=cur(); if(!c)return;
+  const pair=pairAlive(c);
   retireCard(c,true); dropFromQueue(c.id);   // 재출 대기분도 함께 정리
-  removeCurFromQueue(); toast('은퇴 — 목록에서 복구 가능');
+  removeCurFromQueue();
+  toast(pair?'이 방향만 은퇴 — 반대 방향은 남아요':'은퇴 — 목록에서 복구 가능');
 };
 $('rOff').onclick=()=>{ // 끄기 = 노드 단위 중단 → 오터치 가드 (확인 다이얼로그)
   const c=cur(); if(!c)return;
@@ -3841,6 +3848,7 @@ function renderCardSheet(){
       return dk<=todayKey()? '오늘 (밀림)' : (dd<=0?'오늘':dd+'일 뒤'); })() : '—';
   const facts=[];
   facts.push(`<span class="f">${esc(c.typ)}</span>`);
+  if(isRev(c)) facts.push('<span class="f">역방향 (쌍의 파생)</span>');
   if(!f) facts.push('<span class="f">신규</span>');
   else{
     facts.push(`<span class="f">복습 <b>${f.reps}</b>회</span>`);
@@ -3954,7 +3962,7 @@ function cardRow(c, extraMeta){
   const el=document.createElement('div'); el.className='lrow';
   const r=s&&s.fsrs?retrievability(s.fsrs):null;
   el.innerHTML=`<div class="lf">${esc(c.front)}</div><div class="lb">→ ${esc(c.back)}</div>
-    <div class="lmeta"><span class="m">${esc(c.typ)}</span>
+    <div class="lmeta"><span class="m">${esc(c.typ)}</span>${isRev(c)?'<span class="m">역방향</span>':''}
     ${s&&s.fsrs?`<span class="m">S ${s.fsrs.stability.toFixed(1)}일</span><span class="m">R ${r!=null?Math.round(r*100)+'%':'—'}</span>`:'<span class="m">신규</span>'}
     ${s&&s.miss?`<span class="m warn">틀림 ${s.miss}</span>`:''}
     ${isLeech(c)?'<span class="m warn">⚠ 누수</span>':''}

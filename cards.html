@@ -525,7 +525,7 @@ input:focus,select:focus{border-color:var(--accent);}
           <code>is:due</code> 복습 예정 · <code>is:new</code> 신규 · <code>is:weak</code> 약점 ·
           <code>is:leech</code> 누수 · <code>is:flag</code> 플래그 · <code>is:ann</code> @주석 ·
           <code>is:buried</code> 미룸<br>
-          <code>tag:음운</code> 태그 · <code>typ:정의</code> 유형 · <code>subj:국어</code> 과목 ·
+          <code>tag:"기초 문식성"</code> 태그(공백은 따옴표) · <code>typ:정의</code> 유형 · <code>subj:국어</code> 과목 ·
           <code>rated:3</code> 최근 3일 채점 · <code>-is:new</code> 부정<br>
           여러 조건은 띄어쓰기로 AND. 따옴표 없는 나머지 말은 앞·뒤·태그 본문 검색.
         </div>
@@ -3975,10 +3975,13 @@ function cardRow(c, extraMeta){
 function parseQuery(q){ // 검색 = 연산자 AND + 나머지 낱말 본문 검색
   const LR=lastRevMap(), preds=[], words=[];
   let forceRet=false;
-  for(let raw of q.split(/\s+/).filter(Boolean)){
+  const toks=q.match(/(?:[^\s"]|"[^"]*")+/g)||[];   // 따옴표 안의 공백은 한 덩어리로 (대주제 이름에 공백이 많다)
+  for(let raw of toks){
     let neg=false, t=raw.toLowerCase();
     if(t[0]==='-'){ neg=true; t=t.slice(1); }
-    const i=t.indexOf(':'), k=i>0?t.slice(0,i):'', v=i>0?t.slice(i+1):'';
+    const i=t.indexOf(':'), k=i>0?t.slice(0,i):'';
+    let v=i>0?t.slice(i+1):'';
+    v=v.replace(/^"|"$/g,'');                        // tag:"기초 문식성"
     let fn=null;
     if(v){
       if(k==='is'){
@@ -3998,7 +4001,7 @@ function parseQuery(q){ // 검색 = 연산자 AND + 나머지 낱말 본문 검�
         fn=c=>{ const lr=LR[c.id]; return !!lr && (Date.now()-lr[0]) < n*86400000; }; }
     }
     if(fn) preds.push(neg?(c=>!fn(c)):fn);
-    else words.push(raw.toLowerCase());   // 연산자가 아니면 그냥 낱말
+    else words.push(raw.toLowerCase().replace(/^"|"$/g,''));   // 연산자가 아니면 낱말(따옴표는 구절 검색)
   }
   return {preds, words, forceRet};
 }

@@ -472,6 +472,15 @@ input:focus,select:focus{border-color:var(--accent);}
 .u-row .act{flex:0 0 auto;font-size:11.5px;font-weight:800;color:var(--accent);
   background:var(--accent-dim);padding:6px 10px;border-radius:9px;}
 .u-row .act.dim{color:var(--mute);background:var(--surface2);}
+.u-grp{display:flex;align-items:center;gap:8px;padding:10px 13px;margin-bottom:7px;
+  background:var(--sunken);border-radius:13px;cursor:pointer;}
+.u-grp .cv{flex:0 0 auto;font-size:11px;color:var(--faint);transition:transform .15s;}
+.u-grp.open .cv{transform:rotate(90deg);}
+.u-grp .nm{flex:0 0 auto;font-size:13.5px;font-weight:800;}
+.u-grp .mt{flex:1;min-width:0;text-align:right;font-size:11.5px;font-weight:700;color:var(--mute);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.u-grp .mt b{color:var(--accent);} .u-grp .mt i{font-style:normal;color:var(--good);}
+.u-sub{padding-left:10px;margin-bottom:10px;}
 .u-row .t.tap{cursor:pointer;}
 .u-row .mt .inq{color:var(--accent);}
 .u-row .mt a.hd{color:var(--accent);background:var(--accent-dim);text-decoration:none;
@@ -2786,7 +2795,8 @@ const K_CFG='cards_cfg_v1', K_STATE='cards_state_cache_v1', K_DIRTY='cards_dirty
       K_THEME='cards_theme_v1', K_PRESETS='cards_presets_v1', K_LASTP='cards_last_preset_v1',
       K_DATA='cards_data_cache_v1', K_SWIPE='cards_swipe_v1', K_INTAKE='cards_intake_v1',
       K_KBD='cards_kbd_v1', K_SESS='cards_sessions_v1',
-      K_SCHED='cards_sched_v2', K_FB='cards_fb_v1', K_PLAN='cards_plan_v1', K_LOGP='cards_log_v2_';
+      K_SCHED='cards_sched_v2', K_FB='cards_fb_v1', K_PLAN='cards_plan_v1', K_LOGP='cards_log_v2_',
+      K_UOPEN='cards_units_open_v1';
 const OLD_CFG='review_cfg_v1';            // 관리앱(같은 오리진)의 토큰 재사용
 const DAY_CUT=4;                          // 하루 경계 = 새벽 4시
 const EXAM_DAY='2026-11-07';              // due 최대 클램프
@@ -4282,6 +4292,10 @@ function playUnitFirst(sx, k){   // 세션 큐에서 그 단위를 앞으로 끌
 
 /* ═══════════════ 단위 화면 (라이브러리) ═══════════════ */
 let uPicked=new Set();
+/* 단위 목록은 과목별로 접는다 (동하 2026-08-21 — 84줄이 평평하게 깔려 무맥락이었다).
+   접힘 상태는 기기별 localStorage. 검색 중에는 결과가 있는 과목을 강제로 펼친다. */
+let uOpen=new Set((lsGet(K_UOPEN)||'').split('|').filter(Boolean));
+function saveUOpen(){ lsSet(K_UOPEN, [...uOpen].join('|')); }
 function renderUnits(){
   const box=$('unitList'); box.innerHTML='';
   const q=$('uSearch').value.trim().toLowerCase(), sort=$('uSort').value;
@@ -4290,12 +4304,30 @@ function renderUnits(){
   keys.sort((a,b)=> sort==='due'?(stats[b].due-stats[a].due)
     : sort==='new'?(stats[b].nw-stats[a].nw)
     : sort==='last'?((stats[a].last||0)-(stats[b].last||0))
-    : (planRank(a)-planRank(b)));
-  for(const k of keys){
-    const el=unitRow(k, stats[k], {rerender:renderUnits});
-    if(uPicked.has(k))el.classList.add('sel');
-    el.onclick=()=>{ uPicked.has(k)?uPicked.delete(k):uPicked.add(k); renderUnits(); };
-    box.appendChild(el);
+    : (planRank(a)-planRank(b)));            // 정렬은 그룹 안에서 살아 있다
+  const grp=new Map();
+  for(const k of keys){ const sj=TAGMETA[k].subj; if(!grp.has(sj))grp.set(sj,[]); grp.get(sj).push(k); }
+  const order=new Map(SUBJECTS.map((s,i)=>[s,i]));
+  for(const sj of [...grp.keys()].sort((a,b)=>(order.has(a)?order.get(a):99)-(order.has(b)?order.get(b):99))){
+    const ks=grp.get(sj), open=!!q||uOpen.has(sj);
+    let due=0,nw=0,read=0;
+    for(const k of ks){ const t=stats[k]||{}; due+=t.due||0; nw+=t.nw||0;
+      if(state.hoedok&&state.hoedok[k])read++; }
+    const sel=ks.filter(k=>uPicked.has(k)).length;
+    const h=document.createElement('div'); h.className='u-grp'+(open?' open':'');
+    h.innerHTML=`<span class="cv">▸</span><span class="nm">${esc(sj.split('.')[1]||sj)}</span>
+      <span class="mt">${ks.length}단위 · 읽음 ${read}/${ks.length}${due?` · <b>due ${due}</b>`:''}${nw?` · 신규 ${nw}`:''}${sel?` · <i>선택 ${sel}</i>`:''}</span>`;
+    h.onclick=()=>{ uOpen.has(sj)?uOpen.delete(sj):uOpen.add(sj); saveUOpen(); renderUnits(); };
+    box.appendChild(h);
+    if(!open) continue;
+    const sub=document.createElement('div'); sub.className='u-sub';
+    for(const k of ks){
+      const el=unitRow(k, stats[k], {rerender:renderUnits});
+      if(uPicked.has(k))el.classList.add('sel');
+      el.onclick=()=>{ uPicked.has(k)?uPicked.delete(k):uPicked.add(k); renderUnits(); };
+      sub.appendChild(el);
+    }
+    box.appendChild(sub);
   }
   if(!keys.length)box.innerHTML='<div class="empty-note">해당하는 단위가 없어요</div>';
   $('uN').textContent=uPicked.size+'단위';

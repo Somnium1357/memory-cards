@@ -95,10 +95,20 @@ input:focus,select:focus{border-color:var(--accent);}
 /* ══ 풀이 화면 ══ */
 .scr{display:none;flex:1;min-height:0;flex-direction:column;}
 .scr.on{display:flex;}
-#cardZone{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:6px 18px 10px;}
+#cardZone{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:6px 18px 10px;position:relative;}
 #card{width:100%;max-width:660px;max-height:100%;display:flex;flex-direction:column;
   background:var(--surface);border-radius:22px;box-shadow:var(--shadow);
-  padding:26px 28px;overflow:hidden;cursor:pointer;}
+  padding:26px 28px;overflow:hidden;cursor:pointer;
+  touch-action:pan-y;                       /* 세로 스크롤만 브라우저에 주고 가로는 우리가 쓴다 */
+  transition:transform .18s cubic-bezier(.2,.8,.3,1);}
+#card.dragging{transition:none;}
+.sw-hint{position:absolute;top:50%;transform:translateY(-50%);z-index:3;pointer-events:none;
+  font-size:15px;font-weight:800;letter-spacing:-.2px;padding:9px 16px;border-radius:999px;
+  opacity:0;transition:opacity .12s;}
+.sw-hint.left{left:24px;} .sw-hint.right{right:24px;}
+.sw-hint.on{opacity:1;}
+.sw-hint.again{background:var(--again-dim);color:var(--again);}
+.sw-hint.good{background:var(--good-dim);color:var(--good);}
 #cardScroll{overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;}
 #cScope{font-size:12px;font-weight:600;color:var(--mute);letter-spacing:.2px;margin-bottom:12px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -430,6 +440,8 @@ input:focus,select:focus{border-color:var(--accent);}
     <div class="scr on" id="scrSolve">
       <div id="phaseLine"></div>
       <div id="cardZone">
+        <span class="sw-hint left" id="swLeft">다시</span>
+        <span class="sw-hint right" id="swRight">알맞음</span>
         <div id="card">
           <div id="cScope"></div>
           <div id="cardScroll">
@@ -3210,7 +3222,7 @@ function reveal(){
     c.items.forEach((it,i)=>{
       const row=document.createElement('div'); row.className='it-row';
       row.innerHTML=`${ordered?`<span class="it-ord">${i+1}</span>`:''}<span class="xm">✕</span><span>${esc(it)}</span>`;
-      row.onclick=(ev)=>{ ev.stopPropagation(); itemMarks[i]=!itemMarks[i];
+      row.onclick=(ev)=>{ ev.stopPropagation(); if(Date.now()-lastSwipeAt<450)return; itemMarks[i]=!itemMarks[i];
         row.classList.toggle('x',itemMarks[i]); syncGradeButtons(); };
       box.appendChild(row);
     });
@@ -3424,24 +3436,58 @@ $('gGood').onclick=()=>rate(3); $('gEasy').onclick=()=>rate(4);
 $('btnUndo').onclick=doUndo;
 $('btnHome').onclick=()=>{ push(); go('scrHome'); };
 let swipeOn = lsGet(K_SWIPE)==='1';
-let tX=null,tY=null,tT=0;
-/* 포인터 이벤트 = 터치·마우스·펜 공통 (예전엔 touch 전용이라 PC 드래그가 전혀 안 먹었다) */
-$('card').addEventListener('pointerdown',e=>{
-  if(e.button&&e.button!==0)return;
-  tX=e.clientX; tY=e.clientY; tT=Date.now();
-});
-$('card').addEventListener('pointercancel',()=>{ tX=null; });
-$('card').addEventListener('pointerup',e=>{
-  if(tX==null)return;
-  const dx=e.clientX-tX, dy=e.clientY-tY, dt=Date.now()-tT;
-  tX=null;
-  if(!swipeOn||!revealed)return;
-  if(Math.abs(dx)<70||Math.abs(dy)>50||dt>1200)return;      // 느린 드래그·세로 스크롤은 스와이프가 아니다
+/* 스와이프 채점 — 터치(iPad)·마우스(PC) 입력을 하나의 제스처 로직으로.
+   포인터 이벤트는 iOS에서 스크롤 판정 때 가로 드래그가 pointercancel로 잘리는 일이 있어 쓰지 않는다. */
+const SW_MIN=64;                     // 채점으로 인정하는 가로 거리
+let gX=null, gY=null, gT=0, gDrag=false;
+function swReset(){
+  gX=null; gDrag=false;
+  const c=$('card'); c.classList.remove('dragging'); c.style.transform='';
+  $('swLeft').classList.remove('on'); $('swRight').classList.remove('on');
+}
+function gStart(x,y){
+  if(!cur()||!$('scrSolve').classList.contains('on'))return;
+  gX=x; gY=y; gT=Date.now(); gDrag=false;
+}
+function gMove(x,y,ev){
+  if(gX==null)return;
+  const dx=x-gX, dy=y-gY;
+  if(!gDrag){
+    if(Math.abs(dx)<12||Math.abs(dx)<=Math.abs(dy))return;   // 세로 움직임이면 카드 스크롤에 양보
+    gDrag=true; $('card').classList.add('dragging');
+  }
+  if(ev&&ev.cancelable)ev.preventDefault();                  // 가로 제스처 확정 후에만 막는다
+  if(!swipeOn||!revealed)return;                             // 꺼져 있거나 공개 전이면 따라 움직이지 않음
+  const lim=Math.max(-170,Math.min(170,dx));
+  $('card').style.transform=`translateX(${lim}px) rotate(${(lim/70).toFixed(2)}deg)`;
+  const armed=Math.abs(dx)>=SW_MIN;
+  $('swLeft').classList.toggle('on', armed&&dx<0);
+  $('swRight').classList.toggle('on', armed&&dx>0);
+}
+function gEnd(x,y){
+  if(gX==null)return;
+  const dx=x-gX, dy=y-gY, dt=Date.now()-gT, dragged=gDrag;
+  swReset();
+  if(!dragged)return;
   lastSwipeAt=Date.now();                                    // 뒤따르는 click이 다음 카드를 선공개하지 않게
+  if(Math.abs(dx)<SW_MIN||Math.abs(dy)>90||dt>1500)return;
+  if(!swipeOn){ toast('스와이프 채점이 꺼져 있어요 — 홈 설정에서 켜요'); return; }
+  if(!revealed){ toast('정답부터 확인해요 — 카드를 탭'); return; }
   if(dx<0)rate(1);
   else if(!itemMarks.some(Boolean))rate(3);
   else toast('빠뜨린 항목이 있어요 — 왼쪽으로 밀면 「다시」');
-},{passive:true});
+}
+(()=>{ const c=$('card');
+  c.addEventListener('touchstart',e=>{ if(e.touches.length!==1){ swReset(); return; }
+    gStart(e.touches[0].clientX, e.touches[0].clientY); },{passive:true});
+  c.addEventListener('touchmove',e=>{ if(e.touches.length!==1)return;
+    gMove(e.touches[0].clientX, e.touches[0].clientY, e); },{passive:false});
+  c.addEventListener('touchend',e=>{ const t=e.changedTouches[0]; gEnd(t.clientX, t.clientY); },{passive:true});
+  c.addEventListener('touchcancel',swReset,{passive:true});
+  c.addEventListener('mousedown',e=>{ if(e.button)return; gStart(e.clientX,e.clientY); });
+  window.addEventListener('mousemove',e=>{ if(gX!=null)gMove(e.clientX,e.clientY,null); });
+  window.addEventListener('mouseup',e=>{ if(gX!=null)gEnd(e.clientX,e.clientY); });
+})();
 
 /* ═══════════════ 화면 전환 ═══════════════ */
 function go(id){

@@ -266,6 +266,14 @@ input:focus,select:focus{border-color:var(--accent);}
 #summary{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:24px;}
 #summary .big{font-size:26px;font-weight:800;font-family:var(--head-font);letter-spacing:-.3px;}
 #summary .det{font-size:13px;color:var(--mute);line-height:1.7;text-align:center;}
+#summary .score{background:var(--surface);border-radius:18px;padding:16px 20px 14px;margin:16px 0 4px;
+  min-width:min(420px,86vw);box-shadow:var(--shadow-sm);}
+#summary .sc-top{display:flex;align-items:baseline;gap:6px;}
+#summary .sc-top b{font-size:26px;font-weight:800;letter-spacing:-.6px;}
+#summary .sc-top small{font-size:12px;color:var(--mute);font-weight:600;}
+#summary .sc-hit{margin-left:auto;font-size:13px;font-weight:800;color:var(--good);}
+#summary .sc-t{font-size:11.5px;color:var(--mute);font-weight:600;margin-left:10px;}
+#summary .sc-streak{margin-top:10px;font-size:12px;font-weight:800;color:var(--hard);text-align:center;}
 #summary .actions{display:flex;gap:10px;margin-top:18px;}
 #summary .actions button{padding:13px 22px;border-radius:16px;font-size:15px;font-weight:700;}
 .btn-primary{background:var(--accent);color:var(--accent-ink);}
@@ -2806,6 +2814,8 @@ let state={cards:{},log:[]}, sha=null, cfg=null;
 let dirty=false, pushing=false, ratedSincePush=0, lastPushAt=Date.now();
 let queue=[], qPos=0, revealed=false, itemMarks=[], curPreset=null, phase='review',
     sessionDone=0, undoSnap=null, newServed=0, shownAt=0, pausedMs=0, pauseAt=0, pzTimer=null;
+let sess={r:[0,0,0,0,0], ms:0, streak:0, best:0};   // 이번 세션 성적 (요약 화면용)
+function sessReset(){ sess={r:[0,0,0,0,0], ms:0, streak:0, best:0}; }
 const MS_CAP=120000;                       // 응답 시간 상한 (자리 비움이 통계를 오염시키지 않게 — Anki도 상한을 둔다)
 
 function st(id){ // 카드 상태 엔트리 (없으면 생성)
@@ -3198,6 +3208,7 @@ function buildQueue(p, status){
 }
 function startSession(p){
   curPreset=p; lsSet(K_LASTP,p.id); stash=null;   // 새 세션을 고르면 밀려나 있던 세션은 폐기
+  sessReset();
 
   phase = p.scope.status==='new' ? 'new' : 'review';
   queue = buildQueue(p, p.scope.status==='new'?'new':p.scope.status);
@@ -3332,7 +3343,8 @@ function rate(num){
   if(anyX && num!==1){ toast('빠뜨린 항목이 있어요 — 「다시」만 눌러요'); return; } // X 있으면 Again만
   const firstToday = s.d!==tk;
   undoSnap={ id:c.id, prev:JSON.parse(JSON.stringify(state.cards[c.id]||null)),
-             logLen:state.log.length, qPos, phase, sessionDone, newServed };
+             logLen:state.log.length, qPos, phase, sessionDone, newServed,
+             sess:{r:sess.r.slice(), ms:sess.ms, streak:sess.streak, best:sess.best} };
   if(firstToday){                          // 그날 첫 채점만 FSRS 반영
     const fc = s.fsrs?fsrsRevive(s.fsrs):FSRS.createEmptyCard(now);
     const r=engine.next(fc, now, RATING[num]);
@@ -3345,6 +3357,8 @@ function rate(num){
   if(shownAt) extra.ms=Math.min(Math.max(0,Date.now()-shownAt-pausedMs), MS_CAP); // 응답 시간 (쉰 시간 제외)
   const hasExtra=Object.keys(extra).length>0;
   state.log.push(hasExtra?[c.id,now.toISOString(),num,extra]:[c.id,now.toISOString(),num]);
+  sess.r[num]++; sess.ms+=extra.ms||0;
+  if(num===1) sess.streak=0; else { sess.streak++; if(sess.streak>sess.best)sess.best=sess.streak; }
   if(num===1){ s.miss=(s.miss||0)+1;
     queue.splice(Math.min(qPos+1+REQUEUE_GAP, queue.length), 0, c); } // 10장 뒤 재출
   touch(s); afterRate();
@@ -3377,6 +3391,7 @@ function doUndo(){
   if(prev===null) delete state.cards[id]; else state.cards[id]=prev;
   state.log.length=logLen;
   qPos=undoSnap.qPos; phase=undoSnap.phase; sessionDone=undoSnap.sessionDone; newServed=undoSnap.newServed;
+  if(undoSnap.sess) sess=undoSnap.sess;
   // 재출 삽입 롤백: 큐에서 해당 카드의 뒤쪽 중복 제거
   for(let i=queue.length-1;i>qPos;i--){ if(queue[i]&&queue[i].id===id){queue.splice(i,1);break;} }
   undoSnap=null; cacheState(); setDirty(true); updateUndo(); showCard(); toast('되돌렸어요');
@@ -3401,7 +3416,23 @@ function renderSummary(final){
     ? (nt||curTopic ? (curTopic&&TAGMETA[curTopic]
         ? `「${esc(TAGMETA[curTopic].tag)}」 ${sameTopic?'오늘 한 바퀴':'끝'}`:'복습 끝!') : '전량 투입 완료 🎉')
     : (final ? '오늘은 여기까지' : '복습 끝!');
+  const n=sess.r[1]+sess.r[2]+sess.r[3]+sess.r[4];
+  const pc=v=>n?Math.round(v/n*100):0;
+  const hit=n?Math.round((n-sess.r[1])/n*100):0;
+  const scoreCard = n?`<div class="score">
+      <div class="sc-top"><b>${n}</b><small>회</small>
+        <span class="sc-hit">정답률 ${hit}%</span>
+        <span class="sc-t">${fmtMin(sess.ms)}${sess.ms&&n?` · 평균 ${fmtDur(Math.round(sess.ms/n))}`:''}</span></div>
+      <div class="sbar" style="margin-top:10px">
+        <i style="width:${pc(sess.r[1])}%;background:var(--again)"></i><i style="width:${pc(sess.r[2])}%;background:var(--hard)"></i>
+        <i style="width:${pc(sess.r[3])}%;background:var(--good)"></i><i style="width:${pc(sess.r[4])}%;background:var(--easy)"></i></div>
+      <div class="legend" style="justify-content:center">
+        <span><i style="background:var(--again)"></i>다시 ${sess.r[1]}</span><span><i style="background:var(--hard)"></i>어려움 ${sess.r[2]}</span>
+        <span><i style="background:var(--good)"></i>알맞음 ${sess.r[3]}</span><span><i style="background:var(--easy)"></i>쉬움 ${sess.r[4]}</span></div>
+      ${sess.best>=5?`<div class="sc-streak">🔥 최고 연속 ${sess.best}</div>`:''}
+    </div>`:'';
   sm.innerHTML=`<div class="big">${big}</div>
+    ${scoreCard}
     <div class="det">오늘 ${todayRated()}회 채점${capNote}<br>내일 예상 복습 ~${tmr}장</div>
     ${hpLine}
     <div class="actions">
@@ -3928,7 +3959,7 @@ function startAdHoc(cards, label, note){ // 임시 큐 = 목록·상세에서 �
     stash={queue, qPos, preset:curPreset, phase, topic:curTopic};
   curPreset={id:'adhoc', name:label||'임시 세션', scope:{subj:[],tags:[],typ:[],status:'all'},
     order:'shuffle', limit:null, bury:false, newAfter:false};
-  queue=cards.slice(); qPos=0; sessionDone=0; newServed=0; phase='review';
+  queue=cards.slice(); qPos=0; sessionDone=0; newServed=0; phase='review'; sessReset();
   undoSnap=null; updateUndo(); go('scrSolve'); showCard();
   toast(note||`${cards.length}장 임시 세션 — 채점은 정규로 반영돼요`);
 }

@@ -3050,7 +3050,45 @@ document.addEventListener('visibilitychange',()=>{
   if(!hiddenAt) return;              // 앱을 내려둔 시간은 응답 시간에서 조용히 뺀다 (정지 화면은 안 띄움 —
   const d=Date.now()-hiddenAt; hiddenAt=0;   // 잠깐 창 전환한 것까지 탭을 요구하면 성가시다)
   if(!pauseAt && shownAt && $('scrSolve').classList.contains('on')) pausedMs+=d;
+  if(d>60000) refreshRemote();       // 1분 넘게 자리 비웠으면 다른 기기 분을 당겨온다
 });
+let refreshing=false, pendingRefresh=false;
+async function refreshRemote(){     // 포그라운드 복귀 시 원격 상태 당겨오기 (새로고침 없이 기기 전환)
+  if(refreshing||!cfg||!cfg.token) return;
+  if($('scrSolve').classList.contains('on') && cur()){ pendingRefresh=true; return; } // 풀이 중엔 미룬다
+  refreshing=true;
+  try{
+    if(dirty) await push();          // 내 것 먼저 올리고
+    const remote=await ghGetState();
+    if(remote){
+      state = dirty? mergeState(remote,state) : (remote||state);
+      if(!state.cards)state.cards={}; if(!state.log)state.log=[]; if(!state.hoedok)state.hoedok={};
+      lastRevIdx=null; firstRevIdx=null; cacheState();
+      for(const sx of sessions){ if(!isFixed(sx)) sx.day=''; }   // 자동 충전 세션은 새 상태로 다시 채운다
+      pruneSolvedFromQueues();
+      const scr=[...document.querySelectorAll('.scr.on')].map(x=>x.id)[0];
+      if(scr==='scrHome')renderHome(); else if(scr==='scrSession')renderSession();
+      else if(scr==='scrUnits')renderUnits(); else if(scr==='scrStats')renderStats();
+      else if(scr==='scrList')refreshList();
+    }
+  }catch(e){ /* 조용히 실패 — 로컬로 계속 */ }
+  finally{ refreshing=false; }
+}
+function pruneSolvedFromQueues(){   // 다른 기기에서 오늘 이미 푼 카드는 큐에서 뺀다
+  const tk=todayKey(), solved=new Set();
+  for(let i=state.log.length-1;i>=0;i--){ const e=state.log[i];
+    if(dayKey(new Date(e[1]))!==tk)break; solved.add(e[0]); }
+  if(!solved.size)return;
+  for(const sx of sessions){
+    const before=sx.q.length;
+    sx.q=sx.q.filter(id=>!solved.has(id));
+    if(curSess&&curSess.id===sx.id&&before!==sx.q.length){
+      queue=[...queue.slice(0,qPos), ...queue.slice(qPos).filter(c=>!solved.has(c.id))];
+      counts();
+    }
+  }
+  saveSessionsSoon();
+}
 
 /* 저장 표시 — 평상시 무표시, 이상 시에만 */
 function updateSaveUI(){
@@ -3724,7 +3762,8 @@ function gEnd(x,y){
 
 /* ═══════════════ 화면 전환 ═══════════════ */
 function go(id){
-  if(id!=='scrSolve'){ resumeSession(); syncSessQueue(); }
+  if(id!=='scrSolve'){ resumeSession(); syncSessQueue();
+    if(pendingRefresh){ pendingRefresh=false; setTimeout(refreshRemote,0); } }
   document.querySelectorAll('.scr').forEach(s=>s.classList.toggle('on',s.id===id));
   $('rail').classList.remove('open'); $('railScrim').classList.remove('show');
   const railShow = id==='scrSolve';

@@ -2762,11 +2762,22 @@ input:focus,select:focus{border-color:var(--accent);}
 "use strict";
 /* ═══════════════ 상수 ═══════════════ */
 const BUILTIN = { owner:'Somnium1357', repo:'memory-cards' };
-const DATA_PATH='cards-data.json', STATE_PATH='cards-state.json';
+const DATA_PATH='cards-data.json';
+/* 저장 층 분리 (2026-08-20 동하 확정) — 기준: 누가 쓰나 · 얼마나 자주 바뀌나 · 되돌아가 고치나
+   cards-plan.json     루틴 소유, 앱은 읽기만 (투입 계획·단위 분할)
+   cards-sched.json    앱 소유, 카드 한 장마다 바뀜 (fsrs·틀림·은퇴·미룸·태그)
+   cards-feedback.json 앱이 쓰고 루틴이 소비·클리어 (플래그·@주석)
+   cards-log-YYYY-Www  앱 소유, append-only. 지난 주 파일은 다시 안 건드린다
+   cards-sessions.json 앱 소유, 기기 간 병합 (세션·회독 읽음·권장량) */
+const PLAN_PATH='cards-plan.json', SCHED_PATH='cards-sched.json',
+      FB_PATH='cards-feedback.json', SESS_PATH='cards-sessions.json';
+const LEGACY_STATE='cards-state.json';
+function logPath(wk){ return `cards-log-${wk}.json`; }
 const K_CFG='cards_cfg_v1', K_STATE='cards_state_cache_v1', K_DIRTY='cards_dirty_v1',
       K_THEME='cards_theme_v1', K_PRESETS='cards_presets_v1', K_LASTP='cards_last_preset_v1',
       K_DATA='cards_data_cache_v1', K_SWIPE='cards_swipe_v1', K_INTAKE='cards_intake_v1',
-      K_KBD='cards_kbd_v1', K_SESS='cards_sessions_v1';
+      K_KBD='cards_kbd_v1', K_SESS='cards_sessions_v1',
+      K_SCHED='cards_sched_v2', K_FB='cards_fb_v1', K_PLAN='cards_plan_v1', K_LOGP='cards_log_v2_';
 const OLD_CFG='review_cfg_v1';            // 관리앱(같은 오리진)의 토큰 재사용
 const DAY_CUT=4;                          // 하루 경계 = 새벽 4시
 const EXAM_DAY='2026-11-07';              // due 최대 클램프
@@ -2775,93 +2786,8 @@ const PUSH_EVERY_N=20, PUSH_EVERY_MS=5*60*1000, STALE_MS=10*60*1000;
 const PAIR_TYPES=new Set(['정의','기준','동치','근사','표기','전거','대응']); // 방향 버튼 노출 대상(양방향 쌍)
 const TERM_TYPES=new Set(['동치','표기','전거','예시','대응','연쇄','종류','구성','단계','표']);
 const SUBJECTS=['1.국어','2.수학','3.영어','4.사회','5.도덕','6.과학','7.체육','8.음악','9.미술','13.총창'];
-const INTAKE_PLAN=[ // [과목|대주제, 수강일] — 누적복습 수강 기록 근사 매칭 (2026-08-19, 오래된 것부터)
-  ["3.영어|언어 습득 이론","06-05"],
-  ["3.영어|교수법","06-07"],
-  ["6.과학|기본이론","06-09"],
-  ["3.영어|학습자 변인","06-11"],
-  ["8.음악|전통 음악#0","06-14"],
-  ["8.음악|전통 음악#1","06-14"],
-  ["7.체육|학습과제","06-15"],
-  ["4.사회|사회과 교수·학습 모형","06-16"],
-  ["8.음악|서양 음악#0","06-16"],
-  ["8.음악|서양 음악#1","06-16"],
-  ["8.음악|서양 음악#2","06-16"],
-  ["6.과학|과학 학습 모형","06-18"],
-  ["3.영어|기능별 언어 지도#0","06-19"],
-  ["3.영어|기능별 언어 지도#1","06-19"],
-  ["3.영어|요소별 언어 지도","06-19"],
-  ["3.영어|수업 활동","06-19"],
-  ["4.사회|사회과 수업 기법","06-19"],
-  ["7.체육|평가","06-22"],
-  ["7.체육|수업 관리","06-22"],
-  ["2.수학|도형과 측정#0","06-27"],
-  ["2.수학|도형과 측정#1","06-27"],
-  ["2.수학|도형과 측정#2","06-27"],
-  ["2.수학|도형과 측정#3","06-27"],
-  ["2.수학|도형과 측정#4","06-27"],
-  ["2.수학|도형과 측정#5","06-27"],
-  ["3.영어|교사 언어","06-28"],
-  ["7.체육|체육 수업 모형","06-28"],
-  ["8.음악|음악 교육론","06-28"],
-  ["13.총창|교육과정의 성격","06-29"],
-  ["13.총창|Ⅰ. 교육과정 구성의 방향","06-29"],
-  ["13.총창|Ⅱ. 학교 교육과정 설계와 운영","06-29"],
-  ["13.총창|Ⅲ. 학교급별 교육과정 편성·운영의 기준","06-29"],
-  ["13.총창|Ⅳ. 학교 교육과정 지원","06-29"],
-  ["13.총창|창의적 체험활동","06-29"],
-  ["3.영어|평가","07-01"],
-  ["3.영어|교육과정","07-01"],
-  ["4.사회|역사, 지리 영역 지도","07-02"],
-  ["9.미술|조형 요소와 원리","07-04"],
-  ["2.수학|수학의 가치와 특성","07-05"],
-  ["4.사회|사회과 교육의 목표","07-05"],
-  ["4.사회|사회과 교육의 본질에 대한 유형","07-05"],
-  ["4.사회|사회과 교육과정의 내용 구성 원리","07-05"],
-  ["2.수학|수학 수업 모형","07-06"],
-  ["5.도덕|교과서 편찬 방향","07-07"],
-  ["6.과학|물질","07-07"],
-  ["9.미술|입체와 공예","07-07"],
-  ["1.국어|기초 문식성#0","07-11"],
-  ["1.국어|기초 문식성#1","07-11"],
-  ["1.국어|기초 문식성#2","07-11"],
-  ["9.미술|디자인과 매체","07-11"],
-  ["2.수학|폴리아","07-12"],
-  ["9.미술|감상","07-12"],
-  ["5.도덕|도덕 수업 모형","07-14"],
-  ["9.미술|전통 미술#0","07-18"],
-  ["9.미술|전통 미술#1","07-18"],
-  ["6.과학|생명#0","07-21"],
-  ["6.과학|생명#1","07-21"],
-  ["1.국어|문법#0","07-22"],
-  ["1.국어|문법#1","07-22"],
-  ["5.도덕|도덕 교육의 관점","07-22"],
-  ["5.도덕|도덕과 평가 방법","07-22"],
-  ["9.미술|평면 표현","07-23"],
-  ["5.도덕|도덕 교육의 이론적 기초#0","07-24"],
-  ["5.도덕|도덕 교육의 이론적 기초#1","07-24"],
-  ["5.도덕|도덕과의 기능","07-29"],
-  ["5.도덕|도덕과 교수·학습 방법","07-29"],
-  ["9.미술|미술 교육론","07-29"],
-  ["1.국어|읽기#0","07-30"],
-  ["1.국어|읽기#1","07-30"],
-  ["1.국어|읽기#2","07-30"],
-  ["4.사회|3~4학년군 각론#0","08-01"],
-  ["4.사회|3~4학년군 각론#1","08-01"],
-  ["6.과학|운동과 에너지","08-06"],
-  ["7.체육|3, 4학년군 운동","08-08"],
-  ["4.사회|5~6학년군 각론#0","08-10"],
-  ["4.사회|5~6학년군 각론#1","08-10"],
-  ["4.사회|5~6학년군 각론#2","08-10"],
-  ["2.수학|수와 연산#0","08-11"],
-  ["2.수학|수와 연산#1","08-11"],
-  ["2.수학|수와 연산#2","08-11"],
-  ["1.국어|쓰기#0","08-14"],
-  ["1.국어|쓰기#1","08-14"],
-  ["6.과학|지구와 우주","08-17"],
-];
-const PLAN_RANK=new Map(INTAKE_PLAN.map((x,i)=>[x[0],i]));
-const PLAN_DATE=new Map(INTAKE_PLAN);
+let INTAKE_PLAN=[], PLAN_RANK=new Map(), PLAN_DATE=new Map();   // cards-plan.json에서 로드 (루틴 소유)
+
 
 /* ═══════════════ FSRS ═══════════════ */
 const engine = FSRS.fsrs(FSRS.generatorParameters({
@@ -2896,11 +2822,27 @@ const pad=n=>String(n).padStart(2,'0');
 function dayKey(d){ const t=new Date(d.getTime()-DAY_CUT*3600*1000);
   return `${t.getFullYear()}-${pad(t.getMonth()+1)}-${pad(t.getDate())}`; }
 function todayKey(){ return dayKey(new Date()); }
+function weekKeyOf(d){            // ISO 주 (월요일 시작) — 하루 경계 4시를 먼저 적용한 날짜 기준
+  const t=new Date(d.getTime()-DAY_CUT*3600*1000);
+  const x=new Date(Date.UTC(t.getFullYear(), t.getMonth(), t.getDate()));
+  const day=x.getUTCDay()||7;               // 월=1 … 일=7
+  x.setUTCDate(x.getUTCDate()+4-day);       // 그 주의 목요일 = 해당 연도 판정 기준
+  const y=x.getUTCFullYear();
+  const jan1=new Date(Date.UTC(y,0,1));
+  const wk=Math.ceil(((x-jan1)/86400000+1)/7);
+  return `${y}-W${String(wk).padStart(2,'0')}`;
+}
+function thisWeek(){ return weekKeyOf(new Date()); }
+function logTs(e){ return typeof e[1]==='number' ? e[1]*1000 : Date.parse(e[1]); }  // v2=초, v1=ISO 문자열
+function logDate(e){ return new Date(logTs(e)); }
 function tomorrowKey(){ return dayKey(new Date(Date.now()+86400000)); }
 
 /* ═══════════════ 전역 상태 ═══════════════ */
 let DATA=[], BYID={}, ALLTAGS=[], ALLTYPS=[], TAGMETA={};
-let state={cards:{},log:[]}, sha=null, cfg=null;
+let state={cards:{},log:[],hoedok:{}}, sha={}, cfg=null;
+let logWeeks={};                       // 주 키 → 로그 배열 (이번 주 + 통계가 불러온 과거 주)
+const dirtyFiles=new Set(), dirtyLogs=new Set();
+let PLAN={intake:[], splits:{}};
 let dirty=false, pushing=false, ratedSincePush=0, lastPushAt=Date.now();
 let queue=[], qPos=0, revealed=false, itemMarks=[], curPreset=null, phase='review',
     sessionDone=0, undoSnap=null, newServed=0, shownAt=0, pausedMs=0, pauseAt=0, pzTimer=null;
@@ -2914,7 +2856,8 @@ function st(id){ // 카드 상태 엔트리 (없으면 생성)
   if(!Array.isArray(s.ann)) s.ann=[];
   return s;
 }
-function touch(s){ s.u=new Date().toISOString(); }
+function touch(s){ s.u=new Date().toISOString(); markDirty('sched'); }
+function touchFb(s){ s.u=new Date().toISOString(); markDirty('fb'); }
 function isDue(c){ const s=state.cards[c.id];
   return !!(s && s.fsrs && !s.retired && dayKey(new Date(s.fsrs.due))<=todayKey()); }
 function isNew(c){ const s=state.cards[c.id]; return !s || (!s.fsrs && !s.retired); }
@@ -2925,7 +2868,7 @@ function offed(c){ const s=state.cards[c.id]; return !!(s && s.ann && s.ann.incl
 const LEECH_MISS=8;                        // 누수 = 누적 틀림 8회 (Anki lapse 기본 임계). 자동 은퇴는 않고 표시만.
 function buried(c){ const s=state.cards[c.id]; return !!(s && s.by===todayKey()); } // 미룸은 그날 하루만
 function isLeech(c){ const s=state.cards[c.id]; return !!(s && (s.miss||0)>=LEECH_MISS && !s.retired); }
-/* 카드 단위 조작 — 상태 필드는 카드 엔트리에 얹히므로 mergeState(u 최신 우선)가 그대로 처리 */
+/* 카드 단위 조작 — 스케줄 파일 소속(u 최신 우선 병합) */
 function buryCard(c){ const s=st(c.id); s.by=todayKey(); touch(s); cacheState(); setDirty(true); }
 function unburyCard(c){ const s=st(c.id); s.by=''; touch(s); cacheState(); setDirty(true); }
 function forgetCard(c){ const s=st(c.id); s.fsrs=null; s.d=''; touch(s); cacheState(); setDirty(true); }
@@ -2939,7 +2882,7 @@ function pairAlive(c){ // 같은 노드·같은 유형의 반대 방향 카드�
   return DATA.some(x=>x!==c&&x.node===c.node&&x.typ===c.typ&&isRev(x)!==isRev(c)&&!retired(x));
 }
 function retireCard(c,v){ const s=st(c.id); s.retired=v; touch(s); cacheState(); setDirty(true); }
-function setFlag(c,v){ const s=st(c.id); s.flag=v; touch(s); cacheState(); setDirty(true); }
+function setFlag(c,v){ const s=st(c.id); s.flag=v; touchFb(s); cacheState(); }
 function addTag(c,t){ const s=st(c.id); s.t=s.t||[]; if(!s.t.includes(t))s.t.push(t);
   touch(s); cacheState(); setDirty(true); }
 
@@ -2948,44 +2891,118 @@ function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; 
 function lsSet(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } }
 function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
 let cacheWarned=false;
+/* ═══════════════ 로컬 캐시 (파일별) ═══════════════ */
 let cacheTimer=null;
-function cacheState(){ // 연타·일괄 조작에서 직렬화가 반복되지 않게 200ms로 합침 (이탈·push 직전엔 flush)
-  if(cacheTimer)return;
-  cacheTimer=setTimeout(()=>{ cacheTimer=null; cacheStateNow(); },200);
-}
+function cacheState(){ if(cacheTimer)return; cacheTimer=setTimeout(()=>{ cacheTimer=null; cacheStateNow(); },200); }
 function cacheFlush(){ if(cacheTimer){ clearTimeout(cacheTimer); cacheTimer=null; } cacheStateNow(); }
-function cacheStateNow(){ // 상태 캐시가 데이터 캐시보다 우선 — 쿼터 초과 시 데이터 캐시를 비우고 재시도
-  const j=JSON.stringify(state);
-  if(lsSet(K_STATE,j)) return;
-  lsDel(K_DATA);
-  if(lsSet(K_STATE,j)) return;
+function cacheStateNow(){ // 파일 단위로 나눠 담는다 — 쿼터가 모자라면 데이터 캐시를 먼저 버린다
+  const parts=splitState();
+  let ok = lsSet(K_SCHED, JSON.stringify(parts.sched)) && lsSet(K_FB, JSON.stringify(parts.fb));
+  for(const wk in logWeeks) ok = lsSet(K_LOGP+wk, JSON.stringify({v:2, week:wk, log:logWeeks[wk]})) && ok;
+  ok = lsSet(K_SESS, JSON.stringify(sessFile())) && ok;
+  if(ok) return;
+  lsDel(K_DATA);                       // 데이터 캐시는 언제든 다시 받을 수 있다
+  ok = lsSet(K_SCHED, JSON.stringify(parts.sched)) && lsSet(K_FB, JSON.stringify(parts.fb));
+  if(ok) return;
   if(!cacheWarned){ cacheWarned=true;
     showBanner('저장 공간 부족 — 로컬 백업이 안 돼요. 지금 저장을 눌러 커밋해 두세요', false); }
 }
 function setDirty(v){ dirty=v; v?lsSet(K_DIRTY,'1'):lsDel(K_DIRTY); updateSaveUI(); }
+function markDirty(kind, wk){        // kind: sched|fb|sess|log
+  if(kind==='log') dirtyLogs.add(wk||thisWeek());
+  else dirtyFiles.add(kind);
+  setDirty(true);
+}
 
-/* ═══════════════ GitHub API (관리앱 검증 패턴 이식) ═══════════════ */
+/* ═══════════════ 상태 ↔ 파일 변환 ═══════════════ */
+const SCHED_KEYS=['fsrs','miss','retired','by','t','u','d'];
+function splitState(){               // 메모리 state → 파일 두 벌 (스케줄 / 피드백)
+  const sched={}, fb={};
+  for(const id in state.cards){
+    const c=state.cards[id]; if(!c)continue;
+    const e={};
+    for(const k of SCHED_KEYS) if(c[k]!==undefined && c[k]!==null && !(k==='miss'&&!c[k]) && !(k==='retired'&&!c[k]) && !(k==='by'&&!c[k])) e[k]=c[k];
+    if(Object.keys(e).length) sched[id]=e;
+    if(c.flag!=null || (c.ann&&c.ann.length)) fb[id]={flag:c.flag!==undefined?c.flag:null, ann:c.ann||[], u:c.u||''};
+  }
+  return {sched:{v:2, cards:sched}, fb:{v:1, cards:fb}};
+}
+function applyFiles(schedFile, fbFile){   // 파일 두 벌 → 메모리 state.cards
+  const cards={};
+  const sc=(schedFile&&schedFile.cards)||{};
+  for(const id in sc) cards[id]=Object.assign({fsrs:null,miss:0,retired:false,flag:null,ann:[],u:'',d:''}, sc[id]);
+  const fc=(fbFile&&fbFile.cards)||{};
+  for(const id in fc){
+    const e=cards[id]||(cards[id]={fsrs:null,miss:0,retired:false,flag:null,ann:[],u:'',d:''});
+    e.flag=fc[id].flag!==undefined?fc[id].flag:null;
+    e.ann=fc[id].ann||[];
+    if((fc[id].u||'')>(e.u||'')) e.u=fc[id].u;
+  }
+  state.cards=cards;
+}
+function sessFile(){ return {v:1, sessions:[...sessions, ...sessTomb], hoedok:state.hoedok||{},
+  cap:intake.cap, capAt:intake.capAt||0}; }
+function rebuildLog(){               // 주별 묶음 → 화면·통계가 쓰는 단일 배열
+  const all=[];
+  for(const wk in logWeeks) all.push(...logWeeks[wk]);
+  all.sort((x,y)=>logTs(x)-logTs(y));
+  state.log=all;
+}
+function pushLog(entry){             // 새 채점 = 이번 주 파일에 append
+  const wk=thisWeek();
+  (logWeeks[wk]=logWeeks[wk]||[]).push(entry);
+  state.log.push(entry);
+  markDirty('log', wk);
+}
+function dropLastLog(){              // undo — 방금 넣은 것 제거
+  const e=state.log.pop(); if(!e)return;
+  const wk=weekKeyOf(logDate(e));
+  if(logWeeks[wk]){ const i=logWeeks[wk].lastIndexOf(e); if(i>=0)logWeeks[wk].splice(i,1); }
+  markDirty('log', wk);
+}
+
+/* ═══════════════ GitHub API ═══════════════ */
 function utf8ToB64(str){const b=new TextEncoder().encode(str);let s='';b.forEach(x=>s+=String.fromCharCode(x));return btoa(s);}
 function b64ToUtf8(b64){const bin=atob(b64);const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new TextDecoder().decode(a);}
 function ghHeaders(){return {'Authorization':'Bearer '+cfg.token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};}
 function ghUrl(p){return `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${encodeURIComponent(p)}`;}
-async function ghGetState(){
-  const r=await fetch(ghUrl(STATE_PATH),{headers:ghHeaders(),cache:'no-store'});
-  if(r.status===404){sha=null;return null;}
+async function ghGet(path){          // {json, sha} · 없으면 null
+  const r=await fetch(ghUrl(path),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){ sha[path]=null; return null; }
   if(r.status===401)throw{code:'auth'};
-  if(r.status===403)throw{code:'perm'}; // 토큰은 유효하나 이 레포 쓰기 권한 없음 (fine-grained 레포 미지정 등)
+  if(r.status===403)throw{code:'perm'};
   if(!r.ok)throw{code:'http',status:r.status};
-  const j=await r.json(); sha=j.sha;
+  const j=await r.json(); sha[path]=j.sha;
   let txt;
   if(j.content){ txt=b64ToUtf8(j.content.replace(/\s/g,'')); }
-  else { const r2=await fetch(j.download_url,{cache:'no-store'}); txt=await r2.text(); } // >1MB 대비
+  else { const r2=await fetch(j.download_url,{cache:'no-store'}); txt=await r2.text(); }
   return txt.trim()?JSON.parse(txt):null;
 }
+async function ghPut(path, buildBody, onConflict){   // 충돌(409·422)이면 원격을 다시 받아 합치고 재시도
+  const opts=()=>{
+    const body=JSON.stringify({message:`${path} ${new Date().toISOString()}`,
+      content:utf8ToB64(JSON.stringify(buildBody())), ...(sha[path]?{sha:sha[path]}:{})});
+    const o={method:'PUT',headers:{...ghHeaders(),'Content-Type':'application/json'},body};
+    if(document.visibilityState==='hidden' && body.length<55000) o.keepalive=true;
+    return o;
+  };
+  let r=await fetch(ghUrl(path),opts());
+  if(r.status===409||r.status===422){
+    const remote=await ghGet(path);
+    if(onConflict) onConflict(remote);
+    r=await fetch(ghUrl(path),opts());
+  }
+  if(r.status===401)throw{code:'auth'};
+  if(r.status===403)throw{code:'perm'};
+  if(!r.ok)throw{code:'http',status:r.status};
+  const j=await r.json(); sha[path]=j.content.sha;
+}
+
 function mergeSessions(remote, local, log){
   // 세션 병합: id별 합집합 · 같은 id면 큐는 「양쪽 합집합 − 오늘 이미 푼 것」, 나머지 필드는 u 최신 우선
   const tk=todayKey(), solved=new Set();
   for(let i=(log||[]).length-1;i>=0;i--){ const e=log[i];
-    if(dayKey(new Date(e[1]))!==tk)break; solved.add(e[0]); }
+    if(dayKey(logDate(e))!==tk)break; solved.add(e[0]); }
   const byId={}, tomb={};
   for(const list of [remote||[], local||[]]){
     for(const sx of list){
@@ -3014,45 +3031,47 @@ function mergeSessions(remote, local, log){
   }
   return out;
 }
-function mergeState(remote, local){ // 병합: cards=u 최신 우선 / log=append 합집합 / sessions=합집합−오늘 푼 것
-  if(!remote) return local;
-  const out={cards:{},log:[]};
-  const ids=new Set([...Object.keys(remote.cards||{}),...Object.keys(local.cards||{})]);
-  for(const id of ids){
-    const a=(remote.cards||{})[id], b=(local.cards||{})[id];
-    out.cards[id] = !a?b : !b?a : ((b.u||'')>(a.u||'')?b:a);
+function mergeSchedInto(remote){      // 스케줄: 카드별 u 최신 우선
+  const rc=(remote&&remote.cards)||{};
+  for(const id in rc){
+    const mine=state.cards[id];
+    if(!mine){ state.cards[id]=Object.assign({fsrs:null,miss:0,retired:false,flag:null,ann:[],u:'',d:''}, rc[id]); continue; }
+    if((rc[id].u||'')>(mine.u||'')) for(const k of SCHED_KEYS) if(rc[id][k]!==undefined) mine[k]=rc[id][k];
   }
-  const seen=new Set();
-  for(const e of [...(remote.log||[]),...(local.log||[])]){
-    const k=e[0]+'|'+e[1]; if(seen.has(k))continue; seen.add(k); out.log.push(e);
-  }
-  out.log.sort((x,y)=>x[1]<y[1]?-1:1);
-  out.hoedok={...(remote.hoedok||{}), ...(local.hoedok||{})}; // 읽음 체크 합집합
-  out.sessions=mergeSessions(remote.sessions, local.sessions, out.log);
-  out.cap = ((local.capAt||0)>=(remote.capAt||0)) ? local.cap : remote.cap;   // 하루 신규 권장량 = 학습 정책이라 동기화
-  out.capAt = Math.max(local.capAt||0, remote.capAt||0);
-  return out;
 }
-async function ghPutState(){
-  const mk=()=>({message:'카드 상태 '+new Date().toISOString(),
-    content:utf8ToB64(JSON.stringify(state)), ...(sha?{sha}:{})});
-  const opts=()=>{
-    const body=JSON.stringify(mk());
-    const o={method:'PUT',headers:{...ghHeaders(),'Content-Type':'application/json'},body};
-    // 이탈 저장: 본문이 keepalive 한도(64KB) 안일 때만 keepalive (초기 몇 주 유효)
-    if(document.visibilityState==='hidden' && body.length<55000) o.keepalive=true;
-    return o;
-  };
-  let r=await fetch(ghUrl(STATE_PATH),opts());
-  if(r.status===409||r.status===422){ // 409=충돌 / 422=sha 미확보 (부팅 시 fetch 실패 등) → 재확보 후 병합 재시도
-    const remote=await ghGetState();
-    state=mergeState(remote,state); cacheState();
-    r=await fetch(ghUrl(STATE_PATH),opts());
+function mergeFbInto(remote){         // 피드백: 주석은 합집합, 메모는 u 최신 우선
+  const rc=(remote&&remote.cards)||{};
+  for(const id in rc){
+    const mine=state.cards[id]||(state.cards[id]={fsrs:null,miss:0,retired:false,flag:null,ann:[],u:'',d:''});
+    const r=rc[id];
+    mine.ann=[...new Set([...(mine.ann||[]), ...(r.ann||[])])];
+    if((r.u||'')>(mine.u||'')) mine.flag=r.flag!==undefined?r.flag:null;
   }
-  if(r.status===401)throw{code:'auth'};
-  if(r.status===403)throw{code:'perm'}; // 토큰은 유효하나 이 레포 쓰기 권한 없음 (fine-grained 레포 미지정 등)
-  if(!r.ok)throw{code:'http',status:r.status};
-  const j=await r.json(); sha=j.content.sha;
+}
+function mergeLogInto(remote, wk){    // 로그: (카드|시각) 합집합
+  const cur=logWeeks[wk]||[], seen=new Set(cur.map(e=>e[0]+'|'+e[1]));
+  for(const e of (remote&&remote.log)||[]){ const k=e[0]+'|'+e[1]; if(!seen.has(k)){ seen.add(k); cur.push(e); } }
+  cur.sort((x,y)=>logTs(x)-logTs(y));
+  logWeeks[wk]=cur; rebuildLog();
+}
+function mergeSessInto(remote){
+  const merged=mergeSessions((remote&&remote.sessions)||[], sessFile().sessions, state.log);
+  sessions=merged.filter(x=>!x.del); sessTomb=merged.filter(x=>x.del);
+  normalizeSessions();
+  state.hoedok={...((remote&&remote.hoedok)||{}), ...(state.hoedok||{})};
+  if(remote && (remote.capAt||0) > (intake.capAt||0)){ intake.cap=remote.cap; intake.capAt=remote.capAt; }
+}
+async function pushAll(){             // 바뀐 파일만 올린다
+  if(dirtyFiles.has('sched')) await ghPut(SCHED_PATH, ()=>splitState().sched, mergeSchedInto);
+  dirtyFiles.delete('sched');
+  if(dirtyFiles.has('fb'))    await ghPut(FB_PATH,    ()=>splitState().fb,    mergeFbInto);
+  dirtyFiles.delete('fb');
+  for(const wk of [...dirtyLogs]){
+    await ghPut(logPath(wk), ()=>({v:2, week:wk, log:logWeeks[wk]||[]}), (rm)=>mergeLogInto(rm, wk));
+    dirtyLogs.delete(wk);
+  }
+  if(dirtyFiles.has('sess'))  await ghPut(SESS_PATH,  sessFile,             mergeSessInto);
+  dirtyFiles.delete('sess');
 }
 async function push(force){ // 배치 push — 옵티미스틱: 실패해도 로컬은 이미 저장됨
   if(!cfg||!cfg.token){ return; }
@@ -3061,7 +3080,7 @@ async function push(force){ // 배치 push — 옵티미스틱: 실패해도 로
   cacheFlush();
   pushing=true;
   try{
-    await ghPutState();
+    await pushAll();
     setDirty(false); ratedSincePush=0; lastPushAt=Date.now(); hideBanner();
   }catch(e){
     const msg = e&&e.code==='auth' ? '토큰이 만료됐어요 — GitHub 연결에서 갱신'
@@ -3095,12 +3114,14 @@ async function refreshRemote(){     // 포그라운드 복귀 시 원격 상태 
   refreshing=true;
   try{
     if(dirty) await push();          // 내 것 먼저 올리고
-    const remote=await ghGetState();
-    if(remote){
-      state = dirty? mergeState(remote,state) : (remote||state);
-      if(!state.cards)state.cards={}; if(!state.log)state.log=[]; if(!state.hoedok)state.hoedok={};
+    const [sc, fb, sess, wk] = await Promise.all([
+      ghGet(SCHED_PATH), ghGet(FB_PATH), ghGet(SESS_PATH), ghGet(logPath(thisWeek()))]);
+    if(sc||fb||sess||wk){
+      if(sc) mergeSchedInto(sc);
+      if(fb) mergeFbInto(fb);
+      if(wk) mergeLogInto(wk, thisWeek()); else rebuildLog();
+      if(sess) mergeSessInto(sess);
       lastRevIdx=null; firstRevIdx=null; cacheState();
-      adoptStateSessions(); adoptStateIntake();                  // 다른 기기의 세션·권장량 반영
       for(const sx of sessions){ if(!isFixed(sx)) sx.day=''; }   // 자동 충전 세션은 새 상태로 다시 채운다
       pruneSolvedFromQueues();
       const scr=[...document.querySelectorAll('.scr.on')].map(x=>x.id)[0];
@@ -3114,7 +3135,7 @@ async function refreshRemote(){     // 포그라운드 복귀 시 원격 상태 
 function pruneSolvedFromQueues(){   // 다른 기기에서 오늘 이미 푼 카드는 큐에서 뺀다
   const tk=todayKey(), solved=new Set();
   for(let i=state.log.length-1;i>=0;i--){ const e=state.log[i];
-    if(dayKey(new Date(e[1]))!==tk)break; solved.add(e[0]); }
+    if(dayKey(logDate(e))!==tk)break; solved.add(e[0]); }
   if(!solved.size)return;
   for(const sx of sessions){
     const before=sx.q.length;
@@ -3160,10 +3181,9 @@ function loadIntake(){ const v=lsGet(K_INTAKE);
   if(v){ try{ const o=JSON.parse(v);
     if(Array.isArray(o.order)&&o.order.length)intake.order=o.order;
     if(o.cap!==undefined)intake.cap=o.cap; }catch(e){} } }
-function saveIntake(){ lsSet(K_INTAKE, JSON.stringify(intake));
-  state.cap=intake.cap; state.capAt=Date.now(); cacheState(); setDirty(true); }
-function adoptStateIntake(){ if(state.cap!==undefined && state.cap!==intake.cap){
-  intake.cap=state.cap; lsSet(K_INTAKE, JSON.stringify(intake)); } }
+function saveIntake(){ intake.capAt=Date.now(); lsSet(K_INTAKE, JSON.stringify(intake));
+  cacheState(); markDirty('sess'); }   // 권장량은 학습 정책 — 세션 파일에 함께 (앱 소유)
+
 function planRank(k){ const r=PLAN_RANK.get(k); return r===undefined?9999:r; } // 계획에 없는 새 대주제는 맨 뒤
 function newSort(a,b){ return planRank(tagKey(a))-planRank(tagKey(b)) || a._i-b._i; } // 신규 = 수강일 오래된 대주제 → 문서순
 function newToday(){ // 오늘 처음 투입된 카드 수 (생애 첫 채점이 오늘)
@@ -3180,9 +3200,9 @@ function hoedokPending(){ // 회독 대기 = 카드가 진입했는데 아직 �
     .sort((a,b)=>planRank(a)-planRank(b)||TAGMETA[a].i0-TAGMETA[b].i0);
 }
 function markHoedok(k){ if(!state.hoedok)state.hoedok={};
-  state.hoedok[k]=todayKey(); cacheState(); setDirty(true); }
+  state.hoedok[k]=todayKey(); cacheState(); markDirty('sess'); }
 function unmarkHoedok(k){ if(!state.hoedok)state.hoedok={};
-  state.hoedok[k]=null; cacheState(); setDirty(true); } // null 툼스톤 — 합집합 병합에서도 취소가 이긴다
+  state.hoedok[k]=null; cacheState(); markDirty('sess'); } // null 툼스톤 — 합집합 병합에서도 취소가 이긴다
 function hoedokLabel(k){ const m=TAGMETA[k]; return `${m.subj.split('.')[1]} · ${m.tag}`; }
 
 /* ═══════════════ 데이터 로드 ═══════════════ */
@@ -3205,35 +3225,7 @@ async function loadData(){
     if(!TAGMETA[k])TAGMETA[k]={subj:c.subj, tag:unitTagName(c), i0:c._i, n:0};
     TAGMETA[k].n++; }
 }
-const SPLITS = { // 대주제 분할 (동하 확정 2026-08-19) — 투입·회독 단위를 중주제 그룹으로
- '2.수학|도형과 측정': [['구성 요소',['평면도형과 구성 요소']],
-                        ['평면도형',['평면도형']],
-                        ['이론',['디에네스, 개념 학습 이론','반 힐레, 기하 사고 수준 이론']],
-                        ['입체도형',['입체도형']],
-                        ['측정 각론',['측정 각론']],
-                        ['넓이와 부피',['넓이와 부피']]],
- '2.수학|수와 연산': [['수 계열',['자연수','약수와 배수','수의 범위와 올림, 버림, 반올림']],
-                      ['덧셈과 뺄셈',['자연수의 덧셈과 뺄셈']],
-                      ['곱셈과 나눗셈',['자연수의 곱셈','자연수의 나눗셈']]],
- '1.국어|읽기': [['이론·지도',['읽기 과정 모형','과정 중심 읽기 지도','평가','수업 모형']],
-                 ['각론',['각론','독서의 정의적 요인']],
-                 ['읽기 기능',['읽기 기능']]],
- '1.국어|쓰기': [['이론·지도',['쓰기 이론','과정 중심 쓰기 지도','평가','수업 모형']],
-                 ['각론',['정보 전달을 위한 글','설득을 위한 글','친교 및 정서 표현을 위한 글','매체 중심 쓰기 지도','쓰기의 정의적 요인']]],
- '1.국어|기초 문식성': [['낱자·음절',['낱자와 음소','글자와 음절']],
-                        ['단어·문장',['단어','문장']],
-                        ['문단·글·해독',['문단','글','한글 해독 지도 방법']]],
- '4.사회|5~6학년군 각론': [['5-1',['5-1 각론']],['6-1',['6-1 각론']],['6-2',['6-2 각론']]],
- '4.사회|3~4학년군 각론': [['3학년군',['3-1 각론','3-2 각론']],['4학년군',['4-1 각론','4-2 각론']]],
- '5.도덕|도덕 교육의 이론적 기초': [['도덕 심리학',['도덕 심리학']],['동·서양 윤리학',['서양 윤리학','동양 윤리학']]],
- '8.음악|서양 음악': [['악보·리듬',['악보 요소','박자와 리듬']],['가락·구조',['가락과 화성','악곡의 구조']],['연주',['연주']]],
- '6.과학|생명': [['생태',['동물의 생활','식물의 생활','생물의 한살이','다양한 생물과 우리 생활','생물과 환경']],
-                 ['구조·기능',['우리 몸의 구조와 기능','식물의 구조와 기능']]],
- '8.음악|전통 음악': [['장단·민요·악기',['장단','민요','전통 악기']],['감상',['감상']]],
- '9.미술|전통 미술': [['전통 회화',['전통 회화']],['서예',['서예']]],
- '1.국어|문법': [['단어',['단어']],['문장·담화',['문장','글과 담화']]],
- '3.영어|기능별 언어 지도': [['공통·이해',['공통','이해']],['표현',['표현']]],
-};
+let SPLITS = {};   // cards-plan.json에서 로드
 function tagKey(c){ // 투입·회독 단위 키 — 분할 대주제는 그룹까지 (subj|대주제#g)
   const t0=(c.tags&&c.tags[0])||'(기타)';
   const base=c.subj+'|'+t0;
@@ -3245,23 +3237,89 @@ function tagKey(c){ // 투입·회독 단위 키 — 분할 대주제는 그룹�
 }
 function unitTagName(c){ const t0=(c.tags&&c.tags[0])||'(기타)'; const sp=SPLITS[c.subj+'|'+t0];
   if(!sp) return t0; const i=+(tagKey(c).split('#')[1]||0); return t0+' — '+sp[i][0]; }
-async function loadState(){
-  const c=lsGet(K_STATE);
-  let local=null;
-  if(c){ try{ local=JSON.parse(c); }catch(e){} }
-  const wasDirty=!!lsGet(K_DIRTY);
+async function loadPlan(){        // 투입 계획·단위 분할 = 루틴 소유, 앱은 읽기만
+  let j=null;
+  try{
+    const r=await fetch(PLAN_PATH+'?t='+Date.now(),{cache:'no-store'});
+    if(r.ok){ j=await r.json(); lsSet(K_PLAN, JSON.stringify(j)); }
+  }catch(e){}
+  if(!j){ const c=lsGet(K_PLAN); if(c){ try{ j=JSON.parse(c); }catch(e){} } }
+  if(j&&Array.isArray(j.intake)){ PLAN={intake:j.intake, splits:j.splits||{}}; }
+  INTAKE_PLAN=PLAN.intake; SPLITS=PLAN.splits;
+  PLAN_RANK=new Map(INTAKE_PLAN.map((x,i)=>[x[0],i]));
+  PLAN_DATE=new Map(INTAKE_PLAN);
+}
+function cachedFile(key){ const c=lsGet(key); if(!c)return null; try{ return JSON.parse(c); }catch(e){ return null; } }
+async function rawGet(path){   // 토큰 없이도 읽기는 된다 (공개 레포 · Pages 동일 출처)
+  try{ const r=await fetch(path+'?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok)return null; const t=await r.text(); return t.trim()?JSON.parse(t):null;
+  }catch(e){ return null; }
+}
+async function loadAll(){         // 스케줄·피드백·세션·이번 주 로그를 병렬로
+  const wk=thisWeek();
+  let sc=null, fb=null, sess=null, lg=null, legacy=null;
   if(cfg&&cfg.token){
     try{
-      const remote=await ghGetState();
-      state = wasDirty&&local ? mergeState(remote,local) : (remote||local||state);
-      if(wasDirty&&local){ cacheState(); dirty=true; push(true); }
+      [sc, fb, sess, lg] = await Promise.all([
+        ghGet(SCHED_PATH), ghGet(FB_PATH), ghGet(SESS_PATH), ghGet(logPath(wk))]);
+      if(!sc && !fb){ legacy = await ghGet(LEGACY_STATE); }   // 아직 안 옮긴 기기·첫 배포
     }catch(e){
-      if(local) state=local;
-      showBanner(e&&e.code==='auth'?'토큰이 만료됐어요 — GitHub 연결에서 갱신':e&&e.code==='perm'?'토큰에 이 레포 권한이 없어요 — github.com에서 memory-cards 접근을 추가하세요':'상태 불러오기 실패 — 로컬 캐시로 진행', e&&e.code==='auth');
+      showBanner(e&&e.code==='auth'?'토큰이 만료됐어요 — GitHub 연결에서 갱신'
+        :e&&e.code==='perm'?'토큰에 이 레포 권한이 없어요 — github.com에서 memory-cards 접근을 추가하세요'
+        :'상태 불러오기 실패 — 로컬 캐시로 진행', e&&e.code==='auth');
     }
-  }else if(local){ state=local; }
-  if(!state.cards)state.cards={}; if(!state.log)state.log=[]; if(!state.hoedok)state.hoedok={};
-  if(!Array.isArray(state.sessions))state.sessions=[];
+  } else {                        // 토큰 전: 읽기 전용으로라도 최신 상태를 보여준다
+    [sc, fb, sess, lg] = await Promise.all([
+      rawGet(SCHED_PATH), rawGet(FB_PATH), rawGet(SESS_PATH), rawGet(logPath(wk))]);
+    if(!sc && !fb) legacy = await rawGet(LEGACY_STATE);
+  }
+  const wasDirty=!!lsGet(K_DIRTY);
+  const cSc=cachedFile(K_SCHED), cFb=cachedFile(K_FB), cSess=cachedFile(K_SESS), cLg=cachedFile(K_LOGP+wk);
+  if(legacy){                     // 옛 단일 파일 → 새 구조로 읽어들인다 (한 번만)
+    state.cards=legacy.cards||{};
+    state.hoedok=legacy.hoedok||{};
+    logWeeks={}; for(const e of (legacy.log||[])){ const k=weekKeyOf(logDate(e)); (logWeeks[k]=logWeeks[k]||[]).push(e); }
+    if(Array.isArray(legacy.sessions)){ sessions=legacy.sessions.filter(x=>!x.del); sessTomb=legacy.sessions.filter(x=>x.del); }
+    if(legacy.cap!==undefined){ intake.cap=legacy.cap; intake.capAt=legacy.capAt||0; }
+    markDirty('sched'); markDirty('fb'); markDirty('sess'); for(const k in logWeeks) markDirty('log',k);
+  } else {
+    applyFiles(sc||cSc, fb||cFb);
+    logWeeks={}; const lw=(lg||cLg); if(lw&&Array.isArray(lw.log)) logWeeks[wk]=lw.log;
+    if(wasDirty && cSc) mergeSchedInto({cards:(cSc.cards||{})});   // 못 올린 로컬분을 원격 위에 얹는다
+    if(wasDirty && cFb) mergeFbInto({cards:(cFb.cards||{})});
+    if(wasDirty && cLg) mergeLogInto(cLg, wk);
+    const sf=sess||cSess;
+    if(sf){
+      sessions=(sf.sessions||[]).filter(x=>!x.del); sessTomb=(sf.sessions||[]).filter(x=>x.del);
+      state.hoedok=sf.hoedok||{};
+      if(sf.cap!==undefined){ intake.cap=sf.cap; intake.capAt=sf.capAt||0; }
+      if(wasDirty && cSess && sess) mergeSessInto(sess);
+    }
+    normalizeSessions();
+  }
+  rebuildLog();
+  if(!state.cards)state.cards={}; if(!state.hoedok)state.hoedok={};
+  if(!sessions.length) sessions=[newSessObj('일일 복습', HOW_TPL[0].how, {}, 'auto')];
+  normalizeSessions();
+  cacheState();
+  if(wasDirty||legacy) push(true);
+}
+async function loadWeeks(keys){   // 통계용 과거 주 로그 (필요할 때만)
+  const want=keys.filter(k=>!logWeeks[k]);
+  if(!want.length) return false;
+  for(const k of want){
+    const c=cachedFile(K_LOGP+k);
+    if(c){ logWeeks[k]=c.log||[]; continue; }
+    if(!(cfg&&cfg.token)){ logWeeks[k]=[]; continue; }
+    try{ const j=await ghGet(logPath(k)); logWeeks[k]=(j&&j.log)||[]; lsSet(K_LOGP+k, JSON.stringify({v:2,week:k,log:logWeeks[k]})); }
+    catch(e){ logWeeks[k]=[]; }
+  }
+  rebuildLog(); lastRevIdx=null; firstRevIdx=null;
+  return true;
+}
+function weeksBack(n){            // 최근 n주 키 (오늘 포함)
+  const out=[]; for(let i=0;i<n;i++) out.push(weekKeyOf(new Date(Date.now()-i*7*86400000)));
+  return [...new Set(out)];
 }
 
 /* ═══════════════ 프리셋 ═══════════════ */
@@ -3290,24 +3348,6 @@ function newSessObj(name, how, scope, mode){
     scope:Object.assign({units:[],mids:[],subj:[],tags:[],typ:[]}, scope||{}),
     q:[], done:0, day:'', lastScore:null, createdAt:Date.now(), lastAt:0};
 }
-function adoptStateSessions(){   // 상태 파일(원격 병합 결과)의 세션을 앱 목록으로 받아온다
-  if(!Array.isArray(state.sessions) || !state.sessions.length){
-    if(sessions.length) state.sessions=[...sessions, ...sessTomb];   // 원격에 아직 없으면 로컬이 정본
-    return false;
-  }
-  const live=state.sessions.filter(x=>!x.del);
-  sessTomb=state.sessions.filter(x=>x.del);
-  if(!live.length){                                   // 툼스톤만 있는 경우: 지워진 것만 반영
-    const dead=new Set(sessTomb.map(t=>t.id));
-    sessions=sessions.filter(x=>!dead.has(x.id));
-    lsSet(K_SESS, JSON.stringify(sessions));
-    return true;
-  }
-  sessions=live.map(x=>JSON.parse(JSON.stringify(x)));
-  normalizeSessions();
-  lsSet(K_SESS, JSON.stringify(sessions));
-  return true;
-}
 function normalizeSessions(){
   for(const x of sessions){
     x.scope=Object.assign({units:[],mids:[],subj:[],tags:[],typ:[]},x.scope||{}); x.q=x.q||[];
@@ -3333,11 +3373,7 @@ function loadSessions(){
   normalizeSessions();
 }
 let sessSaveT=null, sessTomb=[];
-function saveSessions(){
-  lsSet(K_SESS, JSON.stringify(sessions));
-  state.sessions=[...sessions, ...sessTomb];   // 상태 파일에 함께 실어 기기 간 동기화
-  cacheState(); setDirty(true);
-}
+function saveSessions(){ cacheState(); markDirty('sess'); }
 function saveSessionsSoon(){ if(sessSaveT)return; sessSaveT=setTimeout(()=>{ sessSaveT=null; saveSessions(); },400); }
 function saveSessionsFlush(){ if(sessSaveT){ clearTimeout(sessSaveT); sessSaveT=null; } saveSessions(); }
 function isFixed(sx){ return sx.mode==='manual'; }   // 직접 추가 = 잔량 이월 / 자동 충전 = 매일 재조립
@@ -3434,7 +3470,7 @@ function firstRevMap(){ // 카드별 최초 채점 시각 (도입일 판정용) 
   if(!firstRevIdx || firstRevLog!==state.log || firstRevLen>state.log.length){
     firstRevIdx={}; firstRevLen=0; firstRevLog=state.log; }
   for(let i=firstRevLen;i<state.log.length;i++){
-    const e=state.log[i], t=Date.parse(e[1]);
+    const e=state.log[i], t=logTs(e);
     if(!isFinite(t))continue;
     if(firstRevIdx[e[0]]==null||t<firstRevIdx[e[0]]) firstRevIdx[e[0]]=t;
   }
@@ -3459,7 +3495,7 @@ function revReady(c){ // 역방향 카드가 오늘 투입돼도 되는가
 function dirFilter(pool){ return pool.filter(c=>!isRev(c)||revReady(c)); }
 function againPending(sc){ // 오늘 마지막 채점이 Again인 카드 = "그날 맞출 때까지" 잔여분 (세션 재시작에도 복원)
   const tk=todayKey(), last={};
-  for(const e of state.log){ if(dayKey(new Date(e[1]))===tk) last[e[0]]=e[2]; }
+  for(const e of state.log){ if(dayKey(logDate(e))===tk) last[e[0]]=e[2]; }
   return DATA.filter(c=>last[c.id]===1 && inScope(c,sc));
 }
 function buildQueue(p, status){
@@ -3547,7 +3583,7 @@ function tomorrowCount(sc){ // 내일 예상 = due가 정확히 내일인 카드
   return n;
 }
 function todayRated(){ let n=0; const tk=todayKey();
-  for(let i=state.log.length-1;i>=0;i--){ if(dayKey(new Date(state.log[i][1]))===tk)n++; else if(n)break; }
+  for(let i=state.log.length-1;i>=0;i--){ if(dayKey(logDate(state.log[i]))===tk)n++; else if(n)break; }
   return n;
 }
 function counts(){ // 상단 바 = 현재 세션 범위 기준 (스펙)
@@ -3652,7 +3688,8 @@ function rate(num){
   if(hasItems) extra.items=itemMarks.map(x=>x?'x':'o').join('');
   if(shownAt) extra.ms=Math.min(Math.max(0,Date.now()-shownAt-pausedMs), MS_CAP); // 응답 시간 (쉰 시간 제외)
   const hasExtra=Object.keys(extra).length>0;
-  state.log.push(hasExtra?[c.id,now.toISOString(),num,extra]:[c.id,now.toISOString(),num]);
+  const ts=Math.round(now.getTime()/1000);          // v2 로그 = 초 단위 (ISO 문자열은 항목의 40%였다)
+  pushLog(hasExtra?[c.id,ts,num,extra]:[c.id,ts,num]);
   sess.r[num]++; sess.ms+=extra.ms||0;
   if(num===1) sess.streak=0; else { sess.streak++; if(sess.streak>sess.best)sess.best=sess.streak; }
   if(num===1){ s.miss=(s.miss||0)+1;
@@ -3685,7 +3722,7 @@ function doUndo(){
   if(!undoSnap)return;
   const {id,prev,logLen}=undoSnap;
   if(prev===null) delete state.cards[id]; else state.cards[id]=prev;
-  state.log.length=logLen;
+  while(state.log.length>logLen) dropLastLog();
   qPos=undoSnap.qPos; phase=undoSnap.phase; sessionDone=undoSnap.sessionDone; newServed=undoSnap.newServed;
   if(undoSnap.sess) sess=undoSnap.sess;
   // 재출 삽입 롤백: 큐에서 해당 카드의 뒤쪽 중복 제거
@@ -3710,7 +3747,7 @@ function toggleAnn(name){
   const s=st(c.id);
   const i=s.ann.indexOf(name);
   if(i>=0)s.ann.splice(i,1); else s.ann.push(name);
-  touch(s); cacheState(); setDirty(true); syncRail();
+  touchFb(s); cacheState(); syncRail();
 }
 document.querySelectorAll('.rbtn.ann').forEach(b=>{
   b.onclick=()=>toggleAnn(b.dataset.ann);
@@ -3719,11 +3756,11 @@ $('rFlag').onclick=()=>{
   const c=cur(); if(!c)return;
   const s=st(c.id);
   if(s.flag!=null){ s.flag=null; } else { s.flag=''; }
-  touch(s); cacheState(); setDirty(true); syncRail();
+  touchFb(s); cacheState(); syncRail();
 };
 $('flagMemo').addEventListener('change',()=>{
   const c=cur(); if(!c)return; const s=st(c.id);
-  if(s.flag!=null){ s.flag=$('flagMemo').value; touch(s); cacheState(); setDirty(true); }
+  if(s.flag!=null){ s.flag=$('flagMemo').value; touchFb(s); cacheState(); }
 });
 function dropFromQueue(id){ for(let i=queue.length-1;i>qPos;i--){ if(queue[i].id===id)queue.splice(i,1); } }
 $('rBury').onclick=()=>{
@@ -3747,7 +3784,7 @@ $('rOff').onclick=()=>{ // 끄기 = 노드 단위 중단 → 오터치 가드 (�
     $('ovlConfirm').classList.remove('show');
     const s=st(c.id);
     if(!s.ann.includes('끄기'))s.ann.push('끄기');
-    touch(s); cacheState(); setDirty(true);
+    touchFb(s); cacheState();
     for(let i=queue.length-1;i>qPos;i--){ if(queue[i].node===c.node)queue.splice(i,1); }
     removeCurFromQueue(); toast('노드 끄기 기록 — 루틴이 수거해요');
   };
@@ -4223,8 +4260,11 @@ $('ovlSettings').onclick=(e)=>{ if(e.target===$('ovlSettings'))$('ovlSettings').
 $('btnNewSess').onclick=()=>openSessEditor(null,null);
 $('ssEdit').onclick=()=>{ if(viewSess)openSessEditor(viewSess,null); };
 $('btnSync').onclick=async()=>{ if(!cfg||!cfg.token){openSetup();return;} await push(true); if(!dirty)toast('저장 완료'); };
-$('btnBackup').onclick=()=>{
-  const blob=new Blob([JSON.stringify(state)],{type:'application/json'});
+$('btnBackup').onclick=()=>{   // 파일이 나뉜 뒤로는 한 덩어리로 묶어 내려받는다
+  const parts=splitState();
+  const bundle={v:2, at:new Date().toISOString(), sched:parts.sched, feedback:parts.fb,
+    logs:logWeeks, sessions:sessFile()};
+  const blob=new Blob([JSON.stringify(bundle)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download=`cards-state-백업-${todayKey()}.json`; a.click();
 };
@@ -4467,7 +4507,7 @@ function renderCardSheet(){
     ${hist.length?`<div class="cs-hist">${hist.map(e=>{
         const ex=e[3]||{};
         return `<div class="cs-hrow"><span class="r r${e[2]}">${RATE_NAME[e[2]]||e[2]}</span>
-          <span>${fmtDay(e[1])}</span>
+          <span>${fmtDay(logTs(e))}</span>
           ${ex.items?`<span style="color:var(--faint)">${esc(ex.items)}</span>`:''}
           <span class="sp">${ex.ms!=null?fmtDur(ex.ms):''}</span></div>`; }).join('')}</div>`
       :'<div class="cs-hist"><div class="cs-hrow">아직 푼 적 없어요</div></div>'}
@@ -4490,7 +4530,7 @@ function renderCardSheet(){
   $('csSheet').querySelectorAll('[data-untag]').forEach(b=>b.onclick=()=>{
     const s2=st(c.id); s2.t=(s2.t||[]).filter(x=>x!==b.dataset.untag); touch(s2); cacheState(); setDirty(true); rr(); });
   $('csSheet').querySelectorAll('[data-unann]').forEach(b=>b.onclick=()=>{
-    const s2=st(c.id); s2.ann=(s2.ann||[]).filter(x=>x!==b.dataset.unann); touch(s2); cacheState(); setDirty(true); rr(); });
+    const s2=st(c.id); s2.ann=(s2.ann||[]).filter(x=>x!==b.dataset.unann); touchFb(s2); cacheState(); rr(); });
   const addT=()=>{ const v=$('csTagIn').value.trim().replace(/^#/,''); if(!v)return; addTag(c,v); rr(); };
   $('csTagAdd').onclick=addT;
   $('csTagIn').addEventListener('keydown',e=>{ if(e.key==='Enter'){e.preventDefault();addT();} });
@@ -4530,7 +4570,7 @@ function lastRevMap(){ // 카드별 마지막 리뷰 [ts, rating] — 로그가 
   if(!lastRevIdx || lastRevLog!==state.log || lastRevIdxLen>state.log.length){ // 병합·재로드로 로그가 통째로 갈리면 재구축
     lastRevIdx={}; lastRevIdxLen=0; lastRevLog=state.log; }
   for(let i=lastRevIdxLen;i<state.log.length;i++){
-    const e=state.log[i], t=Date.parse(e[1]);
+    const e=state.log[i], t=logTs(e);
     if(!isFinite(t))continue;
     const p=lastRevIdx[e[0]];
     if(!p||t>=p[0]) lastRevIdx[e[0]]=[t,e[2]];
@@ -4616,7 +4656,7 @@ function renderList(reset){
   listRows=rows;
   const showRev = todayOnly || sort==='recent';
   const note=$('listNote');
-  if(todayOnly){ let n=0; for(const e of state.log) if(dayKey(new Date(e[1]))===tk)n++;
+  if(todayOnly){ let n=0; for(const e of state.log) if(dayKey(logDate(e))===tk)n++;
     note.textContent=`오늘 푼 카드 ${rows.length}장 · 채점 ${n}회 (하루 경계 새벽 ${DAY_CUT}시)`;
     note.style.display='block'; }
   else if(raw){ note.textContent=`${rows.length}장`; note.style.display='block'; }
@@ -4711,7 +4751,7 @@ $('btnSolveList').onclick=()=>{
 function dailyStats(){
   const by={}, firstSeen=new Set();
   for(const e of state.log){
-    const k=dayKey(new Date(e[1]));
+    const k=dayKey(logDate(e));
     const d=by[k]||(by[k]={n:0,nw:0,ms:0,msN:0,r:[0,0,0,0,0]});
     d.n++; d.r[e[2]]=(d.r[e[2]]||0)+1;
     if(!firstSeen.has(e[0])){ firstSeen.add(e[0]); d.nw++; }
@@ -4734,7 +4774,10 @@ function barChart(cols, opt){ // cols=[{a,b,label,title,cls}] a=주(아래)·b=�
   const ax=cols.map(c=>`<span>${esc(c.label||'')}</span>`).join('');
   return `<div class="chart" style="${opt&&opt.h?`height:${opt.h}px`:''}">${bars}</div><div class="xaxis">${ax}</div>`;
 }
+let statsLoaded=false;
 function renderStats(){
+  if(!statsLoaded){ statsLoaded=true;
+    loadWeeks(weeksBack(13)).then(ok=>{ if(ok&&$('scrStats').classList.contains('on'))renderStats(); }); }
   const tk=todayKey(), by=dailyStats();
   const today=by[tk]||{n:0,nw:0,ms:0,msN:0,r:[0,0,0,0,0]};
   let due=0,nw=0,ret=0,bur=0,learned=0;
@@ -4800,7 +4843,7 @@ function renderStats(){
   const cut=Date.now()-30*86400000;
   for(const e of state.log){
     const isFirst=!seen.has(e[0]); seen.add(e[0]);
-    if(Date.parse(e[1])<cut)continue;
+    if(logTs(e)<cut)continue;
     if(!isFirst)R[e[2]]=(R[e[2]]||0)+1;
     const ex=e[3]; if(ex&&typeof ex.ms==='number'){ msSum+=ex.ms; msN++; }
   }
@@ -4878,8 +4921,8 @@ function renderFlags(){
       const el=cardRow(c, tail(c));
       el.onclick=()=>openCardSheet(c, renderFlags);
       const b=el.querySelector('button[data-cid]');
-      if(b)b.onclick=(ev)=>{ ev.stopPropagation(); const s=st(c.id); s.flag=null; s.ann=[]; touch(s);
-        cacheState(); setDirty(true); renderFlags(); toast('해제했어요'); };
+      if(b)b.onclick=(ev)=>{ ev.stopPropagation(); const s=st(c.id); s.flag=null; s.ann=[]; touchFb(s);
+        cacheState(); renderFlags(); toast('해제했어요'); };
       d.appendChild(el);
     }
     body.appendChild(d);
@@ -4900,9 +4943,8 @@ $('btnConnect').onclick=async()=>{
     const r=await fetch(`https://api.github.com/repos/${cfg.owner}/${cfg.repo}`,{headers:ghHeaders(),cache:'no-store'});
     if(!r.ok)throw 0;
     saveCfg(); $('ovlSetup').classList.remove('show'); hideBanner();
-    await loadState(); toast('연결 완료'); if(dirty)push(true);
-    adoptStateSessions(); adoptStateIntake();
-    for(const sx of sessions){ if(!isFixed(sx)) sx.day=''; }  // 원격 상태 반영 — 전체 범위 세션은 다시 채운다
+    await loadAll(); toast('연결 완료'); if(dirty)push(true);
+      for(const sx of sessions){ if(!isFixed(sx)) sx.day=''; }  // 원격 상태 반영 — 전체 범위 세션은 다시 채운다
     saveSessionsFlush(); renderHome();
   }catch(e){
     $('cfgErr').textContent='연결 실패 — 토큰 권한(Contents RW)과 네트워크를 확인해 주세요';
@@ -4919,13 +4961,13 @@ function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show');
 (async function(){
   applyTheme();
   loadCfg(); loadSessions(); loadIntake();
+  await loadPlan();          // tagKey·투입 순서가 계획에 의존하므로 데이터보다 먼저
   await loadData();
   if(!DATA.length){
     $('loading').textContent='카드 데이터를 못 불러왔어요 — 네트워크 확인 후 새로고침';
     return;
   }
-  await loadState();
-  adoptStateSessions(); adoptStateIntake();
+  await loadAll();
   $('loading').style.display='none';
   if(cfg===null||!cfg.token) openSetup();
   go('scrHome');     // 세션은 홈에서 골라 들어간다 (즉시 시작 폐지 — 동하 확정 2026-08-20)

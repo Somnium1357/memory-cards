@@ -480,17 +480,21 @@ input:focus,select:focus{border-color:var(--accent);}
 .fold summary::-webkit-details-marker{display:none;}
 .fold summary::before{content:"▸ ";color:var(--faint);}
 .fold[open] summary::before{content:"▾ ";}
-.tr-row{display:flex;align-items:center;gap:8px;padding:9px 6px;border-radius:10px;cursor:pointer;}
-.tr-row:active{background:var(--surface2);}
-.tr-row .cbx{flex:0 0 auto;width:19px;height:19px;border-radius:6px;border:2px solid var(--line);
-  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:transparent;}
+.tr-row{display:flex;align-items:stretch;border-radius:10px;overflow:hidden;}
+.tr-row .pick{flex:0 0 auto;width:46px;display:flex;align-items:center;justify-content:center;}
+.tr-row .pick:active{background:var(--surface2);}
+.tr-row .open{flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:15px 10px 15px 2px;text-align:left;}
+.tr-row.expandable .open:active{background:var(--surface2);}
+.tr-row .cbx{width:22px;height:22px;border-radius:7px;border:2px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:transparent;}
 .tr-row.on .cbx{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
 .tr-row.part .cbx{border-color:var(--accent);color:var(--accent);}
 .tr-row .nm{flex:1;min-width:0;font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .tr-row .ct{flex:0 0 auto;font-size:11px;font-weight:700;color:var(--mute);}
 .tr-row .ct .due{color:var(--accent);margin-left:6px;}
-.tr-row .tw{flex:0 0 auto;width:20px;text-align:center;color:var(--faint);font-size:11px;}
-.tr-lv1{padding-left:22px;} .tr-lv2{padding-left:46px;}
+.tr-row .tw{flex:0 0 auto;width:22px;text-align:center;color:var(--faint);font-size:12px;}
+.tr-lv1 .open{padding-left:14px;} .tr-lv2 .open{padding-left:34px;}
+.tr-lv2 .pick{width:46px;}
 .tr-lv1 .nm{font-weight:600;font-size:13px;} .tr-lv2 .nm{font-weight:500;font-size:12.5px;color:var(--ink2);}
 .kbd-note kbd{font-family:inherit;font-size:11px;font-weight:800;color:var(--mute);background:var(--surface2);
   border-radius:6px;padding:2px 6px;margin:0 1px;}
@@ -4297,7 +4301,7 @@ function openUnitPick(o){
   pkSel={units:((o.selected&&o.selected.units)||[]).slice(), mids:((o.selected&&o.selected.mids)||[]).slice()};
   pkOnOk=o.onOk||null; pkOnPick=o.onPick||null;
   $('pkTitle').textContent=o.title||'고르기';
-  $('pkDesc').textContent=o.desc||'';
+  $('pkDesc').textContent=(o.desc||'')+(o.sessions?'':' · 왼쪽 네모=선택, 이름=펼치기');
   $('pkSearch').style.display=pkMode==='sessions'?'none':'block';
   $('pkOk').style.display=pkMode==='sessions'?'none':'block';
   $('pkSearch').value='';
@@ -4318,13 +4322,16 @@ function renderPick(){
   }
   const q=$('pkSearch').value.trim().toLowerCase();
   const stats=unitStatsAll();
-  const row=(cls, on, part, tw, name, cnt, due, onClick, onTw)=>{
+  const row=(cls, on, part, tw, name, cnt, due, onPick, onOpen)=>{
     const el=document.createElement('div');
-    el.className='tr-row '+cls+(on?' on':'')+(part?' part':'');
-    el.innerHTML=`<span class="tw">${tw||''}</span><span class="cbx">${on?'✓':(part?'–':'')}</span>
-      <span class="nm">${esc(name)}</span>
-      <span class="ct">${cnt}${due?`<span class="due">due ${due}</span>`:''}</span>`;
-    el.onclick=(e)=>{ if(onTw&&e.target.classList.contains('tw')){ onTw(); return; } onClick(); };
+    el.className='tr-row '+cls+(on?' on':'')+(part?' part':'')+(onOpen?' expandable':'');
+    el.innerHTML=`<button class="pick"><span class="cbx">${on?'✓':(part?'–':'')}</span></button>
+      <button class="open">
+        <span class="nm">${esc(name)}</span>
+        <span class="ct">${cnt}${due?`<span class="due">due ${due}</span>`:''}</span>
+        <span class="tw">${tw||''}</span></button>`;
+    el.querySelector('.pick').onclick=(e)=>{ e.stopPropagation(); onPick(); };
+    el.querySelector('.open').onclick=(e)=>{ e.stopPropagation(); (onOpen||onPick)(); };
     box.appendChild(el);
   };
   for(const node of buildTree()){
@@ -4335,7 +4342,7 @@ function renderPick(){
     const open = q? true : !!pkOpen[node.subj];
     row('', sSt===2, sSt===1, open?'▾':'▸', node.label, node.n, 0,
       ()=>{ const all=sSt!==2; for(const u of units)pkToggleUnit(u, all); renderPick(); },
-      ()=>{ pkOpen[node.subj]=!pkOpen[node.subj]; renderPick(); });
+      ()=>{ pkOpen[node.subj]=!pkOpen[node.subj]; renderPick(); });   // 이름 쪽 = 펼치기
     if(!open)continue;
     for(const u of units){
       const uSt=pkUnitState(u), mids=Object.keys(u.mids);
@@ -4343,7 +4350,7 @@ function renderPick(){
       const st2=stats[u.key]||{due:0};
       row('tr-lv1', uSt===2, uSt===1, mids.length>1?(uOpen?'▾':'▸'):'', u.label.replace(/^[^·]+· /,''), u.n, st2.due,
         ()=>{ pkToggleUnit(u, uSt!==2); renderPick(); },
-        mids.length>1?()=>{ pkOpen[u.key]=!pkOpen[u.key]; renderPick(); }:null);
+        mids.length>1?()=>{ pkOpen[u.key]=!pkOpen[u.key]; renderPick(); }:null);  // 중주제가 하나면 이름도 선택
       if(!uOpen||mids.length<2)continue;
       for(const m of mids){
         const on=pkSel.units.includes(u.key)||pkSel.mids.includes(midKey(u.key,m));

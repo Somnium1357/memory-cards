@@ -374,6 +374,13 @@ input:focus,select:focus{border-color:var(--accent);}
 
 /* ══ 홈 오늘 블록 ══ */
 .today-box{background:var(--surface);border-radius:18px;padding:15px 17px 13px;box-shadow:var(--shadow);margin-bottom:6px;}
+.resume{width:100%;margin:8px 0 2px;padding:15px 18px;border-radius:16px;background:var(--accent);
+  color:var(--accent-ink);font-size:15px;font-weight:800;letter-spacing:-.2px;text-align:left;
+  display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-sm);}
+.resume small{margin-left:auto;font-size:12px;font-weight:700;opacity:.8;}
+.resume:active{filter:brightness(.94);}
+.hd-more{width:100%;padding:9px;border-radius:11px;border:1.5px dashed var(--line);
+  font-size:12px;font-weight:700;color:var(--mute);margin-top:2px;}
 .today-top{display:flex;align-items:center;gap:12px;}
 .today-top .lead{flex:1;min-width:0;}
 .today-top .lead .k{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--faint);}
@@ -433,6 +440,7 @@ input:focus,select:focus{border-color:var(--accent);}
     <div class="scr" id="scrHome">
       <div class="home-wrap"><div class="home-inner">
         <div class="today-box" id="todayBox"></div>
+        <button class="resume" id="btnResume" style="display:none"></button>
         <div class="h-title">세션</div>
         <div class="h-sub" id="hSub"></div>
         <div id="presetList"></div>
@@ -3084,7 +3092,8 @@ function buildQueue(p, status){
   return sel;
 }
 function startSession(p){
-  curPreset=p; lsSet(K_LASTP,p.id);
+  curPreset=p; lsSet(K_LASTP,p.id); stash=null;   // 새 세션을 고르면 밀려나 있던 세션은 폐기
+
   phase = p.scope.status==='new' ? 'new' : 'review';
   queue = buildQueue(p, p.scope.status==='new'?'new':p.scope.status);
   qPos=0; sessionDone=0; newServed=0; undoSnap=null; updateUndo();
@@ -3112,10 +3121,21 @@ function extendWithNew(){ // 신규 = 대주제 한 개씩 — 끝나면 체크�
 /* ═══════════════ 풀이 ═══════════════ */
 const $=id=>document.getElementById(id);
 function cur(){ return queue[qPos]||null; }
+function stashRemain(){ return stash?stash.queue.length-stash.qPos:0; }
+function resumeStash(){ // 임시 세션을 마치고 원래 세션으로 복귀
+  if(!stash)return false;
+  queue=stash.queue; qPos=stash.qPos; curPreset=stash.preset; phase=stash.phase; curTopic=stash.topic;
+  stash=null; undoSnap=null; updateUndo();
+  go('scrSolve'); showCard(); return true;
+}
 function tomorrowCount(sc){ // 내일 예상 = due가 정확히 내일인 카드 (오늘 잔여분은 "복습 N"이 담당)
   const tk=tomorrowKey(); let n=0;
   for(const c of DATA){ const s=state.cards[c.id];
     if(s&&s.fsrs&&!s.retired&&dayKey(new Date(s.fsrs.due))===tk&&(!sc||inScope(c,sc))) n++; }
+  return n;
+}
+function todayRated(){ let n=0; const tk=todayKey();
+  for(let i=state.log.length-1;i>=0;i--){ if(dayKey(new Date(state.log[i][1]))===tk)n++; else if(n)break; }
   return n;
 }
 function counts(){ // 상단 바 = 현재 세션 범위 기준 (스펙)
@@ -3124,7 +3144,7 @@ function counts(){ // 상단 바 = 현재 세션 범위 기준 (스펙)
   const tmr=tomorrowCount(sc);
   const label = phase==='new'?'신규':'복습';
   $('tbCounts').innerHTML = curPreset
-    ? `${label} <b>${remain}</b> · 오늘 ${sessionDone} · 내일 ~<b>${tmr}</b>`
+    ? `${label} <b>${remain}</b> · 오늘 ${todayRated()} · 내일 ~<b>${tmr}</b>`
     : `내일 ~<b>${tmr}</b>`;
 }
 function showCard(){
@@ -3203,7 +3223,7 @@ function rate(num){
   const c=cur(); if(!c||!revealed)return;
   const s=st(c.id), now=new Date(), tk=todayKey();
   const hasItems=itemMarks.length>=2, anyX=itemMarks.some(Boolean);
-  if(anyX && num!==1) return;             // X 있으면 Again만
+  if(anyX && num!==1){ toast('빠뜨린 항목이 있어요 — 「다시」만 눌러요'); return; } // X 있으면 Again만
   const firstToday = s.d!==tk;
   undoSnap={ id:c.id, prev:JSON.parse(JSON.stringify(state.cards[c.id]||null)),
              logLen:state.log.length, qPos, phase, sessionDone, newServed };
@@ -3251,16 +3271,20 @@ function renderSummary(final){
   const hpLine = hp.length
     ? `<div class="det" style="margin-top:6px">📖 읽을 것: ${hp.slice(0,3).map(hoedokLabel).map(esc).join(' · ')}${hp.length>3?` 외 ${hp.length-3}`:''}</div>` : '';
   const capNote = nToday ? ` · 오늘 신규 ${nToday}${intake.cap?(nToday>intake.cap?` <b>(권장 ${intake.cap} 넘김)</b>`:`/${intake.cap}`):''}` : '';
+  const sameTopic = nt && curTopic && nt.key===curTopic;
   const big = phase==='new'
-    ? (nt||curTopic ? (curTopic&&TAGMETA[curTopic]?`「${esc(TAGMETA[curTopic].tag)}」 끝`:'복습 끝!') : '전량 투입 완료 🎉')
+    ? (nt||curTopic ? (curTopic&&TAGMETA[curTopic]
+        ? `「${esc(TAGMETA[curTopic].tag)}」 ${sameTopic?'오늘 한 바퀴':'끝'}`:'복습 끝!') : '전량 투입 완료 🎉')
     : (final ? '오늘은 여기까지' : '복습 끝!');
   sm.innerHTML=`<div class="big">${big}</div>
-    <div class="det">오늘 ${sessionDone}장 풀었어요${capNote}<br>내일 예상 복습 ~${tmr}장</div>
+    <div class="det">오늘 ${todayRated()}회 채점${capNote}<br>내일 예상 복습 ~${tmr}장</div>
     ${hpLine}
     <div class="actions">
-      ${nt?`<button class="btn-primary" id="smNew">${phase==='new'?'다음':'신규 시작'}: ${esc(nt.label)} (${nt.cards.length}장)</button>`:''}
+      ${stashRemain()?`<button class="btn-primary" id="smBack">돌아가기: ${esc(stash.preset.name)} (${stashRemain()}장)</button>`:''}
+      ${nt?`<button class="${stashRemain()?'btn-ghost':'btn-primary'}" id="smNew">${phase==='new'?(sameTopic?'이어서':'다음'):'신규 시작'}: ${esc(nt.label)} (${nt.cards.length}장)</button>`:''}
       <button class="btn-ghost" id="smHome">홈</button></div>`;
   const bn=$('smNew'); if(bn)bn.onclick=()=>{ $('summary').style.display='none'; extendWithNew(); };
+  const bb=$('smBack'); if(bb)bb.onclick=()=>{ $('summary').style.display='none'; resumeStash(); };
   $('smHome').onclick=()=>{ push(); go('scrHome'); };
   counts(); push(); // 세션 경계 = 배치 push 시점
 }
@@ -3363,7 +3387,7 @@ function go(id){
   $('rail').style.display=railShow?'flex':'none';
   $('railFab').classList.toggle('show',railShow);
   if(id==='scrHome')renderHome();
-  if(id==='scrList')renderList(true);
+  if(id==='scrList'){ picking=false; picked.clear(); syncBulk(); renderList(true); }
   if(id==='scrStats')renderStats();
   if(id==='scrWeak')renderWeak();
   if(id==='scrFlags')renderFlags();
@@ -3409,6 +3433,18 @@ function renderToday(){ // 홈 첫 화면 = 오늘 한 일 (통계 탭까지 안
     </div>`;
   $('todayBox').querySelector('[data-go]').onclick=()=>go('scrStats');
 }
+function renderResume(){ // 세션 중 다른 화면에 들렀다 돌아오는 길 (없으면 프리셋 재시작뿐이었음)
+  const b=$('btnResume'), remain=queue.length-qPos;
+  if(curPreset && remain>0){
+    b.style.display='flex';
+    b.dataset.mode='cur';
+    b.innerHTML=`이어서 풀기<small>${esc(curPreset.name)} · ${phase==='new'?'신규':'복습'} ${remain}장 남음</small>`;
+  } else if(stashRemain()){          // 임시 세션이 끝났으면 밀려나 있던 세션으로
+    b.style.display='flex';
+    b.dataset.mode='stash';
+    b.innerHTML=`이어서 풀기<small>${esc(stash.preset.name)} · ${stashRemain()}장 남음</small>`;
+  } else b.style.display='none';
+}
 function renderHome(){
   let due=0,nw=0;
   for(const c of DATA){ if(isDue(c))due++; else if(isNew(c))nw++; }
@@ -3430,20 +3466,28 @@ function renderHome(){
   $('tglSwipe').classList.toggle('on',swipeOn);
   $('tglKbd').classList.toggle('on',kbdOn);
   renderToday();
-  renderHoedok(); renderIntake();
+  renderResume(); renderHoedok(); renderIntake();
   counts();
 }
+let hoedokAll=false;
 function renderHoedok(){ // 회독 대기 — 카드가 진입한 대주제. 오늘 체크분은 [취소] 가능(오터치 복구)
   const box=$('hoedokList'); box.innerHTML='';
   const hp=hoedokPending();
   const doneToday=Object.keys(state.hoedok||{}).filter(k=>state.hoedok[k]===todayKey()&&TAGMETA[k]);
   $('hoedokSec').style.display = (hp.length||doneToday.length)?'block':'none';
-  for(const k of hp){
+  const CAP=5, more=hp.length>CAP && !hoedokAll;
+  for(const k of (more?hp.slice(0,CAP):hp)){
     const m=TAGMETA[k];
     const el=document.createElement('div'); el.className='hd-row';
     el.innerHTML=`<span class="t">${esc(hoedokLabel(k))} <small>${m.n}장</small></span><button>읽음 ✓</button>`;
     el.querySelector('button').onclick=()=>{ markHoedok(k); renderHoedok(); toast('읽음 체크'); };
     box.appendChild(el);
+  }
+  if(more){
+    const b=document.createElement('button'); b.className='hd-more';
+    b.textContent=`밀린 회독 ${hp.length-CAP}개 더 보기`;
+    b.onclick=()=>{ hoedokAll=true; renderHoedok(); };
+    box.appendChild(b);
   }
   for(const k of doneToday){
     const el=document.createElement('div'); el.className='hd-row'; el.style.opacity='.55';
@@ -3470,6 +3514,10 @@ function renderIntake(){ // 투입 계획 미리보기 — 남은 신규가 있�
 }
 $('intakeCap').addEventListener('change',()=>{ intake.cap=+$('intakeCap').value||null; saveIntake();
   toast(intake.cap?`권장 ${intake.cap}장 — 체크포인트에 표시돼요`:'권장량 없음'); });
+$('btnResume').onclick=()=>{
+  if($('btnResume').dataset.mode==='stash'){ resumeStash(); return; }
+  go('scrSolve'); showCard();
+};
 $('btnNewPreset').onclick=()=>openPresetEditor(null);
 $('btnSync').onclick=async()=>{ if(!cfg||!cfg.token){openSetup();return;} await push(true); if(!dirty)toast('저장 완료'); };
 $('btnBackup').onclick=()=>{
@@ -3607,6 +3655,7 @@ function openCardSheet(c, refresh){ csCard=c; csRefresh=refresh||null; renderCar
 function closeCardSheet(){ $('ovlCard').classList.remove('show'); const r=csRefresh; csCard=null; csRefresh=null; if(r)r(); }
 function renderCardSheet(){
   const c=csCard; if(!c)return;
+  const keepScroll=$('csSheet').scrollTop;
   const s=state.cards[c.id]||{}, f=s.fsrs, r=retrievability(f);
   const m=c.front.match(/^〔([^〕]*)〕\s*(.*)$/s);
   const hist=cardHistory(c.id);
@@ -3664,6 +3713,7 @@ function renderCardSheet(){
       <button class="cs-act danger" id="csForget">처음부터 다시</button>
       <button class="cs-act" id="csClose">닫기</button>
     </div>`;
+  $('csSheet').scrollTop=keepScroll;
   const rr=()=>renderCardSheet();
   $('csSheet').querySelectorAll('[data-untag]').forEach(b=>b.onclick=()=>{
     const s2=st(c.id); s2.t=(s2.t||[]).filter(x=>x!==b.dataset.untag); touch(s2); cacheState(); setDirty(true); rr(); });
@@ -3687,13 +3737,16 @@ function renderCardSheet(){
   $('csClose').onclick=closeCardSheet;
 }
 $('ovlCard').onclick=(e)=>{ if(e.target===$('ovlCard'))closeCardSheet(); };
-function startAdHoc(cards, label){ // 임시 큐 = 목록·상세에서 바로 풀기 (채점은 정규 — 스펙)
+let stash=null;                            // 임시 세션에 밀려난 원래 세션
+function startAdHoc(cards, label, note){ // 임시 큐 = 목록·상세에서 바로 풀기 (채점은 정규 — 스펙)
   if(!cards.length){ toast('풀 카드가 없어요'); return; }
+  if(curPreset && curPreset.id!=='adhoc' && queue.length-qPos>0)
+    stash={queue, qPos, preset:curPreset, phase, topic:curTopic};
   curPreset={id:'adhoc', name:label||'임시 세션', scope:{subj:[],tags:[],typ:[],status:'all'},
     order:'shuffle', limit:null, bury:false, newAfter:false};
   queue=cards.slice(); qPos=0; sessionDone=0; newServed=0; phase='review';
   undoSnap=null; updateUndo(); go('scrSolve'); showCard();
-  toast(`${cards.length}장 임시 세션 — 채점은 정규로 반영돼요`);
+  toast(note||`${cards.length}장 임시 세션 — 채점은 정규로 반영돼요`);
 }
 
 /* ═══════════════ 목록 ═══════════════ */
@@ -3807,7 +3860,7 @@ function renderList(reset){
     el.onclick=()=>{
       if(picking){ if(picked.has(c.id)){picked.delete(c.id); el.classList.remove('sel');}
                    else {picked.add(c.id); el.classList.add('sel');} syncBulk(); }
-      else openCardSheet(c, ()=>renderList(true));
+      else openCardSheet(c, refreshList);
     };
     body.appendChild(el);
   }
@@ -3821,6 +3874,13 @@ function renderList(reset){
   }
 }
 /* 일괄 선택 */
+function refreshList(){ // 상세·일괄 조작 후 되돌아올 때 보던 자리를 지킨다
+  const body=$('scrList').querySelector('.sub-body'), sc=body.scrollTop, want=listShown;
+  renderList(true);
+  let guard=0;
+  while(listShown<want && $('listMore').style.display!=='none' && guard++<50) renderList(false);
+  body.scrollTop=sc;
+}
 function syncBulk(){
   $('bulkN').textContent=picked.size+'장';
   $('bulkBar').classList.toggle('on', picking);
@@ -3843,7 +3903,7 @@ function bulkDo(kind){
       else if(kind==='bury')buryCard(c);
     }
     const lbl={retire:'은퇴',restore:'복구',flag:'플래그',unflag:'플래그 해제',bury:'내일로'}[kind];
-    picked.clear(); renderList(true); syncBulk(); toast(`${cs.length}장 ${lbl}`);
+    picked.clear(); refreshList(); syncBulk(); toast(`${cs.length}장 ${lbl}`);
   };
   if(kind==='retire'&&cs.length>=20)
     askConfirm('한꺼번에 은퇴', `${cs.length}장을 은퇴시킵니다. 목록에서 복구할 수 있어요.`, '은퇴', run);
@@ -3866,9 +3926,10 @@ $('bulkTag').addEventListener('keydown',e=>{
   e.target.value=''; e.target.style.display='none'; picked.clear(); renderList(true); syncBulk();
 });
 $('btnSolveList').onclick=()=>{
-  const cs=listRows.filter(c=>!retired(c)&&!offed(c)&&!buried(c)).slice(0,300); // 미룬 카드는 오늘 빼는 게 일관
-  if(!cs.length){ toast('풀 수 있는 카드가 없어요'); return; }
-  startAdHoc(riskSort(cs), '목록 세션');
+  const pool=listRows.filter(c=>!retired(c)&&!offed(c)&&!buried(c)); // 미룬 카드는 오늘 빼는 게 일관
+  if(!pool.length){ toast('풀 수 있는 카드가 없어요'); return; }
+  const cs=riskSort(pool).slice(0,300);   // 상한 300 — 위험도 높은 것부터
+  startAdHoc(cs, '목록 세션', pool.length>cs.length?`${pool.length}장 중 위험도 높은 ${cs.length}장`:null);
 };
 
 /* ═══════════════ 통계 ═══════════════ */
@@ -3911,7 +3972,7 @@ function renderStats(){
     const e=bySubj[c.subj]||(bySubj[c.subj]={tot:0,done:0,due:0});
     e.tot++;
     if(isNew(c))nw++; else { learned++; e.done++; }
-    if(isDue(c)){ due++; e.due++; }
+    if(isDue(c)&&!buried(c)){ due++; e.due++; }
   }
   const tmr=tomorrowCount(null);
   const g=(k,v,sm)=>`<div class="stat"><div class="k">${k}</div><div class="v">${v}${sm?`<small> ${sm}</small>`:''}</div></div>`;

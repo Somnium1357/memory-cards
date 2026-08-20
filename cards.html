@@ -56,10 +56,18 @@ input:focus,select:focus{border-color:var(--accent);}
 /* ══ 앱 골격 ══ */
 #app{display:flex;height:100%;}
 #main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative;}
-/* 사이드바(216px)가 붙는 넓은 화면에선 같은 폭을 왼쪽에 비워 카드·채점바를 화면 정중앙에.
-   1080px 미만에선 폭이 아까워 적용하지 않는다 (사이드바가 오버레이로 바뀌는 820px 이하도 마찬가지) */
-@media (min-width:821px) and (orientation:landscape){
-  #main.railed{padding-left:clamp(0px, calc(100vw - 912px), 216px);}  /* 카드(660)가 좁아지지 않는 선까지만 */
+/* 넓은 가로 화면: 사이드바를 레이아웃에서 빼 오른쪽 여백 위에 띄운다.
+   → 풀이 열은 화면 정중앙, 좌우 여백이 실제로 같아진다 (동하 확정 2026-08-20) */
+@media (min-width:1113px) and (orientation:landscape){
+  #rail{position:fixed;width:196px;flex:none;border-left:none;border-radius:20px;
+    right:calc(14px + env(safe-area-inset-right));
+    top:calc(58px + env(safe-area-inset-top));
+    bottom:calc(14px + env(safe-area-inset-bottom));
+    box-shadow:var(--shadow);padding:12px 10px;z-index:20;}
+}
+/* 그 사이 폭(사이드바가 자리를 차지하는 구간)에서는 왼쪽을 같은 만큼 비워 균형만 맞춘다 */
+@media (min-width:821px) and (max-width:1112px) and (orientation:landscape){
+  #main.railed{padding-left:clamp(0px, calc(100vw - 912px), 216px);}
 }
 #rail{flex:0 0 216px;border-left:1px solid var(--line);background:var(--surface);
   display:flex;flex-direction:column;padding:14px 12px calc(14px + env(safe-area-inset-bottom));overflow-y:auto;}
@@ -613,7 +621,7 @@ input:focus,select:focus{border-color:var(--accent);}
     <button data-v="shuffle">셔플</button><button data-v="doc">문서순</button><button data-v="weighted">가중 셔플</button></div></div>
   <div class="field" id="peWtField" style="display:none"><label>과목 가중치 (배점 비율)</label><div class="wt-grid" id="peWts"></div></div>
   <div class="field"><label>분량 (비우면 전량)</label><input id="peLimit" type="number" inputmode="numeric" min="1" placeholder="전량"></div>
-  <div class="tgl-row"><span>형제 카드 분산 (하루 한 장)</span><div class="tgl" id="peBury"></div></div>
+  <div class="tgl-row"><span>방향 분산 (역방향은 도입 +2~3일 뒤)</span><div class="tgl" id="peBury"></div></div>
   <div class="tgl-row"><span>복습 소진 후 신규 이어가기</span><div class="tgl" id="peNewAfter"></div></div>
   <div class="btn-row"><button class="btn-ghost" id="peDelete" style="color:var(--again)">삭제</button><button class="btn-ghost" id="peCancel">취소</button><button class="btn-primary" id="peSave">저장</button></div>
 </div></div>
@@ -3081,16 +3089,6 @@ function scopePool(sc, status){
     return true; // all
   });
 }
-function nodesRatedToday(){
-  const tk=todayKey(), s=new Set();
-  for(let i=state.log.length-1;i>=0;i--){
-    const e=state.log[i]; if(dayKey(new Date(e[1]))!==tk) break;
-    const c=BYID[e[0]]; if(c)s.add(c.node);
-  }
-  // break는 로그가 시간순 정렬이라는 전제 — 병합 직후엔 전체 스캔이 안전
-  if(s.size===0 && state.log.length){ for(const e of state.log){ if(dayKey(new Date(e[1]))===tk){const c=BYID[e[0]]; if(c)s.add(c.node);} } }
-  return s;
-}
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 function riskSort(pool){ // 선발 기본 = 위험도 우선(R 낮은 순). 신규(R 없음)는 문서순으로 뒤에.
   const rev=[], nw=[];
@@ -3099,11 +3097,43 @@ function riskSort(pool){ // 선발 기본 = 위험도 우선(R 낮은 순). 신�
   rev.sort((a,b)=>a[1]-b[1]); nw.sort((a,b)=>newSort(a[0],b[0]));
   return [...rev.map(x=>x[0]), ...nw.map(x=>x[0])];
 }
-function buryFilter(pool, done){ // 형제 분산: 노드당 1장 (오늘 이미 채점한 노드 제외)
-  const seen=new Set(), out=[];
-  for(const c of pool){ if(done.has(c.node)||seen.has(c.node)) continue; seen.add(c.node); out.push(c); }
-  return out;
+/* 방향 분산 (스펙 2026-08-20 확정 — 노드 단위 이월은 폐기)
+   신규 투입에서 전방(d 없음)은 당일 전부, 역방향(d:"r")만 전방 도입 +2~3일 뒤.
+   ⚠ 카드의 c.d = 방향 필드(생성기), 상태의 s.d = 그날 첫 채점 판정일 — 다른 값이다. */
+function isRev(c){ return c.d==='r'; }
+function revDelay(c){ let h=0; const id=c.id||''; // 카드마다 2일/3일 고정 배정 (부하 분산)
+  for(let i=0;i<id.length;i++) h=(h*31+id.charCodeAt(i))>>>0;
+  return 2+(h%2);
 }
+let firstRevIdx=null, firstRevLog=null, firstRevLen=-1;
+function firstRevMap(){ // 카드별 최초 채점 시각 (도입일 판정용) — 로그 증가분만 반영
+  if(firstRevIdx && firstRevLog===state.log && firstRevLen===state.log.length) return firstRevIdx;
+  if(!firstRevIdx || firstRevLog!==state.log || firstRevLen>state.log.length){
+    firstRevIdx={}; firstRevLen=0; firstRevLog=state.log; }
+  for(let i=firstRevLen;i<state.log.length;i++){
+    const e=state.log[i], t=Date.parse(e[1]);
+    if(!isFinite(t))continue;
+    if(firstRevIdx[e[0]]==null||t<firstRevIdx[e[0]]) firstRevIdx[e[0]]=t;
+  }
+  firstRevLen=state.log.length;
+  return firstRevIdx;
+}
+const NODE_FWD={};                        // 노드 → 전방 카드들 (최초 호출 때 구축)
+function fwdSiblings(node){
+  if(!NODE_FWD._built){ for(const c of DATA){ if(!isRev(c))(NODE_FWD[c.node]=NODE_FWD[c.node]||[]).push(c); }
+    NODE_FWD._built=true; }
+  return NODE_FWD[node]||[];
+}
+function revReady(c){ // 역방향 카드가 오늘 투입돼도 되는가
+  const fwd=fwdSiblings(c.node);
+  if(!fwd.length) return true;            // 역방향뿐인 노드 = 그게 도입이다 (스펙)
+  const F=firstRevMap();
+  let intro=null;
+  for(const f of fwd){ const t=F[f.id]; if(t!=null && (intro==null||t<intro)) intro=t; }
+  if(intro==null) return false;           // 전방이 아직 도입 전이면 역방향도 대기
+  return dayKey(new Date(intro+revDelay(c)*86400000)) <= todayKey();
+}
+function dirFilter(pool){ return pool.filter(c=>!isRev(c)||revReady(c)); }
 function againPending(sc){ // 오늘 마지막 채점이 Again인 카드 = "그날 맞출 때까지" 잔여분 (세션 재시작에도 복원)
   const tk=todayKey(), last={};
   for(const e of state.log){ if(dayKey(new Date(e[1]))===tk) last[e[0]]=e[2]; }
@@ -3111,7 +3141,7 @@ function againPending(sc){ // 오늘 마지막 채점이 Again인 카드 = "그�
 }
 function buildQueue(p, status){
   let pool=scopePool(p.scope, status);
-  if(p.bury) pool=buryFilter(riskSort(pool), nodesRatedToday()); // 분산은 선발 전에 (가중 쿼터 왜곡 방지)
+  if(p.bury && status==='new') pool=dirFilter(pool);   // 방향 분산은 신규 투입 시점에만
   // 선발: 문서순 세션=앞에서 N(통독 의도) / 그 외=위험도 R순, 가중=쿼터 배분 후 쿼터 내 R순
   let sel;
   if(p.order==='doc'){ pool.sort((a,b)=>a._i-b._i); sel=pool; }
@@ -3151,7 +3181,7 @@ function startSession(p){
 let curTopic=null; // 방금 투입한 대주제 키
 function nextTopic(){ // 다음 투입 = 계획 최우선 대주제의 오늘 한 바퀴(개념당 1장) — 바퀴는 중간에 안 자른다
   let pool=scopePool(curPreset.scope,'new').sort(newSort);
-  if(curPreset.bury) pool=buryFilter(pool, nodesRatedToday()); // 쌍은 다음날로 (A → 내일 A' — 동하 승인)
+  if(curPreset.bury) pool=dirFilter(pool);   // 전방은 당일 전부, 역방향은 전방 도입 +2~3일 뒤
   if(!pool.length) return null;
   const k=tagKey(pool[0]);
   return {key:k, cards:pool.filter(c=>tagKey(c)===k), date:PLAN_DATE.get(k)||'', label:hoedokLabel(k)};
@@ -3516,7 +3546,7 @@ function presetDesc(p){
   parts.push({due:'due만',new:'신규만',all:'전부',weak:'약점만'}[sc.status]);
   parts.push({shuffle:'셔플',doc:'문서순',weighted:'가중'}[p.order]);
   parts.push(p.limit?p.limit+'장':'전량');
-  if(p.bury)parts.push('분산');
+  if(p.bury)parts.push('방향 분산');
   return parts.join(' · ');
 }
 function renderToday(){ // 홈 첫 화면 = 오늘 한 일 (통계 탭까지 안 들어가도 보이게)

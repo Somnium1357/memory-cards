@@ -2981,7 +2981,40 @@ async function ghGetState(){
   else { const r2=await fetch(j.download_url,{cache:'no-store'}); txt=await r2.text(); } // >1MB 대비
   return txt.trim()?JSON.parse(txt):null;
 }
-function mergeState(remote, local){ // 병합: cards=u 최신 우선 / log=append 합집합
+function mergeSessions(remote, local, log){
+  // 세션 병합: id별 합집합 · 같은 id면 큐는 「양쪽 합집합 − 오늘 이미 푼 것」, 나머지 필드는 u 최신 우선
+  const tk=todayKey(), solved=new Set();
+  for(let i=(log||[]).length-1;i>=0;i--){ const e=log[i];
+    if(dayKey(new Date(e[1]))!==tk)break; solved.add(e[0]); }
+  const byId={}, tomb={};
+  for(const list of [remote||[], local||[]]){
+    for(const sx of list){
+      if(sx.del){ tomb[sx.id]=Math.max(tomb[sx.id]||0, sx.del); continue; }   // 삭제 툼스톤
+      const prev=byId[sx.id];
+      if(!prev){ byId[sx.id]=JSON.parse(JSON.stringify(sx)); continue; }
+      const newer=(sx.lastAt||0)>=(prev.lastAt||0)?sx:prev, older=newer===sx?prev:sx;
+      const q=[...new Set([...(newer.q||[]), ...(older.q||[])])].filter(id=>!solved.has(id));
+      const merged=JSON.parse(JSON.stringify(newer));
+      merged.q=q;
+      merged.done=Math.max(newer.done||0, older.done||0);
+      merged.scope={ ...newer.scope,
+        units:[...new Set([...((newer.scope&&newer.scope.units)||[]), ...((older.scope&&older.scope.units)||[])])],
+        mids:[...new Set([...((newer.scope&&newer.scope.mids)||[]), ...((older.scope&&older.scope.mids)||[])])] };
+      byId[sx.id]=merged;
+    }
+  }
+  const out=[];
+  for(const id in byId){
+    if(tomb[id] && tomb[id] >= (byId[id].lastAt||0)) continue;   // 지운 뒤 안 건드렸으면 삭제 유지
+    out.push(byId[id]);
+  }
+  const cut=Date.now()-30*86400000;                              // 툼스톤은 30일 들고 있는다
+  for(const id in tomb){                                        // 아직 못 들은 기기가 부활시키지 않게 계속 실어 나른다
+    if(tomb[id]>cut && !out.some(x=>x.id===id)) out.push({id, del:tomb[id]});
+  }
+  return out;
+}
+function mergeState(remote, local){ // 병합: cards=u 최신 우선 / log=append 합집합 / sessions=합집합−오늘 푼 것
   if(!remote) return local;
   const out={cards:{},log:[]};
   const ids=new Set([...Object.keys(remote.cards||{}),...Object.keys(local.cards||{})]);
@@ -2995,6 +3028,9 @@ function mergeState(remote, local){ // 병합: cards=u 최신 우선 / log=appen
   }
   out.log.sort((x,y)=>x[1]<y[1]?-1:1);
   out.hoedok={...(remote.hoedok||{}), ...(local.hoedok||{})}; // 읽음 체크 합집합
+  out.sessions=mergeSessions(remote.sessions, local.sessions, out.log);
+  out.cap = ((local.capAt||0)>=(remote.capAt||0)) ? local.cap : remote.cap;   // 하루 신규 권장량 = 학습 정책이라 동기화
+  out.capAt = Math.max(local.capAt||0, remote.capAt||0);
   return out;
 }
 async function ghPutState(){
@@ -3064,6 +3100,7 @@ async function refreshRemote(){     // 포그라운드 복귀 시 원격 상태 
       state = dirty? mergeState(remote,state) : (remote||state);
       if(!state.cards)state.cards={}; if(!state.log)state.log=[]; if(!state.hoedok)state.hoedok={};
       lastRevIdx=null; firstRevIdx=null; cacheState();
+      adoptStateSessions(); adoptStateIntake();                  // 다른 기기의 세션·권장량 반영
       for(const sx of sessions){ if(!isFixed(sx)) sx.day=''; }   // 자동 충전 세션은 새 상태로 다시 채운다
       pruneSolvedFromQueues();
       const scr=[...document.querySelectorAll('.scr.on')].map(x=>x.id)[0];
@@ -3123,7 +3160,10 @@ function loadIntake(){ const v=lsGet(K_INTAKE);
   if(v){ try{ const o=JSON.parse(v);
     if(Array.isArray(o.order)&&o.order.length)intake.order=o.order;
     if(o.cap!==undefined)intake.cap=o.cap; }catch(e){} } }
-function saveIntake(){ lsSet(K_INTAKE, JSON.stringify(intake)); }
+function saveIntake(){ lsSet(K_INTAKE, JSON.stringify(intake));
+  state.cap=intake.cap; state.capAt=Date.now(); cacheState(); setDirty(true); }
+function adoptStateIntake(){ if(state.cap!==undefined && state.cap!==intake.cap){
+  intake.cap=state.cap; lsSet(K_INTAKE, JSON.stringify(intake)); } }
 function planRank(k){ const r=PLAN_RANK.get(k); return r===undefined?9999:r; } // 계획에 없는 새 대주제는 맨 뒤
 function newSort(a,b){ return planRank(tagKey(a))-planRank(tagKey(b)) || a._i-b._i; } // 신규 = 수강일 오래된 대주제 → 문서순
 function newToday(){ // 오늘 처음 투입된 카드 수 (생애 첫 채점이 오늘)
@@ -3221,6 +3261,7 @@ async function loadState(){
     }
   }else if(local){ state=local; }
   if(!state.cards)state.cards={}; if(!state.log)state.log=[]; if(!state.hoedok)state.hoedok={};
+  if(!Array.isArray(state.sessions))state.sessions=[];
 }
 
 /* ═══════════════ 프리셋 ═══════════════ */
@@ -3249,6 +3290,31 @@ function newSessObj(name, how, scope, mode){
     scope:Object.assign({units:[],mids:[],subj:[],tags:[],typ:[]}, scope||{}),
     q:[], done:0, day:'', lastScore:null, createdAt:Date.now(), lastAt:0};
 }
+function adoptStateSessions(){   // 상태 파일(원격 병합 결과)의 세션을 앱 목록으로 받아온다
+  if(!Array.isArray(state.sessions) || !state.sessions.length){
+    if(sessions.length) state.sessions=[...sessions, ...sessTomb];   // 원격에 아직 없으면 로컬이 정본
+    return false;
+  }
+  const live=state.sessions.filter(x=>!x.del);
+  sessTomb=state.sessions.filter(x=>x.del);
+  if(!live.length){                                   // 툼스톤만 있는 경우: 지워진 것만 반영
+    const dead=new Set(sessTomb.map(t=>t.id));
+    sessions=sessions.filter(x=>!dead.has(x.id));
+    lsSet(K_SESS, JSON.stringify(sessions));
+    return true;
+  }
+  sessions=live.map(x=>JSON.parse(JSON.stringify(x)));
+  normalizeSessions();
+  lsSet(K_SESS, JSON.stringify(sessions));
+  return true;
+}
+function normalizeSessions(){
+  for(const x of sessions){
+    x.scope=Object.assign({units:[],mids:[],subj:[],tags:[],typ:[]},x.scope||{}); x.q=x.q||[];
+    if(!x.mode) x.mode=(x.scope.units&&x.scope.units.length)?'manual':'auto';
+    x.how.status=stArr(x.how.status);
+  }
+}
 function loadSessions(){
   const v=lsGet(K_SESS);
   if(v){ try{ sessions=JSON.parse(v); }catch(e){ sessions=[]; } }
@@ -3264,14 +3330,14 @@ function loadSessions(){
     }catch(e){ migrated=[]; } }
     sessions = migrated.length?migrated:[newSessObj('일일 복습', HOW_TPL[0].how, {})];
   }
-  for(const x of sessions){
-    x.scope=Object.assign({units:[],mids:[],subj:[],tags:[],typ:[]},x.scope||{}); x.q=x.q||[];
-    if(!x.mode) x.mode=(x.scope.units&&x.scope.units.length)?'manual':'auto';   // 옛 세션 승계
-    x.how.status=stArr(x.how.status);
-  }
+  normalizeSessions();
 }
-let sessSaveT=null;
-function saveSessions(){ lsSet(K_SESS, JSON.stringify(sessions)); }
+let sessSaveT=null, sessTomb=[];
+function saveSessions(){
+  lsSet(K_SESS, JSON.stringify(sessions));
+  state.sessions=[...sessions, ...sessTomb];   // 상태 파일에 함께 실어 기기 간 동기화
+  cacheState(); setDirty(true);
+}
 function saveSessionsSoon(){ if(sessSaveT)return; sessSaveT=setTimeout(()=>{ sessSaveT=null; saveSessions(); },400); }
 function saveSessionsFlush(){ if(sessSaveT){ clearTimeout(sessSaveT); sessSaveT=null; } saveSessions(); }
 function isFixed(sx){ return sx.mode==='manual'; }   // 직접 추가 = 잔량 이월 / 자동 충전 = 매일 재조립
@@ -3310,7 +3376,9 @@ function syncSessQueue(){ // 진행 중 세션의 남은 큐를 저장 (새로�
   curSess.lastAt=Date.now(); curSess.day=todayKey();
   saveSessionsSoon();
 }
-function deleteSess(sx){ sessions=sessions.filter(x=>x.id!==sx.id);
+function deleteSess(sx){
+  sessTomb=[...sessTomb.filter(t=>t.id!==sx.id), {id:sx.id, del:Date.now()}];  // 다른 기기에서 부활하지 않게
+  sessions=sessions.filter(x=>x.id!==sx.id);
   if(curSess&&curSess.id===sx.id){ curSess=null; curPreset=null; queue=[]; qPos=0; }
   saveSessionsFlush(); }
 
@@ -4833,6 +4901,7 @@ $('btnConnect').onclick=async()=>{
     if(!r.ok)throw 0;
     saveCfg(); $('ovlSetup').classList.remove('show'); hideBanner();
     await loadState(); toast('연결 완료'); if(dirty)push(true);
+    adoptStateSessions(); adoptStateIntake();
     for(const sx of sessions){ if(!isFixed(sx)) sx.day=''; }  // 원격 상태 반영 — 전체 범위 세션은 다시 채운다
     saveSessionsFlush(); renderHome();
   }catch(e){
@@ -4856,6 +4925,7 @@ function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show');
     return;
   }
   await loadState();
+  adoptStateSessions(); adoptStateIntake();
   $('loading').style.display='none';
   if(cfg===null||!cfg.token) openSetup();
   go('scrHome');     // 세션은 홈에서 골라 들어간다 (즉시 시작 폐지 — 동하 확정 2026-08-20)

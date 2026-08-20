@@ -425,6 +425,14 @@ input:focus,select:focus{border-color:var(--accent);}
 .wk i{flex:1;background:var(--accent-dim);border-radius:2px;min-height:2px;}
 .wk i.on{background:var(--accent);}
 .kbd-note{font-size:11.5px;color:var(--faint);line-height:1.7;margin:12px 4px 0;}
+.home-head{display:flex;align-items:center;gap:8px;margin:10px 2px 6px;}
+.home-head .h-title{margin:0;flex:1;}
+.gear{width:40px;height:40px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  color:var(--mute);background:var(--surface);box-shadow:var(--shadow-sm);}
+.gear svg{width:19px;height:19px;}
+.gear:active{background:var(--surface2);}
+.h-sec #hSub{font-weight:700;letter-spacing:0;color:var(--mute);text-transform:none;margin-left:6px;}
+.h-foot{font-size:11.5px;color:var(--faint);text-align:center;padding:18px 0 6px;line-height:1.7;}
 .kbd-note kbd{font-family:inherit;font-size:11px;font-weight:800;color:var(--mute);background:var(--surface2);
   border-radius:6px;padding:2px 6px;margin:0 1px;}
 #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
@@ -476,10 +484,13 @@ input:focus,select:focus{border-color:var(--accent);}
     <!-- 홈 -->
     <div class="scr" id="scrHome">
       <div class="home-wrap"><div class="home-inner">
+        <div class="home-head">
+          <div class="h-title">오늘</div>
+          <button class="gear" id="btnSettings" title="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 8.9 19a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 5 8.9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9.5a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+        </div>
         <div class="today-box" id="todayBox"></div>
         <button class="resume" id="btnResume" style="display:none"></button>
-        <div class="h-title">세션</div>
-        <div class="h-sub" id="hSub"></div>
+        <div class="h-sec">세션 <span id="hSub"></span></div>
         <div id="presetList"></div>
         <button class="more-btn" id="btnNewPreset">＋ 새 프리셋</button>
         <div id="hoedokSec" style="display:none">
@@ -488,27 +499,13 @@ input:focus,select:focus{border-color:var(--accent);}
         </div>
         <div class="h-sec">신규 투입 — 수강일 오래된 대주제부터</div>
         <div id="planList"></div>
-        <div class="tgl-row" style="padding-top:6px"><span style="font-size:13px;color:var(--mute)">하루 신규 권장량 (체크포인트 표시용)</span>
-          <input id="intakeCap" type="number" inputmode="numeric" min="0" style="width:80px;text-align:center"></div>
         <div class="h-row">
           <button class="h-tab" data-go="scrList">목록</button>
           <button class="h-tab" data-go="scrStats">통계</button>
           <button class="h-tab" data-go="scrWeak">약점</button>
           <button class="h-tab" data-go="scrFlags">플래그</button>
         </div>
-        <div id="themeSeg">
-          <button id="thB">다크 포커스</button>
-          <button id="thC">페이퍼 웜</button>
-        </div>
-        <div class="h-tools">
-          <button class="h-tool" id="btnSync">지금 저장</button>
-          <button class="h-tool" id="btnBackup">상태 백업</button>
-          <button class="h-tool" id="btnSetup">GitHub 연결</button>
-        </div>
-        <div class="tgl-row" style="margin-top:10px"><span style="font-size:13px;color:var(--mute)">스와이프 채점 (좌 다시 · 우 알맞음)</span><div class="tgl" id="tglSwipe"></div></div>
-        <div class="tgl-row"><span style="font-size:13px;color:var(--mute)">키보드 단축키 (PC)</span><div class="tgl" id="tglKbd"></div></div>
-        <div class="kbd-note"><kbd>Space</kbd> 정답 공개 → 알맞음 · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> 채점 ·
-          <kbd>U</kbd> 되돌리기 · <kbd>P</kbd> 일시정지 · <kbd>B</kbd> 내일로 · <kbd>F</kbd> 플래그 · <kbd>H</kbd> 홈 · <kbd>/</kbd> 목록 검색 · <kbd>Esc</kbd> 닫기</div>
+        <div class="h-foot" id="hFoot"></div>
       </div></div>
     </div>
 
@@ -624,6 +621,32 @@ input:focus,select:focus{border-color:var(--accent);}
   <div class="tgl-row"><span>방향 분산 (역방향은 도입 +2~3일 뒤)</span><div class="tgl" id="peBury"></div></div>
   <div class="tgl-row"><span>복습 소진 후 신규 이어가기</span><div class="tgl" id="peNewAfter"></div></div>
   <div class="btn-row"><button class="btn-ghost" id="peDelete" style="color:var(--again)">삭제</button><button class="btn-ghost" id="peCancel">취소</button><button class="btn-primary" id="peSave">저장</button></div>
+</div></div>
+
+<!-- 설정 -->
+<div class="ovl" id="ovlSettings"><div class="sheet">
+  <h2>설정</h2>
+  <p class="desc">매일 만지는 것이 아니라 여기 넣어뒀어요.</p>
+  <div class="field"><label>테마</label>
+    <div id="themeSeg">
+      <button id="thB">다크 포커스</button>
+      <button id="thC">페이퍼 웜</button>
+    </div>
+  </div>
+  <div class="field"><label>하루 신규 권장량 (체크포인트 표시용)</label>
+    <input id="intakeCap" type="number" inputmode="numeric" min="0" placeholder="130"></div>
+  <div class="tgl-row"><span>스와이프 채점 (좌 다시 · 우 알맞음)</span><div class="tgl" id="tglSwipe"></div></div>
+  <div class="tgl-row"><span>키보드 단축키 (PC)</span><div class="tgl" id="tglKbd"></div></div>
+  <div class="kbd-note"><kbd>Space</kbd> 정답 공개 → 알맞음 · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> 채점 ·
+    <kbd>U</kbd> 되돌리기 · <kbd>P</kbd> 일시정지 · <kbd>B</kbd> 내일로 · <kbd>F</kbd> 플래그 · <kbd>H</kbd> 홈 · <kbd>/</kbd> 목록 검색 · <kbd>Esc</kbd> 닫기</div>
+  <div class="field" style="margin-top:16px"><label>저장</label>
+    <div class="h-tools" style="margin-top:0">
+      <button class="h-tool" id="btnSync">지금 저장</button>
+      <button class="h-tool" id="btnBackup">상태 백업</button>
+      <button class="h-tool" id="btnSetup">GitHub 연결</button>
+    </div>
+  </div>
+  <div class="btn-row"><button class="btn-primary" id="setClose">닫기</button></div>
 </div></div>
 
 <!-- 일시정지 -->
@@ -3591,7 +3614,9 @@ function renderResume(){ // 세션 중 다른 화면에 들렀다 돌아오는 �
 function renderHome(){
   let due=0,nw=0;
   for(const c of DATA){ if(isDue(c))due++; else if(isNew(c))nw++; }
-  $('hSub').textContent=`전체 due ${due} · 신규 ${nw} · 총 ${DATA.length}장`;
+  $('hSub').textContent=`due ${due} · 신규 ${nw}`;
+  $('hFoot').innerHTML=`카드 ${DATA.length.toLocaleString()}장 · 리뷰 로그 ${state.log.length.toLocaleString()}건`
+    +`${dirty?' · <b style="color:var(--hard)">미저장분 있음</b>':''}`;
   const box=$('presetList'); box.innerHTML='';
   for(const p of presets){
     const pool=scopePool(p.scope, p.scope.status==='new'?'new':p.scope.status).length;
@@ -3618,7 +3643,7 @@ function renderHoedok(){ // 회독 대기 — 카드가 진입한 대주제. 오
   const hp=hoedokPending();
   const doneToday=Object.keys(state.hoedok||{}).filter(k=>state.hoedok[k]===todayKey()&&TAGMETA[k]);
   $('hoedokSec').style.display = (hp.length||doneToday.length)?'block':'none';
-  const CAP=5, more=hp.length>CAP && !hoedokAll;
+  const CAP=3, more=hp.length>CAP && !hoedokAll;
   for(const k of (more?hp.slice(0,CAP):hp)){
     const m=TAGMETA[k];
     const el=document.createElement('div'); el.className='hd-row';
@@ -3650,13 +3675,16 @@ function renderIntake(){ // 투입 계획 미리보기 — 남은 신규가 있�
     const el=document.createElement('div'); el.className='hd-row';
     el.innerHTML=`<span class="t">${shown===0?'▶ ':''}${esc(m.subj.split('.')[1]+' · '+m.tag)} <small>${intro[k]?left+'장 남음':m.n+'장'} · ${date} 수강</small></span>`;
     box.appendChild(el);
-    if(++shown>=6)break;
+    if(++shown>=4)break;   // 홈은 훑는 자리 — 미리보기는 4개면 충분
   }
   if(!shown)box.innerHTML='<div class="empty-note" style="padding:10px">전량 투입 완료 🎉</div>';
   $('intakeCap').value=intake.cap||'';
 }
 $('intakeCap').addEventListener('change',()=>{ intake.cap=+$('intakeCap').value||null; saveIntake();
   toast(intake.cap?`권장 ${intake.cap}장 — 체크포인트에 표시돼요`:'권장량 없음'); });
+$('btnSettings').onclick=()=>$('ovlSettings').classList.add('show');
+$('setClose').onclick=()=>$('ovlSettings').classList.remove('show');
+$('ovlSettings').onclick=(e)=>{ if(e.target===$('ovlSettings'))$('ovlSettings').classList.remove('show'); };
 $('btnResume').onclick=()=>{
   if($('btnResume').dataset.mode==='stash'){ resumeStash(); return; }
   go('scrSolve'); showCard();

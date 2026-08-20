@@ -4158,7 +4158,7 @@ function segSet(box, val, cb){
 }
 
 /* ═══════════════ 세션 조립기 (범위 × 방식) ═══════════════ */
-let nsTarget=null, nsState=null;
+let nsTarget=null, nsState=null, nsDirty=false;
 function openSessEditor(sx, seed){
   nsTarget=sx;
   const tpl=HOW_TPL.find(t=>t.key===((seed&&seed.tpl)||'daily'))||HOW_TPL[0];
@@ -4171,14 +4171,21 @@ function openSessEditor(sx, seed){
   $('nsDelete').style.display=sx?'block':'none';
   $('nsName').value = sx?sx.name:((seed&&seed.name)||'');
   $('nsFold').open=false;
+  nsDirty=false;
   const tb=$('nsTpl'); tb.innerHTML='';
   for(const t of HOW_TPL){
     const b=document.createElement('button'); b.className='chip'; b.textContent=t.name;
-    b.onclick=()=>{ nsState.how=JSON.parse(JSON.stringify(t.how)); nsState.mode=t.mode;
+    const apply=()=>{ nsState.how=JSON.parse(JSON.stringify(t.how)); nsState.mode=t.mode;
       if(!$('nsName').value.trim())$('nsName').value=t.name;
       $('nsTplDesc').textContent=t.desc;
       [...tb.children].forEach(x=>x.classList.remove('on')); b.classList.add('on');
-      syncSessEditor(); };
+      nsDirty=false; syncSessEditor(); };
+    b.onclick=()=>{
+      if(nsDirty||sx) askConfirm('방식 템플릿 적용',
+        `세부 설정이 「${t.name}」 기본값으로 덮어써집니다. 지금 값(${sessDesc(nsState)})은 사라져요.`,
+        '덮어쓰기', apply);
+      else apply();
+    };
     tb.appendChild(b);
   }
   if(!sx){ const i=HOW_TPL.indexOf(tpl); tb.children[i].classList.add('on'); $('nsTplDesc').textContent=tpl.desc; }
@@ -4201,13 +4208,13 @@ function syncSessEditor(){
       else { a=a.filter(x=>x!=='all');
         a.includes(k)? a=a.filter(x=>x!==k) : a.push(k);
         if(!a.length)a=['all']; }
-      h.status=a; syncSessEditor();
+      h.status=a; nsDirty=true; syncSessEditor();
     };
     sb.appendChild(b);
   }
-  segSet($('nsOrder'), h.order, v=>{h.order=v; $('nsWtField').style.display=v==='weighted'?'block':'none';});
+  segSet($('nsOrder'), h.order, v=>{h.order=v; nsDirty=true; $('nsWtField').style.display=v==='weighted'?'block':'none';});
   $('nsWtField').style.display=h.order==='weighted'?'block':'none';
-  segSet($('nsMode'), nsState.mode||'auto', v=>{ nsState.mode=v; });
+  segSet($('nsMode'), nsState.mode||'auto', v=>{ nsState.mode=v; nsDirty=true; });
   const wg=$('nsWts'); wg.innerHTML='';
   for(const sj of SUBJECTS){
     const c=document.createElement('div'); c.className='wt-cell';
@@ -4221,8 +4228,9 @@ function syncSessEditor(){
   $('nsBury').classList.toggle('on',!!h.bury);
   $('nsNewAfter').classList.toggle('on',!!h.newAfter);
 }
-$('nsBury').onclick=()=>{ nsState.how.bury=!nsState.how.bury; $('nsBury').classList.toggle('on'); };
-$('nsNewAfter').onclick=()=>{ nsState.how.newAfter=!nsState.how.newAfter; $('nsNewAfter').classList.toggle('on'); };
+$('nsBury').onclick=()=>{ nsState.how.bury=!nsState.how.bury; nsDirty=true; $('nsBury').classList.toggle('on'); };
+$('nsNewAfter').onclick=()=>{ nsState.how.newAfter=!nsState.how.newAfter; nsDirty=true; $('nsNewAfter').classList.toggle('on'); };
+$('nsLimit').addEventListener('input',()=>{ nsDirty=true; });
 $('nsCancel').onclick=()=>$('ovlSess').classList.remove('show');
 $('ovlSess').onclick=(e)=>{ if(e.target===$('ovlSess'))$('ovlSess').classList.remove('show'); };
 $('nsDelete').onclick=()=>{
@@ -4240,14 +4248,16 @@ $('nsSave').onclick=()=>{
     const keepQ=nsTarget.q, keepDone=nsTarget.done, keepScore=nsTarget.lastScore;
     Object.assign(nsTarget, nsState, {q:keepQ, done:keepDone, lastScore:keepScore});
     if(!isFixed(nsTarget)) nsTarget.day='';            // 범위가 바뀌었으면 다음 진입 때 다시 채운다
-    else {                                            // 단위 고정: 빠진 단위 카드는 큐에서 빼고, 새 단위는 채운다
-      const keep=nsTarget.scope.units;
-      nsTarget.q=nsTarget.q.filter(id=>BYID[id]&&keep.includes(tagKey(BYID[id])));
+    else if((nsTarget.scope.units||[]).length||(nsTarget.scope.mids||[]).length){
+      // 범위가 지정된 직접 추가 세션: 빠진 범위 카드는 큐에서 빼고, 새 범위는 채운다
+      const sc=nsTarget.scope;
+      nsTarget.q=nsTarget.q.filter(id=>{ const c=BYID[id]; return c && inScope(c, {units:sc.units, mids:sc.mids, subj:[], tags:[], typ:[]}); });
       const had=new Set(nsTarget.q.map(id=>tagKey(BYID[id])));
-      const fresh=keep.filter(k=>!had.has(k));
+      const fresh=(sc.units||[]).filter(k=>!had.has(k));
       if(fresh.length) addUnitsToSess(nsTarget, fresh);
       if(curSess&&curSess.id===nsTarget.id){ queue=[...queue.slice(0,qPos), ...sessCards(nsTarget)]; }
     }
+    // 범위 없이 직접 추가로 바꾼 경우(자동 충전에서 전환 등)는 들고 있던 큐를 그대로 이월
     if(curSess&&curSess.id===nsTarget.id) curPreset=asPreset(nsTarget);
   }else{
     const units=(nsState.scope.units||[]).slice();

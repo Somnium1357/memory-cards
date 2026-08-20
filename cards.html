@@ -3008,10 +3008,16 @@ function pushLog(entry){             // 새 채점 = 이번 주 파일에 append
   state.log.push(entry);
   markDirty('log', wk);
 }
-function dropLastLog(){              // undo — 방금 넣은 것 제거
-  const e=state.log.pop(); if(!e)return;
+function dropLogEntry(e){            // undo — 그 항목 하나만 지목해 제거
+  /* 길이로 잘라내면 안 된다. 채점과 되돌리기 사이에 원격 병합이 끼면 rebuildLog()가
+     배열을 시각순으로 다시 세우기 때문에, 뒤에서부터 자르면 남의 기기 로그가 날아간다.
+     항목은 (카드id|시각) — 병합 규칙과 같은 키 — 로 찾는다. */
+  if(!e)return;
+  const hit=x=>x===e||(x[0]===e[0]&&x[1]===e[1]);
+  for(let i=state.log.length-1;i>=0;i--){ if(hit(state.log[i])){ state.log.splice(i,1); break; } }
   const wk=weekKeyOf(logDate(e));
-  if(logWeeks[wk]){ const i=logWeeks[wk].lastIndexOf(e); if(i>=0)logWeeks[wk].splice(i,1); }
+  const w=logWeeks[wk];
+  if(w){ for(let i=w.length-1;i>=0;i--){ if(hit(w[i])){ w.splice(i,1); break; } } }
   markDirty('log', wk);
 }
 
@@ -3635,7 +3641,7 @@ function playSess(sx){          // 세션 화면의 [이어가기] — 남은 �
   refillSess(sx);
   queue=dropSettled(sessCards(sx)); qPos=0;          // 다른 세션에서 오늘 푼 것은 빼고 이어간다
   phase = stOnly(sx.how.status,'new') ? 'new' : 'review';
-  sessionDone=0; newServed=0; undoSnap=null; undoStack=[]; updateUndo(); sessReset();
+  sessionDone=0; newServed=0; undoSnap=null; undoRun++; updateUndo(); sessReset();
   go('scrSolve');
   if(!queue.length){ finishSess(); } else showCard();
 }
@@ -3670,7 +3676,7 @@ function extendWithNew(){ // 신규 = 대주제 한 개씩 — 끝나면 체크�
   if(!nt){ finishSess(); return; }
   curTopic=nt.key;
   queue=nt.cards; qPos=0;
-  undoSnap=null; undoStack=[]; updateUndo(); // 스냅샷은 이전 큐 좌표라 phase 경계에서 폐기
+  undoSnap=null; undoRun++; updateUndo();   // 큐가 새로 짜였다는 표시 — 스택은 그대로 산다
   showCard();
 }
 
@@ -3779,10 +3785,11 @@ function rate(num){
   const hasItems=itemMarks.length>=2, anyX=itemMarks.some(Boolean);
   if(anyX && num!==1){ toast('빠뜨린 항목이 있어요 — 「다시」만 눌러요'); return; } // X 있으면 Again만
   const firstToday = s.d!==tk;
-  undoSnap={ id:c.id, prev:JSON.parse(JSON.stringify(state.cards[c.id]||null)),
-             logLen:state.log.length, qPos, phase, sessionDone, newServed,
+  undoSnap={ k:'rate', run:undoRun, id:c.id, card:c, entry:null,
+             prev:JSON.parse(JSON.stringify(state.cards[c.id]||null)),
+             sid:curSess?curSess.id:null, phase, sessionDone, newServed,
              sess:{r:sess.r.slice(), ms:sess.ms, streak:sess.streak, best:sess.best} };
-  undoStack.push(undoSnap); if(undoStack.length>UNDO_MAX) undoStack.shift();
+  undoPush(undoSnap);
   if(firstToday){                          // 그날 첫 채점만 FSRS 반영
     const fc = s.fsrs?fsrsRevive(s.fsrs):FSRS.createEmptyCard(now);
     const r=engine.next(fc, now, RATING[num]);
@@ -3794,7 +3801,8 @@ function rate(num){
   if(hasItems) extra.items=itemMarks.map(x=>x?'x':'o').join('');
   if(shownAt) extra.ms=Math.min(Math.max(0,Date.now()-shownAt-pausedMs), MS_CAP); // 응답 시간 (쉰 시간 제외)
   const hasExtra=Object.keys(extra).length>0;
-  pushLog(hasExtra?[c.id,ts,num,extra]:[c.id,ts,num]);
+  const entry=hasExtra?[c.id,ts,num,extra]:[c.id,ts,num];
+  pushLog(entry); undoSnap.entry=entry;      // 되돌릴 때 이 항목만 지목해 뺀다
   s.lt=ts;                                          // 여기까지 반영됨 — 재계산은 이 뒤부터
   sess.r[num]++; sess.ms+=extra.ms||0;
   if(num===1) sess.streak=0; else { sess.streak++; if(sess.streak>sess.best)sess.best=sess.streak; }
@@ -3824,20 +3832,49 @@ $('btnPause').onclick=pauseSession;
 $('pzResume').onclick=resumeSession;
 $('pzHome').onclick=()=>{ resumeSession(); push(); go('scrHome'); };
 const UNDO_MAX=30;                 // 되돌리기 깊이 (동하 요청 2026-08-20 — 1단계로는 부족)
-let undoStack=[];
+let undoStack=[], undoRun=0;       // undoRun = 풀이 런 일련번호. 이어가기·신규 투입으로 큐가
+                                   // 새로 짜이면 올라간다. 스택은 그때도 살아남는다(2026-08-21).
+function undoPush(sn){ undoStack.push(sn); if(undoStack.length>UNDO_MAX) undoStack.shift(); }
 function updateUndo(){ $('btnUndo').toggleAttribute('disabled', !undoStack.length);
   $('btnUndo').title = undoStack.length>1?`되돌리기 (${undoStack.length}단계)`:'되돌리기'; }
+function dropSnap(c){              // 큐에서 빼는 조작(내일로·은퇴·끄기)의 되돌리기 스냅샷 — 조작 전에 떠야 한다
+  return { k:'drop', run:undoRun, id:c.id, card:c,
+           prev:JSON.parse(JSON.stringify(state.cards[c.id]||null)) };
+}
+function reviveAt(card){           // 되돌린 카드를 지금 자리로 데려온다 (큐가 새로 짜였어도)
+  for(let i=queue.length-1;i>=0;i--){
+    if(queue[i]===card||queue[i].id===card.id){ queue.splice(i,1); if(i<qPos)qPos--; }
+  }
+  if(qPos>queue.length) qPos=queue.length;
+  queue.splice(qPos,0,card);       // 재출로 뒤에 끼워둔 중복까지 걷고 한 장만 지금 자리에
+}
 function doUndo(){
-  undoSnap=undoStack.pop()||null;
-  if(!undoSnap)return;
-  const {id,prev,logLen}=undoSnap;
-  if(prev===null) delete state.cards[id]; else state.cards[id]=prev;
-  while(state.log.length>logLen) dropLastLog();
-  qPos=undoSnap.qPos; phase=undoSnap.phase; sessionDone=undoSnap.sessionDone; newServed=undoSnap.newServed;
-  if(undoSnap.sess) sess=undoSnap.sess;
-  // 재출 삽입 롤백: 큐에서 해당 카드의 뒤쪽 중복 제거
-  for(let i=queue.length-1;i>qPos;i--){ if(queue[i]&&queue[i].id===id){queue.splice(i,1);break;} }
-  undoSnap=null; todayRateIdx=null; cacheState(); setDirty(true); updateUndo(); showCard();
+  const sn=undoStack.pop(); undoSnap=null;
+  if(!sn)return;
+  const sameRun = sn.run===undoRun;
+  // 1) 카드 상태 되돌리기 — u는 지금 시각으로 올린다. 옛 u를 그대로 쓰면 다기기 병합이
+  //    「원격이 더 새것」이라 판단해 되돌린 것을 도로 덮는다.
+  if(sn.prev===null) delete state.cards[sn.id];
+  else { sn.prev.u=new Date().toISOString(); state.cards[sn.id]=sn.prev; }
+  if(sn.k==='rate'){
+    dropLogEntry(sn.entry);        // 2) 로그에서 그 채점만 제거
+    markDirty('sched');
+    if(sameRun){                   // 같은 런이면 성적 카운터까지 원상복구
+      phase=sn.phase; sessionDone=sn.sessionDone; newServed=sn.newServed;
+      if(sn.sess) sess=sn.sess;
+    }else{                         // 이전 런의 채점 — 지금 런의 성적표는 남의 것이라 손대지 않는다
+      const sx=sn.sid?sessions.find(x=>x.id===sn.sid):null;
+      if(sx&&sx.done) sx.done--;   // 세션 「누적 회」에서만 한 장 빼준다
+      saveSessionsSoon();
+    }
+  }else{                           // 내일로·은퇴·끄기 — 로그에 없던 조작
+    markSchedUrgent(); markDirty('fb');
+  }
+  const card = sn.card || BYID[sn.id];
+  if(card) reviveAt(card);         // 3) 그 카드를 지금 카드로
+  todayRateIdx=null; cacheState(); setDirty(true); updateUndo();
+  if(!$('scrSolve').classList.contains('on')) go('scrSolve');  // 세션·홈에서 눌러도 그 카드로 돌아간다
+  showCard();
   syncSessQueue();                 // 되돌린 카드가 저장된 세션 큐에도 돌아오게
   toast(undoStack.length?`되돌렸어요 (${undoStack.length}단계 더)`:'되돌렸어요');
 }
@@ -3877,13 +3914,16 @@ $('flagMemo').addEventListener('change',()=>{
 function dropFromQueue(id){ for(let i=queue.length-1;i>qPos;i--){ if(queue[i].id===id)queue.splice(i,1); } }
 $('rBury').onclick=()=>{
   const c=cur(); if(!c)return;
-  buryCard(c); dropFromQueue(c.id); removeCurFromQueue(); toast('내일로 — 오늘 큐에서 빠져요');
+  const sn=dropSnap(c);
+  buryCard(c); dropFromQueue(c.id); removeCurFromQueue(sn);
+  toast('내일로 — 오늘 큐에서 빠져요 (되돌리기로 취소)');
 };
 $('rRetire').onclick=()=>{
   const c=cur(); if(!c)return;
   const pair=pairAlive(c);
+  const sn=dropSnap(c);
   retireCard(c,true); dropFromQueue(c.id);   // 재출 대기분도 함께 정리
-  removeCurFromQueue();
+  removeCurFromQueue(sn);
   toast(pair?'이 방향만 은퇴 — 반대 방향은 남아요':'은퇴 — 목록에서 복구 가능');
 };
 $('rOff').onclick=()=>{ // 끄기 = 노드 단위 중단 → 오터치 가드 (확인 다이얼로그)
@@ -3894,11 +3934,11 @@ $('rOff').onclick=()=>{ // 끄기 = 노드 단위 중단 → 오터치 가드 (�
   $('ovlConfirm').classList.add('show');
   $('cfYes').onclick=()=>{
     $('ovlConfirm').classList.remove('show');
-    const s=st(c.id);
+    const sn=dropSnap(c), s=st(c.id);
     if(!s.ann.includes('끄기'))s.ann.push('끄기');
     touchFb(s); cacheState();
     for(let i=queue.length-1;i>qPos;i--){ if(queue[i].node===c.node)queue.splice(i,1); }
-    removeCurFromQueue(); toast('노드 끄기 기록 — 루틴이 수거해요');
+    removeCurFromQueue(sn); toast('노드 끄기 기록 — 루틴이 수거해요');
   };
 };
 $('cfNo').onclick=()=>$('ovlConfirm').classList.remove('show');
@@ -3912,7 +3952,9 @@ $('cTagInput').addEventListener('change',()=>{
     touch(s); cacheState(); setDirty(true); }
   renderCardTags(c);
 });
-function removeCurFromQueue(){ queue.splice(qPos,1); undoSnap=null; undoStack=[]; updateUndo(); showCard(); syncSessQueue(); }
+function removeCurFromQueue(sn){ // sn을 주면 되돌리기 스택에 쌓는다 (내일로·은퇴·끄기)
+  queue.splice(qPos,1); undoSnap=null; if(sn)undoPush(sn);
+  updateUndo(); showCard(); syncSessQueue(); }
 $('railFab').onclick=()=>{ $('rail').classList.add('open'); $('railScrim').classList.add('show'); };
 $('railScrim').onclick=()=>{ $('rail').classList.remove('open'); $('railScrim').classList.remove('show'); };
 

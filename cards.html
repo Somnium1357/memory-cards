@@ -4200,6 +4200,7 @@ let swipeOn = lsGet(K_SWIPE)==='1';
 /* 스와이프 채점 — 터치(iPad)·마우스(PC) 입력을 하나의 제스처 로직으로.
    포인터 이벤트는 iOS에서 스크롤 판정 때 가로 드래그가 pointercancel로 잘리는 일이 있어 쓰지 않는다. */
 const SW_MIN=64;                     // 채점으로 인정하는 가로 거리
+const NAV_EDGE=32;                   // 왼쪽 가장자리 띠 = 뒤로가기 몫 (채점 스와이프는 여기서 시작하지 않는다)
 let gX=null, gY=null, gT=0, gDrag=false;
 function swReset(){
   gX=null; gDrag=false;
@@ -4208,6 +4209,7 @@ function swReset(){
 }
 function gStart(x,y){
   if(!cur()||!$('scrSolve').classList.contains('on'))return;
+  if(x<=NAV_EDGE) return;   // 가장자리는 뒤로가기 — 좁은 화면에서 카드가 왼쪽 18px까지 오므로 여기서 갈라야 한다
   gX=x; gY=y; gT=Date.now(); gDrag=false;
 }
 function gMove(x,y,ev){
@@ -4252,19 +4254,25 @@ function gEnd(x,y){
 
 /* ═══════════════ 가장자리 스와이프 = 뒤로 (동하 요청 2026-08-21) ═══════════════
    왼쪽 가장자리에서 오른쪽으로 밀면 홈으로 돌아간다.
-   🔴 풀이 화면은 제외한다 — 거기서는 가로 스와이프가 채점(좌 다시·우 알맞음)이라 겹친다.
-   시트가 열려 있을 때도 무시한다(시트 뒤 화면이 바뀌어 버린다). */
+   풀이 화면에서도 먹는다 — 채점 스와이프가 가장자리 띠(NAV_EDGE)를 비켜서만 시작하도록
+   갈라 놓았기 때문이다(gStart). 풀이에서의 뒤로 = 그 세션 화면.
+   시트가 열려 있을 때는 무시한다(시트 뒤 화면이 바뀌어 버린다). */
 (()=>{
-  const EDGE=32, DIST=70, SLOP=60, MAXT=800;
+  const DIST=70, SLOP=60, MAXT=800;
   let x0=null, y0=null, t0=0;
   const curScr=()=>[...document.querySelectorAll('.scr.on')].map(e=>e.id)[0];
   const canBack=()=>{ const s=curScr();
-    return s && s!=='scrHome' && s!=='scrSolve' && !document.querySelector('.ovl.show'); };
-  const start=(x,y)=>{ x0=(x<=EDGE&&canBack())?x:null; y0=y; t0=Date.now(); };
+    return !!(s && s!=='scrHome' && !document.querySelector('.ovl.show')); };
+  const backTo=()=>{                       // 풀이에서는 그 세션 화면으로, 그 밖에는 홈으로
+    if(curScr()!=='scrSolve') return 'scrHome';
+    if(!curSess) return 'scrHome';
+    viewSess=curSess; return 'scrSession';
+  };
+  const start=(x,y)=>{ x0=(x<=NAV_EDGE&&canBack())?x:null; y0=y; t0=Date.now(); };
   const end=(x,y)=>{
     if(x0==null) return;
     const dx=x-x0, dy=y-y0, dt=Date.now()-t0; x0=null;
-    if(dx>=DIST && Math.abs(dy)<=SLOP && dt<=MAXT && canBack()) go('scrHome');
+    if(dx>=DIST && Math.abs(dy)<=SLOP && dt<=MAXT && canBack()) go(backTo());
   };
   document.addEventListener('touchstart',e=>{ if(e.touches.length===1) start(e.touches[0].clientX,e.touches[0].clientY); },{passive:true});
   document.addEventListener('touchend',e=>{ const t=e.changedTouches[0]; if(t) end(t.clientX,t.clientY); },{passive:true});

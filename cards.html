@@ -3880,7 +3880,11 @@ function extendWithNew(){ // 신규 = 대주제 한 개씩 — 끝나면 체크�
   phase='new';
   if(!nt){ finishSess(); return; }
   curTopic=nt.key;
-  queue=nt.cards; qPos=0;
+  // 🔴 남은 큐를 버리지 마라. 예전에는 queue를 통째로 갈아끼워서, 복습이 남은 상태에서 누르면
+  //    그 잔량이 화면 큐에서도 저장 큐에서도 사라졌다(직접 추가 세션은 자동 충전이 없어 영영).
+  //    누른 의도대로 신규를 앞에 놓되, 남은 것은 뒤에 그대로 붙인다.
+  const rest=queue.slice(qPos).filter(c=>!nt.cards.includes(c));
+  queue=[...nt.cards, ...rest]; qPos=0;
   undoSnap=null; undoRun++; updateUndo();   // 큐가 새로 짜였다는 표시 — 스택은 그대로 산다
   showCard();
 }
@@ -3926,6 +3930,7 @@ function showCard(){
   $('cScope').textContent=m?m[1]:''; $('cFront').textContent=m?m[2]:c.front;
   $('cBackWrap').classList.remove('on');
   $('gradeBar').classList.remove('on');
+  phase = isNew(c) ? 'new' : 'review';   // 신규 묶음을 다 풀고 잔량으로 넘어가면 라벨도 따라간다
   $('phaseLine').textContent = phase==='new' ? '신규 학습 중' : '';
   syncRail(); counts();
   $('cardScroll').scrollTop=0;

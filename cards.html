@@ -3283,7 +3283,29 @@ function loadIntake(){ const v=lsGet(K_INTAKE);
 function saveIntake(){ intake.capAt=Date.now(); lsSet(K_INTAKE, JSON.stringify(intake));
   cacheState(); markDirty('sess'); }   // 권장량은 학습 정책 — 세션 파일에 함께 (앱 소유)
 
-function planRank(k){ const r=PLAN_RANK.get(k); return r===undefined?9999:r; } // 계획에 없는 새 대주제는 맨 뒤
+/* 세션 화면의 행 키는 두 가지다 — 대주제 `과목|대주제#g` 또는 중주제 `…#g||중주제`.
+   중주제만 담은 세션에서 행·회독본 링크가 전부 대주제로 뜨던 것을 고치면서 도입했다
+   (동하 2026-08-21). 라이브러리 단위 화면은 대주제 그대로다. */
+function isMidRow(k){ return k.includes('||'); }
+function rowUnit(k){ return k.split('||')[0]; }
+function rowMid(k){ return k.split('||')[1]||''; }
+function rowMeta(k){                     // TAGMETA 대체 — 중주제면 tag를 중주제로 바꿔 돌려준다
+  if(!isMidRow(k)) return TAGMETA[k]||null;
+  const t=TAGMETA[rowUnit(k)]; if(!t) return null;
+  return {subj:t.subj, tag:rowMid(k)||t.tag, i0:t.i0, n:0};
+}
+function rowLabel(k){
+  const t=TAGMETA[rowUnit(k)]; if(!t) return k;
+  const sj=t.subj.split('.')[1]||t.subj;
+  return isMidRow(k) ? `${sj} · ${rowMid(k)||t.tag}` : `${sj} · ${t.tag}`;
+}
+function cardRowKey(c, midSet){          // 그 카드가 어느 행에 속하나 (세션이 집어든 중주제 우선)
+  const u=tagKey(c);
+  if(!midSet||!midSet.size) return u;
+  const mk=midKey(u,(c.tags||[])[1]||'(기타)');
+  return midSet.has(mk)?mk:u;
+}
+function planRank(k){ const r=PLAN_RANK.get(rowUnit(k)); return r===undefined?9999:r; } // 계획에 없는 새 대주제는 맨 뒤
 function newSort(a,b){ return planRank(tagKey(a))-planRank(tagKey(b)) || a._i-b._i; } // 신규 = 수강일 오래된 대주제 → 문서순
 function newToday(){ // 오늘 처음 투입된 카드 수 (생애 첫 채점이 오늘)
   const tk=todayKey(); let n=0;
@@ -3314,7 +3336,7 @@ function hoedokURI(k){
      실제로 그 파일·제목이 있는지는 옵시디언이 열릴 때 판정한다.
      🔴 과목 목록을 박아두지 마라 — 새 회독본(예: 13.총창)이 생겼을 때 코드를 고쳐야 해진다.
         규칙만 지키면 새 과목·새 대주제가 저절로 붙는 것이 이 방식의 요점이다. */
-  const m=TAGMETA[k]; if(!m) return null;
+  const m=rowMeta(k); if(!m) return null;   // 중주제 행이면 중주제 제목으로 간다
   return `obsidian://open?vault=${encodeURIComponent(OBSIDIAN_VAULT)}`
        + `&file=${encodeURIComponent('회독_'+m.subj)}%23${encodeURIComponent(m.tag)}`;
 }
@@ -4227,12 +4249,26 @@ function unitStatsAll(){   // 단위별 집계 한 번에 (DATA 1회 순회)
   }
   return m;
 }
+function rowStats(midSet){  // unitStatsAll의 행 키 판(중주제 포함). 세션 화면 전용
+  const LR=lastRevMap(), m={};
+  for(const c of DATA){
+    const k=cardRowKey(c,midSet);
+    const e=m[k]||(m[k]={n:0,due:0,nw:0,learned:0,ret:0,last:0});
+    const st2=state.cards[c.id];
+    e.n++;
+    if(st2&&st2.retired){ e.ret++; continue; }
+    if(isNew(c))e.nw++; else e.learned++;
+    if(isDue(c))e.due++;
+    const t=LR[c.id]; if(t&&t>e.last)e.last=t;
+  }
+  return m;
+}
 function unitRow(k, st2, opts){   // 공용 단위 행 (세션 화면·단위 화면)
   const el=document.createElement('div'); el.className='u-row';
   const read=state.hoedok&&state.hoedok[k];
-  const plan=PLAN_DATE.get(k)||'';
+  const plan=PLAN_DATE.get(rowUnit(k))||'';
   const uri=hoedokURI(k), inQ=(opts&&opts.inQ)||0;
-  el.innerHTML=`<div class="t"><div class="nm">${esc(hoedokLabel(k))}</div>
+  el.innerHTML=`<div class="t"><div class="nm">${esc(rowLabel(k))}</div>
     <div class="mt">${inQ?`<span class="inq">이 세션 ${inQ}</span>`:''}<span>총 ${st2.n}</span>${st2.due?`<span class="due">due ${st2.due}</span>`:''}
       ${st2.nw?`<span class="nw">신규 ${st2.nw}</span>`:'<span>투입 완료</span>'}
       <span>${st2.last?'인출 '+fmtAgo(st2.last):'인출 없음'}</span>${plan?`<span>${plan} 수강</span>`:''}
@@ -4282,17 +4318,20 @@ function renderSession(){
     selected:{units:[],mids:[]},
     onOk:(sel)=>{ if(!sel.units.length&&!sel.mids.length)return;
       const n=addScopeToSess(sx, sel); toast(n?`${n}장 추가`:'추가할 카드가 없어요'); renderSession(); }});
-  const ub=$('ssUnits'); const stats=unitStatsAll();
-  // 큐에 실제로 든 단위 + (직접 추가 세션이면) 지정 범위
+  const ub=$('ssUnits');
+  // 이 세션이 「중주제로」 집어든 것들 — 그 카드는 대주제가 아니라 중주제 행에 모인다
+  const midSet=new Set(sx.scope.mids||[]);
+  const stats=rowStats(midSet);
   const seen={};
-  for(const id of (live?queue.slice(qPos).map(c=>c.id):sx.q)){ const c=BYID[id]; if(c)seen[tagKey(c)]=(seen[tagKey(c)]||0)+1; }
+  for(const id of (live?queue.slice(qPos).map(c=>c.id):sx.q)){ const c=BYID[id];
+    if(c)seen[cardRowKey(c,midSet)]=(seen[cardRowKey(c,midSet)]||0)+1; }
   let keys=Object.keys(seen);
   if(isFixed(sx)){
     for(const k of (sx.scope.units||[])) if(!seen[k])keys.push(k);
-    for(const mk of (sx.scope.mids||[])){ const k=mk.split('||')[0]; if(!seen[k]&&!keys.includes(k))keys.push(k); }
+    for(const mk of (sx.scope.mids||[])) if(!seen[mk]&&!keys.includes(mk))keys.push(mk);
   } else keys=keys.sort((a,b)=>seen[b]-seen[a]).slice(0,8);
-  keys.sort((a,b)=>planRank(a)-planRank(b));
-  for(const k of keys){ if(!TAGMETA[k])continue;
+  keys.sort((a,b)=>planRank(a)-planRank(b)||(isMidRow(a)?rowMid(a):'').localeCompare(isMidRow(b)?rowMid(b):''));
+  for(const k of keys){ if(!rowMeta(k))continue;
     const inQ=seen[k]||0;
     const row=unitRow(k, stats[k]||{n:0,due:0,nw:0,last:0},
       {inQ, action2:'빼기',
@@ -4300,7 +4339,7 @@ function renderSession(){
        onName:(kk)=>playUnitFirst(sx,kk),
        onAction2:(kk)=>{
          const n=seen[kk]||0;
-         if(n>50) askConfirm('단위 빼기', `${hoedokLabel(kk)} ${n}장이 이 세션에서 빠집니다. [＋ 내용 추가]로 다시 넣을 수 있어요.`,
+         if(n>50) askConfirm('단위 빼기', `${rowLabel(kk)} ${n}장이 이 세션에서 빠집니다. [＋ 내용 추가]로 다시 넣을 수 있어요.`,
            '빼기', ()=>removeUnitFromSess(sx,kk));
          else removeUnitFromSess(sx,kk);
        }});
@@ -4308,35 +4347,39 @@ function renderSession(){
   if(!keys.length)ub.innerHTML='<div class="empty-note" style="padding:16px">아직 내용이 없어요 — 아래에서 단위를 넣으세요</div>';
 }
 function removeUnitFromSess(sx, k){ // 세션에서 단위 빼기 — 큐에서 빼고, 직접 추가 세션이면 범위에서도 뺀다
+  const midSet=new Set(sx.scope.mids||[]);
+  const hit=c=>cardRowKey(c,midSet)===k;
   const before=sx.q.length;
-  sx.q=sx.q.filter(id=>{ const c=BYID[id]; return c && tagKey(c)!==k; });
+  sx.q=sx.q.filter(id=>{ const c=BYID[id]; return c && !hit(c); });
   const gone=before-sx.q.length;
   sx.scope.units=(sx.scope.units||[]).filter(x=>x!==k);          // 자동 충전 세션은 애초에 비어 있어 무해
-  sx.scope.mids=(sx.scope.mids||[]).filter(x=>x.split('||')[0]!==k);
+  sx.scope.mids=(sx.scope.mids||[]).filter(x=>isMidRow(k)?x!==k:rowUnit(x)!==k);
   if(curSess&&curSess.id===sx.id){
     const head=queue.slice(0,qPos);
-    queue=[...head, ...queue.slice(qPos).filter(c=>tagKey(c)!==k)];
+    queue=[...head, ...queue.slice(qPos).filter(c=>!hit(c))];
     counts();
   }
   saveSessionsFlush();
   const auto=!isFixed(sx);
-  toast(gone? `${hoedokLabel(k)} 뺐어요 (${gone}장${auto?' · 오늘 큐에서만':''})` : '큐에 남은 카드가 없었어요');
+  toast(gone? `${rowLabel(k)} 뺐어요 (${gone}장${auto?' · 오늘 큐에서만':''})` : '큐에 남은 카드가 없었어요');
   renderSession();
 }
 function playUnitFirst(sx, k){   // 세션 큐에서 그 단위를 앞으로 끌어와 바로 푼다
   const live=curSess&&curSess.id===sx.id;
+  const midSet=new Set(sx.scope.mids||[]);
+  const hit=c=>cardRowKey(c,midSet)===k;
   // 잔량부터 본다 — 빈 단위인데 playSess가 먼저 돌면 엉뚱한 카드로 풀이 화면이 열린다
   // (이름 탭이 생기면서 「먼저 풀기」 버튼과 달리 빈 단위도 눌리게 됐다)
-  const has = live ? queue.slice(qPos).some(c=>tagKey(c)===k)
-                   : (sx.q||[]).some(id=>BYID[id]&&tagKey(BYID[id])===k);
+  const has = live ? queue.slice(qPos).some(hit)
+                   : (sx.q||[]).some(id=>BYID[id]&&hit(BYID[id]));
   if(!has){ toast('이 단위는 큐에 남은 카드가 없어요'); return; }
   if(!live) playSess(sx);
   const head=[], tail=[];
-  for(let i=qPos;i<queue.length;i++){ (tagKey(queue[i])===k?head:tail).push(queue[i]); }
+  for(let i=qPos;i<queue.length;i++){ (hit(queue[i])?head:tail).push(queue[i]); }
   if(!head.length){ toast('이 단위는 큐에 남은 카드가 없어요'); return; }
   queue=[...queue.slice(0,qPos), ...head, ...tail];
   syncSessQueue(); go('scrSolve'); showCard();
-  toast(`${hoedokLabel(k)} ${head.length}장 먼저`);
+  toast(`${rowLabel(k)} ${head.length}장 먼저`);
 }
 
 /* ═══════════════ 단위 화면 (라이브러리) ═══════════════ */

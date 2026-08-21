@@ -3670,7 +3670,16 @@ function addScopeToSess(sx, sel){ // 내용 추가 — sel={units:[],mids:[]}
   const have=new Set(sx.q);
   const p=asPreset(sx);
   p.scope=Object.assign({},p.scope,{units:(sel.units||[]).slice(), mids:(sel.mids||[]).slice()});
-  const add=buildQueue(p, sx.how.status).map(c=>c.id).filter(id=>!have.has(id));
+  /* 🔴 직접 고른 범위에는 세션의 상태 필터(due 등)와 분량 상한을 적용하지 않는다.
+     「일일 복습」(due 전용)에 음악 111장(전부 신규)을 넣었더니 due가 아니라며 0장이 들어오던 것
+     (동하 2026-08-21). 사람이 집어서 넣은 것은 그 세션의 자동 충전 조건과 무관하다.
+     은퇴·끄기·오늘 미룸·오늘 정리분·방향 분산은 그대로 걸러진다(buildQueue 안). */
+  p.scope=Object.assign({},p.scope,{status:'all'}); p.limit=0;
+  const add=buildQueue(p, 'all').map(c=>c.id).filter(id=>!have.has(id));
+  // 고른 수와 들어간 수가 다를 수 있다 — 방향 분산(역방향은 며칠 뒤)·은퇴·끄기·오늘 정리분.
+  // 그 차이를 말해주지 않으면 「111장 골랐는데 왜 80장?」이 된다.
+  const pool=DATA.filter(c=>inScope(c,p.scope)&&!have.has(c.id));   // inScope가 은퇴·끄기·미룸은 이미 뺀다
+  lastAddHeld=Math.max(0, pool.length-add.length);                  // 남은 차이 = 방향 분산 + 오늘 정리분
   if(isFixed(sx)){                       // 직접 추가 세션만 범위가 늘어난다 (이월 대상)
     sx.scope.units=[...new Set([...(sx.scope.units||[]), ...(sel.units||[])])];
     sx.scope.mids=[...new Set([...(sx.scope.mids||[]), ...(sel.mids||[])])];
@@ -3681,6 +3690,11 @@ function addScopeToSess(sx, sel){ // 내용 추가 — sel={units:[],mids:[]}
   return add.length;
 }
 function addUnitsToSess(sx, units){ return addScopeToSess(sx,{units:units,mids:[]}); }
+let lastAddHeld=0;                 // 직전 추가에서 「아직 안 들어간」 장수 (안내 문구용)
+function addToast(n){
+  if(!n) return toast(lastAddHeld?`지금 넣을 건 없어요 — ${lastAddHeld}장은 나중에(역방향·오늘 푼 것)`:'추가할 카드가 없어요');
+  toast(lastAddHeld?`${n}장 추가 · ${lastAddHeld}장은 나중에(역방향·오늘 푼 것)`:`${n}장 추가`);
+}
 function syncSessQueue(){ // 진행 중 세션의 남은 큐를 저장 (새로고침·탭 종료에도 살아남게)
   if(!curSess) return;
   curSess.q=queue.slice(qPos).map(c=>c.id);
@@ -4424,7 +4438,7 @@ function renderSession(){
                     :'자동 충전 세션이라 오늘 큐에만 얹습니다 (범위는 그대로).',
     selected:{units:[],mids:[]},
     onOk:(sel)=>{ if(!sel.units.length&&!sel.mids.length)return;
-      const n=addScopeToSess(sx, sel); toast(n?`${n}장 추가`:'추가할 카드가 없어요'); renderSession(); }});
+      const n=addScopeToSess(sx, sel); addToast(n); renderSession(); }});
   const ub=$('ssUnits');
   // 이 세션이 「중주제로」 집어든 것들 — 그 카드는 대주제가 아니라 중주제 행에 모인다
   const midSet=new Set(sx.scope.mids||[]);

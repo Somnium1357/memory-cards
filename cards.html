@@ -3693,6 +3693,10 @@ function hoedokURI(k){
   const m=rowMeta(k); if(!m) return null;
   const enc=encodeURIComponent;
   let file='회독_'+m.subj, head=m.tag;          // 색인이 아직 없으면 예전 규칙 그대로
+  /* 색인은 받았는데 그 과목이 색인에 없다 = 회독본이 아예 없는 과목(예: 13.총창).
+     예전 규칙으로 떨어뜨리면 없는 파일을 가리키는 링크가 생긴다 — 아예 만들지 않는다.
+     회독본이 새로 생기면 색인에 들어오므로 그때 저절로 붙는다. */
+  if(HOEDOK&&!HOEDOK.h[m.subj]) return null;
   const H=HOEDOK&&HOEDOK.h[m.subj];
   if(H){
     /* 좁은 것부터 넓은 것으로 떨어진다: 중주제 → 분할 라벨 → 원 대주제 → 파일만.

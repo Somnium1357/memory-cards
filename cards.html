@@ -4250,6 +4250,29 @@ function gEnd(x,y){
   window.addEventListener('mouseup',e=>{ if(gX!=null)gEnd(e.clientX,e.clientY); });
 })();
 
+/* ═══════════════ 가장자리 스와이프 = 뒤로 (동하 요청 2026-08-21) ═══════════════
+   왼쪽 가장자리에서 오른쪽으로 밀면 홈으로 돌아간다.
+   🔴 풀이 화면은 제외한다 — 거기서는 가로 스와이프가 채점(좌 다시·우 알맞음)이라 겹친다.
+   시트가 열려 있을 때도 무시한다(시트 뒤 화면이 바뀌어 버린다). */
+(()=>{
+  const EDGE=32, DIST=70, SLOP=60, MAXT=800;
+  let x0=null, y0=null, t0=0;
+  const curScr=()=>[...document.querySelectorAll('.scr.on')].map(e=>e.id)[0];
+  const canBack=()=>{ const s=curScr();
+    return s && s!=='scrHome' && s!=='scrSolve' && !document.querySelector('.ovl.show'); };
+  const start=(x,y)=>{ x0=(x<=EDGE&&canBack())?x:null; y0=y; t0=Date.now(); };
+  const end=(x,y)=>{
+    if(x0==null) return;
+    const dx=x-x0, dy=y-y0, dt=Date.now()-t0; x0=null;
+    if(dx>=DIST && Math.abs(dy)<=SLOP && dt<=MAXT && canBack()) go('scrHome');
+  };
+  document.addEventListener('touchstart',e=>{ if(e.touches.length===1) start(e.touches[0].clientX,e.touches[0].clientY); },{passive:true});
+  document.addEventListener('touchend',e=>{ const t=e.changedTouches[0]; if(t) end(t.clientX,t.clientY); },{passive:true});
+  document.addEventListener('touchcancel',()=>{x0=null;},{passive:true});
+  document.addEventListener('mousedown',e=>{ if(!e.button) start(e.clientX,e.clientY); });
+  document.addEventListener('mouseup',e=>{ end(e.clientX,e.clientY); });
+})();
+
 /* ═══════════════ 화면 전환 ═══════════════ */
 function go(id){
   if(id!=='scrSolve'){ resumeSession(); syncSessQueue();
@@ -4259,6 +4282,7 @@ function go(id){
   const railShow = id==='scrSolve';
   $('main').classList.toggle('railed', railShow);
   $('btnPause').style.display = railShow?'':'none';   // 풀이 중에만 의미 있는 버튼
+  $('btnUndo').style.display  = railShow?'':'none';   // 홈·세션 화면에 떠 있으면 무엇을 되돌리는지 모호하다
   $('rail').style.display=railShow?'flex':'none';
   $('railFab').classList.toggle('show',railShow);
   if(id==='scrHome')renderHome();

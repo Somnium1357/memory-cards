@@ -2800,14 +2800,17 @@ const DATA_PATH='cards-data.json';
    cards-log-YYYY-Www  앱 소유, append-only. 지난 주 파일은 다시 안 건드린다
    cards-sessions.json 앱 소유, 기기 간 병합 (세션·회독 읽음·권장량) */
 const PLAN_PATH='cards-plan.json', SCHED_PATH='cards-sched.json',
+      MARKS_PATH='cards-marks.json',
       FB_PATH='cards-feedback.json', SESS_PATH='cards-sessions.json';
+const LOG_FIRST_MON='2026-08-17';   // 로그가 시작된 주의 월요일 (첫 채점 2026-08-19)
+                                    // — 전량 재계산이 훑을 범위의 시작. 앞당기면 없는 주를 매번 404로 받는다.
 const LEGACY_STATE='cards-state.json';
 function logPath(wk){ return `cards-log-${wk}.json`; }
 const K_CFG='cards_cfg_v1', K_STATE='cards_state_cache_v1', K_DIRTY='cards_dirty_v1',
       K_THEME='cards_theme_v1', K_PRESETS='cards_presets_v1', K_LASTP='cards_last_preset_v1',
       K_DATA='cards_data_cache_v1', K_SWIPE='cards_swipe_v1', K_INTAKE='cards_intake_v1',
       K_KBD='cards_kbd_v1', K_SESS='cards_sessions_v1',
-      K_SCHED='cards_sched_v2', K_FB='cards_fb_v1', K_PLAN='cards_plan_v1', K_LOGP='cards_log_v2_',
+      K_SCHED='cards_sched_v2', K_MARKS='cards_marks_v1', K_FB='cards_fb_v1', K_PLAN='cards_plan_v1', K_LOGP='cards_log_v2_',
       K_UOPEN='cards_units_open_v1', K_DLOGS='cards_dirty_logs_v1', K_HOEDOK='cards_hoedok_v1';
 const OLD_CFG='review_cfg_v1';            // 관리앱(같은 오리진)의 토큰 재사용
 const DAY_CUT=4;                          // 하루 경계 = 새벽 4시
@@ -2886,8 +2889,8 @@ function st(id){ // 카드 상태 엔트리 (없으면 생성)
   if(!Array.isArray(s.ann)) s.ann=[];
   return s;
 }
-function touch(s){ s.u=new Date().toISOString(); markSchedUrgent(); }
-function touchRate(s){ s.u=new Date().toISOString(); markDirty('sched'); }  // 채점분은 로그가 정본이라 급하지 않다
+function touch(s){ s.u=new Date().toISOString(); markDirty('marks'); }   // 로그로 복원 안 되는 조작 = 바로 올린다
+function touchRate(s){ }   // 채점은 로그가 정본이라 카드 상태로 올릴 것이 없다
 function touchFb(s){ s.u=new Date().toISOString(); markDirty('fb'); }
 function isDue(c){ const s=state.cards[c.id];
   return !!(s && s.fsrs && !s.retired && dayKey(new Date(s.fsrs.due))<=todayKey()); }
@@ -2902,12 +2905,26 @@ function isLeech(c){ const s=state.cards[c.id]; return !!(s && (s.miss||0)>=LEEC
 /* 카드 단위 조작 — 스케줄 파일 소속(u 최신 우선 병합) */
 function buryCard(c){ const s=st(c.id); s.by=todayKey(); touch(s); cacheState(); setDirty(true); }
 function unburyCard(c){ const s=st(c.id); s.by=''; touch(s); cacheState(); setDirty(true); }
-function forgetCard(c){ const s=st(c.id); s.fsrs=null; s.d=''; touch(s); cacheState(); setDirty(true); }
+/* 🔴 fsrs를 직접 고치는 두 조작은 로그에 없다 — 재계산이 만들어낼 수 없으므로 base로 남긴다.
+   base = {at:초, fsrs:상태|null} = 「이 시각의 이 상태에서 다시 시작하라」.
+   재계산은 base.at 이후의 채점만 그 위에 얹는다. */
+function setBase(s, fsrs, id){
+  /* 경계는 「지금 시각」이 아니라 **그 카드의 마지막 채점 시각**이다.
+     지금 시각으로 자르면 조작과 같은 초에 매긴 채점이 어느 쪽으로 갈지 모호해진다.
+     마지막 채점 이하를 버리면, 그 뒤 채점은 반드시 더 나중 초라 항상 얹힌다. */
+  let last=0;
+  for(const e of state.log){ if(e[0]===id){ const t=Math.round(logTs(e)/1000); if(t>last)last=t; } }
+  s.base={at:last, fsrs:fsrs?JSON.parse(JSON.stringify(fsrs)):null};
+  s.fsrs=s.base.fsrs?JSON.parse(JSON.stringify(s.base.fsrs)):null; s.d='';
+  touch(s); cacheState(); setDirty(true);
+}
+function forgetCard(c){ setBase(st(c.id), null, c.id); }
 function setDueDays(c,n){ // due를 n일 뒤로 (FSRS 상태가 있는 카드만) — 시험일 클램프 유지
   const s=st(c.id); if(!s.fsrs) return false;
   let d=new Date(Date.now()+n*86400000);
   if(d>EXAM_END) d=new Date(EXAM_END);
-  s.fsrs={...s.fsrs, due:d.toISOString()}; touch(s); cacheState(); setDirty(true); return true;
+  setBase(s, {...s.fsrs, due:d.toISOString()}, c.id);
+  return true;
 }
 function pairAlive(c){ // 같은 노드·같은 유형의 반대 방향 카드가 살아 있는가 (안내용 근사)
   return DATA.some(x=>x!==c&&x.node===c.node&&x.typ===c.typ&&isRev(x)!==isRev(c)&&!retired(x));
@@ -2934,49 +2951,56 @@ function cachedLogWeeks(){        // 로컬 캐시에 남아 있는 주 로그 �
 function cacheFlush(){ if(cacheTimer){ clearTimeout(cacheTimer); cacheTimer=null; } cacheStateNow(); }
 function cacheStateNow(){ // 파일 단위로 나눠 담는다 — 쿼터가 모자라면 데이터 캐시를 먼저 버린다
   const parts=splitState();
-  let ok = lsSet(K_SCHED, JSON.stringify(parts.sched)) && lsSet(K_FB, JSON.stringify(parts.fb));
+  let ok = lsSet(K_MARKS, JSON.stringify(parts.marks)) && lsSet(K_FB, JSON.stringify(parts.fb));
   for(const wk in logWeeks) ok = lsSet(K_LOGP+wk, JSON.stringify({v:2, week:wk, log:logWeeks[wk]})) && ok;
   ok = lsSet(K_SESS, JSON.stringify(sessFile())) && ok;
   if(ok) return;
   lsDel(K_DATA);                       // 데이터 캐시는 언제든 다시 받을 수 있다
-  ok = lsSet(K_SCHED, JSON.stringify(parts.sched)) && lsSet(K_FB, JSON.stringify(parts.fb));
+  ok = lsSet(K_MARKS, JSON.stringify(parts.marks)) && lsSet(K_FB, JSON.stringify(parts.fb));
   if(ok) return;
   if(!cacheWarned){ cacheWarned=true;
     showBanner('저장 공간 부족 — 로컬 백업이 안 돼요. 지금 저장을 눌러 커밋해 두세요', false); }
 }
 function setDirty(v){ dirty=v; v?lsSet(K_DIRTY,'1'):lsDel(K_DIRTY); updateSaveUI(); }
-let schedUrgent=false, lastSchedPush=Date.now();
-const SCHED_PUSH_MS=5*60*1000;      // 스케줄 스냅샷은 느슨하게 — 그 사이는 로그가 지킨다
+
 function markDirty(kind, wk){        // kind: sched|fb|sess|log
   if(kind==='log'){ dirtyLogs.add(wk||thisWeek()); saveDirtyLogs(); }
   else dirtyFiles.add(kind);
   setDirty(true);
 }
 function saveDirtyLogs(){ const v=[...dirtyLogs]; v.length?lsSet(K_DLOGS,v.join('|')):lsDel(K_DLOGS); }
-function markSchedUrgent(){          // 로그로 복원할 수 없는 변경(은퇴·미룸·초기화·태그)은 바로 올린다
-  schedUrgent=true; markDirty('sched');
-}
-function schedShouldPush(force){
-  return force || schedUrgent || document.visibilityState==='hidden'
-      || (Date.now()-lastSchedPush > SCHED_PUSH_MS);
-}
+
 
 /* ═══════════════ 상태 ↔ 파일 변환 ═══════════════ */
-const SCHED_KEYS=['fsrs','miss','retired','by','t','u','d','lt'];  // lt = 이 카드에 반영한 마지막 로그 시각(초)
-function splitState(){               // 메모리 state → 파일 두 벌 (스케줄 / 피드백)
-  const sched={}, fb={};
+/* 🔴 스케줄 스냅샷(cards-sched.json)은 2026-08-21부터 쓰지 않는다.
+   복습일·난이도·틀림 횟수는 전부 로그에서 다시 계산되는 「파생물」이었는데, 그것을 파일로도
+   올리다 보니 두 벌을 합치는 규칙·5분 게이트·lt 따라잡기가 필요했고 버그가 거기서 나왔다.
+   남는 것은 로그로 복원할 수 없는 것뿐이다 = cards-marks.json.
+     retired 은퇴 · by 오늘 미룸 · t 임의 태그
+     base    「처음부터 다시」·「일정 조정」 — {at:초, fsrs:상태|null}
+             = 그 시각의 상태에서 다시 시작하라는 표시. 재계산은 at 이후 로그만 얹는다. */
+const MARK_KEYS=['retired','by','t','base','u'];
+function splitState(){               // 메모리 state → 파일 두 벌 (마크 / 피드백)
+  const marks={}, fb={};
   for(const id in state.cards){
     const c=state.cards[id]; if(!c)continue;
     const e={};
-    for(const k of SCHED_KEYS) if(c[k]!==undefined && c[k]!==null && !(k==='miss'&&!c[k]) && !(k==='retired'&&!c[k]) && !(k==='by'&&!c[k])) e[k]=c[k];
-    if(Object.keys(e).length) sched[id]=e;
+    for(const k of MARK_KEYS){
+      const v=c[k];
+      if(v===undefined||v===null) continue;
+      if(k==='retired'&&!v) continue;
+      if(k==='by'&&!v) continue;
+      if(k==='t'&&(!Array.isArray(v)||!v.length)) continue;
+      e[k]=v;
+    }
+    if(Object.keys(e).length>1 || (Object.keys(e).length===1 && !e.u)) marks[id]=e;
     if(c.flag!=null || (c.ann&&c.ann.length)) fb[id]={flag:c.flag!==undefined?c.flag:null, ann:c.ann||[], u:c.u||''};
   }
-  return {sched:{v:2, cards:sched}, fb:{v:1, cards:fb}};
+  return {marks:{v:1, cards:marks}, fb:{v:1, cards:fb}};
 }
-function applyFiles(schedFile, fbFile){   // 파일 두 벌 → 메모리 state.cards
+function applyFiles(marksFile, fbFile){   // 파일 두 벌 → 메모리 state.cards (일정은 뒤에서 재계산)
   const cards={};
-  const sc=(schedFile&&schedFile.cards)||{};
+  const sc=(marksFile&&marksFile.cards)||{};
   for(const id in sc) cards[id]=Object.assign({fsrs:null,miss:0,retired:false,flag:null,ann:[],u:'',d:''}, sc[id]);
   const fc=(fbFile&&fbFile.cards)||{};
   for(const id in fc){
@@ -2999,32 +3023,44 @@ function applyLogEntry(sx, e){        // rate()와 같은 규칙으로 한 건 �
     sx.fsrs=fsrsSerialize(nc); sx.d=day;
   }
   if(num===1) sx.miss=(sx.miss||0)+1;
-  sx.lt=Math.round(ts/1000);
 }
-function replayLog(){                // 스냅샷 이후의 로그를 카드별로 따라잡는다
-  let n=0;
+function replayLog(){
+  /* 로그가 정본 — 복습일·난이도·틀림 횟수를 매번 **처음부터 전량** 다시 계산한다.
+     (실측: 채점 2만 건 0.4초. 시험날까지 쌓일 전체 분량이 그 정도다.)
+     base가 있으면 그 시각의 상태에서 시작하고 그 뒤 로그만 얹는다 —
+     「처음부터 다시」·「일정 조정」은 채점이 아니라 사람이 한 조작이라 로그에 없다. */
   const byCard={};
-  for(const e of state.log){ (byCard[e[0]]=byCard[e[0]]||[]).push(e); }
+  for(const e of state.log){ if(BYID[e[0]]) (byCard[e[0]]=byCard[e[0]]||[]).push(e); }
+  for(const id in state.cards){       // 채점 이력이 사라진 카드도 파생분은 비워준다
+    const sx=state.cards[id];
+    const b=sx.base;
+    sx.fsrs = b&&b.fsrs ? JSON.parse(JSON.stringify(b.fsrs)) : null;
+    sx.d=''; sx.miss=0; delete sx.lt;
+  }
+  let n=0;
   for(const id in byCard){
-    const sx=state.cards[id]; if(!sx)continue;      // 스냅샷에 없는 카드 = 아래에서 신규로 생성
-    const lt=sx.lt||0;
-    for(const e of byCard[id]){ if(Math.round(logTs(e)/1000)>lt){ applyLogEntry(sx,e); n++; } }
+    const sx=state.cards[id]||st(id);
+    const from=(sx.base&&sx.base.at)||0;
+    for(const e of byCard[id]){
+      // base.at = 조작 시점의 마지막 채점 시각. 그 이하는 안 얹는다(같은 초 모호성이 없다).
+      if(Math.round(logTs(e)/1000)<=from){
+        if(num1(e)) sx.miss=(sx.miss||0)+1;      // 누적 틀림(누수 판정)은 전 기간을 센다
+        continue;
+      }
+      applyLogEntry(sx,e); n++;
+    }
   }
-  for(const id in byCard){                          // 스냅샷에 아예 없던 카드(다른 기기 신규분)
-    if(state.cards[id])continue;
-    if(!BYID[id])continue;
-    const sx=st(id);
-    for(const e of byCard[id]) applyLogEntry(sx,e);
-    n+=byCard[id].length;
-  }
-  if(n){ lastRevIdx=null; firstRevIdx=null; markDirty('sched'); }
+  lastRevIdx=null; firstRevIdx=null; todayRateIdx=null;
   return n;
 }
-function oldestPendingWeek(){        // 스냅샷이 얼마나 낡았나 — 그 주까지 로그를 불러와야 한다
-  let min=0;
-  for(const id in state.cards){ const lt=state.cards[id].lt||0;
-    if(lt && (!min || lt<min)) min=lt; }
-  return min? weekKeyOf(new Date(min*1000)) : thisWeek();
+function num1(e){ return e[2]===1; }
+function logWeeksRange(){            // 로그가 있을 수 있는 주 전체 (첫 주 → 이번 주)
+  const out=[], end=new Date();
+  for(let d=new Date(LOG_FIRST_MON+'T12:00:00'); d<=end; d=new Date(d.getTime()+7*86400000)){
+    const w=weekKeyOf(d); if(!out.includes(w)) out.push(w);
+  }
+  const tw=thisWeek(); if(!out.includes(tw)) out.push(tw);
+  return out;
 }
 function rebuildLog(){               // 주별 묶음 → 화면·통계가 쓰는 단일 배열
   const all=[];
@@ -3121,12 +3157,12 @@ function mergeSessions(remote, local, log){
   }
   return out;
 }
-function mergeSchedInto(remote){      // 스케줄: 카드별 u 최신 우선
+function mergeMarksInto(remote){      // 마크: 카드별 u 최신 우선 (파일이 작고 드물게 바뀌어 충돌이 거의 없다)
   const rc=(remote&&remote.cards)||{};
   for(const id in rc){
     const mine=state.cards[id];
     if(!mine){ state.cards[id]=Object.assign({fsrs:null,miss:0,retired:false,flag:null,ann:[],u:'',d:''}, rc[id]); continue; }
-    if((rc[id].u||'')>(mine.u||'')) for(const k of SCHED_KEYS) if(rc[id][k]!==undefined) mine[k]=rc[id][k];
+    if((rc[id].u||'')>(mine.u||'')) for(const k of MARK_KEYS) if(rc[id][k]!==undefined) mine[k]=rc[id][k];
   }
 }
 function mergeFbInto(remote){         // 피드백: 주석은 합집합, 메모는 u 최신 우선
@@ -3156,9 +3192,9 @@ async function pushAll(force){        // 바뀐 파일만 올린다 (로그 우�
     await ghPut(logPath(wk), ()=>({v:2, week:wk, log:logWeeks[wk]||[]}), (rm)=>mergeLogInto(rm, wk));
     dirtyLogs.delete(wk); saveDirtyLogs();
   }
-  if(dirtyFiles.has('sched') && schedShouldPush(force)){
-    await ghPut(SCHED_PATH, ()=>splitState().sched, mergeSchedInto);
-    dirtyFiles.delete('sched'); schedUrgent=false; lastSchedPush=Date.now();
+  if(dirtyFiles.has('marks')){
+    await ghPut(MARKS_PATH, ()=>splitState().marks, mergeMarksInto);
+    dirtyFiles.delete('marks');
   }
   if(dirtyFiles.has('fb'))    await ghPut(FB_PATH,    ()=>splitState().fb,    mergeFbInto);
   dirtyFiles.delete('fb');
@@ -3215,9 +3251,9 @@ async function refreshRemote(){     // 포그라운드 복귀 시 원격 상태 
   try{
     if(dirty) await push();          // 내 것 먼저 올리고
     const [sc, fb, sess, wk] = await Promise.all([
-      ghGet(SCHED_PATH), ghGet(FB_PATH), ghGet(SESS_PATH), ghGet(logPath(thisWeek()))]);
+      ghGet(MARKS_PATH), ghGet(FB_PATH), ghGet(SESS_PATH), ghGet(logPath(thisWeek()))]);
     if(sc||fb||sess||wk){
-      if(sc) mergeSchedInto(sc);
+      if(sc) mergeMarksInto(sc);
       if(fb) mergeFbInto(fb);
       if(wk) mergeLogInto(wk, thisWeek()); else rebuildLog();
       if(sess) mergeSessInto(sess);
@@ -3457,11 +3493,12 @@ async function rawGet(path){   // 토큰 없이도 읽기는 된다 (공개 레�
 }
 async function loadAll(){         // 스케줄·피드백·세션·이번 주 로그를 병렬로
   const wk=thisWeek();
-  let sc=null, fb=null, sess=null, lg=null, legacy=null;
+  let sc=null, fb=null, sess=null, lg=null, legacy=null, migrated=false;
   if(cfg&&cfg.token){
     try{
       [sc, fb, sess, lg] = await Promise.all([
-        ghGet(SCHED_PATH), ghGet(FB_PATH), ghGet(SESS_PATH), ghGet(logPath(wk))]);
+        ghGet(MARKS_PATH), ghGet(FB_PATH), ghGet(SESS_PATH), ghGet(logPath(wk))]);
+      if(!sc){ sc = await ghGet(SCHED_PATH); if(sc) migrated=true; }   // 이관 1회 — 옛 스냅샷에서 은퇴·미룸·태그만 건져 온다
       if(!sc && !fb){ legacy = await ghGet(LEGACY_STATE); }   // 아직 안 옮긴 기기·첫 배포
     }catch(e){
       showBanner(e&&e.code==='auth'?'토큰이 만료됐어요 — GitHub 연결에서 갱신'
@@ -3470,25 +3507,26 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
     }
   } else {                        // 토큰 전: 읽기 전용으로라도 최신 상태를 보여준다
     [sc, fb, sess, lg] = await Promise.all([
-      rawGet(SCHED_PATH), rawGet(FB_PATH), rawGet(SESS_PATH), rawGet(logPath(wk))]);
+      rawGet(MARKS_PATH), rawGet(FB_PATH), rawGet(SESS_PATH), rawGet(logPath(wk))]);
+    if(!sc){ sc = await rawGet(SCHED_PATH); if(sc) migrated=true; }
     if(!sc && !fb) legacy = await rawGet(LEGACY_STATE);
   }
   const wasDirty=!!lsGet(K_DIRTY);
-  const cSc=cachedFile(K_SCHED), cFb=cachedFile(K_FB), cSess=cachedFile(K_SESS), cLg=cachedFile(K_LOGP+wk);
+  const cSc=cachedFile(K_MARKS)||cachedFile(K_SCHED), cFb=cachedFile(K_FB), cSess=cachedFile(K_SESS), cLg=cachedFile(K_LOGP+wk);
   if(legacy){                     // 옛 단일 파일 → 새 구조로 읽어들인다 (한 번만)
     state.cards=legacy.cards||{};
     state.hoedok=legacy.hoedok||{};
     logWeeks={}; for(const e of (legacy.log||[])){ const k=weekKeyOf(logDate(e)); (logWeeks[k]=logWeeks[k]||[]).push(e); }
     if(Array.isArray(legacy.sessions)){ sessions=legacy.sessions.filter(x=>!x.del); sessTomb=legacy.sessions.filter(x=>x.del); }
     if(legacy.cap!==undefined){ intake.cap=legacy.cap; intake.capAt=legacy.capAt||0; }
-    markDirty('sched'); markDirty('fb'); markDirty('sess'); for(const k in logWeeks) markDirty('log',k);
+    markDirty('marks'); markDirty('fb'); markDirty('sess'); for(const k in logWeeks) markDirty('log',k);
   } else {
     applyFiles(sc||cSc, fb||cFb);
     logWeeks={}; const lw=(lg||cLg); if(lw&&Array.isArray(lw.log)) logWeeks[wk]=lw.log;
     /* 못 올린 로컬분을 원격 위에 얹는다.
        🔴 얹기만 하고 「올려야 할 것」으로 표시하지 않으면, 지난번에 못 올린 채점이 스스로는
           영영 안 올라간다(다음 채점이 주 로그 전체를 올릴 때 딸려 갈 뿐). 표시까지 한다. */
-    if(wasDirty && cSc){ mergeSchedInto({cards:(cSc.cards||{})}); markDirty('sched'); }
+    if(wasDirty && cSc){ mergeMarksInto({cards:(cSc.cards||{})}); markDirty('marks'); }
     if(wasDirty && cFb){ mergeFbInto({cards:(cFb.cards||{})});    markDirty('fb'); }
     if(wasDirty && cLg){ mergeLogInto(cLg, wk);                   markDirty('log', wk); }
     // K_DLOGS가 정본, 없는 기기(이 기능 이전)는 캐시 전수로 폴백
@@ -3513,29 +3551,35 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
   }
   rebuildLog();
   if(!state.cards)state.cards={}; if(!state.hoedok)state.hoedok={};
-  {                                  // 스냅샷 이후 로그 따라잡기 (로그가 정본)
-    const need=[], oldest=oldestPendingWeek();
-    for(let i=0;i<5;i++){ const k=weekKeyOf(new Date(Date.now()-i*7*86400000)); need.push(k); if(k===oldest)break; }
-    if(need.some(k=>!logWeeks[k])) await loadWeeks(need);
+  {                                  // 로그가 정본 — 전 주차를 모아 처음부터 다시 계산한다
+    await loadWeeks(logWeeksRange());
+    const t0=performance.now();
     const n=replayLog();
-    if(n) console.log('로그 재적용', n, '건');
+    console.log('로그 재계산', n, '건 ·', Math.round(performance.now()-t0), 'ms');
   }
   cleanupTempSessions();
   if(!sessions.length) sessions=[newSessObj('일일 복습', HOW_TPL[0].how, {}, 'auto')];
   normalizeSessions();
+  if(migrated) markDirty('marks');   // 옛 스냅샷에서 건져 온 마크를 새 파일로 한 번 올린다
   cacheState();
-  if(wasDirty||legacy) push(true);
+  if(wasDirty||legacy||migrated) push(true);
 }
-async function loadWeeks(keys){   // 통계용 과거 주 로그 (필요할 때만)
+async function loadWeeks(keys){   // 지난 주 로그 — 전량 재계산의 재료
   const want=keys.filter(k=>!logWeeks[k]);
   if(!want.length) return false;
+  const rest=[];
   for(const k of want){
     const c=cachedFile(K_LOGP+k);
-    if(c){ logWeeks[k]=c.log||[]; continue; }
-    if(!(cfg&&cfg.token)){ logWeeks[k]=[]; continue; }
-    try{ const j=await ghGet(logPath(k)); logWeeks[k]=(j&&j.log)||[]; lsSet(K_LOGP+k, JSON.stringify({v:2,week:k,log:logWeeks[k]})); }
-    catch(e){ logWeeks[k]=[]; }
+    if(c&&Array.isArray(c.log)&&c.log.length){ logWeeks[k]=c.log; continue; }  // 지난 주는 안 바뀐다
+    rest.push(k);
   }
+  await Promise.all(rest.map(async k=>{                    // 병렬 — 주가 늘어도 부팅이 안 느려진다
+    let j=null;
+    try{ j = (cfg&&cfg.token) ? await ghGet(logPath(k)) : await rawGet(logPath(k)); }catch(e){}
+    logWeeks[k]=(j&&j.log)||[];
+    // 🔴 빈 주는 캐시하지 않는다 — 다른 기기가 그 주에 뒤늦게 올린 것을 영영 못 보게 된다
+    if(logWeeks[k].length) lsSet(K_LOGP+k, JSON.stringify({v:2,week:k,log:logWeeks[k]}));
+  }));
   rebuildLog(); lastRevIdx=null; firstRevIdx=null;
   return true;
 }
@@ -3965,7 +4009,6 @@ function rate(num){
   const hasExtra=Object.keys(extra).length>0;
   const entry=hasExtra?[c.id,ts,num,extra]:[c.id,ts,num];
   pushLog(entry); undoSnap.entry=entry;      // 되돌릴 때 이 항목만 지목해 뺀다
-  s.lt=ts;                                          // 여기까지 반영됨 — 재계산은 이 뒤부터
   sess.r[num]++; sess.ms+=extra.ms||0;
   if(num===1) sess.streak=0; else { sess.streak++; if(sess.streak>sess.best)sess.best=sess.streak; }
   if(num===1) s.miss=(s.miss||0)+1;        // 당일 재출 없음 (동하 확정 2026-08-21) — 다음 복습일에 만난다
@@ -4019,7 +4062,6 @@ function doUndo(){
   else { sn.prev.u=new Date().toISOString(); state.cards[sn.id]=sn.prev; }
   if(sn.k==='rate'){
     dropLogEntry(sn.entry);        // 2) 로그에서 그 채점만 제거
-    markDirty('sched');
     if(sameRun){                   // 같은 런이면 성적 카운터까지 원상복구
       phase=sn.phase; sessionDone=sn.sessionDone; newServed=sn.newServed;
       if(sn.sess) sess=sn.sess;
@@ -4029,7 +4071,7 @@ function doUndo(){
       saveSessionsSoon();
     }
   }else{                           // 내일로·은퇴·끄기 — 로그에 없던 조작
-    markSchedUrgent(); markDirty('fb');
+    markDirty('marks'); markDirty('fb');
   }
   const card = sn.card || BYID[sn.id];
   if(card) reviveAt(card);         // 3) 그 카드를 지금 카드로
@@ -4641,7 +4683,7 @@ $('ssEdit').onclick=()=>{ if(viewSess)openSessEditor(viewSess,null); };
 $('btnSync').onclick=async()=>{ if(!cfg||!cfg.token){openSetup();return;} await push(true); if(!dirty)toast('저장 완료'); };
 $('btnBackup').onclick=()=>{   // 파일이 나뉜 뒤로는 한 덩어리로 묶어 내려받는다
   const parts=splitState();
-  const bundle={v:2, at:new Date().toISOString(), sched:parts.sched, feedback:parts.fb,
+  const bundle={v:2, at:new Date().toISOString(), marks:parts.marks, feedback:parts.fb,
     logs:logWeeks, sessions:sessFile()};
   const blob=new Blob([JSON.stringify(bundle)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);

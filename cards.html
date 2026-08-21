@@ -3886,6 +3886,11 @@ function extendWithNew(){ // 신규 = 대주제 한 개씩 — 끝나면 체크�
   const rest=queue.slice(qPos).filter(c=>!nt.cards.includes(c));
   queue=[...nt.cards, ...rest]; qPos=0;
   undoSnap=null; undoRun++; updateUndo();   // 큐가 새로 짜였다는 표시 — 스택은 그대로 산다
+  syncSessQueue();
+  /* 🔴 풀이 화면으로 데려간다. 큐가 빈 세션에서 이 버튼을 누르면 playSess가 finishSess로
+     세션 화면에 튕겨 놓기 때문에, 여기서 화면을 안 바꾸면 카드는 실렸는데 화면은 그대로고
+     버튼은 「남은 카드 없음」으로 남는다(동하 2026-08-21). */
+  if(!$('scrSolve').classList.contains('on')) go('scrSolve');
   showCard();
 }
 

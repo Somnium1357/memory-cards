@@ -477,6 +477,8 @@ input:focus,select:focus{border-color:var(--accent);}
 .u-row .nm{font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .u-row .up{font-size:10.5px;font-weight:700;color:var(--faint);margin-bottom:1px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.u-row .cv{flex:0 0 auto;width:22px;font-size:11px;color:var(--faint);transition:transform .15s;}
+.u-row .cv.open{transform:rotate(90deg);}
 .u-row .mt{font-size:11px;color:var(--mute);font-weight:700;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;}
 .u-row .mt .due{color:var(--accent);} .u-row .mt .nw{color:var(--good);}
 .u-row .rd{flex:0 0 auto;font-size:11.5px;font-weight:800;padding:6px 10px;border-radius:9px;
@@ -3867,6 +3869,7 @@ function finishSess(){         // 큐 소진 = 세션 화면으로 복귀 (성�
   push();                      // 세션 경계 = 배치 push 시점
   go('scrSession');
 }
+let ssOpen=new Set();   // 세션 화면에서 펼쳐 둔 대주제 (중주제 낱개로 빼기용)
 let curTopic=null; // 방금 투입한 대주제 키
 function nextTopic(){ // 다음 투입 = 계획 최우선 대주제의 오늘 한 바퀴(개념당 1장) — 바퀴는 중간에 안 자른다
   let pool=scopePool(curPreset.scope,'new').sort(newSort);
@@ -4414,6 +4417,13 @@ function unitStatsAll(){   // 단위별 집계 한 번에 (DATA 1회 순회)
   }
   return m;
 }
+function midsOfUnit(k){        // 그 대주제의 중주제 키들 (문서 순)
+  const out=[];
+  for(const c of DATA){ if(tagKey(c)!==k) continue;
+    const mk=midKey(k,(c.tags||[])[1]||'(기타)');
+    if(!out.includes(mk)) out.push(mk); }
+  return out;
+}
 function rowStats(midSet){  // unitStatsAll의 행 키 판(중주제 포함). 세션 화면 전용
   const LR=lastRevMap(), m={};
   for(const c of DATA){
@@ -4433,8 +4443,9 @@ function unitRow(k, st2, opts){   // 공용 단위 행 (세션 화면·단위 �
   const read=state.hoedok&&state.hoedok[k];
   const plan=PLAN_DATE.get(rowUnit(k))||'';
   const uri=hoedokURI(k), inQ=(opts&&opts.inQ)||0;
-  const up=rowUpper(k);
-  el.innerHTML=`<div class="t">${up?`<div class="up">${esc(up)}</div>`:''}<div class="nm">${esc(rowName(k))}</div>
+  const up=rowUpper(k), exp=opts&&opts.expandable;
+  el.innerHTML=`${exp?`<button class="cv${opts.expanded?' open':''}">▸</button>`:''}`
+    + `<div class="t">${up?`<div class="up">${esc(up)}</div>`:''}<div class="nm">${esc(rowName(k))}</div>
     <div class="mt">${inQ?`<span class="inq">이 세션 ${inQ}</span>`:''}<span>총 ${st2.n}</span>${st2.due?`<span class="due">due ${st2.due}</span>`:''}
       ${st2.nw?`<span class="nw">신규 ${st2.nw}</span>`:'<span>투입 완료</span>'}
       <span>${st2.last?'인출 '+fmtAgo(st2.last):'인출 없음'}</span>${plan?`<span>${plan} 수강</span>`:''}
@@ -4442,6 +4453,8 @@ function unitRow(k, st2, opts){   // 공용 단위 행 (세션 화면·단위 �
     <button class="rd${read?' on':''}">${read?'읽음 ✓':'📖 읽음'}</button>
     ${opts&&opts.action?`<button class="act">${opts.action}</button>`:''}
     ${opts&&opts.action2?`<button class="act dim">${opts.action2}</button>`:''}`;
+  const cv=el.querySelector('.cv');
+  if(cv)cv.onclick=(e)=>{ e.stopPropagation(); opts.onExpand(k); };
   const a=el.querySelector('.mt a.hd');
   if(a)a.onclick=(e)=>e.stopPropagation();   // 행 선택·이름 탭이 같이 먹지 않게
   el.querySelector('.rd').onclick=(e)=>{ e.stopPropagation();
@@ -4497,10 +4510,14 @@ function renderSession(){
     for(const mk of (sx.scope.mids||[])) if(!seen[mk]&&!keys.includes(mk))keys.push(mk);
   } else keys=keys.sort((a,b)=>seen[b]-seen[a]).slice(0,8);
   keys.sort((a,b)=>planRank(a)-planRank(b)||(isMidRow(a)?rowMid(a):'').localeCompare(isMidRow(b)?rowMid(b):''));
+  const midStats=rowStats(new Set(ssOpen.size?[...ssOpen].flatMap(midsOfUnit):[]));
   for(const k of keys){ if(!rowMeta(k))continue;
     const inQ=seen[k]||0;
+    const subMids = (!isMidRow(k) && midsOfUnit(k).length>=2) ? midsOfUnit(k) : null;
     const row=unitRow(k, stats[k]||{n:0,due:0,nw:0,last:0},
       {inQ, action2:'빼기',
+       expandable:!!subMids, expanded:ssOpen.has(k),
+       onExpand:(kk)=>{ ssOpen.has(kk)?ssOpen.delete(kk):ssOpen.add(kk); renderSession(); },
        rerender:renderSession,
        onName:(kk)=>playUnitFirst(sx,kk),
        onAction2:(kk)=>{
@@ -4509,17 +4526,40 @@ function renderSession(){
            '빼기', ()=>removeUnitFromSess(sx,kk));
          else removeUnitFromSess(sx,kk);
        }});
-    ub.appendChild(row); }
+    ub.appendChild(row);
+    if(subMids && ssOpen.has(k)){          // 펼치면 중주제 낱개로 뺄 수 있다
+      const seenMid={};
+      for(const id of (live?queue.slice(qPos).map(c=>c.id):sx.q)){ const c=BYID[id];
+        if(c&&tagKey(c)===k){ const mk=midKey(k,(c.tags||[])[1]||'(기타)'); seenMid[mk]=(seenMid[mk]||0)+1; } }
+      const sub=document.createElement('div'); sub.className='u-sub';
+      for(const mk of subMids){
+        sub.appendChild(unitRow(mk, midStats[mk]||{n:0,due:0,nw:0,last:0},
+          {inQ:seenMid[mk]||0, action2:'빼기', rerender:renderSession,
+           onName:(kk)=>playUnitFirst(sx,kk),
+           onAction2:(kk)=>removeUnitFromSess(sx,kk)}));
+      }
+      ub.appendChild(sub);
+    }
+  }
   if(!keys.length)ub.innerHTML='<div class="empty-note" style="padding:16px">아직 내용이 없어요 — 아래에서 단위를 넣으세요</div>';
 }
 function removeUnitFromSess(sx, k){ // 세션에서 단위 빼기 — 큐에서 빼고, 직접 추가 세션이면 범위에서도 뺀다
-  const midSet=new Set(sx.scope.mids||[]);
-  const hit=c=>cardRowKey(c,midSet)===k;
+  const isMid=isMidRow(k), u=rowUnit(k);
+  const hit = isMid ? (c=>tagKey(c)===u && midKey(u,(c.tags||[])[1]||'(기타)')===k)
+                    : (c=>tagKey(c)===u);
   const before=sx.q.length;
   sx.q=sx.q.filter(id=>{ const c=BYID[id]; return c && !hit(c); });
   const gone=before-sx.q.length;
-  sx.scope.units=(sx.scope.units||[]).filter(x=>x!==k);          // 자동 충전 세션은 애초에 비어 있어 무해
-  sx.scope.mids=(sx.scope.mids||[]).filter(x=>isMidRow(k)?x!==k:rowUnit(x)!==k);
+  /* 🔴 범위 모델에는 「포함」만 있고 「제외」가 없다. 대주제로 담은 세션에서 중주제 하나를 빼려면
+     그 대주제를 **중주제들로 전개**하고 뺀 것만 빼야 한다 (동하 2026-08-21 — 손으로 하던 절차). */
+  if(isMid && (sx.scope.units||[]).includes(u)){
+    sx.scope.units=sx.scope.units.filter(x=>x!==u);
+    const rest=midsOfUnit(u).filter(m=>m!==k);
+    sx.scope.mids=[...new Set([...(sx.scope.mids||[]), ...rest])];
+  }else{
+    sx.scope.units=(sx.scope.units||[]).filter(x=>x!==k);        // 자동 충전 세션은 애초에 비어 있어 무해
+    sx.scope.mids=(sx.scope.mids||[]).filter(x=>isMid?x!==k:rowUnit(x)!==k);
+  }
   if(curSess&&curSess.id===sx.id){
     const head=queue.slice(0,qPos);
     queue=[...head, ...queue.slice(qPos).filter(c=>!hit(c))];

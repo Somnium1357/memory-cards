@@ -2808,7 +2808,7 @@ const K_CFG='cards_cfg_v1', K_STATE='cards_state_cache_v1', K_DIRTY='cards_dirty
       K_DATA='cards_data_cache_v1', K_SWIPE='cards_swipe_v1', K_INTAKE='cards_intake_v1',
       K_KBD='cards_kbd_v1', K_SESS='cards_sessions_v1',
       K_SCHED='cards_sched_v2', K_FB='cards_fb_v1', K_PLAN='cards_plan_v1', K_LOGP='cards_log_v2_',
-      K_UOPEN='cards_units_open_v1', K_DLOGS='cards_dirty_logs_v1';
+      K_UOPEN='cards_units_open_v1', K_DLOGS='cards_dirty_logs_v1', K_HOEDOK='cards_hoedok_v1';
 const OLD_CFG='review_cfg_v1';            // 관리앱(같은 오리진)의 토큰 재사용
 const DAY_CUT=4;                          // 하루 경계 = 새벽 4시
 const EXAM_DAY='2026-11-07';              // due 최대 클램프
@@ -3338,15 +3338,71 @@ function hoedokLabel(k){ const m=TAGMETA[k]; return `${m.subj.split('.')[1]} · 
    🔴 file에 확장자를 붙이면 제목 앵커가 통째로 무시된다 — `회독_3.영어%23제목` 형태라야 이동한다.
    플랫폼 분기는 없다. 같은 스킴이 iOS·Windows 공통이라, PC에 옵시디언을 깔면 그대로 작동한다
    (안 깔려 있으면 브라우저가 조용히 무시할 뿐 앱은 멀쩡하다). */
-const OBSIDIAN_VAULT='2027임용_Obsidian';
+const OBSIDIAN_VAULT='2027임용_Obsidian', HOEDOK_DIR='hoedok/';
+/* 회독본 사본이 레포 `hoedok/`에 같이 있다(루틴이 회독본 갱신 때 복사).
+   앱이 제목을 직접 읽으므로 —
+     · 중주제 제목이 있으면 중주제로, 없으면 **대주제로** 떨어진다
+     · 파일이 쪼개져도 제목이 있는 파일을 찾아간다 (파일명 규칙에 안 매인다)
+     · 새 과목 회독본이 생기면 저절로 붙는다
+   🔴 여기에 과목·제목 목록을 박아두지 마라. 원본을 읽는 것이 이 방식의 요점이다. */
+let HOEDOK=null;   // {f:[파일명…], h:{과목:{제목:파일인덱스}}}
+function hoedokLoadCache(){ try{ const j=JSON.parse(lsGet(K_HOEDOK)||'null');
+  if(j&&j.f&&j.h) HOEDOK=j; }catch(e){} }
+async function ghListDir(dir){     // 토큰이 있으면 실제 파일 목록 (쪼갠 이름도 잡힌다)
+  if(!cfg||!cfg.token) return null;
+  try{
+    const r=await fetch(ghUrl(dir),{headers:ghHeaders(),cache:'no-store'});
+    if(!r.ok) return null;
+    const j=await r.json();
+    return Array.isArray(j) ? j.filter(x=>x.type==='file'&&/\.md$/i.test(x.name)).map(x=>x.name) : null;
+  }catch(e){ return null; }
+}
+async function loadHoedok(){
+  /* 토큰이 있으면 실제 파일 목록을 받고(쪼갠 이름도 잡힌다), 없으면 관례 이름을 훑는다.
+     어느 쪽이든 파일은 **한 번만** 받는다 — 존재 확인과 본문 읽기를 겹쳐 쓴다. */
+  const listed = await ghListDir('hoedok');
+  const names = listed || SUBJECTS.map(sj => '회독_' + sj + '.md');
+  const f = [], h = {};
+  await Promise.all(names.map(async n => {
+    const sj = SUBJECTS.find(x => n.startsWith('회독_' + x)); if (!sj) return;
+    let txt = null;
+    try {
+      const r = await fetch(HOEDOK_DIR + encodeURIComponent(n) + '?t=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) return;                     // 없는 과목(회독본 미작성)은 조용히 지나간다
+      txt = await r.text();
+    } catch (e) { return; }
+    let fi = f.indexOf(n); if (fi < 0) { fi = f.length; f.push(n); }
+    const m = h[sj] = h[sj] || {};
+    for (const line of txt.split('\n')) {
+      const g = /^#{1,6}\s+(.+?)\s*$/.exec(line);
+      if (g && !(g[1] in m)) m[g[1]] = fi;   // 같은 제목이 여러 파일에 있으면 먼저 나온 파일
+    }
+  }));
+  if (f.length) { HOEDOK = { f, h }; lsSet(K_HOEDOK, JSON.stringify(HOEDOK)); }
+}
 function hoedokURI(k){
-  /* 앱은 볼트를 못 읽는다(브라우저). 그래서 확인하지 않고 규칙대로 주소를 지어내고,
-     실제로 그 파일·제목이 있는지는 옵시디언이 열릴 때 판정한다.
-     🔴 과목 목록을 박아두지 마라 — 새 회독본(예: 13.총창)이 생겼을 때 코드를 고쳐야 해진다.
-        규칙만 지키면 새 과목·새 대주제가 저절로 붙는 것이 이 방식의 요점이다. */
-  const m=rowMeta(k); if(!m) return null;   // 중주제 행이면 중주제 제목으로 간다
-  return `obsidian://open?vault=${encodeURIComponent(OBSIDIAN_VAULT)}`
-       + `&file=${encodeURIComponent('회독_'+m.subj)}%23${encodeURIComponent(m.tag)}`;
+  const m=rowMeta(k); if(!m) return null;
+  const enc=encodeURIComponent;
+  let file='회독_'+m.subj, head=m.tag;          // 색인이 아직 없으면 예전 규칙 그대로
+  const H=HOEDOK&&HOEDOK.h[m.subj];
+  if(H){
+    /* 좁은 것부터 넓은 것으로 떨어진다: 중주제 → 분할 라벨 → 원 대주제 → 파일만.
+       분할 대주제의 TAGMETA.tag는 「대주제 — 그룹명」이라 회독본 제목과 다르다.
+       원 대주제는 단위 키(과목|대주제#그룹)에서 뽑는다. */
+    const cands=[];
+    if(isMidRow(k)&&rowMid(k)) cands.push(rowMid(k));
+    const t=TAGMETA[rowUnit(k)]; if(t&&t.tag) cands.push(t.tag);
+    const raw=(rowUnit(k).split('|')[1]||'').split('#')[0]; if(raw) cands.push(raw);
+    let done=false;
+    for(const c of cands){ if(H[c]!==undefined){ file=HOEDOK.f[H[c]]; head=c; done=true; break; } }
+    if(!done){
+      const any=Object.values(H)[0];            // 제목을 하나도 못 찾으면 그 과목 파일만 연다
+      if(any===undefined) return null;
+      file=HOEDOK.f[any]; head='';
+    }
+    file=file.replace(/\.md$/,'');
+  }
+  return `obsidian://open?vault=${enc(OBSIDIAN_VAULT)}&file=${enc(file)}`+(head?`%23${enc(head)}`:'');
 }
 
 /* ═══════════════ 데이터 로드 ═══════════════ */
@@ -5338,6 +5394,7 @@ function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show');
 (async function(){
   applyTheme();
   loadCfg(); loadSessions(); loadIntake();
+  hoedokLoadCache();         // 회독본 제목 색인 — 캐시부터 써서 pill이 처음부터 맞게 뜬다
   await loadPlan();          // tagKey·투입 순서가 계획에 의존하므로 데이터보다 먼저
   await loadData();
   if(!DATA.length){
@@ -5348,6 +5405,10 @@ function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show');
   $('loading').style.display='none';
   if(cfg===null||!cfg.token) openSetup();
   go('scrHome');     // 세션은 홈에서 골라 들어간다 (즉시 시작 폐지 — 동하 확정 2026-08-20)
+  loadHoedok().then(()=>{    // 회독본 색인 갱신은 뒤에서 — 끝나면 보고 있던 화면만 다시 그린다
+    const scr=[...document.querySelectorAll('.scr.on')].map(x=>x.id)[0];
+    if(scr==='scrSession')renderSession(); else if(scr==='scrUnits')renderUnits();
+  });
 })();
 </script>
 </body>

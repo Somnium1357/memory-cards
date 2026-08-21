@@ -3156,10 +3156,16 @@ async function pushAll(force){        // 바뀐 파일만 올린다 (로그 우�
   if(dirtyFiles.has('sess'))  await ghPut(SESS_PATH,  sessFile,             mergeSessInto);
   dirtyFiles.delete('sess');
 }
+function hasPending(){ return dirty || dirtyFiles.size>0 || dirtyLogs.size>0; }
 async function push(force){ // 배치 push — 옵티미스틱: 실패해도 로컬은 이미 저장됨
-  if(!cfg||!cfg.token){ return; }
+  if(!cfg||!cfg.token){
+    /* 토큰은 기기별이다. 조용히 리턴하면 저장 배지만 켜진 채로 영원히 남아
+       「미저장분 있음」이 왜 뜨는지 알 길이 없다 (동하 아이패드 2026-08-21). */
+    if(hasPending()) showBanner('이 기기는 GitHub에 연결 안 됨 — 채점이 이 기기에만 쌓여요', true);
+    return;
+  }
   if(pushing){ return; }
-  if(!dirty && !force){ return; }
+  if(!force && !hasPending()){ return; }
   cacheFlush();
   pushing=true;
   try{
@@ -3176,7 +3182,9 @@ function afterRate(){ // 채점 후 배치 훅
   cacheState(); setDirty(true); ratedSincePush++;
   if(ratedSincePush>=PUSH_EVERY_N) push();
 }
-setInterval(()=>{ if(dirty && Date.now()-lastPushAt>PUSH_EVERY_MS) push(); updateSaveUI(); }, 30*1000);
+/* dirty가 아니라 hasPending()을 본다 — pushAll은 5분 게이트에 막힌 sched를 dirtyFiles에 남겨두는데,
+   push()가 dirty를 꺼버리므로 예전 조건에서는 다음 채점 전까지 그 스냅샷이 영영 안 올라갔다. */
+setInterval(()=>{ if(hasPending() && Date.now()-lastPushAt>PUSH_EVERY_MS) push(); updateSaveUI(); }, 30*1000);
 let hiddenAt=0;
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){

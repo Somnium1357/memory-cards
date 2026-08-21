@@ -689,7 +689,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
         <div class="op-help" id="opHelp">
           <code>is:due</code> 복습 예정 · <code>is:new</code> 신규 · <code>is:weak</code> 약점 ·
           <code>is:leech</code> 누수 · <code>is:flag</code> 플래그 · <code>is:ann</code> @주석 ·
-          <code>is:buried</code> 미룸<br>
+          <code>is:buried</code> 미룸 · <code>is:off</code> 끈 카드<br>
           <code>tag:"기초 문식성"</code> 태그(공백은 따옴표) · <code>typ:정의</code> 유형 · <code>subj:국어</code> 과목 ·
           <code>rated:3</code> 최근 3일 채점 · <code>-is:new</code> 부정<br>
           여러 조건은 띄어쓰기로 AND. 따옴표 없는 나머지 말은 앞·뒤·태그 본문 검색.
@@ -700,8 +700,8 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
         <button class="more-btn" id="listMore" style="display:none">더 보기</button>
         <div class="bulkbar" id="bulkBar">
           <span class="n" id="bulkN">0장</span>
-          <button data-bulk="retire">은퇴</button>
-          <button data-bulk="restore">복구</button>
+          <button data-bulk="retire">끄기</button>
+          <button data-bulk="restore">다시 켜기</button>
           <button data-bulk="flag">플래그</button>
           <button data-bulk="unflag">플래그 해제</button>
           <button data-bulk="bury">내일로</button>
@@ -833,16 +833,20 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
           <div class="hpb">
             <p>풀이 화면 오른쪽 사이드바(좁은 화면에선 <b>☰</b>)에 있어요.</p>
             <table class="hp-t">
-              <tr><th>은퇴</th><td><b>지금 작동해요.</b> 이 카드만 그만 봐요. 즉시 큐에서 빠지고, 카드 목록에서 복구할 수 있어요</td></tr>
-              <tr><th>⚑플래그</th><td><b>지금 작동해요.</b> 「이 카드가 이상하다」 신고. 메모를 달면 저녁 루틴이 읽고 문구를 고쳐요</td></tr>
-              <tr><th>지도·사례·정의·이름</th><td><span class="hp-warn">아직 처리 창구가 없어요</span> — 「이 성분을 교재에서 끌어와 채워달라」는 신청이에요.
-                지도=수업 적용, 사례=예시, 정의=내용, 이름=개념어. 눌러두면 기록은 남습니다</td></tr>
-              <tr><th>방향</th><td><span class="hp-warn">아직 처리 창구가 없어요</span> · 은퇴와 겹쳐서 <b>없앨 예정</b>이에요</td></tr>
-              <tr><th>끄기</th><td><span class="hp-warn">절반만 작동해요</span> — 「노드 전체」라고 되어 있지만 실제로는 <b>누른 카드 한 장</b>만 빠져요.
-                은퇴·방향과 합쳐 <b>「끄기」 하나로 정리할 예정</b>이에요</td></tr>
+              <tr><th>⚑플래그</th><td>「이 카드가 이상하다」 신고. 카드는 그대로 나와요.
+                메모를 달면 저녁 루틴이 읽고 <b>문구를 고쳐요</b></td></tr>
+              <tr><th>지도·사례<br>정의·이름</th><td>「이 성분을 교재에서 끌어와 채워달라」는 신청이에요. 카드는 그대로 나와요.
+                지도=수업 적용, 사례=예시, 정의=내용, 이름=개념어. 저녁 루틴이 교재에서 찾아 <b>카드에 더해요</b></td></tr>
+              <tr><th>끄기</th><td><b>이 카드 그만.</b> 두 가지가 같이 일어나요 —
+                ① 지금 바로 큐에서 빠져요(카드 목록에서 다시 켤 수 있어요)
+                ② 저녁 루틴이 <b>spec에도 반영</b>해서 카드를 다시 만들어도 안 생겨요</td></tr>
             </table>
-            <p class="hp-key">지금 확실히 쓸 수 있는 건 <b>은퇴</b>와 <b>⚑플래그</b> 둘이에요.</p>
+            <p class="hp-key">넷 다 지금 작동해요. <b>플래그·지도류는 카드를 고치는 신청</b>이고,
+            <b>끄기는 카드를 없애는 것</b>이에요.</p>
             <p>그 밖에 <b>내일로</b>(오늘 큐에서만 빼기 · 복습일은 그대로)와 <b>일시정지</b>(응답 시간 멈춤)가 있어요.</p>
+            <p class="hp-key">2026-08-22에 <b>은퇴·방향·끄기 셋을 「끄기」 하나로</b> 합쳤어요.
+            셋 다 「이 카드 그만」의 변주라 겹쳤고, 특히 <b>방향</b>은 「지금 보는 카드가 전방인지 역방인지」를
+            동하가 알아야 누를 수 있는 버튼이라 애초에 잘못 놓인 것이었어요. 방향은 이제 루틴이 알아서 판정해요.</p>
           </div>
         </details>
 
@@ -865,7 +869,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
               <tr><td>누적 틀림</td><td>「다시」를 되돌리면 횟수도 줄어요</td></tr>
             </table>
             <p>일지에서 아예 지워지니까 <b>앱을 다시 켜도 그대로</b>예요. 복습일은 일지로 매번 다시 계산하거든요.</p>
-            <p><b>채점 말고도 되돌아가는 것</b> — 내일로 · 은퇴 · 끄기. 잘못 눌러도 한 번 되돌리면 됩니다.</p>
+            <p><b>채점 말고도 되돌아가는 것</b> — 내일로 · 끄기. 잘못 눌러도 한 번 되돌리면 됩니다.</p>
             <table class="hp-t">
               <tr><td>몇 단계</td><td><b>30단계</b></td></tr>
               <tr><td>언제까지 살아 있나</td><td>세션을 나갔다 와도, 다른 세션을 거쳐도 살아 있어요</td></tr>
@@ -889,7 +893,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
               <tr><th>세션</th><td>허브. 이어가기 · 마지막 성적 · 이 세션의 단위 · 다음 진도 · 범위 넓히기</td></tr>
               <tr><th>단위</th><td>대주제 84개를 과목별로 접어 둔 목록. 회독 읽음 체크 · 골라서 세션 만들기</td></tr>
               <tr><th>카드 목록</th><td><b>조건을 고르면</b> 결과가 나오는 화면. 5,580장을 그냥 깔지 않아요.
-                누수·플래그·약점·오늘 푼·은퇴 같은 타일이나 검색으로 들어가요</td></tr>
+                누수·플래그·약점·오늘 푼·끈 카드 같은 타일이나 검색으로 들어가요</td></tr>
               <tr><th>풀이</th><td>맨 위 한 줄 = 이 카드가 나온 이유 · 카드 탭 = 답 공개(다시 탭하면 앞면) · 사이드바 = 되짚기</td></tr>
             </table>
             <p><b>단위 행에서</b> — 이름을 누르면 그 단위부터 먼저 풀고, <b>▸</b>를 누르면 중주제로 펼쳐져 낱개로 뺄 수 있어요.
@@ -944,6 +948,8 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
               <tr><td>참 유지율</td><td>「다시」를 안 누른 비율. 통계 화면에 있어요</td></tr>
               <tr><td>회독 읽음</td><td>그 단위를 통독했다는 체크. 카드와 별개로 표시해 둬요</td></tr>
               <tr><td>내일로(미룸)</td><td>오늘 큐에서만 빼기. 복습일은 그대로예요</td></tr>
+              <tr><td>끄기 / 끈 카드</td><td>이 카드 그만. 지금 바로 빠지고(목록에서 다시 켤 수 있어요),
+                저녁 루틴이 spec에도 반영해 카드를 다시 만들어도 안 생겨요. 예전 이름은 「은퇴」였어요</td></tr>
             </table>
           </div>
         </details>
@@ -961,8 +967,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 
   <!-- 사이드바 -->
   <div id="rail">
-    <div class="rail-grp">메타</div>
-    <button class="rbtn" id="rRetire"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>은퇴</button>
+    <div class="rail-grp">되짚기</div>
     <button class="rbtn" id="rFlag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4a1 1 0 0 1 1-1h11l-2 4 2 4H5"/></svg>플래그<span class="st">●</span></button>
     <div id="flagMemoRow"><input id="flagMemo" type="text" placeholder="메모 (선택)" maxlength="120"></div>
     <button class="rbtn" id="rBury"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="9"/></svg>내일로</button>
@@ -971,8 +976,6 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
     <button class="rbtn ann" data-ann="사례"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>사례<span class="st">●</span></button>
     <button class="rbtn ann" data-ann="정의"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>정의<span class="st">●</span></button>
     <button class="rbtn ann" data-ann="이름"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8h10M7 12h6"/><rect x="3" y="4" width="18" height="16" rx="2"/></svg>이름<span class="st">●</span></button>
-    <div class="rail-sep"></div>
-    <button class="rbtn ann" id="rDir" data-ann="방향"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg>방향<span class="st">●</span></button>
     <div class="rail-bottom">
       <button class="rbtn" id="rOff" style="color:var(--mute)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.4 5.6a9 9 0 1 1-12.8 0"/><path d="M12 2v8"/></svg>끄기</button>
     </div>
@@ -3094,7 +3097,9 @@ const OLD_CFG='review_cfg_v1';            // 관리앱(같은 오리진)의 토�
 const DAY_CUT=4;                          // 하루 경계 = 새벽 4시
 const EXAM_DAY='2026-11-07';              // due 최대 클램프
 const PUSH_EVERY_N=20, PUSH_EVERY_MS=5*60*1000, STALE_MS=10*60*1000;
-const PAIR_TYPES=new Set(['정의','기준','동치','근사','표기','전거','대응']); // 방향 버튼 노출 대상(양방향 쌍)
+/* (옛 PAIR_TYPES — @방향 버튼 노출 대상이었다. 2026-08-22 방향 버튼 폐기로 함께 제거.
+   동하는 자기가 보는 카드가 전방인지 역방인지 모르고, 알 필요도 없어야 한다 —
+   방향은 루틴이 카드 ID에서 `d` 필드로 판정한다.) */
 const TERM_TYPES=new Set(['동치','표기','전거','예시','대응','연쇄','종류','구성','단계','표']);
 const SUBJECTS=['1.국어','2.수학','3.영어','4.사회','5.도덕','6.과학','7.체육','8.음악','9.미술','13.총창'];
 let INTAKE_PLAN=[], PLAN_RANK=new Map(), PLAN_DATE=new Map();   // cards-plan.json에서 로드 (루틴 소유)
@@ -3204,10 +3209,19 @@ function setDueDays(c,n){ // due를 n일 뒤로 (FSRS 상태가 있는 카드만
   setBase(s, {...s.fsrs, due:d.toISOString()}, c.id);
   return true;
 }
-function pairAlive(c){ // 같은 노드·같은 유형의 반대 방향 카드가 살아 있는가 (안내용 근사)
-  return DATA.some(x=>x!==c&&x.node===c.node&&x.typ===c.typ&&isRev(x)!==isRev(c)&&!retired(x));
+/* 끄기 = 「이 카드 그만」. 2026-08-22에 은퇴·방향·끄기 셋을 여기로 합쳤다.
+   두 층을 동시에 건드린다 —
+     ① retired  : 이 기기에서 즉시 빠진다(로컬. 되돌리기·복구로 되살릴 수 있다)
+     ② ann 끄기 : 루틴이 수거해 spec의 그 변에 제외 마커를 단다(재생성돼도 안 생긴다)
+   ①만 하면 재생성 때 되살아나고, ②만 하면 오늘 밤까지 계속 나온다. 그래서 둘 다 한다. */
+function offCard(c,v){
+  const s=st(c.id);
+  s.retired=v;
+  s.ann=s.ann||[];
+  const i=s.ann.indexOf('끄기');
+  if(v){ if(i<0)s.ann.push('끄기'); } else if(i>=0) s.ann.splice(i,1);
+  touch(s); touchFb(s); cacheState(); setDirty(true);
 }
-function retireCard(c,v){ const s=st(c.id); s.retired=v; touch(s); cacheState(); setDirty(true); }
 function setFlag(c,v){ const s=st(c.id); s.flag=v; touchFb(s); cacheState(); }
 function addTag(c,t){ const s=st(c.id); s.t=s.t||[]; if(!s.t.includes(t))s.t.push(t);
   touch(s); cacheState(); setDirty(true); }
@@ -4461,7 +4475,7 @@ function syncRail(){
     b.classList.toggle('on', ann.includes(b.dataset.ann));
   });
   $('rFlag').classList.toggle('on', !!(s&&s.flag!=null));
-  $('rDir').style.display = c&&PAIR_TYPES.has(c.typ) ? 'flex':'none';
+  $('rOff').classList.toggle('on', !!(s&&s.ann&&s.ann.includes('끄기')));
   $('flagMemoRow').classList.toggle('on', !!(s&&s.flag!=null));
   $('flagMemo').value = (s&&s.flag)||'';
 }
@@ -4492,28 +4506,12 @@ $('rBury').onclick=()=>{
   buryCard(c); dropFromQueue(c.id); removeCurFromQueue(sn);
   toast('내일로 — 오늘 큐에서 빠져요 (되돌리기로 취소)');
 };
-$('rRetire').onclick=()=>{
+$('rOff').onclick=()=>{ // 끄기 = 이 카드 그만 (2026-08-22 — 은퇴·방향을 여기로 합쳤다)
   const c=cur(); if(!c)return;
-  const pair=pairAlive(c);
   const sn=dropSnap(c);
-  retireCard(c,true); dropFromQueue(c.id);   // 큐 뒤에 남은 같은 카드도 함께 정리
+  offCard(c,true); dropFromQueue(c.id);   // 큐 뒤에 남은 같은 카드도 함께 정리
   removeCurFromQueue(sn);
-  toast(pair?'이 방향만 은퇴 — 반대 방향은 남아요':'은퇴 — 목록에서 복구 가능');
-};
-$('rOff').onclick=()=>{ // 끄기 = 노드 단위 중단 → 오터치 가드 (확인 다이얼로그)
-  const c=cur(); if(!c)return;
-  const sibs=DATA.filter(x=>x.node===c.node).length;
-  $('cfTitle').textContent='이 노드 카드화 끄기';
-  $('cfDesc').textContent=`「${c.node.split('/').pop()}」 노드의 카드 ${sibs}장이 전부 멈춰요. 수거 루틴이 spec에 제외 마커를 반영하면 재생성돼도 안 생깁니다. 낱장만 빼려면 은퇴를 쓰세요.`;
-  $('ovlConfirm').classList.add('show');
-  $('cfYes').onclick=()=>{
-    $('ovlConfirm').classList.remove('show');
-    const sn=dropSnap(c), s=st(c.id);
-    if(!s.ann.includes('끄기'))s.ann.push('끄기');
-    touchFb(s); cacheState();
-    for(let i=queue.length-1;i>qPos;i--){ if(queue[i].node===c.node)queue.splice(i,1); }
-    removeCurFromQueue(sn); toast('노드 끄기 기록 — 루틴이 수거해요');
-  };
+  toast('껐어요 — 오늘 밤 루틴이 spec에도 반영해요 (되돌리기 가능)');
 };
 $('cfNo').onclick=()=>$('ovlConfirm').classList.remove('show');
 $('cTagAdd').onclick=(ev)=>{ ev.stopPropagation(); $('cTagInput').classList.add('on'); $('cTagInput').focus(); };
@@ -5383,7 +5381,7 @@ function renderCardSheet(){
   }
   if(s.miss) facts.push(`<span class="f ${isLeech(c)?'warn':''}">틀림 <b>${s.miss}</b></span>`);
   if(isLeech(c)) facts.push('<span class="f warn">⚠ 누수</span>');
-  if(s.retired) facts.push('<span class="f warn">은퇴</span>');
+  if(s.retired) facts.push('<span class="f warn">끔</span>');
   if(buried(c)) facts.push('<span class="f warn">오늘 미룸</span>');
   const tags=[...(c.tags||[]).map(t=>`<span class="tg">${esc(t)}</span>`),
     ...userTags(c.id).map(t=>`<button class="utag" data-untag="${esc(t)}">#${esc(t)} ✕</button>`),
@@ -5412,7 +5410,7 @@ function renderCardSheet(){
       <button class="cs-act" id="csSolve">지금 이 카드 풀기</button>
       <button class="cs-act ${s.flag!=null?'on':''}" id="csFlag">${s.flag!=null?'플래그 해제':'플래그'}</button>
       <button class="cs-act ${buried(c)?'on':''}" id="csBury">${buried(c)?'미룸 취소':'내일로 미루기'}</button>
-      <button class="cs-act ${s.retired?'on':''}" id="csRetire">${s.retired?'은퇴 복구':'은퇴'}</button>
+      <button class="cs-act ${s.retired?'on':''}" id="csRetire">${s.retired?'다시 켜기':'끄기'}</button>
     </div>
     ${s.flag!=null?`<div class="cs-row" style="margin-top:8px"><input id="csMemo" type="text" maxlength="120" placeholder="플래그 메모 (루틴 수거가 읽어요)" value="${esc(s.flag||'')}"><button id="csMemoSave">저장</button></div>`:''}
     <div class="cs-sec">일정 손보기</div>
@@ -5433,7 +5431,7 @@ function renderCardSheet(){
   $('csFlag').onclick=()=>{ setFlag(c, (state.cards[c.id]||{}).flag!=null?null:''); rr(); };
   const mb=$('csMemoSave'); if(mb)mb.onclick=()=>{ setFlag(c,$('csMemo').value); toast('메모 저장'); };
   $('csBury').onclick=()=>{ buried(c)?unburyCard(c):buryCard(c); rr(); };
-  $('csRetire').onclick=()=>{ retireCard(c, !(state.cards[c.id]||{}).retired); rr(); };
+  $('csRetire').onclick=()=>{ offCard(c, !(state.cards[c.id]||{}).retired); rr(); };
   $('csSolve').onclick=()=>{ closeCardSheet(); startAdHoc([c], '카드 1장'); };
   $('csDueSet').onclick=()=>{ const n=+$('csDueN').value;
     if(!$('csDueN').value.trim()||!isFinite(n)||n<0){ toast('며칠 뒤인지 숫자로'); return; }
@@ -5469,7 +5467,7 @@ const LIST_CONDS=[
   {g:'오늘',   k:'today',   n:'오늘 푼',   f:null, today:true},
   {g:'오늘',   k:'due',     n:'복습 예정', f:c=>isDue(c)},
   {g:'오늘',   k:'buried',  n:'오늘 미룸', f:c=>buried(c)},
-  {g:'정리',   k:'retired', n:'은퇴',      f:c=>retired(c), ret:true},
+  {g:'정리',   k:'retired', n:'끈 카드',   f:c=>retired(c), ret:true},
 ];
 function renderListHome(){       // 조건 없을 때 — 숫자 붙은 진입점. 전체 장수는 일부러 안 쓴다
   const LR=lastRevMap(), tk=todayKey(), cnt={};
@@ -5558,7 +5556,7 @@ function parseQuery(q){ // 검색 = 연산자 AND + 나머지 낱말 본문 검�
         else if(v==='buried')fn=c=>buried(c);
         else if(v==='flag')fn=c=>{const s=state.cards[c.id]; return !!(s&&s.flag!=null);};
         else if(v==='ann')fn=c=>{const s=state.cards[c.id]; return !!(s&&s.ann&&s.ann.length);};
-        else if(v==='retired'||v==='suspended'){ fn=c=>retired(c); if(!neg)forceRet=true; }
+        else if(v==='retired'||v==='suspended'||v==='off'){ fn=c=>retired(c); if(!neg)forceRet=true; }
       }
       else if(k==='tag')fn=c=>(c.tags||[]).concat(userTags(c.id)).some(x=>x.toLowerCase().includes(v));
       else if(k==='typ')fn=c=>(c.typ||'').toLowerCase().includes(v);
@@ -5660,17 +5658,17 @@ function bulkDo(kind){
   if(kind==='tag'){ const inp=$('bulkTag'); inp.style.display='block'; inp.focus(); return; }
   const run=()=>{
     for(const c of cs){
-      if(kind==='retire')retireCard(c,true);
-      else if(kind==='restore')retireCard(c,false);
+      if(kind==='retire')offCard(c,true);
+      else if(kind==='restore')offCard(c,false);
       else if(kind==='flag')setFlag(c,(state.cards[c.id]||{}).flag!=null?(state.cards[c.id].flag):'');
       else if(kind==='unflag')setFlag(c,null);
       else if(kind==='bury')buryCard(c);
     }
-    const lbl={retire:'은퇴',restore:'복구',flag:'플래그',unflag:'플래그 해제',bury:'내일로'}[kind];
+    const lbl={retire:'끄기',restore:'다시 켜기',flag:'플래그',unflag:'플래그 해제',bury:'내일로'}[kind];
     picked.clear(); refreshList(); syncBulk(); toast(`${cs.length}장 ${lbl}`);
   };
   if(kind==='retire'&&cs.length>=20)
-    askConfirm('한꺼번에 은퇴', `${cs.length}장을 은퇴시킵니다. 목록에서 복구할 수 있어요.`, '은퇴', run);
+    askConfirm('한꺼번에 끄기', `${cs.length}장을 끕니다. 목록에서 다시 켤 수 있고, 오늘 밤 루틴이 spec에도 반영해요.`, '끄기', run);
   else run();
 }
 $('qSearch').addEventListener('input',()=>renderList(true));
@@ -5743,7 +5741,7 @@ function renderStats(){
     +g('오늘 채점',today.n,'회')+g('오늘 신규',today.nw,'장')
     +g('오늘 학습시간',fmtMin(today.ms),'')+g('평균 응답',today.msN?fmtDur(Math.round(today.ms/today.msN)):'—','')
     +g('due 남음',due,'장')+g('내일 예상','~'+tmr,'장')
-    +g('학습 진입',learned,`/ ${DATA.length}`)+g('은퇴 · 미룸',`${ret} · ${bur}`,'장')
+    +g('학습 진입',learned,`/ ${DATA.length}`)+g('끈 카드 · 미룸',`${ret} · ${bur}`,'장')
     +'</div>';
 
   /* due 예보 14일 */
@@ -5843,7 +5841,7 @@ function renderWeak(){
     body.appendChild(d);
   };
   sec(`누수 카드 (틀림 ${LEECH_MISS}회 이상)`, leech, null,
-      '반복해서 무너지는 카드 — 카드 문구가 문제인지 보고, 아니면 쪼개거나 플래그로 수거 대상에 올리세요. 자동 은퇴는 하지 않습니다.');
+      '반복해서 무너지는 카드 — 카드 문구가 문제인지 보고, 아니면 쪼개거나 플래그로 수거 대상에 올리세요. 자동으로 끄지는 않습니다.');
   sec('낮은 안정도에 머무는 카드 (2회+ 복습, S<7일)', low, v=>'S '+v.toFixed(1)+'일');
   sec('누적 틀림 상위', missed, null);
 }

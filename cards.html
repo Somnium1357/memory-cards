@@ -475,6 +475,8 @@ input:focus,select:focus{border-color:var(--accent);}
 .u-row.sel{outline:2px solid var(--accent);outline-offset:-2px;}
 .u-row .t{flex:1;min-width:0;}
 .u-row .nm{font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.u-row .up{font-size:10.5px;font-weight:700;color:var(--faint);margin-bottom:1px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .u-row .mt{font-size:11px;color:var(--mute);font-weight:700;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;}
 .u-row .mt .due{color:var(--accent);} .u-row .mt .nw{color:var(--good);}
 .u-row .rd{flex:0 0 auto;font-size:11.5px;font-weight:800;padding:6px 10px;border-radius:9px;
@@ -3294,11 +3296,17 @@ function rowMeta(k){                     // TAGMETA 대체 — 중주제면 tag�
   const t=TAGMETA[rowUnit(k)]; if(!t) return null;
   return {subj:t.subj, tag:rowMid(k)||t.tag, i0:t.i0, n:0};
 }
-function rowLabel(k){
+function rowLabel(k){            // 토스트·확인창용 전체 경로
   const t=TAGMETA[rowUnit(k)]; if(!t) return k;
   const sj=t.subj.split('.')[1]||t.subj;
-  return isMidRow(k) ? `${sj} · ${rowMid(k)||t.tag}` : `${sj} · ${t.tag}`;
+  return (isMidRow(k)&&rowMid(k)) ? `${sj} · ${t.tag} › ${rowMid(k)}` : `${sj} · ${t.tag}`;
 }
+/* 행에서는 두 줄로 쪼갠다 — 좁은 화면에서 한 줄로 붙이면 말줄임이 뒤를 먹어
+   정작 중요한 중주제가 안 보인다. 위: 과목 · 대주제(작게) / 아래: 중주제(굵게). */
+function rowUpper(k){ const t=TAGMETA[rowUnit(k)];
+  return (t&&isMidRow(k)&&rowMid(k)) ? `${t.subj.split('.')[1]||t.subj} · ${t.tag}` : ''; }
+function rowName(k){ const t=TAGMETA[rowUnit(k)]; if(!t) return k;
+  return (isMidRow(k)&&rowMid(k)) ? rowMid(k) : `${t.subj.split('.')[1]||t.subj} · ${t.tag}`; }
 function cardRowKey(c, midSet){          // 그 카드가 어느 행에 속하나 (세션이 집어든 중주제 우선)
   const u=tagKey(c);
   if(!midSet||!midSet.size) return u;
@@ -4268,7 +4276,8 @@ function unitRow(k, st2, opts){   // 공용 단위 행 (세션 화면·단위 �
   const read=state.hoedok&&state.hoedok[k];
   const plan=PLAN_DATE.get(rowUnit(k))||'';
   const uri=hoedokURI(k), inQ=(opts&&opts.inQ)||0;
-  el.innerHTML=`<div class="t"><div class="nm">${esc(rowLabel(k))}</div>
+  const up=rowUpper(k);
+  el.innerHTML=`<div class="t">${up?`<div class="up">${esc(up)}</div>`:''}<div class="nm">${esc(rowName(k))}</div>
     <div class="mt">${inQ?`<span class="inq">이 세션 ${inQ}</span>`:''}<span>총 ${st2.n}</span>${st2.due?`<span class="due">due ${st2.due}</span>`:''}
       ${st2.nw?`<span class="nw">신규 ${st2.nw}</span>`:'<span>투입 완료</span>'}
       <span>${st2.last?'인출 '+fmtAgo(st2.last):'인출 없음'}</span>${plan?`<span>${plan} 수강</span>`:''}

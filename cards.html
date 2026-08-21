@@ -374,6 +374,34 @@ input:focus,select:focus{border-color:var(--accent);}
 .op-help{font-size:11.5px;line-height:1.75;color:var(--mute);background:var(--sunken);
   border-radius:12px;padding:10px 13px;margin-bottom:9px;display:none;}
 .op-help.on{display:block;}
+.why{font-size:11.5px;line-height:1.65;color:var(--faint);margin:-4px 2px 12px;}
+.hp-toc{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
+.hp-lead{font-size:13px;line-height:1.75;color:var(--mute);background:var(--sunken);
+  border-radius:13px;padding:12px 14px;margin-bottom:14px;}
+.hp-lead b{color:var(--ink2);}
+details.hp{background:var(--surface);border-radius:14px;margin-bottom:8px;box-shadow:var(--shadow-sm);
+  overflow:hidden;}
+details.hp>summary{list-style:none;cursor:pointer;padding:13px 15px;font-size:13.5px;font-weight:800;
+  color:var(--ink);display:flex;align-items:center;gap:8px;}
+details.hp>summary::-webkit-details-marker{display:none;}
+details.hp>summary::before{content:'▸';font-size:11px;color:var(--faint);transition:transform .15s;}
+details.hp[open]>summary::before{transform:rotate(90deg);}
+details.hp[open]>summary{border-bottom:1px solid var(--line);}
+.hpb{padding:12px 15px 15px;font-size:12.5px;line-height:1.8;color:var(--mute);}
+.hpb p{margin:0 0 10px;}
+.hpb b{color:var(--ink2);font-weight:700;}
+.hp-key{background:var(--accent-dim);color:var(--ink2);border-radius:10px;padding:9px 12px;}
+.hp-key b{color:var(--accent);}
+.hp-warn{color:var(--again);font-weight:700;}
+.hp-flow{font-family:inherit;font-size:12px;line-height:1.9;color:var(--mute);background:var(--sunken);
+  border-radius:10px;padding:12px 14px;margin:0 0 10px;overflow-x:auto;white-space:pre;}
+.hp-t{width:100%;border-collapse:collapse;margin:0 0 10px;}
+.hp-t td,.hp-t th{padding:6px 0;vertical-align:top;border-top:1px solid var(--line);text-align:left;}
+.hp-t tr:first-child td,.hp-t tr:first-child th{border-top:none;}
+.hp-t td:first-child,.hp-t th:first-child{width:34%;padding-right:12px;color:var(--ink2);font-weight:700;
+  white-space:normal;}
+.hp-foot{font-size:11.5px;color:var(--faint);text-align:center;margin:18px 0 6px;}
+.why b{color:var(--mute);font-weight:700;}
 .op-help code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--accent);
   background:var(--accent-dim);padding:1px 5px;border-radius:5px;}
 .lh-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(98px,1fr));gap:8px;margin-bottom:14px;}
@@ -575,6 +603,7 @@ input:focus,select:focus{border-color:var(--accent);}
       <div class="home-wrap"><div class="home-inner">
         <div class="home-head">
           <div class="h-title">오늘</div>
+          <button class="gear" data-go="scrHelp" title="도움말" style="margin-right:2px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.3a3 3 0 1 1 3.4 4.4v1.1"/><path d="M12 17.6h.01"/></svg></button>
           <button class="gear" id="btnSettings" title="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 8.9 19a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 5 8.9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9.5a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
         </div>
         <div class="today-box" id="todayBox"></div>
@@ -674,6 +703,198 @@ input:focus,select:focus{border-color:var(--accent);}
     <div class="scr" id="scrWeak">
       <div class="sub-head"><button class="tb-btn" data-go="scrHome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title">약점</div></div>
       <div class="sub-body"><div class="sub-inner" id="weakBody"></div></div>
+    </div>
+
+    <!-- 도움말 -->
+    <div class="scr" id="scrHelp">
+      <div class="sub-head"><button class="tb-btn" data-go="scrHome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title">도움말</div></div>
+      <div class="sub-body"><div class="sub-inner">
+
+        <div class="hp-toc" id="hpToc"></div>
+
+        <div class="hp-lead">
+          이 앱이 <b>속으로 굴리는 규칙</b>을 적어 둔 문서예요. 화면에 안 드러나는 판단
+          — 어떤 카드를 언제 꺼내는지, 복습일이 어떻게 정해지는지 — 이 여기 다 있습니다.
+        </div>
+
+        <details class="hp" id="hp1"><summary>한눈에 — 카드가 나에게 오기까지</summary>
+          <div class="hpb">
+            <pre class="hp-flow">회독본(옵시디언)
+   ↓  개념 하나하나를 카드로
+카드 5,580장          ← 아직 아무도 안 푼 상태 = <b>신규</b>
+   ↓  투입 계획(수강일 순서)
+<b>세션</b>이 오늘치를 꺼냄   ← 「무엇을(범위) × 어떻게(방식)」
+   ↓  채점 4단계
+<b>복습일</b>이 정해짐(FSRS) ← 그날이 오면 <b>due</b>
+   ↓
+다시 세션에 실림</pre>
+            <p><b>기억할 두 축</b> — 카드는 <b>신규</b>(한 번도 안 푼 것) 아니면 <b>복습</b>(복습일이 된 것)이에요.
+            세션은 이 둘 중 무엇을 꺼낼지 골라 담습니다.</p>
+          </div>
+        </details>
+
+        <details class="hp" id="hp2"><summary>진도 — 새 카드는 어떻게 들어오나</summary>
+          <div class="hpb">
+            <p>새 카드는 아무 때나 안 나와요. <b>투입 계획</b>이 순서를 정해 둡니다.</p>
+            <table class="hp-t">
+              <tr><td>계획</td><td>대주제 83개를 <b>수강일이 오래된 순</b>으로 줄 세운 목록. 루틴이 관리하고 앱은 읽기만 해요</td></tr>
+              <tr><td><b>다음 진도</b></td><td>그 줄에서 <b>아직 안 푼 카드가 남은 첫 대주제</b>를 통째로 시작. 세션 화면의 「＋ 다음 진도」 버튼</td></tr>
+              <tr><td><b>범위 넓히기</b></td><td>계획을 무시하고 <b>내가 고른</b> 대주제·중주제를 얹기. 「＋ 범위 넓히기」 버튼</td></tr>
+            </table>
+            <p class="hp-key">둘의 차이는 <b>누가 고르느냐</b> 하나예요. 다음 진도 = 계획이 고름 / 범위 넓히기 = 내가 고름.</p>
+            <p><b>한 대주제는 통째로 나가요.</b> 32장이면 32장 다. 중간에서 자르지 않아요 —
+            한 개념 덩어리를 하루에 다 훑는 게 낫다고 봐서요.</p>
+            <p><b>고른 수보다 적게 들어올 수 있어요.</b> 역방향 카드는 며칠 뒤에 오거든요(↓방향 분산).
+            그 차이는 추가할 때 토스트로 알려줍니다.</p>
+          </div>
+        </details>
+
+        <details class="hp" id="hp3"><summary>세션 — 범위 × 방식</summary>
+          <div class="hpb">
+            <p>세션은 덱이 아니라 <b>레시피</b>예요. 「무엇을(범위)」와 「어떻게(방식)」를 정해 두면
+            그 조건으로 카드를 꺼내 옵니다. 큐를 들고 계속 살아요.</p>
+            <p class="hp-key">가장 중요한 갈래는 <b>자동 충전이냐 직접 추가냐</b>입니다.</p>
+            <table class="hp-t">
+              <tr><th>자동 충전</th><td>날이 바뀌면 <b>스스로 오늘 몫을 다시 채워요.</b> 「일일 복습」이 이것.
+                내가 안 채워도 매일 그날 복습분이 준비돼요. 못 푼 건 다음날 어차피 다시 due라 이월 개념이 없어요</td></tr>
+              <tr><th>직접 추가</th><td><b>내가 담은 범위만</b> 풀어요. 못 푼 잔량은 다음날로 넘어가요.
+                「누적복습」처럼 특정 범위를 훑을 때</td></tr>
+            </table>
+            <p><b>방식의 나머지 항목</b></p>
+            <table class="hp-t">
+              <tr><td>상태</td><td>어떤 카드를 담을지 — due(복습일이 된 것) / 신규 / 약점 / 전체. 겹쳐 고를 수 있어요</td></tr>
+              <tr><td>순서</td><td>셔플 / 문서순(회독본 순서대로 통독) / 가중 셔플(과목 배점 비율대로)</td></tr>
+              <tr><td>분량</td><td>비우면 전량. 채우면 <b>위험도 높은 것부터</b> 그 수만큼</td></tr>
+              <tr><td>신규 이어가기</td><td>복습을 다 풀면 새 진도로 이어갈지</td></tr>
+            </table>
+            <p><b>세션 화면이 허브예요.</b> 이어가기·마지막 성적·이 세션의 단위(회독 읽음·먼저 풀기·빼기)·범위 넓히기가 다 여기 있어요.</p>
+          </div>
+        </details>
+
+        <details class="hp" id="hp4"><summary>복습일 — due는 어떻게 정해지나</summary>
+          <div class="hpb">
+            <p>채점하면 <b>FSRS</b>라는 알고리즘이 그 카드의 <b>안정도</b>(얼마나 오래 기억에 남는지)와
+            <b>난이도</b>를 갱신하고, 다음 복습일을 잡아요.</p>
+            <table class="hp-t">
+              <tr><td>다시</td><td>못 떠올림 → 안정도가 깎이고 <b>곧</b> 다시 나와요</td></tr>
+              <tr><td>어려움</td><td>떠올렸지만 힘들었음 → 조금만 늘어나요</td></tr>
+              <tr><td>알맞음</td><td>적당히 떠올림 → 표준으로 늘어나요</td></tr>
+              <tr><td>쉬움</td><td>너무 쉬웠음 → 많이 늘어나요</td></tr>
+            </table>
+            <p>채점 버튼 아래 작게 뜨는 <b>「3일」·「1.2개월」</b>이 <b>그걸 누르면 언제 다시 나오는지</b>예요.</p>
+            <p class="hp-key">그 날짜가 오늘이 되면 그 카드가 <b>due</b>(복습 예정)입니다. 「일일 복습」이 매일 꺼내는 게 이거예요.</p>
+            <p><b>규칙 네 개</b></p>
+            <table class="hp-t">
+              <tr><td>그날 첫 채점만</td><td>같은 카드를 하루에 여러 번 매겨도 <b>첫 번째만</b> 복습일에 반영돼요. 같은 날 반복은 안정도를 왜곡해서요</td></tr>
+              <tr><td>그날은 한 번만</td><td>한 번 매긴 카드는 그날 다시 안 나와요. 「다시」를 눌러도 마찬가지 — 다음 복습일에 만나요</td></tr>
+              <tr><td>하루 경계 새벽 4시</td><td>밤 12시를 넘겨 푼 것도 <b>그 전날</b>로 칩니다</td></tr>
+              <tr><td>시험일 상한</td><td>복습일이 <b>2026-11-07</b>을 넘지 않아요. 시험 뒤로 밀린 카드는 의미가 없으니까요</td></tr>
+            </table>
+            <p><b>풀이 화면 맨 위 한 줄</b>이 그 카드가 왜 지금 나왔는지 말해줘요 —
+            「다음 진도 — 미술 · 감상」 / 「8/19 채점 · 오늘이 복습일」 / 「복습일 8/18 — 2일 지남」.</p>
+          </div>
+        </details>
+
+        <details class="hp" id="hp5"><summary>방향 분산 — 왜 어떤 카드는 며칠 뒤에 오나</summary>
+          <div class="hpb">
+            <p>정의·기준 같은 유형은 카드가 <b>쌍</b>으로 만들어져요.</p>
+            <table class="hp-t">
+              <tr><td>전방</td><td>「기초 문식성」이란 무엇인가? → 내용</td></tr>
+              <tr><td>역방향</td><td>(그 내용) → 이게 무슨 개념인가?</td></tr>
+            </table>
+            <p class="hp-key">둘을 같은 날 주면 앞에서 본 답이 뒤 문제의 정답이 돼요.
+            인출한 게 아니라 <b>방금 본 걸 되뇐 것</b>이라 학습이 안 돼요.</p>
+            <p>그래서 <b>전방은 그날 다 나가고, 역방향은 2~3일 뒤</b>에 들어옵니다.
+            카드마다 2일/3일이 고정 배정돼서 하루 분량도 저절로 분산돼요.</p>
+            <p>범위를 넓힐 때 「142장 추가 · 79장은 나중에」라고 뜨는 게 이것 때문이에요.</p>
+          </div>
+        </details>
+
+        <details class="hp" id="hp6"><summary>되짚기 — 이상한 카드를 만났을 때</summary>
+          <div class="hpb">
+            <p>풀이 화면 오른쪽 사이드바(좁은 화면에선 <b>☰</b>)에 있어요.</p>
+            <table class="hp-t">
+              <tr><th>은퇴</th><td><b>지금 작동해요.</b> 이 카드만 그만 봐요. 즉시 큐에서 빠지고, 카드 목록에서 복구할 수 있어요</td></tr>
+              <tr><th>⚑플래그</th><td><b>지금 작동해요.</b> 「이 카드가 이상하다」 신고. 메모를 달면 저녁 루틴이 읽고 문구를 고쳐요</td></tr>
+              <tr><th>지도·사례·정의·이름</th><td><span class="hp-warn">아직 처리 창구가 없어요</span> — 「이 성분을 교재에서 끌어와 채워달라」는 신청이에요.
+                지도=수업 적용, 사례=예시, 정의=내용, 이름=개념어. 눌러두면 기록은 남습니다</td></tr>
+              <tr><th>방향</th><td><span class="hp-warn">아직 처리 창구가 없어요</span> · 은퇴와 겹쳐서 <b>없앨 예정</b>이에요</td></tr>
+              <tr><th>끄기</th><td><span class="hp-warn">절반만 작동해요</span> — 「노드 전체」라고 되어 있지만 실제로는 <b>누른 카드 한 장</b>만 빠져요.
+                은퇴·방향과 합쳐 <b>「끄기」 하나로 정리할 예정</b>이에요</td></tr>
+            </table>
+            <p class="hp-key">지금 확실히 쓸 수 있는 건 <b>은퇴</b>와 <b>⚑플래그</b> 둘이에요.</p>
+            <p>그 밖에 <b>내일로</b>(오늘 큐에서만 빼기 · 복습일은 그대로)와 <b>일시정지</b>(응답 시간 멈춤)가 있어요.</p>
+          </div>
+        </details>
+
+        <details class="hp" id="hp7"><summary>화면 안내</summary>
+          <div class="hpb">
+            <table class="hp-t">
+              <tr><th>홈</th><td>오늘 요약 · 세션 목록 · 라이브러리(단위·카드 목록) · 기록(통계·약점·플래그) · ⚙설정</td></tr>
+              <tr><th>세션</th><td>허브. 이어가기 · 마지막 성적 · 이 세션의 단위 · 다음 진도 · 범위 넓히기</td></tr>
+              <tr><th>단위</th><td>대주제 84개를 과목별로 접어 둔 목록. 회독 읽음 체크 · 골라서 세션 만들기</td></tr>
+              <tr><th>카드 목록</th><td><b>조건을 고르면</b> 결과가 나오는 화면. 5,580장을 그냥 깔지 않아요.
+                누수·플래그·약점·오늘 푼·은퇴 같은 타일이나 검색으로 들어가요</td></tr>
+              <tr><th>풀이</th><td>맨 위 한 줄 = 이 카드가 나온 이유 · 카드 탭 = 답 공개(다시 탭하면 앞면) · 사이드바 = 되짚기</td></tr>
+            </table>
+            <p><b>단위 행에서</b> — 이름을 누르면 그 단위부터 먼저 풀고, <b>▸</b>를 누르면 중주제로 펼쳐져 낱개로 뺄 수 있어요.
+            「회독본 ↗」은 옵시디언의 그 자리로 바로 열려요.</p>
+          </div>
+        </details>
+
+        <details class="hp" id="hp8"><summary>저장과 동기화</summary>
+          <div class="hpb">
+            <p>모든 기록은 GitHub 레포에 JSON으로 올라가요. <b>그게 동기화이자 백업</b>이에요.</p>
+            <table class="hp-t">
+              <tr><td>언제 올라가나</td><td>20장 채점마다 · 5분마다 · 화면 나갈 때 · 세션 끝 · 앱 내릴 때</td></tr>
+              <tr><td>무엇이 정본인가</td><td><b>채점 일지</b>. 복습일·난이도·틀림 횟수는 앱을 켤 때마다 그 일지로 <b>다시 계산</b>해요</td></tr>
+              <tr><td>저장 배지(작은 점)</td><td>마지막 저장이 <b>10분</b> 넘게 지났을 때만 떠요. 정상이면 뜰 일이 없어요</td></tr>
+              <tr><td>배지가 안 꺼지면</td><td>그 기기에 <b>GitHub 토큰이 없을</b> 가능성이 커요. ⚙설정 → GitHub 연결 확인</td></tr>
+            </table>
+            <p><b>토큰은 기기마다 따로예요.</b> PC와 아이패드에 각각 넣어야 해요.</p>
+            <p>두 기기에서 같이 써도 됩니다. 채점 일지는 <b>합쳐지고 지워지지 않아요.</b></p>
+          </div>
+        </details>
+
+        <details class="hp" id="hp9"><summary>단축키와 제스처</summary>
+          <div class="hpb">
+            <p><b>제스처</b></p>
+            <table class="hp-t">
+              <tr><td>카드 탭</td><td>답 공개 · 답면에서 다시 탭하면 앞면</td></tr>
+              <tr><td>카드 위 좌우 스와이프</td><td>채점(왼쪽 다시 · 오른쪽 알맞음) — ⚙설정에서 켜야 해요</td></tr>
+              <tr><td><b>왼쪽 가장자리에서 오른쪽</b></td><td>뒤로. 풀이 화면에서는 세션 화면으로</td></tr>
+            </table>
+            <p><b>키보드 (PC · ⚙설정에서 켜기)</b></p>
+            <table class="hp-t">
+              <tr><td>Space</td><td>답 공개 → 한 번 더 누르면 알맞음</td></tr>
+              <tr><td>1 2 3 4</td><td>다시 / 어려움 / 알맞음 / 쉬움</td></tr>
+              <tr><td>U · P · B · F</td><td>되돌리기 · 일시정지 · 내일로 · 플래그</td></tr>
+              <tr><td>H · / · Esc</td><td>홈 · 목록 검색 · 닫기</td></tr>
+            </table>
+            <p><b>되돌리기</b>는 30단계까지 되고, 세션을 나갔다 와도 살아 있어요. 채점뿐 아니라 내일로·은퇴도 되돌아가요.</p>
+          </div>
+        </details>
+
+        <details class="hp" id="hp10"><summary>용어 사전</summary>
+          <div class="hpb">
+            <table class="hp-t">
+              <tr><td>신규</td><td>한 번도 채점된 적 없는 카드</td></tr>
+              <tr><td>due · 복습 예정</td><td>FSRS가 잡은 복습일이 오늘이거나 지난 카드</td></tr>
+              <tr><td>단위 · 대주제</td><td>회독·투입·인출의 공통 덩어리. 84개</td></tr>
+              <tr><td>중주제</td><td>대주제 안의 묶음. 단위 행의 <b>▸</b>로 펼쳐 볼 수 있어요</td></tr>
+              <tr><td>전방 / 역방향</td><td>개념명→내용 / 내용→개념명</td></tr>
+              <tr><td>약점</td><td>2회 이상 복습했는데 안정도가 7일 미만이거나, 누적 2회 이상 틀린 카드</td></tr>
+              <tr><td>누수(leech)</td><td>누적 8회 이상 틀린 카드. 표시만 하고 자동으로 빼지는 않아요 — 카드가 나쁜 걸 수도 있어서 사람이 판단해요</td></tr>
+              <tr><td>안정도</td><td>그 기억이 얼마나 오래 남는지. 클수록 복습 간격이 길어져요</td></tr>
+              <tr><td>참 유지율</td><td>「다시」를 안 누른 비율. 통계 화면에 있어요</td></tr>
+              <tr><td>회독 읽음</td><td>그 단위를 통독했다는 체크. 카드와 별개로 표시해 둬요</td></tr>
+              <tr><td>내일로(미룸)</td><td>오늘 큐에서만 빼기. 복습일은 그대로예요</td></tr>
+            </table>
+          </div>
+        </details>
+
+        <div class="hp-foot">이 문서가 답을 못 하는 게 있으면 그건 앱이 설명을 빠뜨린 거예요.</div>
+      </div></div>
     </div>
 
     <!-- 플래그 -->
@@ -3939,7 +4160,7 @@ function showCard(){
   $('cBackWrap').classList.remove('on');
   $('gradeBar').classList.remove('on');
   phase = isNew(c) ? 'new' : 'review';   // 신규 묶음을 다 풀고 잔량으로 넘어가면 라벨도 따라간다
-  $('phaseLine').textContent = phase==='new' ? '신규 학습 중' : '';
+  $('phaseLine').textContent = whyNow(c);   // 이 카드가 왜 지금 나왔는지 (동하 2026-08-21)
   syncRail(); counts();
   $('cardScroll').scrollTop=0;
 }
@@ -4045,6 +4266,19 @@ function rate(num){
   touchRate(s); afterRate();
   sessionDone++; if(phase==='new')newServed++;
   qPos++; updateUndo(); showCard(); syncSessQueue();
+}
+function mdY(v){ const d=new Date(v); return `${d.getMonth()+1}/${d.getDate()}`; }
+function whyNow(c){
+  /* 규칙이 보이지 않게 작동하면 「왜 이게 나왔지」가 안 읽힌다.
+     한 줄이라도 이유를 대면 앱의 속셈이 드러난다 (동하 2026-08-21). */
+  if(isNew(c)) return curTopic&&tagKey(c)===curTopic ? `다음 진도 — ${rowLabel(curTopic)}` : '처음 보는 카드';
+  const st2=state.cards[c.id]; if(!st2||!st2.fsrs) return '';
+  const due=dayKey(new Date(st2.fsrs.due)), tk=todayKey();
+  const lr=lastRevMap()[c.id];
+  const head = lr ? `${mdY(lr[0])} 채점 · ` : '';
+  if(due<tk) return `${head}복습일 ${mdY(st2.fsrs.due)} — ${Math.round((new Date(tk)-new Date(due))/86400000)}일 지남`;
+  if(due>tk) return `${head}복습일은 ${mdY(st2.fsrs.due)} — 미리 보는 중`;
+  return `${head}오늘이 복습일`;
 }
 function fmtClock(ms){ const t=Math.max(0,Math.round(ms/1000));
   return Math.floor(t/60)+':'+pad(t%60); }
@@ -4301,6 +4535,7 @@ function go(id){
   if(id==='scrUnits')renderUnits();
   if(id==='scrList'){ picking=false; picked.clear(); listCond=null; $('qSearch').value=''; syncBulk(); renderList(true); }
   if(id==='scrStats')renderStats();
+  if(id==='scrHelp')renderHelpToc();
   if(id==='scrWeak')renderWeak();
   if(id==='scrFlags')renderFlags();
 }
@@ -4344,6 +4579,17 @@ function renderToday(){ // 홈 첫 화면 = 오늘 한 일 (통계 탭까지 안
       <div style="margin-left:auto;align-self:flex-end"><button class="h-tool" style="padding:8px 12px" data-go="scrStats">통계 자세히</button></div>
     </div>`;
   $('todayBox').querySelector('[data-go]').onclick=()=>go('scrStats');
+}
+function howPlain(sx){          // 태그 줄(「자동 충전 · due · 셔플 …」)을 사람 말로 한 번 더
+  const h=sx.how||{}, a=[];
+  a.push(isFixed(sx) ? '내가 담은 범위만 풀고, 못 푼 건 다음날로 넘어가요'
+                     : '날이 바뀌면 오늘 몫을 스스로 다시 채워요');
+  const st=stArr(h.status);
+  if(st.includes('due')&&st.length===1) a.push('복습일이 된 카드만 나와요');
+  else if(st.includes('new')&&st.length===1) a.push('아직 안 푼 카드만 나와요');
+  if(h.bury) a.push('역방향은 2~3일 뒤에 들어와요');
+  if(h.newAfter) a.push('복습을 다 풀면 새 진도로 이어갈 수 있어요');
+  return a.join(' · ');
 }
 function sessDesc(sx){
   const parts=[];
@@ -4478,16 +4724,21 @@ function renderSession(){
   const live=curSess&&curSess.id===sx.id;
   const nt=(sx.how.newAfter||stHas(sx.how.status,'new'))?(()=>{ const keep=curPreset; curPreset=asPreset(sx);
       const t=nextTopic(); curPreset=keep; return t; })():null;
-  let h=`<button class="ss-go" id="ssGo"${remain?'':' disabled'}>${remain?`이어가기 · ${remain}장`:'남은 카드 없음'}</button>
-    <div class="ss-line"><span>${esc(sessDesc(sx))}</span></div>`;
+  let h=`<button class="ss-go" id="ssGo"${remain?'':' disabled'}>${remain?`이어가기 · ${remain}장`:'오늘 몫 다 풀었어요'}</button>
+    ${remain?'':`<div class="why">${isFixed(sx)?'담아 둔 범위를 다 풀었어요. 아래에서 범위를 넓히거나 다음 진도를 시작하세요.'
+      :'오늘 복습할 카드가 없어요. 날이 바뀌면 그날 복습분으로 스스로 채워집니다.'}</div>`}
+    <div class="ss-line"><span>${esc(sessDesc(sx))}</span></div>
+    <div class="why">${esc(howPlain(sx))}</div>`;
   if(sx.lastScore) h+=`<div class="h-sec" style="margin-top:4px">마지막 성적</div>`+scoreHtml(sx.lastScore);
   h+=`<div class="ss-line"><span>누적 <b>${sx.done||0}</b>회</span>
       <span>${sx.lastAt?'마지막 '+fmtAgo(sx.lastAt):'아직 안 품'}</span></div>`;
-  if(nt) h+=`<button class="more-btn" id="ssNew" style="margin-bottom:12px">＋ 신규 주제 투입: ${esc(nt.label)} (${nt.cards.length}장)</button>`;
+  if(nt) h+=`<button class="more-btn" id="ssNew">＋ 다음 진도: ${esc(nt.label)} (${nt.cards.length}장)</button>
+    <div class="why">수강한 순서상 <b>다음 차례인 대주제</b>를 통째로 시작해요. 고르는 건 계획이 합니다${nt.date?` · ${esc(nt.date)} 수강`:''}</div>`;
   h+=`<div class="h-sec">이 세션의 단위</div>
-      <div class="op-help on" style="margin-bottom:8px">단위 이름을 누르면 그 단위부터 먼저 풀어요. 「회독본 ↗」은 옵시디언에서 열립니다.</div>
+      <div class="op-help on" style="margin-bottom:8px">단위 이름을 누르면 그 단위부터 먼저 풀어요 · <b>▸</b>를 누르면 중주제로 펼쳐집니다 · 「회독본 ↗」은 옵시디언에서 열려요.</div>
       <div id="ssUnits"></div>
-      <button class="more-btn" id="ssAdd">＋ 내용 추가</button>`;
+      <button class="more-btn" id="ssAdd">＋ 범위 넓히기</button>
+      <div class="why"><b>내가 고른</b> 범위를 이 세션에 얹어요. 계획 순서와 무관합니다${isFixed(sx)?'':' · 자동 충전 세션이라 오늘 큐에만 들어가요'}</div>`;
   body.innerHTML=h;
   $('ssGo').onclick=()=>{ if(live){ go('scrSolve'); showCard(); } else playSess(sx); };
   const bn=$('ssNew'); if(bn)bn.onclick=()=>{ if(!live)playSess(sx); curPreset=asPreset(sx); extendWithNew(); };
@@ -5525,6 +5776,20 @@ $('btnConnect').onclick=async()=>{
     $('cfgErr').style.display='block';
   }finally{ $('btnConnect').disabled=false; }
 };
+
+/* ═══════════════ 도움말 ═══════════════ */
+function renderHelpToc(){    // 목차 칩 — 누르면 그 절만 펼치고 그리로 간다
+  const box=$('hpToc'); if(box.dataset.built) return;
+  const secs=[...document.querySelectorAll('#scrHelp details.hp')];
+  box.innerHTML='';
+  for(const d of secs){
+    const b=document.createElement('button'); b.className='chip';
+    b.textContent=d.querySelector('summary').textContent.split(' — ')[0];
+    b.onclick=()=>{ d.open=true; d.scrollIntoView({behavior:'smooth', block:'start'}); };
+    box.appendChild(b);
+  }
+  box.dataset.built='1';
+}
 
 /* ═══════════════ 토스트 ═══════════════ */
 let toastT=null;

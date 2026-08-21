@@ -375,6 +375,13 @@ input:focus,select:focus{border-color:var(--accent);}
   border-radius:12px;padding:10px 13px;margin-bottom:9px;display:none;}
 .op-help.on{display:block;}
 .why{font-size:11.5px;line-height:1.65;color:var(--faint);margin:-4px 2px 12px;}
+.plan-warn{display:none;background:var(--hard-dim);border-radius:14px;padding:12px 14px;margin:6px 0 4px;
+  font-size:12.5px;line-height:1.7;color:var(--ink2);}
+.plan-warn.on{display:block;}
+.plan-warn b{color:var(--hard);}
+.plan-warn .pw-b{font-size:11.5px;color:var(--mute);margin-top:2px;}
+.plan-warn .pw-l{font-size:11.5px;color:var(--ink2);margin:8px 0;font-weight:700;}
+.plan-warn .pw-f{font-size:11.5px;color:var(--mute);}
 .hp-toc{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
 .hp-lead{font-size:13px;line-height:1.75;color:var(--mute);background:var(--sunken);
   border-radius:13px;padding:12px 14px;margin-bottom:14px;}
@@ -613,6 +620,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
         <div class="h-sec">세션 <span id="hSub"></span></div>
         <div id="sessList"></div>
         <button class="more-btn" id="btnNewSess">＋ 새 세션</button>
+        <div id="planWarn" class="plan-warn"></div>
         <div class="h-sec">라이브러리</div>
         <div class="h-row">
           <button class="h-tab" data-go="scrUnits">단위</button>
@@ -3736,6 +3744,35 @@ function tagKey(c){ // 투입·회독 단위 키 — 분할 대주제는 그룹�
   for(let i=0;i<sp.length;i++){ if(sp[i][1].includes(mid)) return base+'#'+i; }
   return base+'#0';
 }
+/* 🔴 계획(cards-plan.json)이 카드 데이터를 못 따라오면 **조용히 엉뚱한 자리로 간다.**
+   ① intake에 없는 대주제 → planRank 9999 → 신규 투입 맨 뒤 = 사실상 영영 안 나옴
+   ② splits에 없는 중주제 → tagKey가 `#0`으로 떨어뜨림 = 남의 그룹에 섞임
+   둘 다 「계획이 낡았다」는 신호지 학습 판단이 아니다. 앱은 그것을 숨기지 말고 드러낸다.
+   고치는 것은 루틴 몫(계획은 루틴 소유) — 앱은 읽기만 한다. */
+function planGaps(){
+  const noPlan=[], badMid=[];
+  for(const k in TAGMETA){ if(!PLAN_RANK.has(k)) noPlan.push({k, n:TAGMETA[k].n}); }
+  const seen={};
+  for(const c of DATA){
+    const base=c.subj+'|'+((c.tags&&c.tags[0])||'(기타)');
+    const sp=SPLITS[base]; if(!sp) continue;
+    const mid=(c.tags&&c.tags[1])||'';
+    if(!mid) continue;                       // 중주제가 아예 없는 카드는 #0이 제자리다(공백 아님)
+    if(sp.some(g=>g[1].includes(mid))) continue;
+    const key=base+'||'+mid;
+    if(!seen[key]){ seen[key]={base, mid, n:0}; badMid.push(seen[key]); }
+    seen[key].n++;
+  }
+  noPlan.sort((a,b)=>b.n-a.n); badMid.sort((a,b)=>b.n-a.n);
+  return {noPlan, badMid, total:noPlan.reduce((a,x)=>a+x.n,0)+badMid.reduce((a,x)=>a+x.n,0)};
+}
+function planGapText(){
+  const g=planGaps(); if(!g.total) return '';
+  const a=[];
+  if(g.noPlan.length) a.push(`계획에 없는 대주제 ${g.noPlan.length}개(${g.noPlan.reduce((x,y)=>x+y.n,0)}장) — 신규 투입에서 맨 뒤로 밀려요`);
+  if(g.badMid.length) a.push(`분할에 없는 중주제 ${g.badMid.length}개(${g.badMid.reduce((x,y)=>x+y.n,0)}장) — 남의 그룹으로 섞여요`);
+  return a.join(' · ');
+}
 function unitTagName(c){ const t0=(c.tags&&c.tags[0])||'(기타)'; const sp=SPLITS[c.subj+'|'+t0];
   if(!sp) return t0; const i=+(tagKey(c).split('#')[1]||0); return t0+' — '+sp[i][0]; }
 async function loadPlan(){        // 투입 계획·단위 분할 = 루틴 소유, 앱은 읽기만
@@ -4645,6 +4682,19 @@ function sessDesc(sx){
   if(sx.how.newAfter)parts.push('신규 이어가기');
   return parts.join(' · ');
 }
+function renderPlanWarn(){
+  const box=$('planWarn'); if(!box) return;
+  const g=planGaps();
+  if(!g.total){ box.classList.remove('on'); box.innerHTML=''; return; }
+  const list=[...g.noPlan.map(x=>`· ${esc(hoedokLabel(x.k)||x.k)} — ${x.n}장 (수강일 미등록)`),
+              ...g.badMid.map(x=>`· ${esc(x.base.split('|')[1])} › ${esc(x.mid||'(이름 없음)')} — ${x.n}장 (분할 미등록)`)];
+  box.innerHTML=`<b>투입 계획이 카드를 못 따라왔어요</b>
+    <div class="pw-b">${esc(planGapText())}</div>
+    <div class="pw-l">${list.join('<br>')}</div>
+    <div class="pw-f">계획(cards-plan.json)은 저녁 루틴이 관리해요. 다음 루틴이 돌면 제자리를 찾습니다 —
+      그때까지 이 단위는 <b>「＋ 범위 넓히기」로 직접 담아</b> 푸세요.</div>`;
+  box.classList.add('on');
+}
 function renderHome(){
   let due=0,nw=0;
   for(const c of DATA){ if(isDue(c))due++; else if(isNew(c))nw++; }
@@ -4652,6 +4702,7 @@ function renderHome(){
   $('hFoot').innerHTML=`카드 ${DATA.length.toLocaleString()}장 · 리뷰 로그 ${state.log.length.toLocaleString()}건`
     +`${dirty?' · <b style="color:var(--hard)">미저장분 있음</b>':''}`;
   cleanupTempSessions();
+  renderPlanWarn();
   const box=$('sessList'); box.innerHTML='';
   for(const sx of sessions){
     if(!isFixed(sx) && sx.day!==todayKey()) refillSess(sx);   // 전체 범위는 열 때마다 오늘치로

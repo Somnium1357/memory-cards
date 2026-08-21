@@ -135,6 +135,13 @@ input:focus,select:focus{border-color:var(--accent);}
   font-size:13px;line-height:1.55;color:var(--mute);}
 #cNote.on{display:block;}
 #cNote b{color:var(--ink2);font-weight:700;font-size:12px;letter-spacing:.4px;margin-right:6px;}
+/* 도식 카드(typ=도식, 8장)는 맞춰 볼 답면이 없다 — 회독본 그림과 대조해 스스로 매긴다.
+   그 사실이 앞면에서 안 보이면 「넘겼는데 답이 없네」가 된다. 앞면부터 말해 준다. */
+#cDiag{display:none;margin-top:14px;padding:10px 14px;border-radius:12px;
+  background:var(--accent-dim);font-size:13px;line-height:1.55;color:var(--ink2);}
+#cDiag.on{display:block;}
+#cDiag b{font-weight:700;font-size:12px;letter-spacing:.4px;margin-right:6px;color:var(--accent);}
+#cDiag a{color:var(--accent);font-weight:700;text-decoration:none;white-space:nowrap;}
 #cMeta{display:none;margin-top:14px;align-items:center;gap:8px;}
 #cMeta.on{display:flex;}
 .typ-tag{font-size:11px;font-weight:700;color:var(--mute);background:var(--surface2);
@@ -589,6 +596,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
           <div id="cScope"></div>
           <div id="cardScroll">
             <div id="cFront"></div>
+            <div id="cDiag"></div>
             <div id="cBackWrap">
               <div id="cBack"></div>
               <div id="cItems"></div>
@@ -4221,6 +4229,19 @@ function counts(){ // 상단 바 = 현재 세션 범위 기준 (스펙)
     ? `${label} <b>${remain}</b> · 오늘 ${todayRated()} · 내일 ~<b>${tmr}</b>`
     : `내일 ~<b>${tmr}</b>`;
 }
+/* 도식 카드 안내 — 앞면에서 「답면이 없다」를, 뒷면에서 「무엇과 대조하나」를 말한다.
+   답면(back)이 "(도식 — 회독본 그림과 대조해 스스로 채점)" 한 줄뿐이라, 이 줄이 없으면
+   넘겨 보고 나서야 그 사실을 안다. 회독본 링크는 뒷면에만 둔다 — 앞면에 두면 그리기 전에 본다. */
+function showDiag(c, back){
+  const el=$('cDiag'), on = c && c.typ==='도식';
+  el.classList.toggle('on', !!on);
+  if(!on){ el.innerHTML=''; return; }
+  if(!back){ el.innerHTML='<b>그림 답</b>맞춰 볼 답면이 없는 카드예요 — 먼저 직접 그린 다음 넘기세요.'; return; }
+  const uri=c?hoedokURI(tagKey(c)):null;
+  el.innerHTML='<b>스스로 채점</b>회독본 그림과 대조해 직접 매기세요.'
+    + (uri?` <a href="${uri.replace(/&/g,'&amp;')}">회독본 ↗</a>`:'');
+  const a=el.querySelector('a'); if(a)a.onclick=(e)=>e.stopPropagation();   // 탭이 카드 되접기로 먹지 않게
+}
 function showCard(){
   /* 🔴 오늘 정리된 카드는 어떤 경로로 큐에 남아 있든 화면에 안 띄운다 — 규칙의 마지막 관문.
      큐 조립 때(playSess·buildQueue)만 거르면 샌다: 세션 순서·설정을 바꾸면 저장 큐가
@@ -4235,10 +4256,12 @@ function showCard(){
   revealed=false; itemMarks=(c.items||[]).map(()=>false); shownAt=Date.now(); pausedMs=0;
   $('summary').style.display='none'; $('cardZone').style.display='flex';
   $('revealHint').style.display='block';
+  $('revealHint').textContent = c.typ==='도식' ? '다 그렸으면 탭하세요' : '카드를 탭하면 정답';
   const m=c.front.match(/^〔([^〕]*)〕\s*(.*)$/s);
   $('cScope').textContent=m?m[1]:''; $('cFront').textContent=m?m[2]:c.front;
   $('cBackWrap').classList.remove('on');
   $('gradeBar').classList.remove('on');
+  showDiag(c,false);
   phase = isNew(c) ? 'new' : 'review';   // 신규 묶음을 다 풀고 잔량으로 넘어가면 라벨도 따라간다
   $('phaseLine').textContent = whyNow(c);   // 이 카드가 왜 지금 나왔는지 (동하 2026-08-21)
   syncRail(); counts();
@@ -4249,8 +4272,9 @@ function reveal(){
   revealed=true;
   $('revealHint').style.display='none';
   const hasItems=Array.isArray(c.items)&&c.items.length>=2;
-  $('cBack').textContent = hasItems?'':c.back;
-  $('cBack').style.display = hasItems?'none':'block';
+  const isDiag=c.typ==='도식';   // 답면이 "(도식 — 회독본…)" 한 줄뿐 — cDiag가 같은 말을 링크까지 붙여 한다
+  $('cBack').textContent = (hasItems||isDiag)?'':c.back;
+  $('cBack').style.display = (hasItems||isDiag)?'none':'block';
   const box=$('cItems'); box.innerHTML=''; box.classList.toggle('on',hasItems);
   if(hasItems){
     const ordered = c.typ==='단계'||c.typ==='연쇄';
@@ -4267,7 +4291,9 @@ function reveal(){
   if(c.note)n.innerHTML='<b>보충</b>'+esc(c.note);
   $('cTyp').textContent=c.typ;
   $('cDir').style.display = isRev(c)?'inline-block':'none';   // 전방은 기본이라 무표시
-  $('cHint').textContent = TERM_TYPES.has(c.typ)||((c.back||'').length<=14&&!c.back.includes('·'))
+  showDiag(c,true);
+  $('cHint').textContent = c.typ==='도식' ? '그림 답 — 회독본과 대조해 스스로 채점'
+    : TERM_TYPES.has(c.typ)||((c.back||'').length<=14&&!c.back.includes('·'))
     ? '용어 답 — 표기까지 정확히' : '서술 답 — 요지 재현이면 정답';
   $('cBackWrap').classList.add('on');
   $('gradeBar').classList.add('on');
@@ -4282,6 +4308,7 @@ function unreveal(){   // 뒷면 → 앞면. 항목 체크(itemMarks)와 응답 
   $('gradeBar').classList.remove('on');
   $('cMeta').classList.remove('on');
   $('revealHint').style.display='block';
+  showDiag(c,false);
   $('cardScroll').scrollTop=0;
 }
 function renderCardTags(c){ // 임의 태그 (사용자 부착 축) — 탭하면 제거

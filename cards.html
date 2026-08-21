@@ -2986,6 +2986,7 @@ function splitState(){               // 메모리 state → 파일 두 벌 (마�
     const c=state.cards[id]; if(!c)continue;
     const e={};
     for(const k of MARK_KEYS){
+      if(k==='u') continue;                       // u는 실제 마크가 있을 때만 따라 붙는다
       const v=c[k];
       if(v===undefined||v===null) continue;
       if(k==='retired'&&!v) continue;
@@ -2993,7 +2994,9 @@ function splitState(){               // 메모리 state → 파일 두 벌 (마�
       if(k==='t'&&(!Array.isArray(v)||!v.length)) continue;
       e[k]=v;
     }
-    if(Object.keys(e).length>1 || (Object.keys(e).length===1 && !e.u)) marks[id]=e;
+    // 🔴 마크가 하나도 없으면 엔트리를 만들지 마라. 예전 조건은 {u:""}(채점만 하고 조작은 없는 카드)를
+    //    통과시켜 이관 직후 빈 엔트리가 183개 실렸다.
+    if(Object.keys(e).length){ e.u=c.u||''; marks[id]=e; }
     if(c.flag!=null || (c.ann&&c.ann.length)) fb[id]={flag:c.flag!==undefined?c.flag:null, ann:c.ann||[], u:c.u||''};
   }
   return {marks:{v:1, cards:marks}, fb:{v:1, cards:fb}};

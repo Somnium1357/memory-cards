@@ -4085,7 +4085,8 @@ function asPreset(sx){   // 큐 조립기·카운터가 쓰는 형태로 변환 
   return {id:sx.id, name:sx.name, order:sx.how.order, weights:sx.how.weights||{},
     limit:sx.how.limit, bury:sx.how.bury, newAfter:sx.how.newAfter,
     scope:{subj:sx.scope.subj||[], tags:sx.scope.tags||[], typ:sx.scope.typ||[],
-           units:sx.scope.units||[], mids:sx.scope.mids||[], status:sx.how.status}};
+           units:sx.scope.units||[], mids:sx.scope.mids||[], status:sx.how.status,
+           fixed:isFixed(sx)}};   // 빈 범위의 뜻이 세션 종류에 따라 뒤집힌다 — inScope 참고
 }
 function sessCards(sx){ return (sx.q||[]).map(id=>BYID[id]).filter(Boolean); }  // 사라진 카드는 조용히 탈락
 function applyOrder(sx){          // 남은 큐를 세션의 제시 순서에 맞춘다 (순서를 바꿨을 때)
@@ -4173,6 +4174,14 @@ function inScope(c,sc){
     const mk=k+'||'+((c.tags||[])[1]||'');
     const hitM=ms&&ms.length&&(ms.includes(mk)||ms.includes(mk+'||'+subOf(c)));   // 중주제 or 3층
     if(!hitU&&!hitM) return false;
+  }else if(sc.fixed){
+    /* 🔴 빈 범위의 뜻이 세션 종류에 따라 뒤집힌다 (동하 2026-08-23).
+       자동 충전 세션(일일 복습)은 「범위 지정 없음 = 전부」가 맞다.
+       직접 추가 세션은 **담은 것만** 푸는 세션이라 빈 범위는 「없음」이라야 한다.
+       예전에는 둘 다 「전부」로 읽어서, 총창 세션의 단위 6개를 「빼기」로 지웠더니
+       그 세션이 5,776장을 집었다(08-22 22:23 실측. 자동 충전이 안 걸려 조용했을 뿐,
+       편집 저장·범위 넓히기를 타면 쏟아진다). */
+    return false;
   }
   if(sc.subj.length && !sc.subj.includes(c.subj)) return false;
   if(sc.tags.length && !(c.tags||[]).concat(userTags(c.id)).some(t=>sc.tags.includes(t))) return false;
@@ -4871,7 +4880,7 @@ function sessDesc(sx){
   const parts=[];
   if(isFixed(sx)){
     const n=(sx.scope.units||[]).length+(sx.scope.mids||[]).length;
-    parts.push(n?`직접 추가 · 범위 ${n}`:'직접 추가');
+    parts.push(n?`직접 추가 · 범위 ${n}`:'직접 추가 · 범위 없음');   // 없음을 말해야 「전체」로 안 읽힌다
   } else parts.push('자동 충전');
   if((sx.scope.subj||[]).length)parts.push(sx.scope.subj.map(x=>x.split('.')[1]).join('·'));
   if((sx.scope.typ||[]).length)parts.push(sx.scope.typ.join('·'));
@@ -5017,9 +5026,13 @@ function renderSession(){
   const refillQ=(!remain&&!isFixed(sx)) ? buildQueue(asPreset(sx), sx.how.status).map(c=>c.id) : null;
   const nt=(sx.how.newAfter||stHas(sx.how.status,'new'))?(()=>{ const keep=curPreset; curPreset=asPreset(sx);
       const t=nextTopic(); curPreset=keep; return t; })():null;
-  let h=`<button class="ss-go" id="ssGo"${remain?'':' disabled'}>${remain?`이어가기 · ${remain}장`:'오늘 몫 다 풀었어요'}</button>
-    ${remain?'':`<div class="why">${isFixed(sx)?'담아 둔 범위를 다 풀었어요. 아래에서 범위를 넓히거나 다음 진도를 시작하세요.'
-      :'오늘 몫은 끝났어요. 날이 바뀌면 그날 복습분으로 스스로 채워집니다.'}</div>`}
+  // 직접 추가 세션인데 범위가 비었다 = 「다 풀었다」가 아니라 「담은 게 없다」
+  const noScope = isFixed(sx) && !((sx.scope.units||[]).length||(sx.scope.mids||[]).length);
+  let h=`<button class="ss-go" id="ssGo"${remain?'':' disabled'}>${remain?`이어가기 · ${remain}장`
+      :noScope?'담은 카드가 없어요':'오늘 몫 다 풀었어요'}</button>
+    ${remain?'':`<div class="why">${!isFixed(sx)?'오늘 몫은 끝났어요. 날이 바뀌면 그날 복습분으로 스스로 채워집니다.'
+      :noScope?'<b>담아 둔 범위가 없어요.</b> 아래 「＋ 범위 넓히기」로 넣으세요 — 직접 추가 세션은 담은 것만 풉니다.'
+      :'담아 둔 범위를 다 풀었어요. 아래에서 범위를 넓히거나 다음 진도를 시작하세요.'}</div>`}
     ${(refillQ&&refillQ.length)?`<button class="more-btn" id="ssRefill">＋ 이어서 채우기 (${refillQ.length}장)</button>
       <div class="why">이 세션의 <b>범위에 아직 남은 카드</b>를 오늘 큐에 얹어요. 오늘 푼 것은 빼고요</div>`:''}
     <div class="ss-line"><span>${esc(sessDesc(sx))}</span></div>

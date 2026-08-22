@@ -4089,9 +4089,10 @@ function asPreset(sx){   // 큐 조립기·카운터가 쓰는 형태로 변환 
 }
 function sessCards(sx){ return (sx.q||[]).map(id=>BYID[id]).filter(Boolean); }  // 사라진 카드는 조용히 탈락
 function applyOrder(sx){          // 남은 큐를 세션의 제시 순서에 맞춘다 (순서를 바꿨을 때)
-  const cards=sessCards(sx);
+  let cards=sessCards(sx);
   if(sx.how.order==='doc') cards.sort((a,b)=>a._i-b._i);
   else shuffle(cards);
+  cards=unleak(cards);
   sx.q=cards.map(c=>c.id);
   // 저장 큐에는 오늘 정리된 카드도 남아 있다(되돌리기용) — 화면 큐에 되넣지 마라
   if(curSess&&curSess.id===sx.id){ queue=[...queue.slice(0,qPos), ...dropSettled(cards)]; counts(); }
@@ -4295,12 +4296,51 @@ function buildQueue(p, status){
   // 제시 순서 (선발된 집합에 적용)
   if(p.order!=='doc') shuffle(sel);
   else sel.sort((a,b)=>a._i-b._i);
-  return sel;
+  return unleak(sel);
+}
+/* 답을 담은 카드는 그 답을 묻는 카드보다 **뒤에** (동하 승인 2026-08-23)
+   ┌ 15:43:27 [기준] 극화 학습을 「역할놀이 학습과 모의 학습」으로 가르는 것은 무엇의 유무인가?
+   └ 15:43:48 [종류] 극화 학습은 어떤 두 학습으로 나뉘는가?   답: 역할놀이 학습 / 모의 학습
+   앞 카드의 **질문**이 뒤 카드의 답을 그대로 말했다. 노드 관계(부모-자식)가 아니라 문면 대 답이다.
+   🔴 뒤에 나오는 건 누설이 아니다 — 순서만 바꾸면 끝이고 spec도 문면도 안 건드린다.
+      문면을 고쳐서 답을 안 말하게 하면 질문이 뭉개진다(그 [기준] 카드는 둘을 대야 물음이 선다).
+   실측(5,784장): items를 **전부** 담는 쌍 177 · 그중 문서순에서 앞이라 실제로 새는 것 32쌍 18장.
+   「하나라도 담음」은 4,167쌍이라 안 쓴다 — 자음·모음 같은 흔한 말이 다 걸린다. */
+function unleak(list){
+  const out=list.slice();
+  /* 🔴 경계는 **분할 전 대주제**(tags[0])다. tagKey를 쓰면 분할 그룹이 갈라져 3쌍을 놓친다 —
+     한 세션에 같은 대주제의 여러 분할 그룹이 같이 담기면 그대로 샌다.
+     id로 미리 재 둔다(splice가 배열을 흔들어도 Map은 안 흔들린다. tagKey를 매번 부르면 4배 느리다). */
+  const uk=new Map(), items=new Map();
+  for(const c of out){
+    uk.set(c.id, c.subj+'|'+((c.tags||[])[0]||''));
+    const t=(c.items||[]).filter(x=>x&&x.length>=2);
+    if(t.length>=2) items.set(c.id, t);          // 열거 카드만 대상 (5,784장 중 극히 일부)
+  }
+  if(!items.size) return out;
+  for(let pass=0, moved=true; moved && pass<4; pass++){
+    moved=false;
+    for(let bi=0; bi<out.length; bi++){
+      const b=out[bi], its=items.get(b.id);
+      if(!its) continue;
+      const u=uk.get(b.id);
+      for(let ai=0; ai<bi; ai++){
+        const a=out[ai];
+        if(uk.get(a.id)!==u) continue;           // 누설은 같은 대주제 안에서 난다
+        const f=a.front||'';
+        if(!its.every(x=>f.includes(x))) continue;
+        out.splice(bi,1); out.splice(ai,0,b);    // 그 앞으로 당긴다
+        moved=true; break;
+      }
+    }
+  }
+  return out;
 }
 function playSess(sx){          // 세션 화면의 [이어가기] — 남은 큐를 그대로 이어 푼다
   curSess=sx; viewSess=sx; curPreset=asPreset(sx);
   refillSess(sx);
-  queue=dropSettled(sessCards(sx)); qPos=0;          // 다른 세션에서 오늘 푼 것은 빼고 이어간다
+  queue=unleak(dropSettled(sessCards(sx))); qPos=0;  // 다른 세션에서 오늘 푼 것은 빼고 이어간다
+  // 🔴 저장된 큐를 이어 풀 때도 한 번 더 건다 — 큐는 조립 뒤에도 「내용 추가」로 뒤에 붙는다
   phase = stOnly(sx.how.status,'new') ? 'new' : 'review';
   sessionDone=0; newServed=0; undoSnap=null; undoRun++; updateUndo(); sessReset();
   go('scrSolve');
@@ -4341,7 +4381,7 @@ function extendWithNew(){ // 신규 = 대주제 한 개씩 — 끝나면 체크�
   //    그 잔량이 화면 큐에서도 저장 큐에서도 사라졌다(직접 추가 세션은 자동 충전이 없어 영영).
   //    누른 의도대로 신규를 앞에 놓되, 남은 것은 뒤에 그대로 붙인다.
   const rest=queue.slice(qPos).filter(c=>!nt.cards.includes(c));
-  queue=[...nt.cards, ...rest]; qPos=0;
+  queue=[...unleak(nt.cards), ...rest]; qPos=0;
   undoSnap=null; undoRun++; updateUndo();   // 큐가 새로 짜였다는 표시 — 스택은 그대로 산다
   syncSessQueue();
   /* 🔴 풀이 화면으로 데려간다. 큐가 빈 세션에서 이 버튼을 누르면 playSess가 finishSess로

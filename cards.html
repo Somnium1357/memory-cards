@@ -3747,7 +3747,22 @@ async function loadHoedok(){
       if (g && !(g[1] in m)) m[g[1]] = fi;   // 같은 제목이 여러 파일에 있으면 먼저 나온 파일
     }
   }));
-  if (f.length) { HOEDOK = { f, h }; lsSet(K_HOEDOK, JSON.stringify(HOEDOK)); }
+  /* 제목 뒤 부연을 뗀 별칭 — 회독본 제목은 「TBLT (: Task-Based Language Teaching)」인데
+     카드의 중주제는 「TBLT」다. 문자열 완전일치만 보면 그런 카드는 조용히 대주제로 떨어진다
+     (실측 2026-08-22: 301장. 그중 253장이 이 한 가지 이유였다).
+     🔴 제목 목록을 박는 게 아니다 — 「제목 = 이름 + 부연」이라는 **꼴**만 안다.
+     🔴 정확한 제목이 따로 있으면 그것이 이긴다. 앵커는 제목 전문이라야 이동하므로 전문을 들고 있는다. */
+  const a = {};
+  for (const sj in h) {
+    const al = {};
+    for (const t in h[sj]) {
+      const s = t.split(/\s+[(（⇒↔→=]/)[0].trim();
+      if (!s || s === t || (s in h[sj])) continue;
+      if (!(s in al)) al[s] = t;             // 충돌은 먼저 나온 제목이 이긴다 (실측 충돌 0건)
+    }
+    a[sj] = al;
+  }
+  if (f.length) { HOEDOK = { f, h, a }; lsSet(K_HOEDOK, JSON.stringify(HOEDOK)); }
 }
 function hoedokURI(k){
   const m=rowMeta(k); if(!m) return null;
@@ -3766,8 +3781,13 @@ function hoedokURI(k){
     if(isMidRow(k)&&rowMid(k)) cands.push(rowMid(k));
     const t=TAGMETA[rowUnit(k)]; if(t&&t.tag) cands.push(t.tag);
     const raw=(rowUnit(k).split('|')[1]||'').split('#')[0]; if(raw) cands.push(raw);
+    const A=(HOEDOK&&HOEDOK.a&&HOEDOK.a[m.subj])||{};   // 옛 캐시({f,h})면 비어 있다 = 예전 동작
     let done=false;
-    for(const c of cands){ if(H[c]!==undefined){ file=HOEDOK.f[H[c]]; head=c; done=true; break; } }
+    for(const c of cands){
+      if(H[c]!==undefined){ file=HOEDOK.f[H[c]]; head=c; done=true; break; }
+      const t=A[c];                                     // 제목 뒤 부연이 붙은 경우
+      if(t!==undefined&&H[t]!==undefined){ file=HOEDOK.f[H[t]]; head=t; done=true; break; }
+    }
     if(!done){
       const any=Object.values(H)[0];            // 제목을 하나도 못 찾으면 그 과목 파일만 연다
       if(any===undefined) return null;

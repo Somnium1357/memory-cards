@@ -563,10 +563,22 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .tr-row .nm{flex:1;min-width:0;font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .tr-row .ct{flex:0 0 auto;font-size:11px;font-weight:700;color:var(--mute);}
 .tr-row .ct .due{color:var(--accent);margin-left:6px;}
-.tr-row .tw{flex:0 0 auto;width:22px;text-align:center;color:var(--faint);font-size:12px;}
-.tr-lv1 .open{padding-left:14px;} .tr-lv2 .open{padding-left:34px;}
-.tr-lv2 .pick{width:46px;}
-.tr-lv1 .nm{font-weight:600;font-size:13px;} .tr-lv2 .nm{font-weight:500;font-size:12.5px;color:var(--ink2);}
+/* 펼침 표시는 이름 **왼쪽**에 둔다. 행 오른쪽 끝에 있으면 이름과 멀어서
+   「이 줄에 자식이 있다」로 안 읽힌다 (동하 2026-08-22). */
+.tr-row .tw{flex:0 0 auto;width:16px;text-align:center;color:var(--faint);font-size:11px;}
+/* 위계 — 과목·대주제·중주제 세 층이 한눈에 갈라져야 한다 (동하 2026-08-22).
+   예전에는 **이름만** 14/34px 들여쓰고 체크박스 열은 셋 다 같은 자리라 목록이 평평했다.
+   이제 행을 통째로 들여쓰고, 자식 층에는 왼쪽 레일을 세운다. */
+.tr-lv0{background:var(--sunken);margin:8px 0 3px;}
+.tr-lv0:first-child{margin-top:0;}
+.tr-lv0 .nm{font-size:13.5px;font-weight:800;}
+/* 🔴 들여쓰기와 체크박스 폭을 같이 줄이면 서로 상쇄돼 층이 안 벌어진다 — 폭은 셋 다 46px로 둔다.
+   (손가락 표적이기도 하다.) */
+.tr-lv1{margin-left:18px;border-left:2px solid var(--line);border-radius:0 10px 10px 0;}
+.tr-lv2{margin-left:40px;border-left:2px solid var(--line);border-radius:0 10px 10px 0;}
+.tr-lv1 .open,.tr-lv2 .open{padding-left:0;}
+.tr-lv1 .nm{font-weight:700;font-size:13px;} .tr-lv2 .nm{font-weight:500;font-size:12.5px;color:var(--ink2);}
+.tr-lv2 .open{padding-top:13px;padding-bottom:13px;}
 .kbd-note kbd{font-family:inherit;font-size:11px;font-weight:800;color:var(--mute);background:var(--surface2);
   border-radius:6px;padding:2px 6px;margin:0 1px;}
 #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
@@ -3765,6 +3777,15 @@ function hoedokURI(k){
   }
   return `obsidian://open?vault=${enc(OBSIDIAN_VAULT)}&file=${enc(file)}`+(head?`%23${enc(head)}`:'');
 }
+/* 카드에서 여는 회독본 — **그 카드의 중주제부터** 찾는다 (동하 2026-08-22).
+   대주제 키로 열면 늘 대주제 제목으로 떨어져, 열고 나서 다시 찾아 내려가야 했다.
+   떨어지는 순서는 hoedokURI가 이미 갖고 있다(중주제 → 대주제 → 파일만) — 후보만 좁혀 준다.
+   실측: 중주제가 있는 5,481장 중 5,180장(94.5%)이 회독본 제목과 그대로 맞는다. */
+function cardHoedokURI(c){
+  if(!c) return null;
+  const u=tagKey(c), mid=(c.tags||[])[1]||'';
+  return hoedokURI(mid?midKey(u,mid):u);
+}
 
 /* ═══════════════ 데이터 로드 ═══════════════ */
 async function loadData(){
@@ -4131,11 +4152,25 @@ function firstRevMap(){ // 카드별 최초 채점 시각 (도입일 판정용) 
   firstRevLen=state.log.length;
   return firstRevIdx;
 }
-const NODE_FWD={};                        // 노드 → 전방 카드들 (최초 호출 때 구축)
+const NODE_FWD={}, NODE_FWD_UP={};        // 노드 → 전방 카드들 (최초 호출 때 구축)
+/* 🔴 자기 노드에 전방이 없으면 **가장 가까운 조상**에서 찾는다 (2026-08-22).
+   역방향의 짝이 늘 같은 노드에 있지는 않다 — 부모가 「셋을 나열」하고 자식이 「그 셋 중 하나」를
+   묻는 모양에서는 자식 노드의 전방이 0장이라, 아래 revReady()의 「역방향뿐인 노드 = 그게 도입」
+   예외로 통과해 나열 카드와 **같은 배치로** 들어왔다. 방금 본 카드에 답이 적혀 있게 된다.
+   실측(2026-08-22): 역방향 1,806장 중 130장이 그 상태, 그중 103장이 실제로 같은 배치였고
+   08-22 11:32~11:47에도 그대로 일어났다(음철법 사용 자료 · 도형 학습 단계). */
 function fwdSiblings(node){
   if(!NODE_FWD._built){ for(const c of DATA){ if(!isRev(c))(NODE_FWD[c.node]=NODE_FWD[c.node]||[]).push(c); }
     NODE_FWD._built=true; }
-  return NODE_FWD[node]||[];
+  if(NODE_FWD[node]) return NODE_FWD[node];
+  if(NODE_FWD_UP[node]) return NODE_FWD_UP[node];
+  let n=node;
+  for(;;){
+    const i=n.lastIndexOf('/'); if(i<0) break;
+    n=n.slice(0,i);
+    if(NODE_FWD[n]) return (NODE_FWD_UP[node]=NODE_FWD[n]);
+  }
+  return (NODE_FWD_UP[node]=[]);          // 전방이 조상에도 없다 = 진짜 역방향뿐인 가지
 }
 function revReady(c){ // 역방향 카드가 오늘 투입돼도 되는가
   const fwd=fwdSiblings(c.node);
@@ -4278,7 +4313,7 @@ function showDiag(c, back){
   el.classList.toggle('on', !!on);
   if(!on){ el.innerHTML=''; return; }
   if(!back){ el.innerHTML='<b>그림 답</b>맞춰 볼 답면이 없는 카드예요 — 먼저 직접 그린 다음 넘기세요.'; return; }
-  const uri=c?hoedokURI(tagKey(c)):null;
+  const uri=cardHoedokURI(c);
   el.innerHTML='<b>스스로 채점</b>회독본 그림과 대조해 직접 매기세요.'
     + (uri?` <a href="${uri.replace(/&/g,'&amp;')}">회독본 ↗</a>`:'');
   const a=el.querySelector('a'); if(a)a.onclick=(e)=>e.stopPropagation();   // 탭이 카드 되접기로 먹지 않게
@@ -5106,6 +5141,15 @@ function openUnitPick(o){
   $('pkSearch').style.display=pkMode==='sessions'?'none':'block';
   $('pkOk').style.display=pkMode==='sessions'?'none':'block';
   $('pkSearch').value='';
+  /* 🔴 펼침 상태는 창을 열 때마다 초기화한다 (동하 2026-08-22).
+     pkOpen이 모듈 전역이라 예전에는 닫았다 다시 열어도 지난번에 펼친 것이 그대로 남아,
+     아홉 과목이 펼쳐진 채로 열렸다. 다만 **이미 고른 것이 있으면 그 과목만** 펼친다 —
+     무엇을 골라 뒀는지는 보여야 하니까. */
+  pkOpen={};
+  if(pkMode!=='sessions') for(const node of buildTree()){
+    if(node.units.some(u=>pkSel.units.includes(u.key)||pkSel.mids.some(m=>m.startsWith(u.key+'||'))))
+      pkOpen[node.subj]=true;
+  }
   renderPick();
   $('ovlPick').classList.add('show');
 }
@@ -5128,9 +5172,9 @@ function renderPick(){
     el.className='tr-row '+cls+(on?' on':'')+(part?' part':'')+(onOpen?' expandable':'');
     el.innerHTML=`<button class="pick"><span class="cbx">${on?'✓':(part?'–':'')}</span></button>
       <button class="open">
+        <span class="tw">${tw||''}</span>
         <span class="nm">${esc(name)}</span>
-        <span class="ct">${cnt}${due?`<span class="due">due ${due}</span>`:''}</span>
-        <span class="tw">${tw||''}</span></button>`;
+        <span class="ct">${cnt}${due?`<span class="due">due ${due}</span>`:''}</span></button>`;
     el.querySelector('.pick').onclick=(e)=>{ e.stopPropagation(); onPick(); };
     el.querySelector('.open').onclick=(e)=>{ e.stopPropagation(); (onOpen||onPick)(); };
     box.appendChild(el);
@@ -5141,7 +5185,7 @@ function renderPick(){
     if(!units.length)continue;
     const sSt=pkSubjState({units});
     const open = q? true : !!pkOpen[node.subj];
-    row('', sSt===2, sSt===1, open?'▾':'▸', node.label, node.n, 0,
+    row('tr-lv0', sSt===2, sSt===1, open?'▾':'▸', node.label, node.n, 0,
       ()=>{ const all=sSt!==2; for(const u of units)pkToggleUnit(u, all); renderPick(); },
       ()=>{ pkOpen[node.subj]=!pkOpen[node.subj]; renderPick(); });   // 이름 쪽 = 펼치기
     if(!open)continue;

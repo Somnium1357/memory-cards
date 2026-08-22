@@ -3272,6 +3272,32 @@ function saveDirtyLogs(){ const v=[...dirtyLogs]; v.length?lsSet(K_DLOGS,v.join(
      base    「처음부터 다시」·「일정 조정」 — {at:초, fsrs:상태|null}
              = 그 시각의 상태에서 다시 시작하라는 표시. 재계산은 at 이후 로그만 얹는다. */
 const MARK_KEYS=['retired','by','t','base','u'];
+/* 재생성으로 사라진 카드의 되짚기·마크를 치운다 (2026-08-22).
+   spec을 고치면 카드 ID가 갈리고, 그 카드에 달아 둔 플래그·@주석은 갈 곳이 없어진다.
+   계약상 「죽은 카드 청소는 앱이 한다」인데 구현이 없어서, 루틴이 돌 때마다 그 항목이
+   「ID 역추적 실패」로 뜨고 사람이 손으로 지워야 했다. 앱이 부팅 때 알아서 치운다.
+   🔴 로그는 절대 건드리지 않는다 — 어떤 경우에도 삭제 금지(FSRS 최적화 근거).
+   🔴 카드 데이터를 못 받은 부팅에서는 아무것도 지우지 않는다 — 그때 지우면 전량이 고아로 보인다. */
+function pruneOrphans(){
+  if(!DATA.length) return 0;
+  const gone=[];
+  for(const id in state.cards){
+    if(BYID[id]) continue;                      // 살아 있는 카드
+    const s=state.cards[id]||{};
+    const hasFb   = s.flag!=null || (s.ann&&s.ann.length);
+    const hasMark = s.retired || s.by || (Array.isArray(s.t)&&s.t.length) || s.base;
+    delete state.cards[id];
+    if(hasFb||hasMark) gone.push({id, memo:(typeof s.flag==='string'&&s.flag)?s.flag:''});
+  }
+  if(!gone.length) return 0;
+  markDirty('marks'); markDirty('fb');
+  console.log('없어진 카드 정리', gone.length, '건', gone.map(x=>x.id));
+  /* 메모가 있던 것은 말없이 버리지 않는다 — 그 문구가 유일한 흔적이라서. */
+  const memos=gone.map(x=>x.memo).filter(Boolean);
+  setTimeout(()=>toast(`없어진 카드 ${gone.length}건 정리했어요 — 되짚기·표시가 갈 곳이 없어졌어요`
+    + (memos.length?` · 메모: ${memos.map(m=>`「${m}」`).join(' · ')}`:'')), 1400);
+  return gone.length;
+}
 function splitState(){               // 메모리 state → 파일 두 벌 (마크 / 피드백)
   const marks={}, fb={};
   for(const id in state.cards){
@@ -3889,8 +3915,9 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
   if(!sessions.length) sessions=[newSessObj('일일 복습', HOW_TPL[0].how, {}, 'auto')];
   normalizeSessions();
   if(migrated) markDirty('marks');   // 옛 스냅샷에서 건져 온 마크를 새 파일로 한 번 올린다
+  const pruned=pruneOrphans();       // 재생성으로 사라진 카드의 되짚기·마크 정리
   cacheState();
-  if(wasDirty||legacy||migrated) push(true);
+  if(wasDirty||legacy||migrated||pruned) push(true);
 }
 async function loadWeeks(keys){   // 지난 주 로그 — 전량 재계산의 재료
   const want=keys.filter(k=>!logWeeks[k]);

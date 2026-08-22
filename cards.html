@@ -573,9 +573,13 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 /* 위계 — 과목·대주제·중주제 세 층이 한눈에 갈라져야 한다 (동하 2026-08-22).
    예전에는 **이름만** 14/34px 들여쓰고 체크박스 열은 셋 다 같은 자리라 목록이 평평했다.
    이제 행을 통째로 들여쓰고, 자식 층에는 왼쪽 레일을 세운다. */
-.tr-lv0{background:var(--sunken);margin:8px 0 3px;}
-.tr-lv0:first-child{margin-top:0;}
-.tr-lv0 .nm{font-size:13.5px;font-weight:800;}
+/* 과목 줄은 **머리글**이지 다른 재질이 아니다. 배경(--sunken)을 주면 시트 안에서 혼자
+   구멍처럼 파여 보인다 (동하 2026-08-22). 굵기와 가는 선으로만 층을 낸다. */
+.tr-lv0{margin:12px 0 2px;border-top:1px solid var(--line);border-radius:0;}
+.tr-lv0:first-child{margin-top:0;border-top:none;}
+.tr-lv0 .nm{font-size:13.5px;font-weight:800;color:var(--ink);}
+.tr-lv0 .open{padding-top:13px;padding-bottom:11px;}
+.tr-lv0 .ct{color:var(--faint);}
 /* 🔴 들여쓰기와 체크박스 폭을 같이 줄이면 서로 상쇄돼 층이 안 벌어진다 — 폭은 셋 다 46px로 둔다.
    (손가락 표적이기도 하다.) */
 .tr-lv1{margin-left:18px;border-left:2px solid var(--line);border-radius:0 10px 10px 0;}

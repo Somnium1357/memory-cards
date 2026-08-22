@@ -523,7 +523,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .u-row .nm{font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .u-row .up{font-size:10.5px;font-weight:700;color:var(--faint);margin-bottom:1px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.u-row .cv{flex:0 0 auto;width:22px;font-size:11px;color:var(--faint);transition:transform .15s;}
+.u-row .cv{flex:0 0 auto;width:22px;font-size:14px;color:var(--mute);transition:transform .15s;}
 .u-row .cv.open{transform:rotate(90deg);}
 .u-row .mt{font-size:11px;color:var(--mute);font-weight:700;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;}
 .u-row .mt .due{color:var(--accent);} .u-row .mt .nw{color:var(--good);}
@@ -535,7 +535,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .u-row .act.dim{color:var(--mute);background:var(--surface2);}
 .u-grp{display:flex;align-items:center;gap:8px;padding:10px 13px;margin-bottom:7px;
   background:var(--sunken);border-radius:13px;cursor:pointer;}
-.u-grp .cv{flex:0 0 auto;font-size:11px;color:var(--faint);transition:transform .15s;}
+.u-grp .cv{flex:0 0 auto;width:22px;text-align:center;font-size:14px;color:var(--mute);transition:transform .15s;}
 .u-grp.open .cv{transform:rotate(90deg);}
 .u-grp .nm{flex:0 0 auto;font-size:13.5px;font-weight:800;}
 .u-grp .mt{flex:1;min-width:0;text-align:right;font-size:11.5px;font-weight:700;color:var(--mute);
@@ -565,8 +565,11 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .tr-row .ct{flex:0 0 auto;font-size:11px;font-weight:700;color:var(--mute);}
 .tr-row .ct .due{color:var(--accent);margin-left:6px;}
 /* 펼침 표시는 이름 **왼쪽**에 둔다. 행 오른쪽 끝에 있으면 이름과 멀어서
-   「이 줄에 자식이 있다」로 안 읽힌다 (동하 2026-08-22). */
-.tr-row .tw{flex:0 0 auto;width:16px;text-align:center;color:var(--faint);font-size:11px;}
+   「이 줄에 자식이 있다」로 안 읽힌다 (동하 2026-08-22).
+   🔴 크기·색·회전은 `.cv`(단위 화면·세션 화면)와 **같은 값**을 쓴다 — 같은 뜻의 표시는 같아야 한다. */
+.tr-row .tw{flex:0 0 auto;width:22px;text-align:center;color:var(--mute);font-size:14px;
+  transition:transform .15s;}
+.tr-row.opened .tw{transform:rotate(90deg);}
 /* 위계 — 과목·대주제·중주제 세 층이 한눈에 갈라져야 한다 (동하 2026-08-22).
    예전에는 **이름만** 14/34px 들여쓰고 체크박스 열은 셋 다 같은 자리라 목록이 평평했다.
    이제 행을 통째로 들여쓰고, 자식 층에는 왼쪽 레일을 세운다. */
@@ -3707,7 +3710,8 @@ function rowUpper(k){ const t=TAGMETA[rowUnit(k)]; if(!(t&&isMidRow(k)&&rowMid(k
   return isSubRow(k)&&rowSub(k)!==rowMid(k) ? `${base} › ${rowMid(k)}` : base; }
 function rowName(k){ const t=TAGMETA[rowUnit(k)]; if(!t) return k;
   if(!(isMidRow(k)&&rowMid(k))) return `${t.subj.split('.')[1]||t.subj} · ${t.tag}`;
-  return isSubRow(k) ? rowSub(k) : rowMid(k); }
+  if(!isSubRow(k)) return rowMid(k);
+  return rowSub(k)===rowMid(k) ? `${rowSub(k)} (그 자체)` : rowSub(k); }   // 피커와 같은 표기
 function cardRowKey(c, midSet){          // 그 카드가 어느 행에 속하나 (세션이 집어든 것 중 좁은 쪽 우선)
   const u=tagKey(c);
   if(!midSet||!midSet.size) return u;
@@ -5029,9 +5033,15 @@ function renderSession(){
   } else keys=keys.sort((a,b)=>seen[b]-seen[a]).slice(0,8);
   keys.sort((a,b)=>planRank(a)-planRank(b)||(isMidRow(a)?rowMid(a):'').localeCompare(isMidRow(b)?rowMid(b):''));
   /* ssOpen에는 이제 대주제 키와 중주제 키가 섞여 있다 — 층마다 통계 판을 따로 만든다 */
-  const openU=[...ssOpen].filter(x=>!isMidRow(x)), openM=[...ssOpen].filter(isMidRow);
-  const midStats=rowStats(new Set(openU.flatMap(midsOfUnit)));
-  const subStats=rowStats(new Set(openM.flatMap(subsOfMid)));
+  /* 한 행의 자식은 — 대주제면 중주제들(하나뿐이면 그 3층), 중주제면 3층들, 3층이면 없음 */
+  const kidsOf=(k)=>{
+    if(!isMidRow(k)){ const ms=midsOfUnit(k);
+      return ms.length>=2 ? ms : (ms.length===1 ? subsOfMid(ms[0]) : []); }
+    return isSubRow(k) ? [] : subsOfMid(k);
+  };
+  const allKids=[...ssOpen].flatMap(kidsOf);
+  const midStats=rowStats(new Set(allKids.filter(x=>!isSubRow(x))));
+  const subStats=rowStats(new Set(allKids.filter(isSubRow)));
   const qIds=()=>(live?queue.slice(qPos).map(c=>c.id):sx.q);
   const countBy=(ids,keyOf,want)=>{ const m={};
     for(const id of ids){ const c=BYID[id]; if(!c)continue; const kk=keyOf(c);
@@ -5039,8 +5049,7 @@ function renderSession(){
     return m; };
   for(const k of keys){ if(!rowMeta(k))continue;
     const inQ=seen[k]||0;
-    const subMids = (!isMidRow(k) && midsOfUnit(k).length>=2) ? midsOfUnit(k)
-                  : (isMidRow(k)&&!isSubRow(k) && subsOfMid(k).length) ? subsOfMid(k) : null;
+    const kids=kidsOf(k), subMids = kids.length>1 ? kids : null;
     const row=unitRow(k, stats[k]||{n:0,due:0,nw:0,last:0},
       {inQ, action2:'빼기',
        expandable:!!subMids, expanded:ssOpen.has(k),
@@ -5055,7 +5064,7 @@ function renderSession(){
        }});
     ub.appendChild(row);
     if(subMids && ssOpen.has(k)){          // 펼치면 한 층 아래(중주제 · 3층)로 낱개로 뺄 수 있다
-      const kidIsSub=isMidRow(k);          // 중주제를 펼친 것이면 자식이 3층이다
+      const kidIsSub=isSubRow(subMids[0]);   // 자식이 3층인가 (중주제 한 개짜리 대주제도 여기로 온다)
       const kidKey=kidIsSub?cardSubKey:(c=>midKey(tagKey(c),(c.tags||[])[1]||'(기타)'));
       const kidStats=kidIsSub?subStats:midStats;
       const seenKid=countBy(qIds(), kidKey, subMids);
@@ -5312,10 +5321,10 @@ function renderPick(){
   const stats=unitStatsAll();
   const row=(cls, on, part, tw, name, cnt, due, onPick, onOpen)=>{
     const el=document.createElement('div');
-    el.className='tr-row '+cls+(on?' on':'')+(part?' part':'')+(onOpen?' expandable':'');
+    el.className='tr-row '+cls+(on?' on':'')+(part?' part':'')+(onOpen?' expandable':'')+(tw==='▾'?' opened':'');
     el.innerHTML=`<button class="pick"><span class="cbx">${on?'✓':(part?'–':'')}</span></button>
       <button class="open">
-        <span class="tw">${tw||''}</span>
+        <span class="tw">${tw?'▸':''}</span>
         <span class="nm">${esc(name)}</span>
         <span class="ct">${cnt}${due?`<span class="due">due ${due}</span>`:''}</span></button>`;
     el.querySelector('.pick').onclick=(e)=>{ e.stopPropagation(); onPick(); };
@@ -5337,10 +5346,25 @@ function renderPick(){
       const uSt=pkUnitState(u), mids=Object.keys(u.mids);
       const uOpen = q? true : !!pkOpen[u.key];
       const st2=stats[u.key]||{due:0};
-      row('tr-lv1', uSt===2, uSt===1, mids.length>1?(uOpen?'▾':'▸'):'', u.label.replace(/^[^·]+· /,''), u.n, st2.due,
+      /* 🔴 중주제가 하나뿐인 단위(도형과 측정처럼 분할 단위가 곧 중주제인 것)는 **3층을 바로** 편다.
+         그 중주제 행은 단위 이름을 되풀이할 뿐이라 한 층 낭비다. 예전에는 `mids.length<2`로
+         통째로 막혀 있어서 「평면도형이 안 쪼개진다」가 됐다 (동하 2026-08-22). */
+      const solo = mids.length===1 ? mids[0] : null;
+      const soloSubs = solo ? Object.keys(u.subs[solo]||{}) : [];
+      const canOpen = mids.length>1 || soloSubs.length>1;
+      row('tr-lv1', uSt===2, uSt===1, canOpen?(uOpen?'▾':'▸'):'', u.label.replace(/^[^·]+· /,''), u.n, st2.due,
         ()=>{ pkToggleUnit(u, uSt!==2); renderPick(); },
-        mids.length>1?()=>{ pkOpen[u.key]=!pkOpen[u.key]; renderPick(); }:null);  // 중주제가 하나면 이름도 선택
-      if(!uOpen||mids.length<2)continue;
+        canOpen?()=>{ pkOpen[u.key]=!pkOpen[u.key]; renderPick(); }:null);   // 펼 게 없으면 이름도 선택
+      if(!uOpen||!canOpen)continue;
+      if(solo){                                  // 중주제 한 개 → 3층을 lv2 자리에 바로
+        const mk=midKey(u.key,solo), mSt=pkMidState(u,solo);
+        for(const s of soloSubs){
+          const on=mSt===2||pkSel.mids.includes(subKey(mk,s));
+          row('tr-lv2', on, false, '', s===solo?`${s} (그 자체)`:s, u.subs[solo][s], 0,
+            ()=>{ pkToggleSub(u,solo,s,!on); renderPick(); }, null);
+        }
+        continue;
+      }
       for(const m of mids){
         const mSt=pkMidState(u,m), mk=midKey(u.key,m);
         const subs=Object.keys((u.subs&&u.subs[m])||{});

@@ -4584,7 +4584,15 @@ function rate(num){
     s.fsrs=fsrsSerialize(nc); s.d=tk;
   }                                        // 재출 채점은 로그만 (이중 반영 방지)
   const extra = {};
-  if(hasItems) extra.items=itemMarks.map(x=>x?'x':'o').join('');
+  /* 🔴 열거 카드에서 「통째로 백지」는 **탭 없이 again**이다 (동하 채점 규약).
+     그대로 적으면 로그에 `ooo`(전부 맞음) + 등급 1이 남아, 규약을 모르는 눈에는 전부-맞음으로 읽힌다.
+     실측 2026-08-23 — items가 붙은 279건 중 **등급1 + 무탭이 71건**. 그 한 경우만 `xxx`로 적는다.
+     ⚠ 부분 결손(탭 1개 이상 + again)과 hard·good의 무탭(진짜 전부 맞음)은 **건드리지 않는다.**
+     ⚠ 탭에서 등급을 유도하지 않는다 — 백지일 때 탭 0개를 good으로 오판하는 함정이 있다.
+     ⚠ 과거 로그는 소급하지 않는다. 이 배포 이전의 `ooo`+again은 규약상 백지로 읽는다. */
+  if(hasItems) extra.items = (num===1 && !anyX)
+    ? 'x'.repeat(itemMarks.length)
+    : itemMarks.map(x=>x?'x':'o').join('');
   if(shownAt) extra.ms=Math.min(Math.max(0,Date.now()-shownAt-pausedMs), MS_CAP); // 응답 시간 (쉰 시간 제외)
   const hasExtra=Object.keys(extra).length>0;
   const entry=hasExtra?[c.id,ts,num,extra]:[c.id,ts,num];

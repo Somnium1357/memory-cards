@@ -21,7 +21,7 @@
   --good-dim:rgba(87,201,123,.13); --easy-dim:rgba(104,168,245,.13);
   --danger:#F0716E; --ok:#57C97B;
   --shadow:0 8px 28px rgba(0,0,0,.38); --shadow-sm:0 1px 4px rgba(0,0,0,.28);
-  --head-font:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Malgun Gothic",sans-serif;
+  --head-font:"NotoMusic",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Malgun Gothic",sans-serif;
 }
 :root[data-theme="c"]{
   --bg:#F3EDDE; --surface:#FBF7EC; --surface2:#F0E9D8; --sunken:#EAE2CE;
@@ -32,18 +32,31 @@
   --good-dim:rgba(37,110,69,.11); --easy-dim:rgba(45,90,168,.10);
   --danger:#A93E35; --ok:#256E45;
   --shadow:0 6px 22px rgba(93,80,52,.16); --shadow-sm:0 1px 4px rgba(93,80,52,.25);
-  --head-font:"SerifKR","Apple Myungjo","Nanum Myeongjo",Georgia,serif;
+  --head-font:"NotoMusic","SerifKR","Apple Myungjo","Nanum Myeongjo",Georgia,serif;
 }
 @font-face{
   font-family:"SerifKR";
   src:url("serif-kr.woff2") format("woff2");
   font-weight:100 900; font-display:swap;
 }
+/* 음악 기호 전용 폰트 (Noto Music · OFL · 35KB) — 동하 2026-08-23 「음악 음표가 안 나와, 글자가 깨짐」
+   ♩♪♭♯(U+2669~266F)는 시스템 폰트에 흔하지만, **음악기호 블록(U+1D1xx)**은 iOS·Windows 어느 기본
+   폰트에도 없어 두부(□)로 뜬다. 음악 카드가 쓰는 것 — 𝅘𝅥𝅯(노트헤드+대+깃발) · 𝄽𝄾𝄿(쉼표) · 𝄐(늘임표) ·
+   𝄋(세뇨) · 𝅻𝅼𝅽(악센트·스타카토·테누토).
+   🔴 `unicode-range`로 **음악 기호에만** 걸린다. 한글·라틴은 이 폰트로 안 간다 — 본문 글꼴은 그대로다.
+   🔴 카드 글자는 안 건드렸다. 문면을 BMP 기호로 바꾸는 건 문면 층 일이고, 그러면 정보가 준다
+      (16분음표를 ♪로 적으면 8분음표와 구별이 사라진다). */
+@font-face{
+  font-family:"NotoMusic";
+  src:url("noto-music.woff2") format("woff2");
+  font-display:swap;
+  unicode-range:U+25CC, U+2669-266F, U+1D000-1D0F5, U+1D100-1D126, U+1D129-1D1EA, U+1D200-1D245;
+}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
 html,body{height:100%;}
 body{
   background:var(--bg); color:var(--ink); overflow:hidden;
-  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Malgun Gothic",sans-serif;
+  font-family:"NotoMusic",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Malgun Gothic",sans-serif;
   -webkit-user-select:none; user-select:none; -webkit-text-size-adjust:100%;
   padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }

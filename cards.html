@@ -3115,7 +3115,8 @@ const K_CFG='cards_cfg_v1', K_STATE='cards_state_cache_v1', K_DIRTY='cards_dirty
       K_DATA='cards_data_cache_v1', K_SWIPE='cards_swipe_v1', K_INTAKE='cards_intake_v1',
       K_KBD='cards_kbd_v1', K_SESS='cards_sessions_v1',
       K_SCHED='cards_sched_v2', K_MARKS='cards_marks_v1', K_FB='cards_fb_v1', K_PLAN='cards_plan_v1', K_LOGP='cards_log_v2_',
-      K_UOPEN='cards_units_open_v1', K_DLOGS='cards_dirty_logs_v1', K_HOEDOK='cards_hoedok_v1';
+      K_UOPEN='cards_units_open_v1', K_DLOGS='cards_dirty_logs_v1', K_HOEDOK='cards_hoedok_v1',
+      K_FBSYNC='cards_fb_sync_v1';        // 마지막 성공 push 시각 — 소진된 피드백 판정 기준 (reapFb)
 const OLD_CFG='review_cfg_v1';            // 관리앱(같은 오리진)의 토큰 재사용
 const DAY_CUT=4;                          // 하루 경계 = 새벽 4시
 const EXAM_DAY='2026-11-07';              // due 최대 클램프
@@ -3509,11 +3510,34 @@ function mergeMarksInto(remote){      // 마크: 카드별 u 최신 우선 (파�
     if((rc[id].u||'')>(mine.u||'')) for(const k of MARK_KEYS) if(rc[id][k]!==undefined) mine[k]=rc[id][k];
   }
 }
-function mergeFbInto(remote){         // 피드백: 주석은 합집합, 메모는 u 최신 우선
+/* 🔴 루틴이 소진한 피드백을 앱이 되살리면 안 된다 (2026-08-23 실측)
+   `cards-feedback.json`은 앱이 쓰고 **루틴 3.8이 소비하고 지운다.** 그런데 앱은 자기 로컬 상태를
+   정본처럼 굴려서, 원격에서 사라진 키를 캐시·메모리에서 되살려 다음 쓰기에 도로 넣었다.
+   이력 실측 — 01:15 총 8건 → **10:54 총 31건**(소진분 18개가 원래 `u` 그대로 부활) → 11:13 다시 0건.
+   루틴이 지울 때마다 앱이 되돌리는 **무한 왕복**이다.
+   판단 재료는 `u`다. 마지막 성공 push 시각(`K_FBSYNC`)보다 오래된 `u`는 **이미 원격에 올라간 것**이니,
+   그게 지금 원격에 없다 = 루틴이 소진한 것이다. 그 뒤에 새로 단 것(`u` > base)만 지킨다. */
+function fbBase(){ return lsGet(K_FBSYNC)||''; }
+function reapFb(remoteFb){           // 원격에서 사라진 소진분을 로컬에서도 걷어낸다
+  const base=fbBase(); if(!base||!remoteFb) return 0;
+  const rc=remoteFb.cards||{}; let n=0;
+  for(const id in state.cards){
+    const s=state.cards[id]; if(!s) continue;
+    if(!(s.flag!=null || (s.ann&&s.ann.length))) continue;   // 피드백이 없는 카드는 볼 것 없다
+    if(rc[id]) continue;                                     // 원격에 살아 있다
+    if((s.u||'') > base) continue;                           // 마지막 push 뒤에 새로 단 것 — 지킨다
+    s.flag=null; s.ann=[]; n++;
+  }
+  if(n) console.log('소진된 피드백 정리', n, '건');
+  return n;
+}
+function mergeFbInto(remote, base){   // 피드백: 주석은 합집합, 메모는 u 최신 우선
   const rc=(remote&&remote.cards)||{};
   for(const id in rc){
-    const mine=state.cards[id]||(state.cards[id]={fsrs:null,miss:0,retired:false,flag:null,ann:[],u:'',d:''});
     const r=rc[id];
+    // base가 있으면 = 로컬 캐시를 원격 위에 얹는 경우다. 원격에 없는 오래된 키는 되살리지 않는다
+    if(base && !state.cards[id] && (r.u||'') <= base) continue;
+    const mine=state.cards[id]||(state.cards[id]={fsrs:null,miss:0,retired:false,flag:null,ann:[],u:'',d:''});
     mine.ann=[...new Set([...(mine.ann||[]), ...(r.ann||[])])];
     if((r.u||'')>(mine.u||'')) mine.flag=r.flag!==undefined?r.flag:null;
   }
@@ -3560,6 +3584,9 @@ async function push(force){ // 배치 push — 옵티미스틱: 실패해도 로
   try{
     await pushAll(force);
     setDirty(false); ratedSincePush=0; lastPushAt=Date.now(); hideBanner();
+    /* 여기까지 왔으면 로컬 피드백은 전부 원격에 있다. 이 시각이 「소진 판정」의 기준선이다 —
+       이보다 오래된 u를 가진 키가 나중에 원격에서 사라지면 그건 루틴이 소비한 것이다. */
+    lsSet(K_FBSYNC, new Date().toISOString());
   }catch(e){
     const msg = e&&e.code==='auth' ? '토큰이 만료됐어요 — GitHub 연결에서 갱신'
       : e&&e.code==='perm' ? '토큰에 이 레포 쓰기 권한이 없어요 — github.com 토큰 설정에서 memory-cards 접근 + Contents 쓰기 추가 후 재시도'
@@ -3598,7 +3625,7 @@ async function refreshRemote(){     // 포그라운드 복귀 시 원격 상태 
       ghGet(MARKS_PATH), ghGet(FB_PATH), ghGet(SESS_PATH), ghGet(logPath(thisWeek()))]);
     if(sc||fb||sess||wk){
       if(sc) mergeMarksInto(sc);
-      if(fb) mergeFbInto(fb);
+      if(fb){ mergeFbInto(fb); reapFb(fb); }   // 앱을 켜 둔 채로도 루틴이 소진한다 — 그때도 걷어낸다
       if(wk) mergeLogInto(wk, thisWeek()); else rebuildLog();
       if(sess) mergeSessInto(sess);
       replayLog();                    // 다른 기기가 올린 로그를 내 스냅샷에 반영
@@ -3964,7 +3991,8 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
        🔴 얹기만 하고 「올려야 할 것」으로 표시하지 않으면, 지난번에 못 올린 채점이 스스로는
           영영 안 올라간다(다음 채점이 주 로그 전체를 올릴 때 딸려 갈 뿐). 표시까지 한다. */
     if(wasDirty && cSc){ mergeMarksInto({cards:(cSc.cards||{})}); markDirty('marks'); }
-    if(wasDirty && cFb){ mergeFbInto({cards:(cFb.cards||{})});    markDirty('fb'); }
+    if(fb) reapFb(fb);                                            // 원격에서 소진된 것은 로컬에서도 뺀다
+    if(wasDirty && cFb){ mergeFbInto({cards:(cFb.cards||{})}, fbBase()); markDirty('fb'); }
     if(wasDirty && cLg){ mergeLogInto(cLg, wk);                   markDirty('log', wk); }
     // K_DLOGS가 정본, 없는 기기(이 기능 이전)는 캐시 전수로 폴백
     const pend=(lsGet(K_DLOGS)||'').split('|').filter(Boolean);

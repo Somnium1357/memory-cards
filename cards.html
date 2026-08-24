@@ -131,52 +131,54 @@ input:focus,select:focus{border-color:var(--accent);}
   background:var(--surface);border-radius:22px;box-shadow:var(--shadow);
   padding:26px 28px;overflow:hidden;cursor:pointer;position:relative;
   touch-action:pan-y;                       /* 세로 스크롤만 브라우저에 주고 가로는 우리가 쓴다 */
-  transition:transform .18s cubic-bezier(.2,.8,.3,1);}
+  /* 취소되어 제자리로 돌아올 때의 곡선. 밋밋한 ease는 「고무줄로 당겼다 놓은」 손맛이 안 난다 —
+     끝에서 급히 감속하는 easeOutQuint 계열로 바꿨다 (동하: 「iOS 다른거랑 좀 안맞다」 2026-08-24). */
+  transition:transform .34s cubic-bezier(.22,1,.36,1);}
 #card.dragging,#card.snap{transition:none;}
 /* 🔴 끄는 동안(그리고 날아가는 동안)만 카드를 사이드바 위로 올린다. 아이패드 가로(1194)에서 카드는
-   오른쪽 끝이 927인데 최대 170px까지 밀리므로 fixed 사이드바(#rail, x=984~1180, z-index 20) 밑으로
-   들어간다 — 아래 테두리 글로우가 가장 세게 민 순간에 잘려 보인다. 30 < 스크림(38)·서랍(40)이라
+   오른쪽 끝이 927인데 고무줄 상한(SW_FREE+SW_RUB=250)까지 밀리므로 fixed 사이드바
+   (#rail, x=984~1180, z-index 20) 밑으로 들어간다. 30 < 스크림(38)·서랍(40)이라
    좁은 화면의 ☰ 서랍은 그대로 카드를 덮는다. 사이드바 자체는 건드리지 않았다. */
 #card.dragging,#card.flying{z-index:30;}
-/* 채점 스와이프가 임계를 넘겨 떨어질 때 — 그 방향으로 짧게 날려 보낸다.
-   길면 하루 수백 번 반복하는 동작에 걸리적거리므로 FLY_MS(170ms)에 맞춰 놓았다. */
-#card.flying{transition:transform .17s ease-in,opacity .17s ease-in;opacity:0;}
+/* 채점 스와이프가 임계를 넘겨 떨어질 때 — 그 방향으로 화면 밖까지 날려 보낸다.
+   「던진 것이 멀어진다」는 감속 곡선. 🔴 이 시간은 JS의 FLY_MS(200ms)와 반드시 같아야 한다 —
+   JS가 그만큼을 pausedMs로 되돌려 응답 시간에서 연출 시간을 빼기 때문이다(로그가 정본이다). */
+#card.flying{transition:transform .2s cubic-bezier(.32,.72,0,1),opacity .16s linear;opacity:0;}
 
-/* ── 스와이프 채점 피드백 ──
-   🔴 힌트는 **카드 안**에 산다(예전엔 #cardZone). 아이패드 가로에서 cardZone 기준 right:24px은
-   x=1094~1170이라 fixed 사이드바(#rail, x=984~1180, z-index 20)가 통째로 덮었다 — 「알맞음」이
-   아예 안 보였던 원인이다. 카드 기준이면 화면 폭·사이드바 유무와 무관하게 늘 카드 위다
-   (실측: 아이패드 가로에서 라벨 오른쪽 끝 916, 사이드바까지 68px 남는다).
-   🔴 다만 **카드를 따라 움직이면 안 된다**. 아이폰 390px에서는 카드가 화면을 거의 채우므로
-   오른쪽으로 미는 순간 라벨이 화면 밖으로 나간다(실측: 임계 64px에서 오른쪽 끝 418 > 390).
-   그래서 gMove가 카드가 밀린 만큼을 --sw-x에 반대 부호로 넣어 라벨을 제자리에 못박는다.
-   미는 쪽 라벨은 늘 그 방향으로 움직인 카드 **안쪽**에 남으므로 overflow:hidden에 잘리지 않는다. */
-.sw-hint{position:absolute;top:50%;z-index:4;pointer-events:none;
-  font-size:15px;font-weight:800;letter-spacing:-.2px;padding:9px 16px;border-radius:999px;
-  background-color:var(--surface);          /* 문면 위에 겹치므로 불투명 바닥을 깔아 준다 */
-  border:1.5px solid transparent;           /* 자리는 미리 잡아 두고 색만 바꾼다 — 폭이 안 흔들리게 */
-  opacity:0;transform:translate(var(--sw-x,0px),-50%) scale(.9);
-  transition:opacity .14s,transform .13s cubic-bezier(.2,.8,.3,1);}
-.sw-hint.left{left:14px;} .sw-hint.right{right:14px;}
-/* opacity는 JS가 끄는 양에 비례해 직접 넣는다(gMove). 여기서 opacity를 잡으면 그게 죽는다. */
-.sw-hint.again{background-image:linear-gradient(var(--again-dim),var(--again-dim));color:var(--again);}
-.sw-hint.good{background-image:linear-gradient(var(--good-dim),var(--good-dim));color:var(--good);}
-/* 임계를 넘는 순간 살짝 커지며 테두리가 선다 */
-.sw-hint.on{transform:translate(var(--sw-x,0px),-50%) scale(1.06);}
-.sw-hint.again.on{border-color:var(--again);}
-.sw-hint.good.on{border-color:var(--good);}
-/* 카드 가장자리 — 끄는 양에 비례해 그 방향 색이 진해진다. opacity 하나만 움직이므로 레이아웃이 없다. */
-#swRing{position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:2;
-  border:2.5px solid transparent;opacity:0;transition:opacity .16s;}
-#swRing.again{border-color:var(--again);box-shadow:inset 0 0 26px -8px var(--again);}
-#swRing.good{border-color:var(--good);box-shadow:inset 0 0 26px -8px var(--good);}
-/* 🔴 끄는 중엔 전이를 통째로 끊는다. opacity도 --sw-x도 매 프레임 JS가 넣는 값이라, 전이가 걸리면
-   손가락보다 늦게 따라오고 라벨이 카드 위에서 출렁인다(실측으로 확인). 임계를 넘는 「톡」이
-   부드럽지 않고 딱 끊기지만, 그게 오히려 「넘었다」를 분명히 알린다. 손을 떼면 전이가 살아나
-   힌트가 부드럽게 사라진다 — 단, 채점되어 카드가 갈릴 때(.snap)는 그 페이드가 **다음** 카드 위에
-   남으므로 거기서도 끊는다. */
-#card.dragging #swRing,#card.dragging .sw-hint,
-#card.snap #swRing,#card.snap .sw-hint{transition:none;}
+/* ── 스와이프 채점 피드백 (2026-08-24 재설계) ──
+   🔴 예전에는 카드 자신에 테두리 글로우(#swRing)와 카드 안 라벨을 씌웠다. 동하: 「시각피드백이
+   너무 별로야.. 카드 배경 말고 오른쪽/왼쪽에 색 나오는 식으로 해주고. 글자도 그쪽으로」.
+   그래서 색은 카드에서 걷어내고 **카드 영역의 좌·우 가장자리**에 세운다. 카드는 손가락만 따라가고,
+   띠는 가장자리에 못박혀 함께 움직이지 않는다 — 그래야 「어느 쪽으로 가고 있나」가 카드의 위치와
+   따로 읽힌다(예전엔 라벨을 카드에 붙여 놓고 --sw-x로 되미는 편법이 필요했다. 이제 필요 없다).
+   🔴 폭을 카드 열(max-width 660)에 가둔 이유 = 사이드바. 아이패드 가로(1194)에서 #cardZone은
+   화면 전폭인데 #rail이 x=984~1180에 fixed(z-index 20)로 떠 있다. 띠를 cardZone 전폭으로 잡으면
+   오른쪽 띠가 통째로 그 밑이다. 카드 열에 가두면 열이 x=267~927이라 사이드바까지 57px 남는다.
+   아이폰 390에서는 열이 x=18~372, 넓은 PC(1600)에서는 470~1130으로 어느 쪽도 안 가린다(실측).
+   z-index 34 = 끄는 중의 카드(30)보다 위, 스크림(38)·서랍(40)보다 아래 — 좁은 화면 ☰ 서랍이 덮는다. */
+#swEdges{position:absolute;inset:0;padding:6px 18px 10px;display:flex;justify-content:center;
+  pointer-events:none;z-index:34;}
+#swEdgesIn{position:relative;width:100%;max-width:660px;}   /* #card와 정확히 같은 열 */
+/* 띠 — 가장자리에서 안쪽으로 스미며 옅어진다. 폭은 transform:scaleX로 키운다(레이아웃 없음).
+   라벨을 이 안에 넣으면 scaleX에 눌려 글자가 찌그러지므로 라벨은 따로 띄운다. */
+.sw-band{position:absolute;top:0;bottom:0;width:38%;max-width:210px;border-radius:22px;
+  opacity:0;transform:scaleX(var(--sw-s,.35));}
+.sw-band.good{left:0;transform-origin:left center;
+  background:linear-gradient(90deg,var(--good),var(--good-dim) 42%,transparent);}
+.sw-band.again{right:0;transform-origin:right center;
+  background:linear-gradient(270deg,var(--again),var(--again-dim) 42%,transparent);}
+/* 글자도 띠 쪽으로. 🔴 왼쪽 = 알맞음, 오른쪽 = 다시 (2026-08-24 방향 반전) */
+.sw-lab{position:absolute;top:50%;font-size:15px;font-weight:800;letter-spacing:-.2px;
+  opacity:0;transform:translateY(-50%) scale(.94);}
+.sw-lab.left{left:18px;} .sw-lab.right{right:18px;}
+.sw-lab.good{color:var(--good);} .sw-lab.again{color:var(--again);}
+.sw-lab.on{transform:translateY(-50%) scale(1);}   /* 임계 통과 = 또렷해지고 제 크기가 된다 */
+/* 🔴 끄는 중엔 전이를 끊는다(.live). opacity도 --sw-s도 매 프레임 JS가 넣는 값이라, 전이가 걸리면
+   손가락보다 늦게 따라와 띠가 출렁인다. 손을 떼면 .live가 빠져 전이가 살아나고 띠가 조용히 걷힌다 —
+   단, 채점되어 카드가 갈릴 때는 그 페이드가 **다음** 카드 위에 남으므로 거기서는 .live를 붙인 채로
+   끈 뒤 한 프레임 지나서 뗀다(swFly 참고). */
+.sw-band,.sw-lab{transition:opacity .16s ease-out,transform .16s ease-out;}
+#swEdges.live .sw-band,#swEdges.live .sw-lab{transition:none;}
 #cardScroll{overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;}
 #cScope{font-size:12px;font-weight:600;color:var(--mute);letter-spacing:.2px;margin-bottom:12px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -708,12 +710,16 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
     <div class="scr on" id="scrSolve">
       <div id="phaseLine"></div>
       <div id="cardZone">
+        <!-- 스와이프 채점의 색·글자는 카드가 아니라 **카드 영역의 좌·우 가장자리**에 산다.
+             카드와 형제라서 카드가 밀려도 제자리에 못박힌다. 폭은 카드 열에 가둬 사이드바를
+             피한다(CSS 주석에 세 뷰포트 실측값). 왼쪽 = 알맞음, 오른쪽 = 다시. -->
+        <div id="swEdges" aria-hidden="true"><div id="swEdgesIn">
+          <div class="sw-band good" id="swBandL"></div>
+          <div class="sw-band again" id="swBandR"></div>
+          <span class="sw-lab left good" id="swLeft">알맞음</span>
+          <span class="sw-lab right again" id="swRight">다시</span>
+        </div></div>
         <div id="card">
-          <!-- 스와이프 힌트·테두리는 카드의 자식이다 — 사이드바에 가리지 않게(CSS 주석 참고).
-               카드와 함께 움직이므로 미는 방향이 그대로 읽힌다. -->
-          <div id="swRing"></div>
-          <span class="sw-hint left again" id="swLeft">다시</span>
-          <span class="sw-hint right good" id="swRight">알맞음</span>
           <div id="cScope"></div>
           <div id="cardScroll">
             <div id="cFront"></div>
@@ -1042,8 +1048,10 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
             <p><b>제스처</b></p>
             <table class="hp-t">
               <tr><td>카드 탭</td><td>답 공개 · 답면에서 다시 탭하면 앞면</td></tr>
-              <tr><td>카드 위 좌우 스와이프</td><td>채점(왼쪽 다시 · 오른쪽 알맞음) — ⚙설정에서 켜야 해요</td></tr>
-              <tr><td><b>왼쪽 가장자리에서 오른쪽</b></td><td>뒤로. 풀이 화면에서는 세션 화면으로</td></tr>
+              <tr><td>카드 위 좌우 스와이프</td><td>채점(<b>왼쪽으로 밀면 알맞음 · 오른쪽으로 밀면 다시</b>) — ⚙설정에서 켜야 해요.
+                자주 쓰는 알맞음이 손에 편한 방향이에요</td></tr>
+              <tr><td><b>왼쪽 가장자리에서 오른쪽</b></td><td>뒤로. 풀이 화면에서는 세션 화면으로.
+                화면 맨 왼쪽 끝에서 시작할 때만이라 카드 채점과 섞이지 않아요</td></tr>
             </table>
             <p><b>키보드 (PC · ⚙설정에서 켜기)</b></p>
             <table class="hp-t">
@@ -1168,7 +1176,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
   </div>
   <div class="field"><label>하루 신규 권장량 (체크포인트 표시용)</label>
     <input id="intakeCap" type="number" inputmode="numeric" min="0" placeholder="130"></div>
-  <div class="tgl-row"><span>스와이프 채점 (좌 다시 · 우 알맞음)</span><div class="tgl" id="tglSwipe"></div></div>
+  <div class="tgl-row"><span>스와이프 채점 (좌 알맞음 · 우 다시)</span><div class="tgl" id="tglSwipe"></div></div>
   <div class="tgl-row"><span>키보드 단축키 (PC)</span><div class="tgl" id="tglKbd"></div></div>
   <div class="kbd-note"><kbd>Space</kbd> 정답 공개 → 알맞음 · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> 채점 ·
     <kbd>U</kbd> 되돌리기 · <kbd>P</kbd> 일시정지 · <kbd>B</kbd> 내일로 · <kbd>F</kbd> 플래그 · <kbd>H</kbd> 홈 · <kbd>/</kbd> 목록 검색 · <kbd>Esc</kbd> 닫기</div>
@@ -4995,15 +5003,37 @@ $('btnHome').onclick=()=>{ push(); go('scrHome'); };
 let swipeOn = lsGet(K_SWIPE)==='1';
 /* 스와이프 채점 — 터치(iPad)·마우스(PC) 입력을 하나의 제스처 로직으로.
    포인터 이벤트는 iOS에서 스크롤 판정 때 가로 드래그가 pointercancel로 잘리는 일이 있어 쓰지 않는다. */
+/* 🔴 방향 매핑 (2026-08-24 반전, 동하 근거: 「왼쪽에서 오른쪽으로 당기는게 더 힘드니까」)
+   오른쪽으로 밀기(dx>0) = 다시(1) — 손에 힘든 방향이라 드물고 신중해야 할 쪽에 준다.
+   왼쪽으로 밀기(dx<0)  = 알맞음(3) — 편한 방향이라 하루 수백 번 나오는 쪽에 준다.
+   ⚠ 이 매핑은 gEnd의 채점 호출·열거 카드 X 차단·라벨(#swLeft/#swRight)·도움말·설정 토글 라벨에
+   흩어져 있다. 한 군데만 고치면 앱이 거짓말을 한다. 바꿀 땐 전부 같이 바꿔라. */
 const SW_MIN=64;                     // 채점으로 인정하는 가로 거리
 const NAV_EDGE=32;                   // 왼쪽 가장자리 띠 = 뒤로가기 몫 (채점 스와이프는 여기서 시작하지 않는다)
-const FLY_MS=170;                    // 떨어진 카드가 날아가는 시간 — 하루 수백 번이라 더 길면 걸리적거린다
+/* 🔴 방향 반전으로 「오른쪽으로 밀기 = 다시」와 「왼쪽 가장자리에서 오른쪽으로 밀기 = 뒤로가기」가
+   같은 방향이 됐다. 지금 갈라 주는 건 오직 NAV_EDGE뿐이다 — gStart가 x<=NAV_EDGE면 채점 제스처를
+   시작조차 하지 않아 왼쪽 32px 띠는 통째로 뒤로가기 몫이다. 이 분기를 지우면 「다시」가
+   뒤로가기를 삼킨다(또는 그 반대). 건드리지 마라. */
+const FLY_MS=200;                    // 떨어진 카드가 날아가는 시간 — CSS #card.flying 전이와 같은 값이어야 한다
+const SW_FREE=110;                   // 여기까지는 손가락을 1:1로 따라간다
+const SW_RUB=140;                    // 그 너머는 점근 감쇠 — 아무리 밀어도 SW_FREE+SW_RUB(=250)에 수렴
+/* 🔴 예전엔 170px에서 하드 클램프였다. 손가락은 계속 가는데 카드가 딱 서니 「걸리는」 느낌이 난다 —
+   iOS는 그렇게 멈추지 않는다(동하: 「넘기는 감각? 그게 그냥 좀 별로야」). 넘어간 만큼 o에 대해
+   o*c/(o+c)로 점점 덜 움직이는 고무줄로 바꿨다. 끝이 없으니 벽에 닿는 순간이 없다. */
+function rubber(dx){
+  const a=Math.abs(dx); if(a<=SW_FREE)return dx;
+  const o=a-SW_FREE;
+  return (dx<0?-1:1)*(SW_FREE + o*SW_RUB/(o+SW_RUB));
+}
 let gX=null, gY=null, gDrag=false, gFly=false;
-function swFx(){                     // 힌트·테두리 끄기 — opacity만 되돌린다(CSS 기본값 0으로 페이드)
-  /* 색 클래스(.on/.again/.good)와 --sw-x는 일부러 남긴다. 지우면 사라지는 도중에 색이 뚝 끊기고
-     라벨이 제자리에서 튄다(카드는 아직 되돌아오는 중인데 라벨만 먼저 카드 기준으로 돌아가므로).
-     안 보이는 상태로 남아 있을 뿐이고, 다음 gMove가 첫 프레임에 전부 다시 정한다. */
-  $('swLeft').style.opacity=''; $('swRight').style.opacity=''; $('swRing').style.opacity='';
+/* 띠·라벨 끄기. instant=true면 전이를 끊은 채로 끈다 — 카드가 갈리는 순간에 쓰며, 안 그러면
+   페이드가 **다음** 카드 위에 남는다. --sw-s와 색 클래스는 남긴다(다음 gMove가 첫 프레임에 다시 정한다). */
+function swFx(instant){
+  const E=$('swEdges');
+  if(instant)E.classList.add('live'); else E.classList.remove('live');
+  $('swBandL').style.opacity=''; $('swBandR').style.opacity='';
+  $('swLeft').style.opacity='';  $('swRight').style.opacity='';
+  $('swLeft').classList.remove('on'); $('swRight').classList.remove('on');
 }
 function swReset(){                  // 취소 — 카드가 제자리로 (transition이 되돌려 준다)
   if(gFly)return;                    // 날아가는 중엔 transform을 뺏지 않는다
@@ -5018,13 +5048,15 @@ function swFly(dir,done){
   const c=$('card');
   c.classList.remove('dragging');    // 전이를 다시 살려서 밀어낸다
   c.classList.add('flying');
-  c.style.transform=`translateX(${dir*480}px) rotate(${dir*6}deg)`;
+  const far=Math.round(window.innerWidth*.9+240);   // 어느 폭에서도 화면 밖까지 (예전 고정 480px은 넓은 화면에서 모자랐다)
+  c.style.transform=`translateX(${dir*far}px) rotate(${dir*4}deg)`;
   setTimeout(()=>{
     gFly=false;
-    /* 되돌릴 때 전이를 한 프레임 끊는다 — 안 끊으면 **다음** 카드가 화면 밖에서 날아 들어오고,
-       힌트 페이드가 새 카드 위에 남는다 (.snap이 힌트 쪽 전이도 같이 끊는다) */
+    /* 되돌릴 때 전이를 한 프레임 끊는다 — 안 끊으면 **다음** 카드가 화면 밖에서 날아 들어온다.
+       띠 쪽도 같은 이유로 전이를 끊은 채(swFx(true)) 끄고, 한 프레임 지나서 .live를 뗀다. */
     c.classList.remove('flying'); c.classList.add('snap');
-    c.style.transform=''; swFx(); void c.offsetWidth; c.classList.remove('snap');
+    c.style.transform=''; swFx(true); void c.offsetWidth;
+    c.classList.remove('snap'); $('swEdges').classList.remove('live');
     pausedMs+=FLY_MS;                // 연출에 쓴 시간은 응답 시간이 아니다 (로그가 정본이라 섞이면 안 된다)
     done();
   },FLY_MS);
@@ -5034,6 +5066,11 @@ function gStart(x,y){
   if(!cur()||!$('scrSolve').classList.contains('on'))return;
   if(x<=NAV_EDGE) return;   // 가장자리는 뒤로가기 — 좁은 화면에서 카드가 왼쪽 18px까지 오므로 여기서 갈라야 한다
   gX=x; gY=y; gDrag=false;
+  /* 카드가 **손끝을 축으로** 돈다 — 회전 중심을 잡은 지점에 맞춘다. 그래야 각도가 아주 작아도
+     따라 도는 느낌이 나고, 카드 한가운데를 도는 기계적인 움직임이 안 난다.
+     제스처당 한 번만 재므로 매 프레임 비용이 아니다(gMove에서는 절대 재지 않는다). */
+  const c=$('card'), r=c.getBoundingClientRect();
+  c.style.transformOrigin=`${Math.round(x-r.left)}px ${Math.round(y-r.top)}px`;
 }
 function gMove(x,y,ev){
   if(gX==null)return;
@@ -5044,20 +5081,25 @@ function gMove(x,y,ev){
   }
   if(ev&&ev.cancelable)ev.preventDefault();                  // 가로 제스처 확정 후에만 막는다
   if(!swipeOn||!revealed)return;                             // 꺼져 있거나 공개 전이면 따라 움직이지 않음
-  const lim=Math.max(-170,Math.min(170,dx));
-  $('card').style.transform=`translateX(${lim}px) rotate(${(lim/70).toFixed(2)}deg)`;
-  /* 🔴 여기는 손가락이 움직일 때마다 불린다. opacity·transform·클래스만 건드린다 —
-     width/left처럼 레이아웃을 다시 재는 속성은 절대 쓰지 않는다. */
+  const tx=rubber(dx);                                       // 1:1로 따라가다 편한 범위를 넘으면 고무줄
+  /* 회전은 아주 약하게 — 중심이 손끝이라 이 정도로 충분히 「따라 돈다」(예전 dx/70은 과했다).
+     상한 250px에서도 2.5° 남짓이다. */
+  $('card').style.transform=`translateX(${tx.toFixed(1)}px) rotate(${(tx/100).toFixed(2)}deg)`;
+  /* 🔴 여기는 손가락이 움직일 때마다 불린다. transform·opacity·CSS 변수만 건드린다 —
+     width/left처럼 레이아웃을 다시 재는 속성은 절대 쓰지 않는다(getBoundingClientRect도 금지). */
   const t=Math.min(1,Math.abs(dx)/SW_MIN), armed=t>=1;       // 임계까지 얼마나 왔나 (0~1)
-  const L=$('swLeft'), R=$('swRight'), G=$('swRing');
-  const back=(-lim)+'px';                                    // 카드가 밀린 만큼 라벨은 되민다 (제자리 고정)
-  L.style.setProperty('--sw-x',back); R.style.setProperty('--sw-x',back);
-  G.classList.toggle('again',dx<0); G.classList.toggle('good',dx>0);
-  G.style.opacity = armed?'1':(t*t*.8).toFixed(3);           // 임계 전엔 눌러 두었다가 넘으면 확 — 「얼마나 더」가 보이게
-  L.style.opacity = dx<0?(armed?'1':(t*.7).toFixed(3)):'0';
-  R.style.opacity = dx>0?(armed?'1':(t*.7).toFixed(3)):'0';
-  L.classList.toggle('on', armed&&dx<0);                     // .on = 임계 통과 (또렷해지고 살짝 커진다)
-  R.classList.toggle('on', armed&&dx>0);
+  const good=dx<0, again=dx>0;                               // 🔴 왼쪽=알맞음, 오른쪽=다시
+  const E=$('swEdges'), BL=$('swBandL'), BR=$('swBandR'), L=$('swLeft'), R=$('swRight');
+  E.classList.add('live');                                   // 끄는 동안은 전이를 끊는다 (손가락보다 늦으면 출렁인다)
+  /* 미는 정도에 비례해 띠가 넓어지고(scaleX) 진해진다. 임계를 넘으면 진하기가 한 번 뚝 올라
+     「넘었다」가 손 안 보고도 읽힌다 — 얼마나 더 밀어야 하는지가 그 전까지의 기울기다. */
+  const grow=(.35+t*.65).toFixed(3), ink=armed?'.30':(t*t*.20).toFixed(3);
+  BL.style.setProperty('--sw-s',grow); BR.style.setProperty('--sw-s',grow);
+  BL.style.opacity = good?ink:'0';  BR.style.opacity = again?ink:'0';
+  L.style.opacity = good?(armed?'1':(t*.6).toFixed(3)):'0';
+  R.style.opacity = again?(armed?'1':(t*.6).toFixed(3)):'0';
+  L.classList.toggle('on', armed&&good);                     // .on = 임계 통과 (또렷해지고 제 크기가 된다)
+  R.classList.toggle('on', armed&&again);
 }
 function gEnd(x,y){
   if(gX==null)return;
@@ -5074,8 +5116,10 @@ function gEnd(x,y){
   if(Math.abs(dy)>Math.max(90,ax)){ swReset(); toast('너무 비스듬해요 — 옆으로 곧게 밀어요'); return; }
   if(!swipeOn){ swReset(); toast('스와이프 채점이 꺼져 있어요 — 홈 설정에서 켜요'); return; }
   if(!revealed){ swReset(); toast('정답부터 확인해요 — 카드를 탭'); return; }
-  if(dx>0 && itemMarks.some(Boolean)){ swReset(); toast('빠뜨린 항목이 있어요 — 왼쪽으로 밀면 「다시」'); return; }
-  swFly(dx<0?-1:1, ()=>{ if(dx<0)rate(1); else rate(3); });  // 왼쪽=다시, 오른쪽=알맞음
+  /* 열거 카드에서 X를 하나라도 찍었으면 「알맞음」 쪽을 막는다. 🔴 알맞음은 이제 dx<0(왼쪽)이다 —
+     방향 반전 때 이 조건을 같이 안 뒤집으면 정반대를 막게 된다. */
+  if(dx<0 && itemMarks.some(Boolean)){ swReset(); toast('빠뜨린 항목이 있어요 — 오른쪽으로 밀면 「다시」'); return; }
+  swFly(dx<0?-1:1, ()=>{ if(dx<0)rate(3); else rate(1); });  // 왼쪽=알맞음, 오른쪽=다시
 }
 (()=>{ const c=$('card');
   c.addEventListener('touchstart',e=>{ if(e.touches.length!==1){ swReset(); return; }
@@ -5097,8 +5141,10 @@ function gEnd(x,y){
 
 /* ═══════════════ 가장자리 스와이프 = 뒤로 (동하 요청 2026-08-21) ═══════════════
    왼쪽 가장자리에서 오른쪽으로 밀면 홈으로 돌아간다.
-   풀이 화면에서도 먹는다 — 채점 스와이프가 가장자리 띠(NAV_EDGE)를 비켜서만 시작하도록
-   갈라 놓았기 때문이다(gStart). 풀이에서의 뒤로 = 그 세션 화면.
+   🔴 2026-08-24 방향 반전 이후 이 제스처는 「오른쪽으로 밀기 = 다시」와 **같은 방향**이다.
+   둘을 갈라 주는 건 시작점뿐이다 — 채점 스와이프가 가장자리 띠(NAV_EDGE) 안에서는 아예
+   시작하지 않는다(gStart). 그 분기를 지우면 왼쪽 끝에서 시작한 「다시」가 뒤로가기를 삼킨다.
+   풀이 화면에서도 먹는다. 풀이에서의 뒤로 = 그 세션 화면.
    시트가 열려 있을 때는 무시한다(시트 뒤 화면이 바뀌어 버린다). */
 (()=>{
   const DIST=70, SLOP=60, MAXT=800;

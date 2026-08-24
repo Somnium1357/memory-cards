@@ -3140,7 +3140,7 @@ const K_CFG='cards_cfg_v1', K_STATE='cards_state_cache_v1', K_DIRTY='cards_dirty
       K_KBD='cards_kbd_v1', K_SESS='cards_sessions_v1',
       K_SCHED='cards_sched_v2', K_MARKS='cards_marks_v1', K_FB='cards_fb_v1', K_PLAN='cards_plan_v1', K_LOGP='cards_log_v2_',
       K_UOPEN='cards_units_open_v1', K_DLOGS='cards_dirty_logs_v1', K_HOEDOK='cards_hoedok_v1',
-      K_FBSYNC='cards_fb_sync_v1';        // 마지막 성공 push 시각 — 소진된 피드백 판정 기준 (reapFb)
+      K_FBSYNC='cards_fb_sync_v1';        // 마지막 성공 push 시각 — fb·marks 공용 기준선 (reapFb·reapMarks, 둘 다 같은 pushAll에서 올라간다)
 const OLD_CFG='review_cfg_v1';            // 관리앱(같은 오리진)의 토큰 재사용
 const DAY_CUT=4;                          // 하루 경계 = 새벽 4시
 const EXAM_DAY='2026-11-07';              // due 최대 클램프
@@ -3310,7 +3310,11 @@ function cacheStateNow(){ // 파일 단위로 나눠 담는다 — 쿼터가 모
   ok = lsSet(K_SESS, JSON.stringify(sessFile())) && ok;
   if(ok) return;
   lsDel(K_DATA);                       // 데이터 캐시는 언제든 다시 받을 수 있다
-  ok = lsSet(K_MARKS, JSON.stringify(parts.marks)) && lsSet(K_FB, JSON.stringify(parts.fb));
+  /* 로그가 정본이므로 이번 주 로그부터 다시 담는다 — 일부만 저장될 상황이면 마지막까지 살아남아야 할 것은
+     미푸시 로그의 유일 사본이고, marks/fb는 작고 원격에 있을 확률도 높다. 지난 주까지는 안 담는다(용량이 없다). */
+  const wk=thisWeek();
+  ok = lsSet(K_LOGP+wk, JSON.stringify({v:2, week:wk, log:logWeeks[wk]||[]}));
+  ok = lsSet(K_MARKS, JSON.stringify(parts.marks)) && lsSet(K_FB, JSON.stringify(parts.fb)) && ok;
   if(ok) return;
   if(!cacheWarned){ cacheWarned=true;
     showBanner('저장 공간 부족 — 로컬 백업이 안 돼요. 지금 저장을 눌러 커밋해 두세요', false); }
@@ -3544,12 +3548,20 @@ function mergeSessions(remote, local, log){
   }
   return out;
 }
-function mergeMarksInto(remote){      // 마크: 카드별 u 최신 우선 (파일이 작고 드물게 바뀌어 충돌이 거의 없다)
+function mergeMarksInto(remote, base){ // 마크: 카드별 엔트리 통째 u 최신 우선 (파일이 작고 드물게 바뀌어 충돌이 거의 없다)
   const rc=(remote&&remote.cards)||{};
   for(const id in rc){
     const mine=state.cards[id];
+    // base가 있으면 = 로컬 캐시를 원격 위에 얹는 경우다. 원격에 없는 오래된 엔트리는 되살리지 않는다
+    if(!mine && base && (rc[id].u||'') <= base) continue;
     if(!mine){ state.cards[id]=Object.assign({fsrs:null,miss:0,retired:false,flag:null,ann:[],u:'',d:''}, rc[id]); continue; }
-    if((rc[id].u||'')>(mine.u||'')) for(const k of MARK_KEYS) if(rc[id][k]!==undefined) mine[k]=rc[id][k];
+    /* 원격이 최신이면 마크 키를 통째로 교체한다 — splitState가 해제된 마크(retired:false 등)를
+       파일에 싣지 않으므로, 원격 엔트리에 「없는 키」는 해제된 것이다. 키별 덮어쓰기(!==undefined일 때만)로는
+       해제가 전파되지 않아 옛 마크가 되살아났다. fsrs·flag 등 마크 아닌 필드는 건드리지 않는다. */
+    if((rc[id].u||'')>(mine.u||'')) for(const k of MARK_KEYS){
+      if(rc[id][k]!==undefined) mine[k]=rc[id][k];
+      else delete mine[k];
+    }
   }
 }
 /* 🔴 루틴이 소진한 피드백을 앱이 되살리면 안 된다 (2026-08-23 실측)
@@ -3573,18 +3585,31 @@ function reapFb(remoteFb){           // 원격에서 사라진 소진분을 로�
   if(n) console.log('소진된 피드백 정리', n, '건');
   return n;
 }
-function mergeFbInto(remote, base){   // 피드백: 주석은 합집합, 메모는 u 최신 우선
+function reapMarks(remoteMarks){     // 원격에서 사라진 해제분(다시 켜기·미룸 취소)을 로컬에서도 걷어낸다 — reapFb와 같은 원리
+  const base=fbBase(); if(!base||!remoteMarks) return 0;   // 기준선도 fb와 공용 — 같은 pushAll에서 함께 올라간다
+  const rc=remoteMarks.cards||{}; let n=0;
+  for(const id in state.cards){
+    const s=state.cards[id]; if(!s) continue;
+    if(!(s.retired || s.by || (Array.isArray(s.t)&&s.t.length) || s.base)) continue;  // 실릴 마크가 없는 카드는 볼 것 없다
+    if(rc[id]) continue;                                     // 원격에 살아 있다
+    if((s.u||'') > base) continue;                           // 마지막 push 뒤에 새로 단 것 — 지킨다
+    s.retired=false; s.by=''; s.t=[]; delete s.base; n++;    // fsrs·flag·ann·ft·u는 건드리지 않는다
+  }
+  if(n) console.log('해제된 마크 정리', n, '건');
+  return n;
+}
+function mergeFbInto(remote, base){   // 피드백: u 최신 엔트리가 통째로 이긴다 (구식일 때만 주석 합집합)
   const rc=(remote&&remote.cards)||{};
   for(const id in rc){
     const r=rc[id];
     // base가 있으면 = 로컬 캐시를 원격 위에 얹는 경우다. 원격에 없는 오래된 키는 되살리지 않는다
     if(base && !state.cards[id] && (r.u||'') <= base) continue;
     const mine=state.cards[id]||(state.cards[id]={fsrs:null,miss:0,retired:false,flag:null,ann:[],u:'',d:''});
-    mine.ann=[...new Set([...(mine.ann||[]), ...(r.ann||[])])];
-    if((r.u||'')>(mine.u||'')){        // 메모와 사유는 한 몸이라 같이 최신이 이긴다
+    if((r.u||'')>(mine.u||'')){        // 메모·사유·주석은 한 몸이라 같이 최신이 이긴다
       mine.flag=r.flag!==undefined?r.flag:null;
       mine.ft=Array.isArray(r.type)?r.type.slice():[];
-    }
+      mine.ann=(r.ann||[]).slice();    // 합집합이면 다른 기기의 주석 제거가 여기서 부활한다 — 최신 것으로 교체
+    } else mine.ann=[...new Set([...(mine.ann||[]), ...(r.ann||[])])];
   }
 }
 function mergeLogInto(remote, wk){    // 로그: (카드|시각) 합집합
@@ -3673,7 +3698,7 @@ async function refreshRemote(){     // 포그라운드 복귀 시 원격 상태 
     const [sc, fb, sess, wk] = await Promise.all([
       ghGet(MARKS_PATH), ghGet(FB_PATH), ghGet(SESS_PATH), ghGet(logPath(thisWeek()))]);
     if(sc||fb||sess||wk){
-      if(sc) mergeMarksInto(sc);
+      if(sc){ mergeMarksInto(sc); reapMarks(sc); }   // 다른 기기의 해제도 그때 걷어낸다
       if(fb){ mergeFbInto(fb); reapFb(fb); }   // 앱을 켜 둔 채로도 루틴이 소진한다 — 그때도 걷어낸다
       if(wk) mergeLogInto(wk, thisWeek()); else rebuildLog();
       if(sess){ mergeSessInto(sess); sessLoadOK=true; }   // 늦게라도 제대로 받으면 그때부터 올려도 된다
@@ -4055,8 +4080,9 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
     /* 못 올린 로컬분을 원격 위에 얹는다.
        🔴 얹기만 하고 「올려야 할 것」으로 표시하지 않으면, 지난번에 못 올린 채점이 스스로는
           영영 안 올라간다(다음 채점이 주 로그 전체를 올릴 때 딸려 갈 뿐). 표시까지 한다. */
-    if(wasDirty && cSc){ mergeMarksInto({cards:(cSc.cards||{})}); markDirty('marks'); }
+    if(wasDirty && cSc){ mergeMarksInto({cards:(cSc.cards||{})}, fbBase()); markDirty('marks'); }
     if(fb) reapFb(fb);                                            // 원격에서 소진된 것은 로컬에서도 뺀다
+    if(sc) reapMarks(sc);                                         // 원격에서 해제된 마크도 마찬가지
     if(wasDirty && cFb){ mergeFbInto({cards:(cFb.cards||{})}, fbBase()); markDirty('fb'); }
     if(wasDirty && cLg){ mergeLogInto(cLg, wk);                   markDirty('log', wk); }
     // K_DLOGS가 정본, 없는 기기(이 기능 이전)는 캐시 전수로 폴백
@@ -4622,7 +4648,9 @@ function renderCardTags(c){ // 임의 태그 (사용자 부착 축) — 탭하�
   }
   $('cTagInput').classList.remove('on'); $('cTagInput').value='';
 }
-function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function esc(s){ // 속성 자리(data-*="…"·value="…")에도 쓰이므로 따옴표까지 막는다 — textContent 방식은 "를 안 막았다
+  return s==null?'':String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
 function syncGradeButtons(){
   const hasX=itemMarks.some(Boolean);
   ['gHard','gGood','gEasy'].forEach(id=>{ $(id).toggleAttribute('disabled',hasX); });
@@ -5028,7 +5056,7 @@ function renderPlanWarn(){
 }
 function renderHome(){
   let due=0,nw=0;
-  for(const c of DATA){ if(isDue(c))due++; else if(isNew(c))nw++; }
+  for(const c of DATA){ if(isDue(c)&&!buried(c))due++; else if(isNew(c))nw++; }   // 미룸은 오늘 안 한다는 뜻 — renderToday와 같은 숫자로
   $('hSub').textContent=`due ${due} · 신규 ${nw}`;
   $('hFoot').innerHTML=`카드 ${DATA.length.toLocaleString()}장 · 리뷰 로그 ${state.log.length.toLocaleString()}건`
     +`${dirty?' · <b style="color:var(--hard)">미저장분 있음</b>':''}`;

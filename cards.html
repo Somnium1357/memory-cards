@@ -4366,10 +4366,31 @@ function addToast(n){
   if(!n) return toast(lastAddHeld?`지금 넣을 건 없어요 — ${lastAddHeld}장은 나중에(역방향·오늘 푼 것)`:'추가할 카드가 없어요');
   toast(lastAddHeld?`${n}장 추가 · ${lastAddHeld}장은 나중에(역방향·오늘 푼 것)`:`${n}장 추가`);
 }
+let lastPlaySid=null;   // 마지막으로 playSess한 세션 id — curSess가 끊겨도 화면 큐의 주인을 되찾는 열쇠
 function syncSessQueue(){ // 진행 중 세션의 남은 큐를 저장 (새로고침·탭 종료에도 살아남게)
-  if(!curSess) return;
-  curSess.q=queue.slice(qPos).map(c=>c.id);
-  curSess.lastAt=Date.now(); curSess.day=todayKey();
+  const rest=queue.slice(qPos);
+  /* 🔴 예전에는 첫 줄이 `if(!curSess) return;`이었다. 화면 큐(queue·qPos)는 살아 있는데 curSess만
+     끊긴 채로 채점이 이어지면, rate()가 부르는 이 함수가 매번 아무 일도 하지 않아 저장된 q가
+     옛 값(0)으로 굳는다. 앱을 끄면 그 0이 정본이 되어 이어풀기가 사라진다 — 채점 로그는 별도
+     경로라 멀쩡해서 「푼 건 남았는데 이어풀기만 없다」가 된다 (동하 2026-08-24, 166장 유실).
+     curSess가 끊기는 길은 하나가 아니다: 세션 삭제(deleteSess)·임시 세션 정리, 그리고
+     **mergeSessInto가 sessions 배열을 통째로 갈아끼우면** curSess는 목록 밖 고아 객체가 된다
+     (그 뒤의 쓰기는 전부 허공으로 간다 — done이 안 늘던 것도 이것으로 설명된다).
+     그래서 길을 하나씩 막지 않고, **저장할 때마다 id로 지금 살아 있는 세션을 다시 찾는다.** */
+  let tgt = curSess ? (sessions.find(x=>x.id===curSess.id)||null) : null;
+  // 고아였으면 산 객체로 다시 묶는다 — 성적(lastScore·scores)·done도 여기로 들어가야 한다
+  if(tgt && tgt!==curSess) curSess=tgt;
+  // curSess가 없어도 화면에 큐가 남아 있으면 마지막으로 재생한 세션이 그 큐의 주인이다
+  if(!tgt && rest.length && lastPlaySid) tgt = sessions.find(x=>x.id===lastPlaySid)||null;
+  if(!tgt){
+    /* 🔴 주인을 못 찾으면 아무 데도 넣지 않는다 — 엉뚱한 세션을 오염시키느니 안 넣는 게 낫다.
+       대신 침묵하지는 않는다. 지금까지는 완전한 무소음이라 앱을 끄기 전까지 아무도 몰랐다.
+       다음에 같은 일이 나면 어느 경로였는지 특정할 수 있게 남은 장수와 두 후보 id를 같이 찍는다. */
+    if(rest.length) console.warn('[세션] 남은 큐 '+rest.length+'장을 저장할 세션을 못 찾았습니다 — 저장 안 함 (curSess='+(curSess?curSess.id:'null')+', lastPlaySid='+lastPlaySid+')');
+    return;
+  }
+  tgt.q=rest.map(c=>c.id);
+  tgt.lastAt=Date.now(); tgt.day=todayKey();
   saveSessionsSoon();
 }
 function cleanupTempSessions(){   // 목록·상세에서 만든 임시 세션은 하루만 산다 (다 풀면 즉시 사라짐)
@@ -4572,6 +4593,7 @@ function unleak(list){
 }
 function playSess(sx){          // 세션 화면의 [이어가기] — 남은 큐를 그대로 이어 푼다
   curSess=sx; viewSess=sx; curPreset=asPreset(sx);
+  lastPlaySid=sx.id;   // curSess가 끊겨도 이 id로 큐의 주인을 되찾는다 (syncSessQueue 참고)
   refillSess(sx);
   queue=unleak(dropSettled(sessCards(sx))); qPos=0;  // 다른 세션에서 오늘 푼 것은 빼고 이어간다
   // 🔴 저장된 큐를 이어 풀 때도 한 번 더 건다 — 큐는 조립 뒤에도 「내용 추가」로 뒤에 붙는다

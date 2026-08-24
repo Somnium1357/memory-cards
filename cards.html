@@ -3611,8 +3611,12 @@ async function pushAll(force){        // 바뀐 파일만 올린다 (로그 우�
   }
   if(dirtyFiles.has('fb'))    await ghPut(FB_PATH,    ()=>splitState().fb,    mergeFbInto);
   dirtyFiles.delete('fb');
-  if(dirtyFiles.has('sess'))  await ghPut(SESS_PATH,  sessFile,             mergeSessInto);
-  dirtyFiles.delete('sess');
+  /* 🔴 세션 목록을 못 읽은 부팅에서는 **올리지 않는다.** 올리면 남의 기기 세션을 지운다.
+     dirty 표시는 지우지 않는다 — 다음에 제대로 읽으면 그때 올라간다. */
+  if(dirtyFiles.has('sess') && sessLoadOK){
+    await ghPut(SESS_PATH, sessFile, mergeSessInto);
+    dirtyFiles.delete('sess');
+  }
 }
 function hasPending(){ return dirty || dirtyFiles.size>0 || dirtyLogs.size>0; }
 async function push(force){ // 배치 push — 옵티미스틱: 실패해도 로컬은 이미 저장됨
@@ -3672,7 +3676,7 @@ async function refreshRemote(){     // 포그라운드 복귀 시 원격 상태 
       if(sc) mergeMarksInto(sc);
       if(fb){ mergeFbInto(fb); reapFb(fb); }   // 앱을 켜 둔 채로도 루틴이 소진한다 — 그때도 걷어낸다
       if(wk) mergeLogInto(wk, thisWeek()); else rebuildLog();
-      if(sess) mergeSessInto(sess);
+      if(sess){ mergeSessInto(sess); sessLoadOK=true; }   // 늦게라도 제대로 받으면 그때부터 올려도 된다
       replayLog();                    // 다른 기기가 올린 로그를 내 스냅샷에 반영
       lastRevIdx=null; firstRevIdx=null; cacheState();
       for(const sx of sessions){ if(!isFixed(sx)) sx.day=''; }   // 자동 충전 세션은 새 상태로 다시 채운다
@@ -4017,7 +4021,7 @@ async function rawGet(path){   // 토큰 없이도 읽기는 된다 (공개 레�
 }
 async function loadAll(){         // 스케줄·피드백·세션·이번 주 로그를 병렬로
   const wk=thisWeek();
-  let sc=null, fb=null, sess=null, lg=null, legacy=null, migrated=false;
+  let sc=null, fb=null, sess=null, lg=null, legacy=null, migrated=false, netFail=false;
   if(cfg&&cfg.token){
     try{
       [sc, fb, sess, lg] = await Promise.all([
@@ -4025,6 +4029,7 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
       if(!sc){ sc = await ghGet(SCHED_PATH); if(sc) migrated=true; }   // 이관 1회 — 옛 스냅샷에서 은퇴·미룸·태그만 건져 온다
       if(!sc && !fb){ legacy = await ghGet(LEGACY_STATE); }   // 아직 안 옮긴 기기·첫 배포
     }catch(e){
+      netFail=true;               // 🔴 「못 받았다」와 「없다」를 갈라야 한다 — 아래 sessLoadOK 참고
       showBanner(e&&e.code==='auth'?'토큰이 만료됐어요 — GitHub 연결에서 갱신'
         :e&&e.code==='perm'?'토큰에 이 레포 권한이 없어요 — github.com에서 memory-cards 접근을 추가하세요'
         :'상태 불러오기 실패 — 로컬 캐시로 진행', e&&e.code==='auth');
@@ -4083,7 +4088,18 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
     console.log('로그 재계산', n, '건 ·', Math.round(performance.now()-t0), 'ms');
   }
   cleanupTempSessions();
-  if(!sessions.length) sessions=[newSessObj('일일 복습', HOW_TPL[0].how, {}, 'auto')];
+  /* 🔴 세션 목록을 **못 받은 것**과 **없는 것**은 다르다 (동하 2026-08-24 「누복 세션이 두 개가 됐어」)
+     실측 — 08-23 13:09 세션 3개 → 15:34 파일이 **「일일 복습」 새것 하나로 통째로 덮임** →
+     08-24 다른 기기가 자기 3개를 병합해 되살리며 「일일 복습」이 둘이 됐다.
+     원인: 부팅 때 원격도 캐시도 못 얻으면 `sessions`가 빈 배열이 되고, 아래 한 줄이 기본 세션을
+     만들어 버린다. 그리고 그것이 **원격을 덮어썼다.** 네트워크 한 번 튄 것이 남의 세션을 지운다.
+     이제 두 겹으로 막는다 — ① 못 받았으면 기본 세션을 안 만든다 ② 세션 파일을 아예 안 올린다
+     (`pushAll`의 `sessLoadOK` 가드). 다음 부팅에 제대로 받으면 저절로 풀린다. */
+  sessLoadOK = !!(sess||cSess) || !netFail;
+  if(!sessions.length){
+    if(sessLoadOK) sessions=[newSessObj('일일 복습', HOW_TPL[0].how, {}, 'auto')];
+    else showBanner('세션 목록을 못 받았어요 — 새로고침하세요 (이 기기에서는 세션을 저장하지 않아요)');
+  }
   normalizeSessions();
   if(migrated) markDirty('marks');   // 옛 스냅샷에서 건져 온 마크를 새 파일로 한 번 올린다
   const pruned=pruneOrphans();       // 재생성으로 사라진 카드의 되짚기·마크 정리
@@ -4134,6 +4150,9 @@ const HOW_TPL=[
    how:{status:['due'], order:'weighted',weights:{}, limit:100,  bury:true,  newAfter:false}},
 ];
 let sessions=[], curSess=null, viewSess=null;
+/* 세션 목록을 이번 부팅에 **제대로 읽었나.** false면 세션 파일을 올리지 않는다 —
+   못 읽은 상태로 올리면 남의 기기 세션을 지운다(2026-08-24 실측). loadAll·refreshRemote가 세운다. */
+let sessLoadOK=false;
 function newSessObj(name, how, scope, mode){
   return {id:'s'+Date.now()+Math.floor(Math.random()*1000), name:name||'새 세션',
     how:JSON.parse(JSON.stringify(how)), mode:mode||'auto',
@@ -5021,7 +5040,8 @@ function renderHome(){
     const remain=sessRemain(sx), live=curSess&&curSess.id===sx.id&&remain>0;
     const el=document.createElement('div'); el.className='sess';
     el.innerHTML=`<div class="b"><div class="nm">${esc(sx.name)}${live?' <span style="font-size:11px;color:var(--good)">● 진행 중</span>':''}${sx.temp?' <span style="font-size:10.5px;color:var(--faint)">임시 · 오늘까지</span>':''}</div>
-      <div class="ds">${esc(sessDesc(sx))}</div></div>
+      <div class="ds">${esc(sessDesc(sx))}</div>
+      <div class="ds">누적 <b>${sx.done||0}</b>회${sx.lastAt?` · 마지막 ${esc(fmtAgo(sx.lastAt))}`:' · 아직 안 품'}</div></div>
       <div class="cnt"><b>${remain}</b><small>장 남음</small></div>`;
     el.onclick=()=>{ viewSess=sx; go('scrSession'); };
     box.appendChild(el);

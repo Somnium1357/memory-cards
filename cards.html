@@ -95,8 +95,9 @@ input:focus,select:focus{border-color:var(--accent);}
 #railScrim.show{display:block;}
 
 /* ══ 상단 바 ══ */
-#topbar{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:8px 12px 6px;min-height:46px;}
-.tb-btn{width:40px;height:36px;display:flex;align-items:center;justify-content:center;
+/* 버튼 44×44 = 최소 터치 타깃 — 세로 패딩을 깎아 topbar 전체 높이는 종전(~50px)과 같게 (감사 U3) */
+#topbar{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:4px 12px 2px;min-height:46px;}
+.tb-btn{width:44px;height:44px;display:flex;align-items:center;justify-content:center;
   border-radius:12px;color:var(--mute);}
 .tb-btn:active{background:var(--surface2);}
 .tb-btn svg{width:19px;height:19px;}
@@ -162,9 +163,10 @@ input:focus,select:focus{border-color:var(--accent);}
 #cDir{display:none;color:var(--accent);background:var(--accent-dim);}
 #cHint{font-size:11px;color:var(--faint);font-weight:500;}
 #cTags{display:flex;gap:5px;flex-wrap:wrap;}
+/* 탭이 동작인 것(태그 제거·＋태그)만 패딩으로 36px대까지 — 표시용 .typ-tag는 그대로 둔다 (감사 U3) */
 #cTags .utag{font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-dim);
-  padding:3px 9px;border-radius:999px;}
-#cTagAdd{color:var(--faint);}
+  padding:11px 12px;border-radius:999px;}
+#cTagAdd{color:var(--faint);padding:11px 12px;}
 #cTagInput{display:none;width:110px;font-size:16px;padding:4px 10px;border-radius:999px;}
 #cTagInput.on{display:inline-block;}
 #annMarks{display:flex;gap:5px;margin-left:auto;}
@@ -181,7 +183,8 @@ input:focus,select:focus{border-color:var(--accent);}
 .gbtn:active{transform:scale(.97);}
 .gbtn .gl{font-size:15px;letter-spacing:-.2px;}
 .gbtn .gi{font-size:11px;font-weight:600;opacity:.75;}
-.gbtn[disabled]{opacity:.22;pointer-events:none;}
+/* .dim = 시각적으로만 죽인다 — pointer-events를 막으면 탭이 rate()에 못 가 안내 토스트가 안 뜬다 (감사 U2) */
+.gbtn.dim{opacity:.22;}
 #gAgain{background:var(--again-dim);color:var(--again);}
 #gHard{background:var(--hard-dim);color:var(--hard);}
 #gGood{background:var(--good-dim);color:var(--good);}
@@ -207,8 +210,9 @@ input:focus,select:focus{border-color:var(--accent);}
 #flagMemo{width:100%;font-size:16px;padding:8px 10px;}
 /* 플래그 사유 칩 — 한 번 탭이 곧 플래그+사유다 (타이핑 제로 경로) */
 #flagTypes{display:flex;flex-wrap:wrap;gap:5px;padding:6px 2px 2px;}
-.ft-chip{font-size:11.5px;font-weight:700;padding:6px 9px;border-radius:999px;line-height:1;
+.ft-chip{font-size:11.5px;font-weight:700;padding:11px 10px;border-radius:999px;line-height:1;
   background:var(--surface2);color:var(--mute);border:1.5px solid transparent;}
+  /* 패딩 11px = 칩 높이 36px대 — 26px는 터치 미달, 좁은 사이드바라 44 대신 36 이상으로 타협 (감사 U3) */
 .ft-chip.on{background:var(--accent-dim);color:var(--accent);border-color:var(--accent);}
 
 /* ══ 홈 화면 ══ */
@@ -274,8 +278,10 @@ input:focus,select:focus{border-color:var(--accent);}
 .bl-row .bar i{display:block;height:100%;background:var(--accent);border-radius:99px;}
 .bl-row .c{flex:0 0 40px;text-align:right;color:var(--mute);font-size:12px;}
 .list-note{font-size:12px;font-weight:700;color:var(--mute);padding:2px 4px 10px;}
-.search-row{display:flex;gap:8px;margin-bottom:10px;}
-.search-row input{flex:1;}
+.search-row{display:flex;gap:8px;margin-bottom:10px;min-width:0;}
+/* min-width:0 — input의 암묵 최소폭 때문에 줄이 안 줄어 360px에서 정렬 select가 화면 밖으로 밀렸다 (감사 U6) */
+.search-row input{flex:1;min-width:0;}
+.search-row select{flex:0 1 auto;min-width:0;}
 .chip-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;}
 .chip-row::-webkit-scrollbar{display:none;}
 .chip{flex:0 0 auto;font-size:12px;font-weight:700;padding:7px 13px;border-radius:999px;
@@ -786,7 +792,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
           <div class="hpb">
             <pre class="hp-flow">회독본(옵시디언)
    ↓  개념 하나하나를 카드로
-카드 5,580장          ← 아직 아무도 안 푼 상태 = <b>신규</b>
+카드 <span class="hp-n-cards">5,000여</span>장       ← 아직 아무도 안 푼 상태 = <b>신규</b>
    ↓  투입 계획(수강일 순서)
 <b>세션</b>이 오늘치를 꺼냄   ← 「무엇을(범위) × 어떻게(방식)」
    ↓  채점 4단계
@@ -938,7 +944,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
               <tr><th>홈</th><td>오늘 요약 · 세션 목록 · 라이브러리(단위·카드 목록) · 기록(통계·약점·플래그) · ⚙설정</td></tr>
               <tr><th>세션</th><td>허브. 이어가기 · 마지막 성적 · 이 세션의 단위 · 다음 진도 · 범위 넓히기</td></tr>
               <tr><th>단위</th><td>대주제 84개를 과목별로 접어 둔 목록. 회독 읽음 체크 · 골라서 세션 만들기</td></tr>
-              <tr><th>카드 목록</th><td><b>조건을 고르면</b> 결과가 나오는 화면. 5,580장을 그냥 깔지 않아요.
+              <tr><th>카드 목록</th><td><b>조건을 고르면</b> 결과가 나오는 화면. <span class="hp-n-cards">5,000여</span>장을 그냥 깔지 않아요.
                 누수·플래그·약점·오늘 푼·끈 카드 같은 타일이나 검색으로 들어가요</td></tr>
               <tr><th>풀이</th><td>맨 위 한 줄 = 이 카드가 나온 이유 · 카드 탭 = 답 공개(다시 탭하면 앞면) · 사이드바 = 되짚기</td></tr>
             </table>
@@ -1034,7 +1040,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 <!-- 셋업 -->
 <div class="ovl" id="ovlSetup"><div class="sheet">
   <h2>GitHub 연결</h2>
-  <p class="desc">채점 기록을 <b>Somnium1357/memory-cards</b> 레포의 cards-state.json에 커밋해요. 토큰(Contents: Read and write)은 이 기기에만 저장됩니다.</p>
+  <p class="desc">채점 기록을 <b>Somnium1357/memory-cards</b> 레포의 cards-log-주차.json 등 상태 파일에 커밋해요. 토큰(Contents: Read and write)은 이 기기에만 저장됩니다.</p><!-- cards-state.json은 폐지 — 문구가 낡으면 신뢰가 깎인다 (감사 U8) -->
   <div class="field"><label>토큰 (github_pat_… / ghp_…)</label><input id="cfgToken" type="password" autocomplete="off" spellcheck="false"></div>
   <div class="desc" id="cfgErr" style="color:var(--again);display:none"></div>
   <div class="btn-row"><button class="btn-ghost" id="setupClose">닫기</button><button class="btn-primary" id="btnConnect">연결</button></div>
@@ -3810,11 +3816,18 @@ function rowLabel(k){            // 토스트·확인창용 전체 경로
 }
 /* 행에서는 두 줄로 쪼갠다 — 좁은 화면에서 한 줄로 붙이면 말줄임이 뒤를 먹어
    정작 중요한 중주제가 안 보인다. 위: 과목 · 대주제(작게) / 아래: 중주제(굵게). */
-function rowUpper(k){ const t=TAGMETA[rowUnit(k)]; if(!(t&&isMidRow(k)&&rowMid(k))) return '';
+function rowUpper(k){ const t=TAGMETA[rowUnit(k)];
+  if(!(t&&isMidRow(k)&&rowMid(k))){
+    // 분할 대주제(tag=「원 대주제 — 그룹명」)는 대주제 행도 두 줄로 — 한 줄이면 좁은 폭에서
+    // 말줄임이 정작 구별점인 그룹명부터 먹는다 (감사 U5). 분할 아닌 대주제는 종전대로 한 줄(빈 up).
+    const cut=t?t.tag.indexOf(' — '):-1;
+    return cut<0 ? '' : `${t.subj.split('.')[1]||t.subj} · ${t.tag.slice(0,cut)}`; }
   const base=`${t.subj.split('.')[1]||t.subj} · ${t.tag}`;
   return isSubRow(k)&&rowSub(k)!==rowMid(k) ? `${base} › ${rowMid(k)}` : base; }
 function rowName(k){ const t=TAGMETA[rowUnit(k)]; if(!t) return k;
-  if(!(isMidRow(k)&&rowMid(k))) return `${t.subj.split('.')[1]||t.subj} · ${t.tag}`;
+  if(!(isMidRow(k)&&rowMid(k))){
+    const cut=t.tag.indexOf(' — ');   // 분할이면 아랫줄=그룹명만 (윗줄이 원 대주제를 이미 말한다)
+    return cut<0 ? `${t.subj.split('.')[1]||t.subj} · ${t.tag}` : t.tag.slice(cut+3); }
   if(!isSubRow(k)) return rowMid(k);
   return rowSub(k)===rowMid(k) ? `${rowSub(k)} (그 자체)` : rowSub(k); }   // 피커와 같은 표기
 function cardRowKey(c, midSet){          // 그 카드가 어느 행에 속하나 (세션이 집어든 것 중 좁은 쪽 우선)
@@ -4627,6 +4640,11 @@ function reveal(){
   $('cMeta').classList.add('on');
   renderCardTags(c);
   intervalsPreview(c); syncGradeButtons();
+  // 긴 앞면이면 방금 펼친 답면이 화면 밖이라 공개된 줄도 모른다 — 뷰포트 아래쪽(80% 밑)에
+  // 있을 때만 살짝 끌어올린다. 짧은 카드는 nearest라 아무 일도 없다 (감사 U4). 스크롤 컨테이너=#cardScroll.
+  const bw=$('cBackWrap'), scr=$('cardScroll').getBoundingClientRect();
+  if(bw.getBoundingClientRect().top > scr.top + scr.height*0.8)
+    bw.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 function unreveal(){   // 뒷면 → 앞면. 항목 체크(itemMarks)와 응답 시간(shownAt)은 건드리지 않는다 —
   const c=cur(); if(!c||!revealed)return;   // 답을 봤다는 사실은 그대로 남아야 한다
@@ -4653,7 +4671,9 @@ function esc(s){ // 속성 자리(data-*="…"·value="…")에도 쓰이므로 
 }
 function syncGradeButtons(){
   const hasX=itemMarks.some(Boolean);
-  ['gHard','gGood','gEasy'].forEach(id=>{ $(id).toggleAttribute('disabled',hasX); });
+  // disabled로 막지 않는다 — 탭이 rate()까지 가야 「다시만 눌러요」 토스트가 뜬다.
+  // disabled면 버튼이 말없이 죽어 왜 안 되는지 알 길이 없다 (감사 U2). 죽은 티는 .dim이 낸다.
+  ['gHard','gGood','gEasy'].forEach(id=>{ $(id).classList.toggle('dim',hasX); });
 }
 function intervalsPreview(c){ // 채점 버튼 위 다음 간격 미리보기
   const s=st(c.id), now=new Date(Math.round(Date.now()/1000)*1000);  // 실제 채점과 같은 초 단위 — fuzz 결과가 어긋나지 않게
@@ -5172,9 +5192,12 @@ function renderSession(){
   if(!isFixed(sx)) refillSess(sx);
   const remain=sessRemain(sx);
   const live=curSess&&curSess.id===sx.id;
-  /* 자동 충전 세션이 오늘 몫을 다 비웠을 때만 「이어서 채우기」를 띄운다.
-     예전에는 이 자리에서 refillSess가 말없이 채웠다 — 그 놀라움을 버튼으로 바꾼 것이다. */
-  const refillQ=(!remain&&!isFixed(sx)) ? buildQueue(asPreset(sx), sx.how.status).map(c=>c.id) : null;
+  /* 큐가 비면 「이어서 채우기」를 띄운다 — 예전에는 이 자리에서 refillSess가 말없이 채웠다,
+     그 놀라움을 버튼으로 바꾼 것이다. 자동 충전 세션 전용이 아니다 — 직접 추가 세션도
+     범위에 남은 것을 다시 담을 길이 있어야 한다 (동하 2026-08-24: 범위를 잘못 담아
+     「큐 비우기」로 비웠더니 그날 다시 풀 방법이 없었다). 범위가 빈 직접 추가 세션은
+     inScope의 fixed 가드로 buildQueue가 0을 내 버튼이 안 뜬다 — 그대로 맞다. */
+  const refillQ = !remain ? buildQueue(asPreset(sx), sx.how.status).map(c=>c.id) : null;
   const nt=(sx.how.newAfter||stHas(sx.how.status,'new'))?(()=>{ const keep=curPreset; curPreset=asPreset(sx);
       const t=nextTopic(); curPreset=keep; return t; })():null;
   // 직접 추가 세션인데 범위가 비었다 = 「다 풀었다」가 아니라 「담은 게 없다」
@@ -5602,7 +5625,10 @@ $('ovlPick').onclick=(e)=>{ if(e.target===$('ovlPick'))$('ovlPick').classList.re
 
 $('intakeCap').addEventListener('change',()=>{ intake.cap=+$('intakeCap').value||null; saveIntake();
   toast(intake.cap?`권장 ${intake.cap}장 — 체크포인트에 표시돼요`:'권장량 없음'); });
-$('btnSettings').onclick=()=>$('ovlSettings').classList.add('show');
+$('btnSettings').onclick=()=>{
+  // 열 때 현재값을 채운다 — 비어 있으면 설정돼 있어도 미설정처럼 보인다 (감사 U7). 없으면 placeholder 130 유지.
+  $('intakeCap').value = intake.cap!=null ? intake.cap : '';
+  $('ovlSettings').classList.add('show'); };
 $('setClose').onclick=()=>$('ovlSettings').classList.remove('show');
 $('ovlSettings').onclick=(e)=>{ if(e.target===$('ovlSettings'))$('ovlSettings').classList.remove('show'); };
 $('btnNewSess').onclick=()=>openSessEditor(null,null);
@@ -5923,8 +5949,11 @@ $('ovlCard').onclick=(e)=>{ if(e.target===$('ovlCard'))closeCardSheet(); };
 function startAdHoc(cards, label, note){ // 목록·상세에서 바로 풀기 = 임시 세션도 정식 세션으로 만든다
   if(!cards.length){ toast('풀 카드가 없어요'); return; }
   if(curSess) syncSessQueue();             // 하던 세션은 남은 큐 그대로 보존 (멀티세션)
+  /* 🔴 mode는 반드시 'manual' — 임시 세션은 담은 카드만 푼다. 비우면 'auto'가 되어
+     refreshRemote의 day 리셋에 휩쓸리고, 다음 렌더의 refill이 빈 범위 + status 'all'로
+     전 카드를 채워 버린다 (감사 U1 — 재현 확정). */
   const sx=newSessObj(label||'임시 세션',
-    {status:'all', order:'shuffle', weights:{}, limit:null, bury:false, newAfter:false}, {});
+    {status:'all', order:'shuffle', weights:{}, limit:null, bury:false, newAfter:false}, {}, 'manual');
   sx.q=cards.map(c=>c.id); sx.day=todayKey(); sx.temp=true;
   sessions.unshift(sx); saveSessionsFlush();
   playSess(sx);
@@ -6378,6 +6407,8 @@ $('btnConnect').onclick=async()=>{
 
 /* ═══════════════ 도움말 ═══════════════ */
 function renderHelpToc(){    // 목차 칩 — 누르면 그 절만 펼치고 그리로 간다
+  // 도움말 속 카드 장수는 열 때마다 실제 데이터로 채운다 — 박아 둔 숫자는 반드시 낡는다 (감사 U8)
+  document.querySelectorAll('.hp-n-cards').forEach(el=>{ el.textContent=DATA.length.toLocaleString(); });
   const box=$('hpToc'); if(box.dataset.built) return;
   const secs=[...document.querySelectorAll('#scrHelp details.hp')];
   box.innerHTML='';

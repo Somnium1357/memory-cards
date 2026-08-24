@@ -3236,7 +3236,8 @@ const K_CFG='cards_cfg_v1', K_STATE='cards_state_cache_v1', K_DIRTY='cards_dirty
       K_KBD='cards_kbd_v1', K_SESS='cards_sessions_v1',
       K_SCHED='cards_sched_v2', K_MARKS='cards_marks_v1', K_FB='cards_fb_v1', K_PLAN='cards_plan_v1', K_LOGP='cards_log_v2_',
       K_UOPEN='cards_units_open_v1', K_DLOGS='cards_dirty_logs_v1', K_HOEDOK='cards_hoedok_v1',
-      K_FBSYNC='cards_fb_sync_v1';        // 마지막 성공 push 시각 — fb·marks 공용 기준선 (reapFb·reapMarks, 둘 다 같은 pushAll에서 올라간다)
+      K_FBSYNC='cards_fb_sync_v1',        // 마지막 성공 push 시각 — fb·marks 공용 기준선 (reapFb·reapMarks, 둘 다 같은 pushAll에서 올라간다)
+      K_WKSYNC='cards_week_sync_v1';      // 지난 주 로그를 마지막으로 다시 받은 주차 — loadWeeks의 「주가 바뀌면 한 번 재수신」 기준선
 const OLD_CFG='review_cfg_v1';            // 관리앱(같은 오리진)의 토큰 재사용
 const DAY_CUT=4;                          // 하루 경계 = 새벽 4시
 const EXAM_DAY='2026-11-07';              // due 최대 클램프
@@ -3299,6 +3300,9 @@ function tomorrowKey(){ return dayKey(new Date(Date.now()+86400000)); }
 
 /* ═══════════════ 전역 상태 ═══════════════ */
 let DATA=[], BYID={}, ALLTAGS=[], ALLTYPS=[], TAGMETA={};
+/* 이번 부팅의 DATA가 **원격에서 방금 받은 것**인가 (캐시 폴백이면 false).
+   BYID로 「없는 카드」를 판정하는 곳은 이 값을 먼저 봐야 한다 — pruneOrphans 참고. */
+let dataFresh=false;
 let state={cards:{},log:[],hoedok:{}}, sha={}, cfg=null;
 let logWeeks={};                       // 주 키 → 로그 배열 (이번 주 + 통계가 불러온 과거 주)
 const dirtyFiles=new Set(), dirtyLogs=new Set();
@@ -3442,6 +3446,12 @@ const MARK_KEYS=['retired','by','t','base','u'];
    🔴 카드 데이터를 못 받은 부팅에서는 아무것도 지우지 않는다 — 그때 지우면 전량이 고아로 보인다. */
 function pruneOrphans(){
   if(!DATA.length) return 0;
+  /* 🔴 캐시 카드로 부팅한 판은 손대지 않는다 (2026-08-24).
+     밤 루틴이 카드를 재생성해 **새 ID**가 생기고 다른 기기가 거기에 끄기·플래그를 달았는데,
+     이 기기가 낡은 캐시로 부팅하면 그 새 ID들이 전부 BYID에 없다 = 전량 고아로 보인다.
+     지우고 push하면 남의 끄기가 풀려 껐던 카드가 되살아나고 신고가 증발한다.
+     「없어졌다」와 「내가 못 받았다」는 다르다 — 못 받았을 때는 판정 자체를 미룬다. */
+  if(!dataFresh) return 0;
   const gone=[];
   for(const id in state.cards){
     if(BYID[id]) continue;                      // 살아 있는 카드
@@ -4075,8 +4085,10 @@ async function loadData(){
     if(!r.ok)throw 0;
     const j=await r.json();
     DATA=j.cards||[];
+    dataFresh=true;                 // 원격 = 최신 카드 ID 전량을 안다
     lsSet(K_DATA, JSON.stringify(j));
   }catch(e){
+    dataFresh=false;                // 캐시 폴백 = 밤새 재생성된 새 ID를 모른다
     const c=lsGet(K_DATA);
     if(c){ try{ DATA=(JSON.parse(c).cards)||[]; toast('오프라인 — 캐시 카드로 진행'); }catch(e2){} }
   }
@@ -4235,22 +4247,51 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
   cacheState();
   if(wasDirty||legacy||migrated||pruned) push(true);
 }
-async function loadWeeks(keys){   // 지난 주 로그 — 전량 재계산의 재료
+/* 지난 주 로그 — 전량 재계산의 재료.
+   옛 전제 「지난 주는 안 바뀐다」는 틀렸다 (2026-08-24). 기기 B가 주 경계를 넘겨 오프라인이었다가
+   뒤늦게 지난 주 로그를 올리는 경로가 정상 시나리오에 있다(`pushAll`이 `dirtyLogs`의 지난 주를 올린다).
+   그 순간 이미 그 주를 캐시해 둔 기기 A는 B의 지난주 채점을 **영영 못 본다** — 원격은 온전하니
+   유실은 아니지만 A의 재계산만 어긋나 기기별로 복습 일정이 갈린다.
+   그렇다고 매 부팅 전 주차를 다 받으면 부팅이 느려지므로, 「주가 바뀐 뒤 첫 부팅에서 한 번」만 다시 받는다. */
+async function loadWeeks(keys){
   const want=keys.filter(k=>!logWeeks[k]);
   if(!want.length) return false;
-  const rest=[];
+  const tw=thisWeek();
+  const resync = lsGet(K_WKSYNC)!==tw;   // 이번 주 들어 아직 지난 주 재수신을 안 했다
+  const rest=[], reget=[];
   for(const k of want){
     const c=cachedFile(K_LOGP+k);
-    if(c&&Array.isArray(c.log)&&c.log.length){ logWeeks[k]=c.log; continue; }  // 지난 주는 안 바뀐다
+    if(c&&Array.isArray(c.log)&&c.log.length){
+      logWeeks[k]=c.log;                 // 캐시를 일단 쓴다 — 재수신이 실패해도 이게 남는다
+      if(resync && k!==tw) reget.push(k);
+      continue;
+    }
     rest.push(k);
   }
-  await Promise.all(rest.map(async k=>{                    // 병렬 — 주가 늘어도 부팅이 안 느려진다
-    let j=null;
-    try{ j = (cfg&&cfg.token) ? await ghGet(logPath(k)) : await rawGet(logPath(k)); }catch(e){}
-    logWeeks[k]=(j&&j.log)||[];
-    // 🔴 빈 주는 캐시하지 않는다 — 다른 기기가 그 주에 뒤늦게 올린 것을 영영 못 보게 된다
-    if(logWeeks[k].length) lsSet(K_LOGP+k, JSON.stringify({v:2,week:k,log:logWeeks[k]}));
-  }));
+  let regetOK=true;
+  await Promise.all([                                      // 병렬 — 주가 늘어도 부팅이 안 느려진다
+    ...rest.map(async k=>{
+      let j=null;
+      try{ j = (cfg&&cfg.token) ? await ghGet(logPath(k)) : await rawGet(logPath(k)); }catch(e){}
+      logWeeks[k]=(j&&j.log)||[];
+      // 🔴 빈 주는 캐시하지 않는다 — 다른 기기가 그 주에 뒤늦게 올린 것을 영영 못 보게 된다
+      if(logWeeks[k].length) lsSet(K_LOGP+k, JSON.stringify({v:2,week:k,log:logWeeks[k]}));
+    }),
+    ...reget.map(async k=>{
+      let j=null;
+      try{ j = (cfg&&cfg.token) ? await ghGet(logPath(k)) : await rawGet(logPath(k)); }catch(e){}
+      /* 아무것도 못 받았으면 실패로 친다. reget에 든 주는 로컬 캐시가 비어 있지 않은 주 =
+         원격에도 있어야 정상이므로, null은 「없다」보다 「못 받았다」로 읽는 편이 안전하다.
+         (rawGet은 네트워크 실패도 null로 삼켜서 어차피 구분이 안 된다.) */
+      if(!j||!Array.isArray(j.log)){ regetOK=false; return; }
+      /* 🔴 통째 교체 금지 — 아직 push 못 한 로컬 채점이 날아간다. 로그는 정본이다.
+         (카드|시각) 합집합으로 얹는다. */
+      mergeLogInto(j, k);
+      if(logWeeks[k].length) lsSet(K_LOGP+k, JSON.stringify({v:2,week:k,log:logWeeks[k]}));
+    })
+  ]);
+  // 실패하면 기준선을 올리지 않는다 — 다음 부팅에 다시 시도해야 한다
+  if(resync && regetOK) lsSet(K_WKSYNC, tw);
   rebuildLog(); lastRevIdx=null; firstRevIdx=null;
   return true;
 }

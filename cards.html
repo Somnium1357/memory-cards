@@ -65,6 +65,17 @@ input,select{font-family:inherit;font-size:16px;color:var(--ink);background:var(
   border:1.5px solid var(--line);border-radius:12px;padding:9px 12px;outline:none;-webkit-user-select:auto;user-select:auto;}
 input:focus,select:focus{border-color:var(--accent);}
 ::placeholder{color:var(--faint);}
+/* 카드 문면만 복사 가능하게 (동하 2026-08-24) — 플래그 메모에 문구를 인용할 때 body의 전역
+   user-select:none이 걸림돌이었다. 대상은 풀이 화면의 앞면·답면·항목·보충과 상세 시트의 같은 자리뿐
+   — 버튼·사이드바·목록 행은 그대로 선택 불가다(터치에서 길게 눌러 잡히는 게 성가시다).
+   🔴 터치 기기에서는 아예 켜지 않는다: 아이패드에서 카드 텍스트가 선택되면 스와이프 채점·탭
+   되접기와 충돌한다. 그래서 마우스가 있는 환경으로 못 박는다. JS 쪽에 같은 조건의 가드가 있다(SEL_OK). */
+@media (hover:hover) and (pointer:fine){
+  #cScope,#cFront,#cBack,#cItems,#cNote,
+  .cs-scope,.cs-front,.cs-back,.cs-items,.cs-note{-webkit-user-select:text;user-select:text;}
+  /* 기본 파랑은 두 테마 다 어긋난다. --accent-dim은 알파 .11~.13이라 선택 표시로는 안 보인다 */
+  ::selection{background:var(--accent);color:var(--accent-ink);}
+}
 
 /* ══ 앱 골격 ══ */
 #app{display:flex;height:100%;}
@@ -156,6 +167,13 @@ input:focus,select:focus{border-color:var(--accent);}
 #cDiag.on{display:block;}
 #cDiag b{font-weight:700;font-size:12px;letter-spacing:.4px;margin-right:6px;color:var(--accent);}
 #cDiag a{color:var(--accent);font-weight:700;text-decoration:none;white-space:nowrap;}
+/* 도식이 **아닌** 카드의 회독본 링크 (동하 2026-08-24). 안내 문구 없이 조용한 한 줄이다 —
+   도식과 달리 답면이 멀쩡히 있으니 할 말이 없다. 🔴 자리가 #cBackWrap **안**이라는 게 핵심:
+   #cDiag는 앞면 바로 아래라 답을 보기 전에 눈에 들어온다. 여기 두면 「뒷면일 때만 보인다」가
+   클래스 토글이 아니라 구조로 보장된다 — 인출 연습이 깨질 길이 없다. */
+#cHoedok{display:none;margin-top:12px;}
+#cHoedok.on{display:block;}
+#cHoedok a{font-size:12px;font-weight:700;color:var(--accent);text-decoration:none;white-space:nowrap;}
 #cMeta{display:none;margin-top:14px;align-items:center;gap:8px;}
 #cMeta.on{display:flex;}
 .typ-tag{font-size:11px;font-weight:700;color:var(--mute);background:var(--surface2);
@@ -370,6 +388,9 @@ input:focus,select:focus{border-color:var(--accent);}
   font-size:13px;line-height:1.55;color:var(--ink2);}
 .cs-diag b{font-weight:700;font-size:12px;letter-spacing:.4px;margin-right:6px;color:var(--accent);}
 .cs-diag a{color:var(--accent);font-weight:700;text-decoration:none;white-space:nowrap;}
+/* 도식이 아닌 카드의 회독본 링크 — 상세 시트는 이미 답이 보이는 화면이라 앞/뒤 구분이 없다 */
+.cs-hoedok{margin-top:10px;}
+.cs-hoedok a{font-size:12px;font-weight:700;color:var(--accent);text-decoration:none;white-space:nowrap;}
 .cs-sec{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--faint);margin:18px 2px 8px;}
 .cs-facts{display:flex;flex-wrap:wrap;gap:6px;}
 .cs-facts .f{font-size:11.5px;font-weight:700;color:var(--mute);background:var(--surface2);
@@ -545,6 +566,14 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .ss-go[disabled]{background:var(--surface2);color:var(--faint);box-shadow:none;}
 .ss-line{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;font-weight:700;color:var(--mute);margin:2px 2px 12px;}
 .ss-line b{color:var(--ink2);}
+/* 세션 성적 추이 — .ss-line과 같은 작은 글씨 결. 스파크라인·차트는 안 그린다: 여기서 알고 싶은 건
+   「나아지고 있나」 하나뿐이라 회차별 정답률 숫자 + CSS만으로 만든 얇은 막대면 족하다 (동하 2026-08-24) */
+.ss-trend{display:flex;align-items:flex-end;gap:9px;flex-wrap:wrap;margin:2px 2px 4px;}
+.ss-trend span{display:flex;flex-direction:column;align-items:center;gap:3px;
+  font-size:10.5px;font-weight:700;color:var(--mute);}
+.ss-trend i{display:block;width:13px;border-radius:2px;background:var(--accent);opacity:.5;}
+.ss-trend span:last-child{color:var(--accent);}     /* 맨 오른쪽 = 가장 최근 회차 */
+.ss-trend span:last-child i{opacity:1;}
 .u-row{display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:14px;
   padding:11px 14px;margin-bottom:7px;box-shadow:var(--shadow-sm);}
 .u-row.sel{outline:2px solid var(--accent);outline-offset:-2px;}
@@ -653,6 +682,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
               <div id="cBack"></div>
               <div id="cItems"></div>
               <div id="cNote"></div>
+              <div id="cHoedok"></div>
               <div id="cMeta"><span class="typ-tag" id="cTyp"></span><span class="typ-tag" id="cDir">역방향</span><span id="cHint"></span><span id="cTags"></span><button class="typ-tag" id="cTagAdd">＋태그</button><input id="cTagInput" type="text" maxlength="16" placeholder="태그"><span id="annMarks"></span></div>
             </div>
           </div>
@@ -4196,7 +4226,8 @@ function newSessObj(name, how, scope, mode){
   return {id:'s'+Date.now()+Math.floor(Math.random()*1000), name:name||'새 세션',
     how:JSON.parse(JSON.stringify(how)), mode:mode||'auto',
     scope:Object.assign({units:[],mids:[],subj:[],tags:[],typ:[]}, scope||{}),
-    q:[], done:0, day:'', lastScore:null, createdAt:Date.now(), lastAt:0};
+    // scores = 세션 성적 추이(최신이 앞, 최대 30). 예전 세션엔 없으니 읽는 쪽은 (sx.scores||[])로 받는다
+    q:[], done:0, day:'', lastScore:null, scores:[], createdAt:Date.now(), lastAt:0};
 }
 function normalizeSessions(){
   for(const x of sessions){
@@ -4504,7 +4535,15 @@ function playSess(sx){          // 세션 화면의 [이어가기] — 남은 �
 function finishSess(){         // 큐 소진 = 세션 화면으로 복귀 (성적표는 거기서)
   if(curSess){
     const n=sess.r[1]+sess.r[2]+sess.r[3]+sess.r[4];
-    if(n) curSess.lastScore={r:sess.r.slice(), ms:sess.ms, best:sess.best, n, at:Date.now()};
+    if(n){
+      const sc={r:sess.r.slice(), ms:sess.ms, best:sess.best, n, at:Date.now()};
+      curSess.lastScore=sc;               // 기존 화면·병합이 쓰는 필드 — 이름도 뜻도 그대로 둔다
+      /* 추이 이력. 최신이 앞(scores[0] === lastScore). 🔴 30개에서 자른다 — 이 파일은 기기 간
+         동기화 대상(SESS_PATH)이라 세션마다 무한히 쌓이면 저장 용량·PUT 크기에 걸린다.
+         항목 하나가 약 80바이트라 세션당 2.4KB가 상한이다. 30회면 두어 달치라 추이엔 넘친다. */
+      curSess.scores=[sc, ...(curSess.scores||[])];
+      if(curSess.scores.length>30) curSess.scores.length=30;
+    }
     curSess.q=queue.slice(qPos).map(c=>c.id);
     curSess.done=(curSess.done||0)+sessionDone;
     curSess.lastAt=Date.now(); curSess.day=todayKey();
@@ -4582,6 +4621,17 @@ function showDiag(c, back){
     + (uri?` <a href="${uri.replace(/&/g,'&amp;')}">회독본 ↗</a>`:'');
   const a=el.querySelector('a'); if(a)a.onclick=(e)=>e.stopPropagation();   // 탭이 카드 되접기로 먹지 않게
 }
+/* 도식이 아닌 카드의 회독본 링크 (동하 2026-08-24 — 「모든 카드에서 회독본으로 갈 수 있게」).
+   🔴 뒷면 전용이다: 답을 보기 전에 원문으로 가면 인출 연습이 깨진다. 그래서 #cDiag(앞면 아래)가
+   아니라 #cBackWrap 안의 #cHoedok에 그린다 — 공개 전에는 부모가 통째로 숨겨져 있어 새어 나올 길이 없다.
+   도식 카드에서는 비워 둔다: #cDiag가 이미 안내 문구와 함께 같은 링크를 달고 있어 두 번 나온다. */
+function showHoedokLink(c){
+  const el=$('cHoedok');
+  const uri = (c && c.typ!=='도식') ? cardHoedokURI(c) : null;   // null = 회독본 없는 과목(13.총창)
+  el.classList.toggle('on', !!uri);
+  el.innerHTML = uri ? `<a href="${uri.replace(/&/g,'&amp;')}">회독본 ↗</a>` : '';
+  const a=el.querySelector('a'); if(a)a.onclick=(e)=>e.stopPropagation();   // 탭이 카드 되접기로 먹지 않게
+}
 function showCard(){
   /* 🔴 오늘 정리된 카드는 어떤 경로로 큐에 남아 있든 화면에 안 띄운다 — 규칙의 마지막 관문.
      큐 조립 때(playSess·buildQueue)만 거르면 샌다: 세션 순서·설정을 바꾸면 저장 큐가
@@ -4622,7 +4672,8 @@ function reveal(){
       const row=document.createElement('div');
       row.className='it-row'+(itemMarks[i]?' x':'');   // 앞면 갔다 와도 체크가 보이게 (reveal이 매번 다시 그린다)
       row.innerHTML=`${ordered?`<span class="it-ord">${i+1}</span>`:''}<span class="xm">✕</span><span>${esc(it)}</span>`;
-      row.onclick=(ev)=>{ ev.stopPropagation(); if(Date.now()-lastSwipeAt<450)return; itemMarks[i]=!itemMarks[i];
+      // selecting() = PC에서 항목 글자를 끌어 선택한 것 — 그 mouseup의 click으로 ✕가 켜지면 안 된다
+      row.onclick=(ev)=>{ ev.stopPropagation(); if(Date.now()-lastSwipeAt<450||selecting())return; itemMarks[i]=!itemMarks[i];
         row.classList.toggle('x',itemMarks[i]); syncGradeButtons(); };
       box.appendChild(row);
     });
@@ -4632,6 +4683,7 @@ function reveal(){
   $('cTyp').textContent=c.typ;
   $('cDir').style.display = isRev(c)?'inline-block':'none';   // 전방은 기본이라 무표시
   showDiag(c,true);
+  showHoedokLink(c);
   $('cHint').textContent = c.typ==='도식' ? '그림 답 — 회독본과 대조해 스스로 채점'
     : TERM_TYPES.has(c.typ)||((c.back||'').length<=14&&!c.back.includes('·'))
     ? '용어 답 — 표기까지 정확히' : '서술 답 — 요지 재현이면 정답';
@@ -4882,7 +4934,19 @@ $('railScrim').onclick=()=>{ $('rail').classList.remove('open'); $('railScrim').
 
 /* ═══════════════ 카드 탭·스와이프 ═══════════════ */
 let lastSwipeAt=0;
+/* PC에서 카드 문면이 선택 가능해졌다(F3, 2026-08-24). CSS와 **같은 조건**으로 켜고 끈다 —
+   여기가 어긋나면 터치 기기에서 없는 선택을 있다고 치고 탭·스와이프를 막아 버린다. */
+const SEL_OK = !!(window.matchMedia && window.matchMedia('(hover:hover) and (pointer:fine)').matches);
+const SEL_ZONE='#cScope,#cFront,#cBack,#cItems,#cNote';
+function selecting(){   // 지금 글자가 실제로 잡혀 있나 = 방금 동작이 「선택」이었나
+  if(!SEL_OK)return false;
+  const s=window.getSelection&&window.getSelection();
+  return !!(s && !s.isCollapsed && String(s).trim());
+}
 $('card').addEventListener('click',()=>{ if(Date.now()-lastSwipeAt<450)return;
+  /* 문면을 끌어 선택하면 mouseup 뒤에 click이 따라온다 — 그걸 탭으로 먹으면 복사하려다 답면이 접힌다.
+     선택을 지우는 평범한 클릭은 mousedown 시점에 이미 선택이 풀려 여기 안 걸린다. */
+  if(selecting())return;
   revealed?unreveal():reveal(); });   // 뒷면에서 다시 탭하면 앞면 (동하 요청 2026-08-21)
 $('gAgain').onclick=()=>rate(1); $('gHard').onclick=()=>rate(2);
 $('gGood').onclick=()=>rate(3); $('gEasy').onclick=()=>rate(4);
@@ -4939,7 +5003,13 @@ function gEnd(x,y){
     gMove(e.touches[0].clientX, e.touches[0].clientY, e); },{passive:false});
   c.addEventListener('touchend',e=>{ const t=e.changedTouches[0]; gEnd(t.clientX, t.clientY); },{passive:true});
   c.addEventListener('touchcancel',swReset,{passive:true});
-  c.addEventListener('mousedown',e=>{ if(e.button)return; gStart(e.clientX,e.clientY); });
+  c.addEventListener('mousedown',e=>{ if(e.button)return;
+    /* 🔴 마우스에서는 「가로로 끌기」가 문면 선택(F3)과 스와이프 채점의 같은 동작이다. 문면 위에서
+       시작한 드래그는 선택 몫으로 넘긴다 — PC엔 1~4 키 채점이 따로 있어 잃는 게 없고, 카드 여백에서
+       시작하면 스와이프는 그대로 먹는다. 터치 경로(touchstart)는 건드리지 않았다: 아이패드에서는
+       애초에 문면이 선택 불가라 충돌이 없고, 거기선 스와이프가 유일한 채점 손동작이다. */
+    if(SEL_OK && e.target.closest && e.target.closest(SEL_ZONE))return;
+    gStart(e.clientX,e.clientY); });
   window.addEventListener('mousemove',e=>{ if(gX!=null)gMove(e.clientX,e.clientY,null); });
   window.addEventListener('mouseup',e=>{ if(gX!=null)gEnd(e.clientX,e.clientY); });
 })();
@@ -5119,6 +5189,22 @@ function scoreHtml(sc){
       <span><i style="background:var(--good)"></i>알맞음 ${sc.r[3]}</span><span><i style="background:var(--easy)"></i>쉬움 ${sc.r[4]}</span></div>
     ${sc.best>=5?`<div class="sc-streak">🔥 최고 연속 ${sc.best}</div>`:''}</div>`;
 }
+/* 세션 성적 추이 (동하 2026-08-24) — 회차별 정답률(=다시가 아닌 비율)만 최근 10회.
+   scoreHtml 같은 성적표를 여러 개 쌓지 않는다: 추이에서 볼 건 「나아지고 있나」 하나뿐이라
+   숫자 + 얇은 막대 한 줄이면 족하고, 세션 화면이 이미 길다.
+   🔴 scores가 없던 세션(2026-08-24 이전 전부)에서도 깨지면 안 된다 — (sx.scores||[])로 방어하고,
+   2회 미만이면 아예 안 그린다(1회짜리는 바로 위 「마지막 성적」과 같은 말이다). */
+function trendHtml(sx){
+  const all=(sx.scores||[]).filter(s=>s&&s.n&&s.r);
+  if(all.length<2) return '';
+  const recent=all.slice(0,10).reverse();        // 왼쪽이 오래된 회차 = 읽는 방향과 시간 방향을 맞춘다
+  return `<div class="ss-trend">`+recent.map(s=>{
+      const hit=Math.round((s.n-s.r[1])/s.n*100);
+      return `<span title="${s.n}장">`
+        + `<i style="height:${Math.max(2,Math.round(hit*.22))}px"></i>${hit}</span>`;   // 100% = 22px
+    }).join('')+`</div>
+    <div class="why">최근 <b>${recent.length}회</b> 정답률 — 오른쪽이 이번 회차예요</div>`;
+}
 function unitStatsAll(){   // 단위별 집계 한 번에 (DATA 1회 순회)
   const LR=lastRevMap(), m={};
   for(const k in TAGMETA) m[k]={n:0,due:0,nw:0,learned:0,ret:0,last:0};
@@ -5211,7 +5297,7 @@ function renderSession(){
       <div class="why">이 세션의 <b>범위에 아직 남은 카드</b>를 오늘 큐에 얹어요. 오늘 푼 것은 빼고요</div>`:''}
     <div class="ss-line"><span>${esc(sessDesc(sx))}</span></div>
     <div class="why">${esc(howPlain(sx))}</div>`;
-  if(sx.lastScore) h+=`<div class="h-sec" style="margin-top:4px">마지막 성적</div>`+scoreHtml(sx.lastScore);
+  if(sx.lastScore) h+=`<div class="h-sec" style="margin-top:4px">마지막 성적</div>`+scoreHtml(sx.lastScore)+trendHtml(sx);
   h+=`<div class="ss-line"><span>누적 <b>${sx.done||0}</b>회</span>
       <span>${sx.lastAt?'마지막 '+fmtAgo(sx.lastAt):'아직 안 품'}</span></div>`;
   if(nt) h+=`<button class="more-btn" id="ssNew">＋ 다음 진도: ${esc(nt.label)} (${nt.cards.length}장)</button>
@@ -5796,9 +5882,11 @@ $('nsSave').onclick=()=>{
   if(nsTarget){
     const orderChanged = nsTarget.how.order!==nsState.how.order;
     const statusChanged = JSON.stringify(stArr(nsTarget.how.status))!==JSON.stringify(stArr(nsState.how.status));
-    const keepQ=nsTarget.q, keepDone=nsTarget.done, keepScore=nsTarget.lastScore;
+    // nsState는 시트를 열 때 뜬 **깊은 복사본**이다 — 그 사이에 세션이 끝났으면 성적이 되돌아간다.
+    // lastScore를 지키던 이유 그대로 scores(추이 이력)도 지킨다 (2026-08-24)
+    const keepQ=nsTarget.q, keepDone=nsTarget.done, keepScore=nsTarget.lastScore, keepScores=nsTarget.scores;
     const prevU=new Set(nsTarget.scope.units||[]), prevM=new Set(nsTarget.scope.mids||[]);  // 편집 **전** 범위
-    Object.assign(nsTarget, nsState, {q:keepQ, done:keepDone, lastScore:keepScore});
+    Object.assign(nsTarget, nsState, {q:keepQ, done:keepDone, lastScore:keepScore, scores:keepScores});
     if(!isFixed(nsTarget)) nsTarget.day='';            // 범위가 바뀌었으면 다음 진입 때 다시 채운다
     else if((nsTarget.scope.units||[]).length||(nsTarget.scope.mids||[]).length){
       // 범위가 지정된 직접 추가 세션: 빠진 범위 카드는 큐에서 빼고, 새 범위는 채운다
@@ -5884,10 +5972,13 @@ function renderCardSheet(){
     ${(()=>{ /* 도식 카드는 답면이 「(도식 — 회독본 그림과 대조해…)」 한 줄뿐이라, 여기서도
                 회독본으로 갈 길이 있어야 한다. 풀이 화면 뒷면(showDiag)에는 이미 있었는데
                 상세 시트에는 없어서 카드 목록에서 열면 갈 데가 없었다 (동하 2026-08-23). */
-      if(c.typ!=='도식') return '';
-      const u=cardHoedokURI(c);
-      return `<div class="cs-diag"><b>스스로 채점</b>회독본 그림과 대조해 직접 매기세요.`
-        + (u?` <a href="${u.replace(/&/g,'&amp;')}">회독본 ↗</a>`:'') + `</div>`;
+      const u=cardHoedokURI(c);      // null = 회독본 없는 과목(13.총창) — 그때는 링크를 안 만든다
+      if(c.typ==='도식')
+        return `<div class="cs-diag"><b>스스로 채점</b>회독본 그림과 대조해 직접 매기세요.`
+          + (u?` <a href="${u.replace(/&/g,'&amp;')}" onclick="event.stopPropagation()">회독본 ↗</a>`:'') + `</div>`;
+      /* 도식이 아닌 카드도 회독본으로 갈 수 있어야 한다 (동하 2026-08-24). 안내 문구는 없다 —
+         답면이 멀쩡히 있으니 할 말이 없고, 링크 한 줄이면 된다. */
+      return u?`<div class="cs-hoedok"><a href="${u.replace(/&/g,'&amp;')}" onclick="event.stopPropagation()">회독본 ↗</a></div>`:'';
     })()}
     ${c.note?`<div class="cs-note"><b>보충 </b>${esc(c.note)}</div>`:''}
     <div class="cs-sec">상태</div>

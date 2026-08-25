@@ -3278,7 +3278,7 @@ const dirtyFiles=new Set(), dirtyLogs=new Set();
 let PLAN={intake:[], splits:{}};
 let dirty=false, pushing=false, ratedSincePush=0, lastPushAt=Date.now();
 let queue=[], qPos=0, revealed=false, itemMarks=[], curPreset=null, phase='review',
-    sessionDone=0, undoSnap=null, newServed=0, shownAt=0, pausedMs=0, pauseAt=0, pzTimer=null;
+    sessionDone=0, doneCredited=0, undoSnap=null, newServed=0, shownAt=0, pausedMs=0, pauseAt=0, pzTimer=null;
 let sess={r:[0,0,0,0,0], ms:0, streak:0, best:0};   // 이번 세션 성적 (요약 화면용)
 function sessReset(){ sess={r:[0,0,0,0,0], ms:0, streak:0, best:0}; }
 const MS_CAP=120000;                       // 응답 시간 상한 (자리 비움이 통계를 오염시키지 않게 — Anki도 상한을 둔다)
@@ -4620,7 +4620,7 @@ function playSess(sx){          // 세션 화면의 [이어가기] — 남은 �
   queue=unleak(dropSettled(sessCards(sx))); qPos=0;  // 다른 세션에서 오늘 푼 것은 빼고 이어간다
   // 🔴 저장된 큐를 이어 풀 때도 한 번 더 건다 — 큐는 조립 뒤에도 「내용 추가」로 뒤에 붙는다
   phase = stOnly(sx.how.status,'new') ? 'new' : 'review';
-  sessionDone=0; newServed=0; undoSnap=null; undoRun++; updateUndo(); sessReset();
+  sessionDone=0; doneCredited=0; newServed=0; undoSnap=null; undoRun++; updateUndo(); sessReset();
   go('scrSolve');
   if(!queue.length){ finishSess(); } else showCard();
 }
@@ -4637,7 +4637,13 @@ function finishSess(){         // 큐 소진 = 세션 화면으로 복귀 (성�
       if(curSess.scores.length>30) curSess.scores.length=30;
     }
     curSess.q=queue.slice(qPos).map(c=>c.id);
-    curSess.done=(curSess.done||0)+sessionDone;
+    /* 🔴 증가분만 더한다. 예전엔 `+sessionDone`이라 **한 번의 playSess에서 finishSess가 여러 번**
+       불릴 때마다 러닝 총계가 통째로 다시 더해졌다(큐 소진 → 「신규 이어가기」로 더 풀고 또 소진,
+       또는 다음 주제가 없어 extendWithNew가 곧바로 finishSess). 실측 2026-08-26: 실제 채점 약 2,700회인데
+       「일일 복습」 누적이 **15,268회**(약 5.7배). sessionDone은 되돌리기가 되살리므로 0으로 리셋하지
+       않고, 「어디까지 반영했나」를 doneCredited로 따로 들고 간다. */
+    const addDone = sessionDone - doneCredited;
+    if(addDone>0){ curSess.done=(curSess.done||0)+addDone; doneCredited=sessionDone; }
     curSess.lastAt=Date.now(); curSess.day=todayKey();
     if(curSess.temp && !curSess.q.length){        // 목록에서 만든 임시 세션은 다 풀면 정리
       const done=curSess; viewSess=null; deleteSess(done);
@@ -4667,7 +4673,12 @@ function extendWithNew(){ // 신규 = 대주제 한 개씩 — 끝나면 체크�
   //    그 잔량이 화면 큐에서도 저장 큐에서도 사라졌다(직접 추가 세션은 자동 충전이 없어 영영).
   //    누른 의도대로 신규를 앞에 놓되, 남은 것은 뒤에 그대로 붙인다.
   const rest=queue.slice(qPos).filter(c=>!nt.cards.includes(c));
-  queue=[...unleak(nt.cards), ...rest]; qPos=0;
+  /* 🔴 신규 투입분에도 세션의 제시 순서를 적용한다 (동하 2026-08-26 「셔플로 해놔도 신규가 안 섞인다」).
+     nextTopic()은 문서순으로 뽑는데 예전엔 그대로 붙여서, 세션이 셔플이어도 **이 경로만** 문서순이었다.
+     설정이 거짓말을 하고 있던 셈. 문서순 세션(통독)은 그대로 둔다.
+     ⚠ 섞은 **뒤에** unleak을 건다 — 누설 쌍은 최종 순서에서 잡아야 한다. */
+  const fresh = (curPreset&&curPreset.order!=='doc') ? shuffle(nt.cards.slice()) : nt.cards;
+  queue=[...unleak(fresh), ...rest]; qPos=0;
   undoSnap=null; undoRun++; updateUndo();   // 큐가 새로 짜였다는 표시 — 스택은 그대로 산다
   syncSessQueue();
   /* 🔴 풀이 화면으로 데려간다. 큐가 빈 세션에서 이 버튼을 누르면 playSess가 finishSess로
@@ -4936,6 +4947,10 @@ function doUndo(){
     dropLogEntry(sn.entry);        // 2) 로그에서 그 채점만 제거
     if(sameRun){                   // 같은 런이면 성적 카운터까지 원상복구
       phase=sn.phase; sessionDone=sn.sessionDone; newServed=sn.newServed;
+      /* 반영 뒤(finishSess) 같은 런에서 되돌린 경우 — 반영분이 실제보다 앞서므로 그만큼 누적에서 뺀다 */
+      if(doneCredited>sessionDone){ const back=doneCredited-sessionDone;
+        if(curSess) curSess.done=Math.max(0,(curSess.done||0)-back);
+        doneCredited=sessionDone; saveSessionsSoon(); }
       if(sn.sess) sess=sn.sess;
     }else{                         // 이전 런의 채점 — 지금 런의 성적표는 남의 것이라 손대지 않는다
       const sx=sn.sid?sessions.find(x=>x.id===sn.sid):null;

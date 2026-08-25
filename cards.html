@@ -3605,7 +3605,13 @@ function mergeSessions(remote, local, log){
       const q=[...new Set([...(newer.q||[]), ...(older.q||[])])].filter(id=>!solved.has(id));
       const merged=JSON.parse(JSON.stringify(newer));
       merged.q=q;
-      merged.done=Math.max(newer.done||0, older.done||0);
+      /* 🔴 일회성 정정(doneFix)이 한쪽에만 있으면 max를 쓰지 않는다 — max면 **정정 전 큰 값이 이겨**
+         정정이 되돌아간다. 마커 있는 쪽을 따르고 마커를 물려준다. 둘 다 있으면 평소대로 max. */
+      const nf=newer.doneFix, of=older.doneFix;
+      merged.done = (nf&&!of) ? (newer.done||0)
+                  : (of&&!nf) ? (older.done||0)
+                  : Math.max(newer.done||0, older.done||0);
+      if(nf||of) merged.doneFix = nf||of;
       merged.scope={ ...newer.scope,
         units:[...new Set([...((newer.scope&&newer.scope.units)||[]), ...((older.scope&&older.scope.units)||[])])],
         mids:[...new Set([...((newer.scope&&newer.scope.mids)||[]), ...((older.scope&&older.scope.mids)||[])])] };
@@ -4305,6 +4311,22 @@ function normalizeSessions(){
     if(!x.mode) x.mode=(x.scope.units&&x.scope.units.length)?'manual':'auto';
     x.how.status=stArr(x.how.status);
   }
+  fixDoneOnce();
+}
+/* 🔴 일회성 정정 (2026-08-26 동하 승인) — 「누적」 부풀림의 과거분.
+   원인·수정은 `8a91339`. 그 커밋은 **앞으로**만 바로잡고 이미 쌓인 값은 안 건드렸다.
+   로그에 세션 id가 없어 세션별 되계산이 불가하므로, 로그로 확실한 것에서 역산했다 —
+   전체 채점 2,676회(W34+W35 전량) − 나머지 세 세션 330회(153·81·96) = **2,346**.
+   ⚠ 이 값은 **상한**이다: 「바로 풀기」 임시 세션은 다 풀면 지워지므로 그 몫이 여기 섞여 있다.
+   🔴 `doneFix` 마커가 없으면 한 번만 적용한다. 마커는 **병합 규칙과 한 몸**이다 —
+   `mergeSessions`가 done을 `Math.max`로 합치기 때문에, 마커 없이 값만 낮추면
+   **정정 안 된 기기가 옛 15,268을 도로 올려** 정정이 조용히 되돌아간다. */
+const DONE_FIX={ id:'s1787229309770394', done:2346, at:'2026-08-26' };
+function fixDoneOnce(){
+  const sx=sessions.find(x=>x.id===DONE_FIX.id);
+  if(!sx || sx.doneFix) return;
+  sx.done=DONE_FIX.done; sx.doneFix=DONE_FIX.at;
+  saveSessionsSoon();
 }
 function loadSessions(){
   const v=lsGet(K_SESS);

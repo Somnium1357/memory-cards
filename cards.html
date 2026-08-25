@@ -3528,7 +3528,38 @@ function logWeeksRange(){            // 로그가 있을 수 있는 주 전체 (
   const tw=thisWeek(); if(!out.includes(tw)) out.push(tw);
   return out;
 }
+/* 🔴 로그 정규화 — 「무체크 다시」의 items를 전칸 틀림으로 (동하 승인 2026-08-26, **소급 확정**)
+   열거 카드에서 탭 없이 「다시」 = 통째로 백지 = 전칸 틀림이 동하 규약의 참값이다.
+   `rate()`는 2026-08-23부터 그렇게 쓰지만(`xxx`), 그 전 기록은 `ooo`(전부 맞음)로 남아
+   **항목 정답률이 100%로 잡혔다.** 메타 세션이 이걸로 두 번 헛짚어 소급이 확정됐다.
+   ▸ 방향은 items 삭제(=통계에서 제외)가 아니라 **`xxx`(=0%로 셈)**다. 지금 앱이 쓰는 방식과
+     같아야 08-23 전후 통계가 같은 뜻을 갖는다. 「탭이 귀찮아 안 눌렀을 뿐」인 경우는
+     등급이 이미 「다시」라는 것으로 충분히 잡힌다 (동하 판단 2026-08-26).
+   🔴 **파일을 고쳐서는 안 된다 — 앱 안에서 해야 한다.** `mergeLogInto`는 `카드|시각` 중복에서
+   **로컬을 이기게** 두고 `ghPut`도 본문을 로컬에서 만든다. 원격 파일만 패치하면 기기가 다음
+   push에서 옛 `ooo`로 통째로 덮는다(타이밍 문제가 아니다). 변환이 **결정적**이라 두 기기가
+   각자 돌려도 같은 결과가 나오고, 그래서 병합이 어긋나지 않는다.
+   ▸ 마커도 컷오프도 두지 않는다 — `rate()`가 이미 그 경우를 `xxx`로 쓰므로 **새 데이터엔 no-op**이고,
+     멱등이라 매번 돌려도 안전하다. 원격에서 옛 항목이 뒤늦게 딸려 와도 여기서 다시 잡힌다.
+   ⚠ 등급 2~4는 건드리지 않는다 — 무탭 hard·good은 **진짜 전부 맞음**이다. */
+function normalizeLogItems(){
+  let n=0;
+  for(const wk in logWeeks){
+    let hit=0;
+    for(const e of logWeeks[wk]){
+      if(e[2]!==1) continue;                       // 「다시」만
+      const x=e[3];
+      if(!x || typeof x.items!=='string' || !x.items) continue;
+      if(!/^o+$/.test(x.items)) continue;          // 하나라도 x가 있으면 부분 결손 — 그대로 둔다
+      x.items='x'.repeat(x.items.length); hit++;
+    }
+    if(hit){ markDirty('log', wk); n+=hit; }
+  }
+  if(n) console.info('[log] 무체크 다시 items 정정 '+n+'건');
+  return n;
+}
 function rebuildLog(){               // 주별 묶음 → 화면·통계가 쓰는 단일 배열
+  normalizeLogItems();               // 🔴 읽는 쪽이 보기 전에 불변식을 세운다 (위 주석)
   const all=[];
   for(const wk in logWeeks) all.push(...logWeeks[wk]);
   all.sort((x,y)=>logTs(x)-logTs(y));
@@ -4893,7 +4924,8 @@ function rate(num){
      실측 2026-08-23 — items가 붙은 279건 중 **등급1 + 무탭이 71건**. 그 한 경우만 `xxx`로 적는다.
      ⚠ 부분 결손(탭 1개 이상 + again)과 hard·good의 무탭(진짜 전부 맞음)은 **건드리지 않는다.**
      ⚠ 탭에서 등급을 유도하지 않는다 — 백지일 때 탭 0개를 good으로 오판하는 함정이 있다.
-     ⚠ 과거 로그는 소급하지 않는다. 이 배포 이전의 `ooo`+again은 규약상 백지로 읽는다. */
+     ⚠ 과거 로그는 **소급한다** (동하 2026-08-26로 결정이 바뀌었다 — 「읽으면 된다」가 실제로
+       안 통했다. 메타 세션이 두 번 헛짚었다). 소급은 여기가 아니라 `normalizeLogItems()`가 한다. */
   if(hasItems) extra.items = (num===1 && !anyX)
     ? 'x'.repeat(itemMarks.length)
     : itemMarks.map(x=>x?'x':'o').join('');

@@ -5107,8 +5107,12 @@ function reveal(){
   $('revealHint').style.display='none';
   const hasItems=Array.isArray(c.items)&&c.items.length>=2;
   const isDiag=c.typ==='도식';   // 답면이 "(도식 — 회독본…)" 한 줄뿐 — cDiag가 같은 말을 링크까지 붙여 한다
-  $('cBack').textContent = (hasItems||isDiag)?'':c.back;
-  $('cBack').style.display = (hasItems||isDiag)?'none':'block';
+  /* 🔴 표 카드는 **표 자체가 답면**이다(#cTable이 위에서 전량 공개된다). back 문자열을 여기 또 찍으면
+     같은 답을 두 번 말하거나 "(표)" 같은 자리표시가 그대로 노출된다. 그래서 숨긴다 —
+     생성기 쪽에 back을 안 쓰는 것으로 약속돼 있고, 혹 채워 오더라도 화면은 안 흔들린다. */
+  const isTbl=!!c.table;
+  $('cBack').textContent = (hasItems||isDiag||isTbl)?'':c.back;
+  $('cBack').style.display = (hasItems||isDiag||isTbl)?'none':'block';
   const box=$('cItems'); box.innerHTML=''; box.classList.toggle('on',hasItems);
   if(hasItems){
     const ordered = c.typ==='단계'||c.typ==='연쇄';
@@ -5129,7 +5133,8 @@ function reveal(){
   renderTable(c,true);
   showDiag(c,true);
   showHoedokLink(c);
-  $('cHint').textContent = c.typ==='도식' ? '그림 답 — 회독본과 대조해 스스로 채점'
+  $('cHint').textContent = isTbl ? '표 답 — 위 표를 채워 보고 대조해요'
+    : c.typ==='도식' ? '그림 답 — 회독본과 대조해 스스로 채점'
     : TERM_TYPES.has(c.typ)||((c.back||'').length<=14&&!c.back.includes('·'))
     ? '용어 답 — 표기까지 정확히' : '서술 답 — 요지 재현이면 정답';
   $('cBackWrap').classList.add('on');

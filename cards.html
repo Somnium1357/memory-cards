@@ -4959,7 +4959,12 @@ function tblLayout(t, avail){
   const maxLen=t.cells.reduce((m,c)=>Math.max(m, (Array.isArray(c.v)?c.v.reduce((a,b)=>Math.max(a,b.length),0):String(c.v).length)),0);
   /* 🔴 한 글자짜리 값(자음·모음)에 46을 깔면 자음 체계가 14px 차이로 접혔다. 바닥을 38로 내린다 —
      15열이어도 (878-202)/15 = 45px씩이라 읽는 데 지장이 없다. */
-  const minW=Math.max(38, Math.min(210, 34+maxLen*7));
+  /* 🔴 상한이 210이면 **긴 글이 든 칸 때문에 표가 통째로 접힌다.** 08-29 실측: 영어 성취기준이
+     동하 판정으로 셀 글자가 길어지자(「세부·중심·순서 (일상생활 주제 담화·글)」) 4열이 902px를 요구해
+     878에 못 들어가 10행×2열로 접혔다 — 회독본은 4열이고 그 모양이 대조에 낫다.
+     minW는 **한 줄에 다 담는 폭이 아니라 읽을 수 있는 최소 폭**이다. 넘치면 줄바꿈으로 흡수한다.
+     세로는 얼마든지 길어져도 되므로(가로만 스와이프가 가져간다) 상한을 150으로 내린다. */
+  const minW=Math.max(38, Math.min(150, 34+maxLen*7));
   const headW=Math.max(70, Math.min(150, 46+t.rows.reduce((m,a)=>Math.max(m,...(t.axes[a]||['']).map(v=>v.length)),0)*11));
   while(cols.length>1){
     const n=tblProduct(t, cols).length;

@@ -172,6 +172,31 @@ input:focus,select:focus{border-color:var(--accent);}
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 #cFront{font-size:24px;font-weight:700;line-height:1.5;font-family:var(--head-font);letter-spacing:-.2px;}
 #cBackWrap{display:none;margin-top:18px;border-top:1px solid var(--line);padding-top:16px;}
+/* 표 카드 (2026-08-29) — 표 하나를 통째로 싣는 카드. 값 칸만 가렸다가 탭하면 드러난다.
+   🔴 가로 스크롤을 절대 만들지 않는다 — #card가 touch-action:pan-y라 가로 드래그는 채점 스와이프가
+   가져간다(gMove). 넘칠 것 같으면 renderTable이 축을 접지, 스크롤 컨테이너를 두지 않는다. */
+#cTable{display:none;margin-top:16px;}
+#cTable.on{display:block;}
+#cTable .tt{font-size:12px;font-weight:800;color:var(--mute);margin-bottom:8px;letter-spacing:.2px;}
+#cTable table{border-collapse:collapse;width:100%;table-layout:fixed;}
+#cTable th,#cTable td{border:1px solid var(--line);padding:5px 4px;text-align:center;
+  font-size:14px;line-height:1.35;word-break:break-word;vertical-align:middle;}
+#cTable th{background:var(--sunken);color:var(--mute);font-size:11.5px;font-weight:800;}
+#cTable th.rh{text-align:left;padding-left:8px;color:var(--ink2);font-size:12.5px;}
+#cTable td{color:var(--ink2);font-weight:600;}
+#cTable td.tm{cursor:pointer;color:transparent;background:var(--sunken);border-radius:6px;
+  transition:color .16s ease,background .16s ease;}
+#cTable td.tm::after{content:"?";color:var(--faint);font-weight:800;font-size:12px;}
+#cTable td.tm.on{color:var(--ink2);background:transparent;}
+#cTable td.tm.on::after{content:"";}
+#cTable td .vl{display:block;}
+#cTable td .vl+.vl{margin-top:2px;padding-top:2px;border-top:1px dotted var(--line);}
+/* 넓은 화면에서 표 카드만 660 상한을 푼다. 🔴 폭은 JS가 인라인으로 박는다 —
+   `max-width:none`만 주면 카드가 마당 전폭(1144)까지 벌어져 **사이드바 밑으로 들어간다**(08-29 실측).
+   그리고 가운데 정렬이면 넓힌 만큼 오른쪽이 사이드바로 밀리므로, 표 카드일 때만 **왼쪽 정렬**로 바꾼다.
+   그래야 자음 체계(15열)가 접히지 않고 들어간다 — 가운데 정렬이면 760px밖에 못 쓴다. */
+#card.tblwide{max-width:none;}
+#cardZone.tblleft{justify-content:flex-start;}
 #cBackWrap.on{display:block;}
 #cBack{font-size:19px;font-weight:600;line-height:1.55;color:var(--ink2);}
 #cItems{display:none;flex-direction:column;gap:7px;margin-top:4px;}
@@ -704,6 +729,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
           <div id="cScope"></div>
           <div id="cardScroll">
             <div id="cFront"></div>
+            <div id="cTable"></div>
             <div id="cDiag"></div>
             <div id="cBackWrap">
               <div id="cBack"></div>
@@ -4902,6 +4928,129 @@ function counts(){ // 상단 바 = 현재 세션 범위 기준 (스펙)
     ? `${label} <b>${remain}</b> · 오늘 ${todayRated()} · 내일 ~<b>${tmr}</b>`
     : `내일 ~<b>${tmr}</b>`;
 }
+/* ═══ 표 카드 (동하 2026-08-29 · QC `table` 규약) ═══════════════════════════════
+   카드 하나가 표 하나를 싣는다. 앞면 = 값 칸만 가림(탭하면 하나씩 드러남) · 뒷면 = 전량 공개.
+   채점은 평범한 4단 — 셀마다 o/x를 누르지 않는다(동하 명시. 그래서 items 로그도 없다).
+   규약: k는 모든 축을 명시(병합·생략 비의존) · k값 "*"=그 축 전체를 덮는 병합 · v 배열=여러 줄 ·
+        v ""=진짜 빈칸(🔴 가리지 않는다) · 가리는 것은 v뿐(축 이름·머리·빈칸은 언제나 보인다). */
+function tblProduct(t, names){            // 축 이름 목록 → 값 조합 (선언 순서 유지)
+  let out=[{}];
+  for(const n of names){ const nx=[];
+    for(const base of out) for(const v of (t.axes[n]||[])) nx.push({...base, [n]:v});
+    out=nx; }
+  return out;
+}
+function tblFind(t, key){                 // 좌표 → 셀 ("*"는 아무 값이나 받는다. 덜 넓은 쪽이 이긴다)
+  let best=null, bestStars=99;
+  for(const c of t.cells){
+    let ok=true, stars=0;
+    for(const a in key){ const kv=c.k[a];
+      if(kv==='*'){ stars++; continue; }
+      if(kv!==key[a]){ ok=false; break; } }
+    if(ok && stars<bestStars){ best=c; bestStars=stars; }
+  }
+  return best;
+}
+function tblLayout(t, avail){
+  /* 🔴 열이 화면을 넘으면 **가장 안쪽 열 축을 행으로 내린다.** 가로 스크롤은 만들지 않는다 —
+     #card가 touch-action:pan-y라 가로 드래그를 채점 스와이프가 가져가기 때문이다.
+     아이패드 실측(08-28): 가로 934px · 세로 544px 가용. 자음 체계를 편 폭 15열×44+90 = 750px. */
+  let rows=t.rows.slice(), cols=t.cols.slice();
+  const maxLen=t.cells.reduce((m,c)=>Math.max(m, (Array.isArray(c.v)?c.v.reduce((a,b)=>Math.max(a,b.length),0):String(c.v).length)),0);
+  /* 🔴 한 글자짜리 값(자음·모음)에 46을 깔면 자음 체계가 14px 차이로 접혔다. 바닥을 38로 내린다 —
+     15열이어도 (878-202)/15 = 45px씩이라 읽는 데 지장이 없다. */
+  const minW=Math.max(38, Math.min(210, 34+maxLen*7));
+  const headW=Math.max(70, Math.min(150, 46+t.rows.reduce((m,a)=>Math.max(m,...(t.axes[a]||['']).map(v=>v.length)),0)*11));
+  while(cols.length>1){
+    const n=tblProduct(t, cols).length;
+    /* 🔴 예전엔 `headW + rows.length*headW`로 **행 머리 폭을 한 번 더** 셌다.
+       그 15px 남짓 때문에 자음 체계와 영어 성취기준이 가로모드에서도 접혔다(동하가 싫다고 한 그 모양). */
+    if(rows.length*headW + n*minW <= avail) break;
+    rows.push(cols.pop());                 // 안쪽 열 축 → 행으로
+  }
+  return {rows, cols, minW, headW};
+}
+function renderTable(c, back){
+  const el=$('cTable'), t=c && c.table;
+  el.classList.toggle('on', !!t);
+  if(!t){ el.innerHTML=''; $('card').classList.remove('tblwide');
+    $('cardZone').classList.remove('tblleft'); $('card').style.maxWidth=''; return; }
+  /* 쓸 수 있는 폭 = 카드 마당 안쪽에서 사이드바 왼쪽까지. 사이드바가 없으면 화면 폭.
+     🔴 숨은 화면에서는 rect가 0으로 나온다 — 그때는 660으로 가정한다(인수인계 §4-6). */
+  const rail=$('rail'), rr=rail?rail.getBoundingClientRect():null;
+  const railL=(rr && rr.width>0 && getComputedStyle(rail).display!=='none') ? rr.left : window.innerWidth;
+  const zone=$('cardZone').getBoundingClientRect();
+  const zL=zone.width>0?zone.left:0;
+  // 왼쪽 정렬을 전제로 잰다: 마당 왼쪽 패딩(18)에서 사이드바 왼쪽까지, 카드 좌우 패딩(56)을 뺀다
+  let avail = Math.floor(Math.min(railL, window.innerWidth) - (zL+18) - 18 - 56);
+  if(!(avail>200)) avail=604;
+  const L=tblLayout(t, avail);
+  const colTuples=tblProduct(t, L.cols);
+  const rowAll=tblProduct(t, L.rows);
+  const rowTuples=rowAll.filter(rt=>t.cells.some(cell=>{
+    for(const a in rt){ const kv=cell.k[a]; if(kv!=='*' && kv!==rt[a]) return false; }
+    return true; }));
+  // 카드 폭 — 표가 660을 넘어야 할 때만 상한을 푼다
+  const need=L.headW*L.rows.length + colTuples.length*L.minW;
+  const wide = need>604 && avail>=need;
+  $('card').classList.toggle('tblwide', wide);
+  $('cardZone').classList.toggle('tblleft', wide);
+  $('card').style.maxWidth = wide ? (need+56)+'px' : '';   // 🔴 인라인으로 못 박는다 (위 CSS 주석)
+  const wid=Math.min(Math.max(need, 320), avail);
+
+  let h=`<div class="tt">${esc(t.title||'')} — ${esc(L.rows.join(' · '))} × ${esc(L.cols.join(' · '))}</div>`;
+  h+=`<table style="max-width:${wid}px">`;
+  // 열 머리 (바깥 → 안쪽). 바깥 축은 안쪽 개수만큼 colspan
+  for(let ci=0; ci<L.cols.length; ci++){
+    const inner=L.cols.slice(ci+1).reduce((a,n)=>a*(t.axes[n]||[]).length, 1);
+    h+='<tr>'+`<th colspan="${L.rows.length}">${ci===0?esc(L.rows.join(' \\ ')):''}</th>`;
+    for(let x=0; x<colTuples.length; x+=inner)
+      h+=`<th colspan="${inner}">${esc(colTuples[x][L.cols[ci]])}</th>`;
+    h+='</tr>';
+  }
+  // 본문
+  const spanLeft=L.rows.map(()=>0);
+  rowTuples.forEach((rt,ri)=>{
+    h+='<tr>';
+    L.rows.forEach((ra,rj)=>{
+      if(spanLeft[rj]>0){ spanLeft[rj]--; return; }
+      let n=1;
+      for(let k=ri+1;k<rowTuples.length;k++){
+        let same=true;
+        for(let q=0;q<=rj;q++) if(rowTuples[k][L.rows[q]]!==rt[L.rows[q]]) { same=false; break; }
+        if(!same) break; n++;
+      }
+      spanLeft[rj]=n-1;
+      h+=`<th class="rh" rowspan="${n}">${esc(rt[ra])}</th>`;
+    });
+    let x=0;
+    while(x<colTuples.length){
+      const key={...rt, ...colTuples[x]};
+      const cell=tblFind(t, key);
+      let span=1;
+      if(cell) while(x+span<colTuples.length && tblFind(t,{...rt, ...colTuples[x+span]})===cell) span++;
+      const v=cell?cell.v:'';
+      const empty = v==='' || v==null || (Array.isArray(v)&&!v.length);
+      const body = Array.isArray(v) ? v.map(x2=>`<span class="vl">${esc(x2)}</span>`).join('') : esc(v);
+      h+=`<td colspan="${span}"${empty?'':' class="tm'+(back?' on':'')+'"'}>${empty?'':body}</td>`;
+      x+=span;
+    }
+    h+='</tr>';
+  });
+  h+='</table>';
+  if(!back) h+=`<div class="why" style="margin-top:8px">칸을 탭하면 하나씩 드러나요 · 카드를 탭하면 전부 공개</div>`;
+  el.innerHTML=h;
+  // 🔴 칸 탭이 카드 전체 공개로 번지지 않게 (회독본 링크와 같은 처리)
+  el.querySelectorAll('td.tm').forEach(td=>{ td.onclick=(ev)=>{
+    ev.stopPropagation();
+    if(Date.now()-lastSwipeAt<450 || selecting()) return;
+    td.classList.toggle('on'); }; });
+}
+/* 화면 회전·창 크기 변화에 다시 잰다 — 접힘 여부가 폭으로 정해지기 때문이다.
+   공개 상태는 유지한다(뒷면이면 back=true로 다시 그린다). */
+let tblRT=null;
+window.addEventListener('resize',()=>{ if(tblRT)return; tblRT=setTimeout(()=>{ tblRT=null;
+  const c=cur(); if(c&&c.table&&$('scrSolve').classList.contains('on')) renderTable(c, revealed); },180); });
 /* 도식 카드 안내 — 앞면에서 「답면이 없다」를, 뒷면에서 「무엇과 대조하나」를 말한다.
    답면(back)이 "(도식 — 회독본 그림과 대조해 스스로 채점)" 한 줄뿐이라, 이 줄이 없으면
    넘겨 보고 나서야 그 사실을 안다. 회독본 링크는 뒷면에만 둔다 — 앞면에 두면 그리기 전에 본다. */
@@ -4945,6 +5094,7 @@ function showCard(){
   $('cScope').textContent=m?m[1]:''; $('cFront').textContent=m?m[2]:c.front;
   $('cBackWrap').classList.remove('on');
   $('gradeBar').classList.remove('on');
+  renderTable(c,false);
   showDiag(c,false);
   phase = isNew(c) ? 'new' : 'review';   // 신규 묶음을 다 풀고 잔량으로 넘어가면 라벨도 따라간다
   $('phaseLine').textContent = whyNow(c);   // 이 카드가 왜 지금 나왔는지 (동하 2026-08-21)
@@ -4976,6 +5126,7 @@ function reveal(){
   if(c.note)n.innerHTML='<b>보충</b>'+esc(c.note);
   $('cTyp').textContent=c.typ;
   $('cDir').style.display = isRev(c)?'inline-block':'none';   // 전방은 기본이라 무표시
+  renderTable(c,true);
   showDiag(c,true);
   showHoedokLink(c);
   $('cHint').textContent = c.typ==='도식' ? '그림 답 — 회독본과 대조해 스스로 채점'

@@ -175,26 +175,35 @@ input:focus,select:focus{border-color:var(--accent);}
 /* 표 카드 (2026-08-29) — 표 하나를 통째로 싣는 카드. 값 칸만 가렸다가 탭하면 드러난다.
    🔴 가로 스크롤을 절대 만들지 않는다 — #card가 touch-action:pan-y라 가로 드래그는 채점 스와이프가
    가져간다(gMove). 넘칠 것 같으면 renderTable이 축을 접지, 스크롤 컨테이너를 두지 않는다. */
-#cTable{display:none;margin-top:16px;}
+/* 🔴 글꼴은 카드 얼굴과 같이 간다. `--head-font`는 #cFront에만 걸려 있었고 #cTable은 형제라
+   본문 고딕을 상속했다 — 종이 테마에서 앞면만 명조로 나와 표만 딴 글꼴로 보였다(동하 08-29 실기). */
+#cTable{display:none;margin-top:16px;font-family:var(--head-font);}
 #cTable.on{display:block;}
 #cTable .tt{font-size:12px;font-weight:800;color:var(--mute);margin-bottom:8px;letter-spacing:.2px;}
 #cTable table{border-collapse:collapse;width:100%;table-layout:fixed;}
-#cTable th,#cTable td{border:1px solid var(--line);padding:5px 4px;text-align:center;
+#cTable th,#cTable td{border:1px solid var(--line);padding:8px 5px;text-align:center;
   font-size:14px;line-height:1.35;word-break:break-word;vertical-align:middle;}
 #cTable th{background:var(--sunken);color:var(--mute);font-size:11.5px;font-weight:800;}
 #cTable th.rh{text-align:left;padding-left:8px;color:var(--ink2);font-size:12.5px;}
 #cTable td{color:var(--ink2);font-weight:600;}
-#cTable td.tm{cursor:pointer;color:transparent;background:var(--sunken);border-radius:6px;
-  transition:color .16s ease,background .16s ease;}
-#cTable td.tm::after{content:"?";color:var(--faint);font-weight:800;font-size:12px;}
-#cTable td.tm.on{color:var(--ink2);background:transparent;}
-#cTable td.tm.on::after{content:"";}
+/* 가리개 — 🔴 칸이 아니라 **글자만** 덮는다. 칸을 통째로 칠하면 「애매하게 꽉 찬」 모양이 되고
+   (동하 08-29 실기), 답이 한 글자인지 긴 구절인지도 안 보인다. `?` 글리프도 뺐다 — 회색 띠 하나로
+   가려졌다는 건 이미 보인다. 🔴 터치 대상은 여전히 **칸 전체**(td.onclick)라 띠가 작아도 누르기 쉽다.
+   그래서 띠는 글자보다 좌우 6px·위아래 2px만 크다 — 터치 크기와 무관한 순수 표시다. */
+#cTable td.tm{cursor:pointer;}
+#cTable td.tm .mk{display:inline-block;max-width:100%;padding:2px 6px;border-radius:5px;
+  background:var(--sunken);color:transparent;word-break:break-word;
+  transition:background .16s ease,color .16s ease;}
+#cTable td.tm.on .mk{background:transparent;color:var(--ink2);}
 #cTable td .vl{display:block;}
 #cTable td .vl+.vl{margin-top:2px;padding-top:2px;border-top:1px dotted var(--line);}
 /* 넓은 화면에서 표 카드만 660 상한을 푼다. 🔴 폭은 JS가 인라인으로 박는다 —
    `max-width:none`만 주면 카드가 마당 전폭(1144)까지 벌어져 **사이드바 밑으로 들어간다**(08-29 실측).
-   그리고 가운데 정렬이면 넓힌 만큼 오른쪽이 사이드바로 밀리므로, 표 카드일 때만 **왼쪽 정렬**로 바꾼다.
-   그래야 자음 체계(15열)가 접히지 않고 들어간다 — 가운데 정렬이면 760px밖에 못 쓴다. */
+   그리고 마당 가운데 정렬이면 넓힌 만큼 오른쪽이 사이드바로 밀리므로, 표 카드일 때만 **왼쪽 정렬**로 바꾼다.
+   그래야 자음 체계(15열)가 접히지 않고 들어간다 — 마당 가운데 정렬이면 760px밖에 못 쓴다.
+   🔴 다만 **왼끝에 붙이지는 않는다**(동하 08-29 실기 「왼쪽 정렬 좀 이상해」). flex-start로 두되
+   renderTable이 `margin-left`를 인라인으로 박아 **마당 왼쪽 ~ 사이드바 왼쪽 띠 안에서 가운데**로 놓는다.
+   띠보다 표가 넓으면 여백이 0이 되어 저절로 왼끝 정렬로 돌아간다(넓은 표가 우선). */
 #card.tblwide{max-width:none;}
 #cardZone.tblleft{justify-content:flex-start;}
 #cBackWrap.on{display:block;}
@@ -4940,6 +4949,29 @@ function tblProduct(t, names){            // 축 이름 목록 → 값 조합 (�
     out=nx; }
   return out;
 }
+/* 행 축 조합 — 🔴 평범한 곱집합(tblProduct)이 아니다. 어떤 축이 그 자리에서 **아무것도 가르지 않으면**
+   (그 아래 셀의 그 축이 전부 "*") 축을 접어 한 줄로 낸다. 안 접으면 세기가 행에 붙을 때
+   비음·유음이 「예사/된/거센」 세 줄로 늘어나 같은 글자를 세 번 보여 준다 — 교재에 없는 모양이다.
+   접힌 자리는 값이 "*"로 남고, 행 머리는 빈 칸으로 그린다(해당 없음).
+   ⚠ 이것만으로는 부족하다 — 마찰음의 ㅎ처럼 **형제는 가르는데 저만 "*"인 셀**은 여전히 여러 줄에
+   걸린다. 그건 renderTable의 rowspan 병합이 받는다. 두 장치가 한 몸이다.
+   ⚠ 지금 6표는 행 축에 "*"가 없어 이 함수는 tblProduct와 같은 답을 낸다(무변경). 자음 체계의
+   세기 축이 행으로 내려오면 그때부터 갈린다. */
+function tblRowTuples(t, rows){
+  const out=[];
+  const hits=(key)=>t.cells.filter(c=>{
+    for(const q in key){ const kv=c.k[q]; if(kv!=='*' && kv!==key[q]) return false; }
+    return true; });
+  (function rec(i, key){
+    if(i>=rows.length){ out.push({...key}); return; }
+    const a=rows[i], hit=hits(key);
+    if(!hit.length) return;
+    if(hit.every(c=>c.k[a]==='*')){ rec(i+1, {...key, [a]:'*'}); return; }
+    for(const v of (t.axes[a]||[]))
+      if(hit.some(c=>{ const kv=c.k[a]; return kv==='*'||kv===v; })) rec(i+1, {...key, [a]:v});
+  })(0, {});
+  return out;
+}
 function tblFind(t, key){                 // 좌표 → 셀 ("*"는 아무 값이나 받는다. 덜 넓은 쪽이 이긴다)
   let best=null, bestStars=99;
   for(const c of t.cells){
@@ -4979,7 +5011,8 @@ function renderTable(c, back){
   const el=$('cTable'), t=c && c.table;
   el.classList.toggle('on', !!t);
   if(!t){ el.innerHTML=''; $('card').classList.remove('tblwide');
-    $('cardZone').classList.remove('tblleft'); $('card').style.maxWidth=''; return; }
+    $('cardZone').classList.remove('tblleft');
+    $('card').style.maxWidth=''; $('card').style.marginLeft=''; return; }
   /* 쓸 수 있는 폭 = 카드 마당 안쪽에서 사이드바 왼쪽까지. 사이드바가 없으면 화면 폭.
      🔴 숨은 화면에서는 rect가 0으로 나온다 — 그때는 660으로 가정한다(인수인계 §4-6). */
   const rail=$('rail'), rr=rail?rail.getBoundingClientRect():null;
@@ -4991,16 +5024,16 @@ function renderTable(c, back){
   if(!(avail>200)) avail=604;
   const L=tblLayout(t, avail);
   const colTuples=tblProduct(t, L.cols);
-  const rowAll=tblProduct(t, L.rows);
-  const rowTuples=rowAll.filter(rt=>t.cells.some(cell=>{
-    for(const a in rt){ const kv=cell.k[a]; if(kv!=='*' && kv!==rt[a]) return false; }
-    return true; }));
+  const rowTuples=tblRowTuples(t, L.rows);   // 🔴 곱집합이 아니다 — 안 가르는 축은 접힌다 (위 주석)
   // 카드 폭 — 표가 660을 넘어야 할 때만 상한을 푼다
   const need=L.headW*L.rows.length + colTuples.length*L.minW;
   const wide = need>604 && avail>=need;
   $('card').classList.toggle('tblwide', wide);
   $('cardZone').classList.toggle('tblleft', wide);
   $('card').style.maxWidth = wide ? (need+56)+'px' : '';   // 🔴 인라인으로 못 박는다 (위 CSS 주석)
+  /* 왼끝에 붙이지 않는다 — 쓸 수 있는 띠(avail) 안에서 남는 만큼 절반을 왼쪽 여백으로 준다.
+     표가 띠를 꽉 채우면 0이 되어 저절로 왼끝으로 돌아간다(동하 08-29 실기). */
+  $('card').style.marginLeft = wide ? Math.max(0, Math.round((avail-need)/2))+'px' : '';
   const wid=Math.min(Math.max(need, 320), avail);
 
   let h=`<div class="tt">${esc(t.title||'')} — ${esc(L.rows.join(' · '))} × ${esc(L.cols.join(' · '))}</div>`;
@@ -5013,7 +5046,12 @@ function renderTable(c, back){
       h+=`<th colspan="${inner}">${esc(colTuples[x][L.cols[ci]])}</th>`;
     h+='</tr>';
   }
-  // 본문
+  /* 본문 — 🔴 셀 격자를 먼저 만든다. 같은 셀 객체가 여러 칸에 걸리면("*" 축) **가로는 colspan,
+     세로는 rowspan**으로 한 칸에 합친다. 세로 병합이 없으면 마찰음의 ㅎ처럼 세기 축 전체에 걸린 셀이
+     예사/된/거센 세 줄에 같은 글자로 세 번 찍힌다. 빈 칸(null)은 진짜 공백이라 합치지 않는다. */
+  const R=rowTuples.length, C=colTuples.length;
+  const grid=rowTuples.map(rt=>colTuples.map(ct=>tblFind(t, {...rt, ...ct})||null));
+  const taken=rowTuples.map(()=>colTuples.map(()=>false));
   const spanLeft=L.rows.map(()=>0);
   rowTuples.forEach((rt,ri)=>{
     h+='<tr>';
@@ -5026,19 +5064,30 @@ function renderTable(c, back){
         if(!same) break; n++;
       }
       spanLeft[rj]=n-1;
-      h+=`<th class="rh" rowspan="${n}">${esc(rt[ra])}</th>`;
+      // 접힌 축("*")은 가르는 게 없다는 뜻이라 빈 칸으로 둔다 — 값을 지어내지 않는다
+      h+=`<th class="rh" rowspan="${n}">${rt[ra]==='*'?'':esc(rt[ra])}</th>`;
     });
-    let x=0;
-    while(x<colTuples.length){
-      const key={...rt, ...colTuples[x]};
-      const cell=tblFind(t, key);
-      let span=1;
-      if(cell) while(x+span<colTuples.length && tblFind(t,{...rt, ...colTuples[x+span]})===cell) span++;
+    for(let x=0;x<C;x++){
+      if(taken[ri][x]) continue;
+      const cell=grid[ri][x];
+      let span=1, rspan=1;
+      if(cell){
+        while(x+span<C && grid[ri][x+span]===cell) span++;
+        while(ri+rspan<R){
+          let all=true;
+          for(let q=0;q<span;q++) if(grid[ri+rspan][x+q]!==cell){ all=false; break; }
+          if(!all) break; rspan++;
+        }
+      }
+      for(let r=ri;r<ri+rspan;r++) for(let q=x;q<x+span;q++) taken[r][q]=true;
       const v=cell?cell.v:'';
       const empty = v==='' || v==null || (Array.isArray(v)&&!v.length);
-      const body = Array.isArray(v) ? v.map(x2=>`<span class="vl">${esc(x2)}</span>`).join('') : esc(v);
-      h+=`<td colspan="${span}"${empty?'':' class="tm'+(back?' on':'')+'"'}>${empty?'':body}</td>`;
-      x+=span;
+      // 🔴 가리개는 .mk가 쓴다 — 칸이 아니라 글자만 덮으려면 값이 제 너비를 가진 요소여야 한다
+      const body = Array.isArray(v)
+        ? v.map(x2=>`<span class="vl"><span class="mk">${esc(x2)}</span></span>`).join('')
+        : `<span class="mk">${esc(v)}</span>`;
+      h+=`<td colspan="${span}" rowspan="${rspan}"${empty?'':' class="tm'+(back?' on':'')+'"'}>`
+        +`${empty?'':body}</td>`;
     }
     h+='</tr>';
   });

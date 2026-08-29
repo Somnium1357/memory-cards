@@ -184,6 +184,9 @@ input:focus,select:focus{border-color:var(--accent);}
 #cTable th,#cTable td{border:1px solid var(--line);padding:8px 5px;text-align:center;
   font-size:14px;line-height:1.35;word-break:break-word;vertical-align:middle;}
 #cTable th{background:var(--sunken);color:var(--mute);font-size:11.5px;font-weight:800;}
+/* 축 이름 줄 — 값 머리와 구별되게 한 단 죽인다. 이게 값처럼 보이면 표를 잘못 읽는다 */
+#cTable th.axl{background:var(--surface2);color:var(--faint);font-size:11px;font-weight:700;
+  letter-spacing:.2px;padding-top:5px;padding-bottom:5px;}
 #cTable th.rh{text-align:left;padding-left:8px;color:var(--ink2);font-size:12.5px;}
 #cTable td{color:var(--ink2);font-weight:600;}
 /* 가리개 — 🔴 칸이 아니라 **글자만** 덮는다. 칸을 통째로 칠하면 「애매하게 꽉 찬」 모양이 되고
@@ -5036,12 +5039,21 @@ function renderTable(c, back){
   $('card').style.marginLeft = wide ? Math.max(0, Math.round((avail-need)/2))+'px' : '';
   const wid=Math.min(Math.max(need, 320), avail);
 
-  let h=`<div class="tt">${esc(t.title||'')} — ${esc(L.rows.join(' · '))} × ${esc(L.cols.join(' · '))}</div>`;
+  let h=`<div class="tt">${esc(t.title||'')}</div>`;   // 축 이름은 아래 축 이름 줄이 맡는다
   h+=`<table style="max-width:${wid}px">`;
+  /* 🔴 축 이름 줄 — 열 축의 **이름**이 표 어디에도 안 찍혀 있었다. 값만 보고는 그 열이 무슨 축인지
+     알 수 없다. 「교사의 입장」 표는 행 축(다양성 인정)도 O/X, 열 축(의견 표명)도 O/X라 특히 못 읽었다
+     (동하 08-29 플래그 「의견표명 축이 표에 없음」).
+     ⚠ 모서리 칸이 **축을 잘못 알려주고 있었다** — 행 축 둘을 `\`로 이어(`다양성 인정 \ 학자`) 놓았는데
+     표 모서리의 `\`는 관례가 「앞=행 · 뒤=열」이다. 읽으면 학자가 열 축이 되고 O/X 열은 이름을 잃는다.
+     같은 쪽 축은 `·`로 잇고, 행/열 구분은 **칸을 나누는 것**으로 한다. */
+  // 행 축 이름은 머리 전체를 세로로 덮는다 — 안 그러면 그 아래에 빈 칸이 하나 생긴다
+  h+='<tr>'+`<th colspan="${L.rows.length}" rowspan="${L.cols.length+1}" class="axl">${esc(L.rows.join(' · '))}</th>`
+     +`<th colspan="${colTuples.length}" class="axl">${esc(L.cols.join(' · '))}</th></tr>`;
   // 열 머리 (바깥 → 안쪽). 바깥 축은 안쪽 개수만큼 colspan
   for(let ci=0; ci<L.cols.length; ci++){
     const inner=L.cols.slice(ci+1).reduce((a,n)=>a*(t.axes[n]||[]).length, 1);
-    h+='<tr>'+`<th colspan="${L.rows.length}">${ci===0?esc(L.rows.join(' \\ ')):''}</th>`;
+    h+='<tr>';
     for(let x=0; x<colTuples.length; x+=inner)
       h+=`<th colspan="${inner}">${esc(colTuples[x][L.cols[ci]])}</th>`;
     h+='</tr>';

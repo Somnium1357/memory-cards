@@ -28,13 +28,13 @@
 }
 :root[data-theme="c"]{
   --bg:#F3EDDE; --ink:#2F2A20; --ink2:#4C4536; --dim:#6E6450;
-  --mk:#857A5E; --hair:#E0D8C2; --ac:#AE5B33;
+  --mk:#6F654B; --hair:#E0D8C2; --ac:#AE5B33;
   color-scheme:light;
 }
 @media (prefers-color-scheme:light){
   :root:not([data-theme]){
     --bg:#F3EDDE; --ink:#2F2A20; --ink2:#4C4536; --dim:#6E6450;
-    --mk:#857A5E; --hair:#E0D8C2; --ac:#AE5B33;
+    --mk:#6F654B; --hair:#E0D8C2; --ac:#AE5B33;
     color-scheme:light;
   }
 }
@@ -78,7 +78,8 @@ h4{font-family:var(--fb);font-weight:700;font-size:1rem;margin:16px 0 5px var(--
 .term{font-weight:500;white-space:nowrap;}
 .desc{color:var(--ink2);}
 .num{color:var(--dim);font-variant-numeric:tabular-nums;}
-.row>.num:first-child{min-width:1.7em;}   /* 두 자리 번호 정렬용 — 더 주면 한 자리 번호가 제목과 벌어진다 */
+.row>.num:first-child,h3>.num:first-child,h4>.num:first-child{min-width:1.7em;display:inline-block;}
+/* 두 자리·로마 번호 정렬용 — 더 주면 한 자리 번호가 제목과 벌어진다 */
 .quiet{color:var(--dim);font-size:.9375em;}
 .key{font-weight:500;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--mk);}
 .mk{color:var(--mk);}
@@ -223,7 +224,7 @@ img.photo{max-width:100%;height:auto;display:block;border-radius:4px;}
 
 /* ── 표 ── */
 table{border-collapse:collapse;font-size:.9375rem;}
-th,td{border:1px solid var(--hair);padding:6px 12px;text-align:center;}
+th,td{border:1px solid color-mix(in srgb,var(--dim) 30%,var(--hair));padding:6px 12px;text-align:center;}
 th{font-weight:500;color:var(--ink2);}
 td.h{font-weight:500;color:var(--ink2);}
 

@@ -48,7 +48,11 @@
       if(marks.length >= 2){
         a = marks[0].getBoundingClientRect();
         b = marks[marks.length-1].getBoundingClientRect();
-      } else {
+        /* 마크들이 한 가로줄에 있으면(.line/.lanes) 세로 폭이 0 — 목록 폴백으로 넘어간다
+           (영어 p02·p03 실사고 2026-08-31: 브레이스가 8px 로 주저앉았다) */
+        if (Math.abs((b.top + b.height/2) - (a.top + a.height/2)) < 8) marks = [];
+      }
+      if(marks.length < 2){
         /* .term/.mid 가 없으면 왼쪽 안의 「세로 목록」(.bracket/.stack/.kids, 항목 2+)을 찾아
            그 첫·끝 항목을 잰다 — 왼쪽이 라벨+목록의 가로 묶음(.branch)이면 직계 자식은 가로
            형제라 첫·끝 중앙이 같은 점이 되어 브레이스가 8px 로 주저앉는다 (체육 p02 실사고) */
@@ -65,6 +69,11 @@
         var ks = list.children;
         a = ks[0].getBoundingClientRect();
         b = ks[ks.length-1].getBoundingClientRect();
+      }
+      if (Math.abs((b.top + b.height/2) - (a.top + a.height/2)) < 8){
+        /* 목록마저 한 가로줄(.line 등) — 왼쪽 상자의 첫 줄·끝 줄 중앙으로 근사한다 */
+        a = { top: lb.top, height: 24 };
+        b = { top: lb.bottom - 24, height: 24 };
       }
       var top = (a.top + a.height/2) - lb.top;
       var bot = lb.bottom - (b.top + b.height/2);

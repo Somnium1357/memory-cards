@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400&display=swap">
 <link rel="stylesheet" href="kit.css">
 <style>
-.wrap{max-width:1120px;margin:0 auto;padding:44px 26px 90px;}
+.wrap{width:min(100%,1000px);margin:0 auto;padding:44px clamp(18px,4vw,32px) 90px;}
 /* 줄글은 좁게 유지한다 — 넓힌 것은 도식·트리를 위해서지 본문을 위해서가 아니다 */
 .src,.foot,p.note,p.sub{max-width:46em;}
 .eyebrow{color:var(--dim);font-size:.875rem;letter-spacing:.08em;margin:0 0 10px;}
@@ -39,31 +39,19 @@ nav a:hover,nav a:focus{color:var(--ink);border-bottom-color:var(--mk);}
         <svg class="a1" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="10" y1="0" x2="1" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
         <svg class="a2" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="1" y1="0" x2="10" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
       </div><div class="stack">
-        <div class="chain">
-          <span class="term">음성 언어</span>
-          <span class="arrow">-</span>
-          <div class="par">
-            <span class="quiet">(→ 뜻으로 구별)</span>
-            <span class="term">음소</span>
-            <div class="row"><span class="quiet">자음</span><span class="quiet">모음</span></div>
-          </div>
-          <span class="arrow">-</span>
-          <div class="par">
-            <span class="quiet">(→ 소리로 구별)</span>
-            <span class="term">음절</span>
-            <span class="quiet">C+V</span>
-            <span class="quiet">C+V+C</span>
-          </div>
+        <div class="line">
+          <div class="col"><span class="mid">음성 언어</span></div>
+          <div class="col"><span class="mid mk">-</span></div>
+          <div class="col"><span class="up">(→ 뜻으로 구별)</span><span class="mid">음소</span><span class="down">자음 · 모음</span></div>
+          <div class="col"><span class="mid mk">-</span></div>
+          <div class="col"><span class="up">(→ 소리로 구별)</span><span class="mid">음절</span><span class="down">C+V · C+V+C</span></div>
         </div>
-        <div class="chain">
-          <span class="term">문자 언어</span>
-          <span class="arrow">-</span>
-          <div class="par">
-            <span class="term">낱자</span>
-            <div class="row"><span class="quiet">자음자</span><span class="quiet">모음자</span></div>
-          </div>
-          <span class="arrow">-</span>
-          <span class="term">글자</span>
+        <div class="line">
+          <div class="col"><span class="mid">문자 언어</span></div>
+          <div class="col"><span class="mid mk">-</span></div>
+          <div class="col"><span class="mid">낱자</span><span class="down">자음자 · 모음자</span></div>
+          <div class="col"><span class="mid mk">-</span></div>
+          <div class="col"><span class="mid">글자</span></div>
         </div>
       </div></div>
     </div>

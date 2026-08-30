@@ -68,15 +68,15 @@ h4{font-family:var(--fb);font-weight:500;font-size:1rem;margin:16px 0 5px;}
 /* ── 가지 · 묶음 — 등뼈에서 팔이 글자 중앙으로 ── */
 .branch{display:flex;align-items:center;}
 .branch>*{flex:0 0 auto;}   /* 같은 이유 — 가지도 줄어들면 안 된다 */
-.branch>:first-child{padding-right:15px;}
+.branch>:first-child{padding-right:12px;}
 .kids,.bracket{display:flex;flex-direction:column;}
-.kids>*,.bracket>*{position:relative;padding-left:24px;padding-top:2px;padding-bottom:2px;}
+.kids>*,.bracket>*{position:relative;padding-left:17px;padding-top:2px;padding-bottom:2px;}
 .kids>*::before,.bracket>*::before{content:'';position:absolute;left:0;top:0;bottom:0;
   border-left:1px solid var(--mk);}
 .kids>*:first-child::before,.bracket>*:first-child::before{top:50%;}
 .kids>*:last-child::before,.bracket>*:last-child::before{bottom:50%;}
 .kids>*:only-child::before,.bracket>*:only-child::before{display:none;}
-.kids>*::after,.bracket>*::after{content:'';position:absolute;left:0;top:50%;width:16px;
+.kids>*::after,.bracket>*::after{content:'';position:absolute;left:0;top:50%;width:10px;
   border-top:1px solid var(--mk);}
 
 /* ── 꺾쇠 — 팔 끝이 첫 항목·끝 항목의 **글자 중앙**에 닿아야 한다.
@@ -96,6 +96,25 @@ h4{font-family:var(--fb);font-weight:500;font-size:1rem;margin:16px 0 5px;}
 .forkdown>.mkd{position:relative;height:11px;align-self:stretch;color:var(--mk);}
 .forkdown>.mkd>svg{position:absolute;top:0;height:100%;display:block;}
 .forkdown>.row{gap:1.6em;}
+
+/* ── 줄 — 같은 위계를 가로 일직선에 놓고, 칸마다 위·아래에 주석을 단다.
+   주석 길이가 달라도 가운데 줄은 어긋나지 않는다(subgrid).
+   <div class="line">
+     <div class="col"><span class="up"></span><span class="mid">음소</span><span class="down">자음 모음</span></div>
+     <div class="col"><span class="mid mk">-</span></div>   ← 구분자도 한 칸
+   </div>
+   빈 칸은 그냥 비워 둔다. .col 안에는 up·mid·down 순서로만 넣는다. ── */
+.line{display:grid;grid-auto-flow:column;grid-auto-columns:max-content;
+  grid-template-rows:auto auto auto;column-gap:11px;align-items:center;}
+.line>.col{display:grid;grid-template-rows:subgrid;grid-row:1/4;
+  justify-items:start;align-items:center;row-gap:1px;}
+/* 행을 명시한다 — 안 그러면 up 이 없는 칸에서 mid 가 1행으로 올라가 줄이 어긋난다 */
+.line .up{grid-row:1;} .line .mid{grid-row:2;} .line .down{grid-row:3;}
+.line .mid{font-weight:500;white-space:nowrap;}
+.line .up,.line .down{color:var(--ink2);font-size:.9375rem;white-space:nowrap;}
+@supports not (grid-template-rows:subgrid){
+  .line>.col{display:flex;flex-direction:column;align-items:flex-start;}
+}
 
 /* ── 사슬 ── */
 .chain{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}

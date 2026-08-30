@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 330 310" width="430" height="404">
+  <g stroke="currentColor" stroke-width="1">
+    <circle cx="165.0" cy="69.0" r="17" fill="#e8362d"/>
+    <circle cx="215.5" cy="85.4" r="17" fill="#f07f13"/>
+    <circle cx="246.8" cy="128.4" r="17" fill="#f2d200"/>
+    <circle cx="246.8" cy="181.6" r="17" fill="#a7d02c"/>
+    <circle cx="215.5" cy="224.6" r="17" fill="#009a44"/>
+    <circle cx="165.0" cy="241.0" r="17" fill="#00a3a3"/>
+    <circle cx="114.5" cy="224.6" r="17" fill="#0057b8"/>
+    <circle cx="83.2" cy="181.6" r="17" fill="#2b2f7f"/>
+    <circle cx="83.2" cy="128.4" r="17" fill="#7b3fa0"/>
+    <circle cx="114.5" cy="85.4" r="17" fill="#b8106a"/>
+  </g>
+  <g class="ln" stroke="currentColor" stroke-width="1.3" stroke-dasharray="5 4"><line x1="165" y1="95" x2="165" y2="215"/></g>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(165.0,91.0) rotate(-90.0)"/>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(165.0,219.0) rotate(90.0)"/>
+  <g class="tx" fill="currentColor" font-size="15" text-anchor="middle">
+    <text x="165.0" y="25.0">빨강</text>
+    <text x="243.8" y="50.6">주황</text>
+    <text x="292.4" y="117.6">노랑</text>
+    <text x="292.4" y="200.4">연두</text>
+    <text x="243.8" y="267.4">초록</text>
+    <text x="165.0" y="293.0">청록</text>
+    <text x="86.2" y="267.4">파랑</text>
+    <text x="37.6" y="200.4">남색</text>
+    <text x="37.6" y="117.6">보라</text>
+    <text x="86.2" y="50.6">자주</text>
+    <text x="187" y="159" font-size="14" text-anchor="start">보색</text>
+  </g>
+</svg>

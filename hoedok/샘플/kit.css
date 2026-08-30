@@ -183,7 +183,10 @@ h4{font-family:var(--fb);font-weight:700;font-size:1rem;margin:16px 0 5px var(--
 /* 나란한 단 — .n2/.n3/.n4 로 개수를, .fit 으로 「내용폭대로」를 준다.
    기본은 균등분할이라 좌우 내용량이 다르면 한쪽만 줄바꿈된다 — 그때 .fit 을 쓴다. */
 .cols{display:grid;grid-template-columns:repeat(var(--n,2),minmax(0,1fr));gap:0 34px;
-  align-items:start;}   /* 칸 세로 중앙 정렬이 나란한 단의 첫 줄을 어긋나게 한다 (독립검수 #43) */
+  align-items:start;
+  /* 좁은 폭(아이패드 세로)에서 넘친 단이 html overflow-x:hidden 에 잘려 글자가 사라졌다
+     (미술 독립검수 08-31) — 잘리는 대신 제 상자 안에서 가로 스크롤 */
+  max-width:100%;overflow-x:auto;}
 .cols.n2{--n:2;} .cols.n3{--n:3;} .cols.n4{--n:4;}
 .cols.fit{grid-template-columns:repeat(var(--n,2),max-content);gap:0 30px;}
 
@@ -213,6 +216,28 @@ h4{font-family:var(--fb);font-weight:700;font-size:1rem;margin:16px 0 5px var(--
   font-size:.9375rem;line-height:1.25;}
 .converge .link b{display:block;font-weight:500;color:var(--ink2);}
 
+/* ── bracket 안 부분 묶음 — bracket 형제 몇을 converge 로 묶되 각자의 눈금은 유지한다.
+   (미술 5회차 실측 4곳: 바니시·석유→테레빈유 / 수묵화·담채화→얇은 한지 등 —
+   converge 를 bracket 자식에 그대로 넣으면 안쪽 항목들이 눈금을 잃고 하위처럼 읽힌다.)
+   마크업: bracket 자식 자리에
+     <div class="bsub"><div class="converge">
+       <div class="stack"><div data-b="s">…</div><div data-b="e">…</div></div>
+       <svg …converge 정본…></svg>
+       <div class="link">⟶</div>
+       <div class="stack">…공통 꼬리…</div>
+     </div></div>
+   bsub 자신의 눈금은 끄고 안쪽 항목이 같은 x 에 대신 단다 — 밖에서는 같은 급 형제로 읽힌다. ── */
+.bracket>.bsub{padding-top:0;padding-bottom:0;}
+.bracket>.bsub::before,.bracket>.bsub::after{display:none;}
+.bracket>.bsub>.converge>.stack:first-child{gap:0;}
+.bracket>.bsub>.converge>.stack:first-child>*{position:relative;padding-top:2px;padding-bottom:2px;}
+.bracket>.bsub>.converge>.stack:first-child>*::before{content:'';position:absolute;left:-17px;top:0;bottom:0;
+  border-left:1px solid var(--mk);}
+.bracket>.bsub>.converge>.stack:first-child>*::after{content:'';position:absolute;left:-17px;top:50%;width:10px;
+  border-top:1px solid var(--mk);}
+.bracket>.bsub:first-child>.converge>.stack:first-child>*:first-child::before{top:50%;}
+.bracket>.bsub:last-child>.converge>.stack:first-child>*:last-child::before{bottom:50%;}
+
 /* ── 도식 슬롯 — 볼트 도식 svg 를 <img> 로 건다 (조판 지시서 §6-6).
    <figure class="fig"><img class="dg" src="도식/도식_….svg" alt="…"></figure>
    ⚠ svg 내부 테마는 prefers-color-scheme 만 본다 — 페이지 data-theme 와 어긋날 수 있다(§7 미결). */
@@ -227,6 +252,11 @@ img.photo{max-width:100%;height:auto;display:block;border-radius:4px;}
 :root[data-theme="b"] img.photo{filter:invert(.9) hue-rotate(180deg);}
 @media (prefers-color-scheme:dark){
   :root:not([data-theme]) img.photo{filter:invert(.9) hue-rotate(180deg);}
+}
+/* 색이 곧 내용인 발췌(오방색 등) — 반전하면 뜻이 뒤집힌다(흑↔백). 다크에서도 원색 그대로. */
+:root[data-theme="b"] img.photo.color{filter:none;}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme]) img.photo.color{filter:none;}
 }
 
 /* ── 표 ── */

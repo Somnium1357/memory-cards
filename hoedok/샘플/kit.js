@@ -70,3 +70,38 @@
   window.addEventListener('resize', all);
   all();
 })();
+
+/* 테마 — 카드앱과 같은 저장소를 읽는다(같은 origin). 앱에서 고른 테마가 여기도 적용된다.
+   저장값 없으면 시스템 설정. 우상단 버튼으로 여기서 바꾸면 앱에도 반영된다(같은 키). */
+(function(){
+  var KEY='cards_theme_v1';
+  function cur(){
+    try{ var v=localStorage.getItem(KEY); if(v==='b'||v==='c') return v; }catch(e){}
+    return matchMedia('(prefers-color-scheme:light)').matches ? 'c' : 'b';
+  }
+  function apply(v){ document.documentElement.dataset.theme=v; }
+  apply(cur());
+  function mkBtn(){
+    var b=document.createElement('button');
+    b.id='themeBtn';
+    b.setAttribute('aria-label','테마 전환');
+    b.textContent = document.documentElement.dataset.theme==='b' ? '☀' : '☾';
+    b.style.cssText='position:fixed;top:14px;right:14px;z-index:9;width:34px;height:34px;'
+      +'border:1px solid var(--hair);border-radius:50%;background:var(--bg);color:var(--dim);'
+      +'font-size:15px;cursor:pointer;line-height:1;';
+    b.onclick=function(){
+      var v=document.documentElement.dataset.theme==='b'?'c':'b';
+      apply(v); b.textContent=v==='b'?'☀':'☾';
+      try{ localStorage.setItem(KEY,v); }catch(e){}
+    };
+    document.body.appendChild(b);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',mkBtn);
+  else mkBtn();
+})();
+
+
+/* 구조 선 svg 는 전부 장식이다 — 일괄로 스크린리더에서 뺀다 */
+document.querySelectorAll('.mkf svg,.mkd svg,.converge>svg,.fork svg').forEach(function(e){
+  e.setAttribute('aria-hidden','true');});
+

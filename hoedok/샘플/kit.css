@@ -13,21 +13,31 @@
    7. 들여쓰기는 한 가지 폭으로만. 축이 여럿이면 흩어져 보인다.
    ═══════════════════════════════════════════════════════ */
 
-:root{
-  --bg:#FAF9F5; --ink:#16191D; --ink2:#2E343A; --dim:#6E767E;
-  --mk:#A2ABB3; --hair:#E3E1D9; --ac:#1D6152;
+/* 테마 — 카드앱 규약을 따른다: data-theme="b"(다크) / "c"(페이퍼 웜).
+   같은 origin 이라 앱의 localStorage(cards_theme_v1)를 kit.js 가 읽어 맞춘다.
+   저장값이 없으면 prefers-color-scheme. 색값은 앱 팔레트에서 가져와 앱과 결이 같다. */
+:root, :root[data-theme="b"]{
+  --bg:#13151A; --ink:#E8EAF0; --ink2:#C3C8D4; --dim:#828A9B;
+  --mk:#5E6678; --hair:#2B303C; --ac:#8CA7FF;
   --fd:"Nanum Myeongjo",serif;
   --fb:"Noto Sans KR",system-ui,sans-serif;
   --fm:"IBM Plex Mono",ui-monospace,monospace;
   --gap:7px;
   --step:1.55em;              /* 들여쓰기 한 단 — 문서 전체가 이 하나만 쓴다 */
+  color-scheme:dark;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#14161A; --ink:#ECEFF2; --ink2:#D2D8DD; --dim:#959EA6;
-  --mk:#5C666F; --hair:#282D33; --ac:#6FC2AD;}}
-:root[data-theme="dark"]{
-  --bg:#14161A; --ink:#ECEFF2; --ink2:#D2D8DD; --dim:#959EA6;
-  --mk:#5C666F; --hair:#282D33; --ac:#6FC2AD;}
+:root[data-theme="c"]{
+  --bg:#F3EDDE; --ink:#2F2A20; --ink2:#4C4536; --dim:#6E6450;
+  --mk:#B4A98D; --hair:#E0D8C2; --ac:#AE5B33;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme]){
+    --bg:#F3EDDE; --ink:#2F2A20; --ink2:#4C4536; --dim:#6E6450;
+    --mk:#B4A98D; --hair:#E0D8C2; --ac:#AE5B33;
+    color-scheme:light;
+  }
+}
 
 *{box-sizing:border-box;}
 body{margin:0;background:var(--bg);color:var(--ink);
@@ -41,15 +51,17 @@ h2{font-family:var(--fd);font-weight:700;font-size:1.4375rem;line-height:1.35;
   margin:52px 0 16px;letter-spacing:-.01em;padding-bottom:9px;
   border-bottom:1px solid var(--hair);}
 h2:first-child{margin-top:36px;}
-h3{font-family:var(--fb);font-weight:500;font-size:.8125rem;line-height:1.5;
-  letter-spacing:.09em;color:var(--dim);margin:30px 0 10px;}
+/* h3 > h4 — 검토 지적: h3 를 소형 회색 라벨로 두면 h4 가 부모보다 도드라진다 */
+h3{font-family:var(--fb);font-weight:700;font-size:1.0625rem;line-height:1.5;
+  color:var(--ink);margin:34px 0 10px;}
 h3:first-of-type{margin-top:22px;}
-h4{font-family:var(--fb);font-weight:500;font-size:1rem;margin:16px 0 5px;}
+h4{font-family:var(--fb);font-weight:500;font-size:1rem;margin:16px 0 5px;color:var(--ink);}
 
 /* ── 흐름 ── */
 .stack{display:flex;flex-direction:column;gap:var(--gap);}
 .row{display:flex;align-items:baseline;gap:.5em;flex-wrap:wrap;}
 .ind{padding-left:var(--step);}
+.stack>.row>.desc,.ind>.desc{max-width:46em;}   /* 트리 밖 줄글 상한 */
 
 /* ── 글자 역할 — 굵기와 회색 단계로만 ── */
 .term{font-weight:500;white-space:nowrap;}
@@ -60,9 +72,9 @@ h4{font-family:var(--fb);font-weight:500;font-size:1rem;margin:16px 0 5px;}
 .mk{color:var(--mk);}
 
 /* ── 부연 · 보조 ── */
-.sub{color:var(--ink2);padding-left:var(--step);position:relative;}
+.sub{color:var(--ink2);padding-left:var(--step);position:relative;max-width:46em;}
 .sub::before{content:'↳';position:absolute;left:.15em;color:var(--mk);}
-.note{color:var(--ink2);font-size:.9375rem;padding-left:var(--step);position:relative;}
+.note{color:var(--ink2);font-size:.9375rem;padding-left:var(--step);position:relative;max-width:46em;}
 .note::before{content:'※';position:absolute;left:.1em;color:var(--mk);font-size:.875rem;}
 
 /* ── 가지 · 묶음 — 등뼈에서 팔이 글자 중앙으로 ── */
@@ -157,7 +169,13 @@ th,td{border:1px solid var(--hair);padding:6px 12px;text-align:center;}
 th{font-weight:500;color:var(--ink2);}
 td.h{font-weight:500;color:var(--ink2);}
 
-.wide{overflow-x:auto;}
+.wide{overflow-x:auto;scrollbar-width:thin;
+  background:
+    linear-gradient(90deg,var(--bg) 40%,transparent) left/28px 100%,
+    linear-gradient(270deg,var(--bg) 40%,transparent) right/28px 100%,
+    radial-gradient(farthest-side at 0 50%,rgba(0,0,0,.28),transparent) left/12px 100%,
+    radial-gradient(farthest-side at 100% 50%,rgba(0,0,0,.28),transparent) right/12px 100%;
+  background-repeat:no-repeat;background-attachment:local,local,scroll,scroll;}
 
 
 /* 문서 틀 — 상자를 쓰지 않는다. 표제와 여백이 절을 가른다. */
@@ -170,3 +188,14 @@ td.h{font-weight:500;color:var(--ink2);}
 .head .nm{font-weight:500;font-size:1.0625rem;}
 .foot{margin-top:56px;padding-top:20px;border-top:1px solid var(--hair);
   color:var(--dim);font-size:.9375rem;max-width:46ch;}
+
+/* 프린트 — 트리·표가 쪽 경계에서 잘리지 않게 */
+@media print{
+  .branch,.fork,.converge,.bracket,table,.line{break-inside:avoid;}
+  h2,h3,h4{break-after:avoid;}
+  #themeBtn,nav{display:none;}
+  :root{--bg:#fff;--ink:#111;--ink2:#333;--dim:#666;--mk:#999;--hair:#ddd;}
+}
+
+/* 키보드 포커스 */
+a:focus-visible,button:focus-visible{outline:2px solid var(--ac);outline-offset:2px;}

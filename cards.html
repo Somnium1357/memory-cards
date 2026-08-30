@@ -4285,27 +4285,36 @@ function tagKey(c){ // 투입·회독 단위 키 — 분할 대주제는 그룹�
    둘 다 「계획이 낡았다」는 신호지 학습 판단이 아니다. 앱은 그것을 숨기지 말고 드러낸다.
    고치는 것은 루틴 몫(계획은 루틴 소유) — 앱은 읽기만 한다. */
 function planGaps(){
-  const noPlan=[], badMid=[];
+  const noPlan=[], badMid=[], noMid=[];
   for(const k in TAGMETA){ if(!PLAN_RANK.has(k)) noPlan.push({k, n:TAGMETA[k].n}); }
   const seen={};
   for(const c of DATA){
     const base=c.subj+'|'+((c.tags&&c.tags[0])||'(기타)');
     const sp=SPLITS[base]; if(!sp) continue;
     const mid=(c.tags&&c.tags[1])||'';
-    if(!mid) continue;                       // 중주제가 아예 없는 카드는 #0이 제자리다(공백 아님)
+    /* 🔴 예전엔 여기서 `if(!mid) continue`로 **건너뛰었다** — 「중주제가 없으면 #0이 제자리」라는
+       전제였는데 틀렸다. `#0`은 「기본 그룹」이 아니라 **그저 먼저 적힌 그룹**이고 제 수강일을 갖는다.
+       그래서 중주제 없는 카드는 아무 검사 없이 남의 날짜를 물려받는다 — 08-30에 고친
+       「과학 기본이론이 6월 딱지를 달고 있던 것」과 **같은 계통의 병**이다.
+       실해가 작아도(현재 1장) 숨기면 안 되는 이유: 이 검사기의 0을 배포 안전 확인으로 쓰고 있다.
+       ⚠ **분할 안 된 단위의 중주제 없는 카드(현재 37장)는 세지 않는다** — 고를 그룹 자체가 없어
+       물려받을 남의 날짜도 없다. 여기서 세면 고칠 수 없는 경고만 늘어난다. */
+    if(!mid){ noMid.push({k:tagKey(c), id:c.id}); continue; }
     if(sp.some(g=>g[1].includes(mid))) continue;
     const key=base+'||'+mid;
     if(!seen[key]){ seen[key]={base, mid, n:0}; badMid.push(seen[key]); }
     seen[key].n++;
   }
   noPlan.sort((a,b)=>b.n-a.n); badMid.sort((a,b)=>b.n-a.n);
-  return {noPlan, badMid, total:noPlan.reduce((a,x)=>a+x.n,0)+badMid.reduce((a,x)=>a+x.n,0)};
+  return {noPlan, badMid, noMid,
+    total:noPlan.reduce((a,x)=>a+x.n,0)+badMid.reduce((a,x)=>a+x.n,0)+noMid.length};
 }
 function planGapText(){
   const g=planGaps(); if(!g.total) return '';
   const a=[];
   if(g.noPlan.length) a.push(`계획에 없는 대주제 ${g.noPlan.length}개(${g.noPlan.reduce((x,y)=>x+y.n,0)}장) — 신규 투입에서 맨 뒤로 밀려요`);
   if(g.badMid.length) a.push(`분할에 없는 중주제 ${g.badMid.length}개(${g.badMid.reduce((x,y)=>x+y.n,0)}장) — 남의 그룹으로 섞여요`);
+  if(g.noMid.length) a.push(`중주제가 없는 카드 ${g.noMid.length}장 — 분할 단위라 남의 수강일을 물려받아요`);
   return a.join(' · ');
 }
 function unitTagName(c){ const t0=(c.tags&&c.tags[0])||'(기타)'; const sp=SPLITS[c.subj+'|'+t0];

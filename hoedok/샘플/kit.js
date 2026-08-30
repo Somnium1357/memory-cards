@@ -78,6 +78,8 @@
       var d1 = mk.querySelector('.d1'), d2 = mk.querySelector('.d2');
       if(d1){ d1.style.left = l+'px'; d1.style.width = Math.max(1, mid-l)+'px'; }
       if(d2){ d2.style.left = mid+'px'; d2.style.width = Math.max(1, r-mid)+'px'; }
+      var root = f.querySelector(':scope > .root');
+      if(root){ root.style.marginLeft = Math.max(0, mid - root.offsetWidth/2)+'px'; }
     });
   }
   function all(){ fitBrace(); fitDown(); }

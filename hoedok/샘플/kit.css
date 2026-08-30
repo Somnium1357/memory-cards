@@ -18,7 +18,7 @@
    저장값이 없으면 prefers-color-scheme. 색값은 앱 팔레트에서 가져와 앱과 결이 같다. */
 :root, :root[data-theme="b"]{
   --bg:#13151A; --ink:#E8EAF0; --ink2:#C3C8D4; --dim:#828A9B;
-  --mk:#5E6678; --hair:#2B303C; --ac:#8CA7FF;
+  --mk:#7A849B; --hair:#2B303C; --ac:#8CA7FF;
   --fd:"Nanum Myeongjo",serif;
   --fb:"Noto Sans KR",system-ui,sans-serif;
   --fm:"IBM Plex Mono",ui-monospace,monospace;
@@ -28,16 +28,18 @@
 }
 :root[data-theme="c"]{
   --bg:#F3EDDE; --ink:#2F2A20; --ink2:#4C4536; --dim:#6E6450;
-  --mk:#B4A98D; --hair:#E0D8C2; --ac:#AE5B33;
+  --mk:#857A5E; --hair:#E0D8C2; --ac:#AE5B33;
   color-scheme:light;
 }
 @media (prefers-color-scheme:light){
   :root:not([data-theme]){
     --bg:#F3EDDE; --ink:#2F2A20; --ink2:#4C4536; --dim:#6E6450;
-    --mk:#B4A98D; --hair:#E0D8C2; --ac:#AE5B33;
+    --mk:#857A5E; --hair:#E0D8C2; --ac:#AE5B33;
     color-scheme:light;
   }
 }
+/* --mk 명암: 다크 #5E6678→#7A849B(3.2→4.6:1) · 라이트 #B4A98D→#857A5E(2.0→3.9:1) —
+   관계를 나르는 기호(⇒·→·↓·브레이스)가 본문보다 흐리면 안 된다 (독립 검수 08-30 #33) */
 
 *{box-sizing:border-box;}
 body{margin:0;background:var(--bg);color:var(--ink);
@@ -55,7 +57,8 @@ h2:first-child{margin-top:36px;}
 h3{font-family:var(--fb);font-weight:700;font-size:1.0625rem;line-height:1.5;
   color:var(--ink);margin:34px 0 10px;}
 h3:first-of-type{margin-top:22px;}
-h4{font-family:var(--fb);font-weight:500;font-size:1rem;margin:16px 0 5px;color:var(--ink);}
+/* h4 는 700 — 인라인 .term(500)과 같아지면 위계가 붕괴한다 (독립 검수 08-30 #8) */
+h4{font-family:var(--fb);font-weight:700;font-size:1rem;margin:16px 0 5px;color:var(--ink);}
 
 /* ── 흐름 ── */
 .stack{display:flex;flex-direction:column;gap:var(--gap);}
@@ -67,6 +70,7 @@ h4{font-family:var(--fb);font-weight:500;font-size:1rem;margin:16px 0 5px;color:
 .term{font-weight:500;white-space:nowrap;}
 .desc{color:var(--ink2);}
 .num{color:var(--dim);font-variant-numeric:tabular-nums;}
+.row>.num:first-child{min-width:2em;}   /* 두 자리 번호에서 본문 x 가 안 밀리게 */
 .quiet{color:var(--dim);font-size:.9375em;}
 .key{font-weight:500;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--mk);}
 .mk{color:var(--mk);}
@@ -104,12 +108,15 @@ h4{font-family:var(--fb);font-weight:500;font-size:1rem;margin:16px 0 5px;color:
 /* ── 아래로 갈라지는 꺾쇠 — 말 밑에 갈래를 단다. 팔 끝은 첫·끝 갈래의 **가로 중앙**.
    svg 는 .d1/.d2 두 개, 위치·폭은 kit.js 가 잡는다 — d1 은 왼팔 상자(첫 갈래 중앙~꼭짓점),
    d2 는 오른팔 상자(꼭짓점~끝 갈래 중앙). 꼭짓점이 위(말 쪽), 팔 끝이 아래(갈래 쪽)다.
+   말(뿌리)을 갈래 위에 두려면 <div class="root">말</div> 을 .mkd 앞에 넣는다 —
+   kit.js 가 뿌리를 꼭짓점 위로 옮긴다 (없으면 뿌리 없이 갈래만).
    마크업 정본 (2026-08-30 신설 — 그대로 복사하라. 지어내면 두 팔이 안 만난다):
-   <div class="forkdown"><div class="mkd">
+   <div class="forkdown"><div class="root">말</div><div class="mkd">
     <svg class="d1" viewBox="0 0 100 10" preserveAspectRatio="none" fill="none"><line x1="0" y1="9" x2="100" y2="1" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
     <svg class="d2" viewBox="0 0 100 10" preserveAspectRatio="none" fill="none"><line x1="0" y1="1" x2="100" y2="9" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
    </div><div class="row">…갈래들…</div></div> ── */
 .forkdown{display:flex;flex-direction:column;align-items:flex-start;gap:3px;}
+.forkdown>.root{align-self:flex-start;}   /* 가로 위치는 kit.js 가 꼭짓점에 맞춘다 */
 .forkdown>.mkd{position:relative;height:11px;align-self:stretch;color:var(--mk);}
 .forkdown>.mkd>svg{position:absolute;top:0;height:100%;display:block;}
 .forkdown>.row{gap:1.6em;}
@@ -124,7 +131,7 @@ h4{font-family:var(--fb);font-weight:500;font-size:1rem;margin:16px 0 5px;color:
 .line{display:grid;grid-auto-flow:column;grid-auto-columns:max-content;
   grid-template-rows:auto auto auto;column-gap:11px;align-items:center;}
 .line>.col{display:grid;grid-template-rows:subgrid;grid-row:1/4;
-  justify-items:start;align-items:center;row-gap:1px;}
+  justify-items:center;align-items:center;row-gap:1px;}   /* 위·아래 주석은 짝의 가로 중앙에 */
 /* 행을 명시한다 — 안 그러면 up 이 없는 칸에서 mid 가 1행으로 올라가 줄이 어긋난다 */
 .line .up{grid-row:1;} .line .mid{grid-row:2;} .line .down{grid-row:3;}
 .line .mid{font-weight:500;white-space:nowrap;}
@@ -154,7 +161,8 @@ h4{font-family:var(--fb);font-weight:500;font-size:1rem;margin:16px 0 5px;color:
   column-gap:1.6em;row-gap:2px;align-items:baseline;}
 .vchain>.stp{grid-column:1;}
 .vchain>.arw{grid-column:1;color:var(--mk);padding-left:.7em;line-height:1.15;}
-.vchain>.ann{grid-column:2;color:var(--ink2);max-width:46em;}
+.vchain>.ann{grid-column:2;color:var(--ink2);max-width:46em;
+  padding-left:1.15em;text-indent:-1.15em;}   /* 행걸이 — 둘째 줄이 ⇒ 밑으로 안 파고들게 */
 
 /* ── 칸 ── */
 .lanes{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;min-width:520px;}

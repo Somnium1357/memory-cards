@@ -7,7 +7,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@700&family=Noto+Sans+KR:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="kit.css">
 <style>
-.wrap{width:min(100%,1000px);margin:0 auto;padding:44px clamp(18px,4vw,32px) 90px;}
+/* 🔴 max-width:none — kit.css 의 .wrap{max-width:720px} 이 폭 지정을 눌러 온 것을 해제 (독립 검수 #1) */
+.wrap{width:min(100%,1160px);max-width:none;margin:0 auto;padding:44px clamp(18px,4vw,32px) 90px;}
 .src,.foot,p.note,p.sub{max-width:46em;}
 .eyebrow{color:var(--dim);font-size:.875rem;letter-spacing:.08em;margin:0 0 10px;}
 h1{font-family:var(--fd);font-weight:700;font-size:1.75rem;margin:0 0 4px;}
@@ -27,14 +28,16 @@ nav a:hover,nav a:focus{color:var(--ink);border-bottom-color:var(--mk);}
 <main class="wrap">
 <p class="eyebrow">회독본</p>
 <h1>10.실과</h1>
-<p class="src">노트 2쪽 · 글자는 전사본, 배치는 노트</p>
+<p class="src">노트 p2–p3 · 2쪽 · 글자는 전사본, 배치는 노트</p>
 <nav><a href="#p02">인간 발달과 주도적 삶 <span>2쪽</span></a></nav>
 <section class="pg" id="p02">
 <h2 id="인간_발달과_주도적_삶">인간 발달과 주도적 삶</h2>
 
 <h3 id="1._아동기의_발달"><a id="아동기의_발달"></a><span class="num">1.</span> 아동기의 발달</h3>
 <h4 id="1)_자립적_일상생활"><a id="자립적_일상생활"></a><span class="num">1)</span> 자립적 일상생활</h4>
-<div class="row"><span class="mk">⇒</span><span class="desc">생활 속 문제를 스스로 해결하는 힘</span></div>
+<div class="stack ind">
+  <div class="row"><span class="mk">⇒</span><span class="desc">생활 속 문제를 스스로 해결하는 힘</span></div>
+</div>
 
 <h3 id="2._건강한_가정생활"><a id="건강한_가정생활"></a><span class="num">2.</span> 건강한 가정생활</h3>
 <h4 id="1)_가족의_형태"><a id="가족의_형태"></a><span class="num">1)</span> 가족의 형태</h4>
@@ -44,7 +47,7 @@ nav a:hover,nav a:focus{color:var(--ink);border-bottom-color:var(--mk);}
 </div>
 
 <h4 id="2)_가족의_기능"><a id="가족의_기능"></a><span class="num">2)</span> 가족의 기능</h4>
-<div class="wide"><div class="cols n3 fit">
+<div class="ind"><div class="cols n3">
   <div>출산 및 양육</div>
   <div>교육·사회화</div>
   <div>휴식</div>
@@ -55,6 +58,7 @@ nav a:hover,nav a:focus{color:var(--ink);border-bottom-color:var(--mk);}
 
 <h3 id="3._균형_잡힌_식사,_건강한_식습관"><a id="균형_잡힌_식사,_건강한_식습관"></a><span class="num">3.</span> 균형 잡힌 식사, 건강한 식습관</h3>
 <h4 id="1)_영양소"><a id="영양소"></a><span class="num">1)</span> 영양소</h4>
+<div class="stack ind">
 <div class="bracket">
   <div><span class="term">탄수화물</span> : 4kcal/g, 포도당으로 분해됨</div>
   <div><span class="term">단백질</span> : 4kcal/g</div>
@@ -64,7 +68,7 @@ nav a:hover,nav a:focus{color:var(--ink);border-bottom-color:var(--mk);}
   <div><span class="term">물</span> : 체온 조절, 노폐물 배출, 산소 운반</div>
 </div>
 
-<div class="wide"><div class="branch">
+<div class="branch">
   <span class="term">기능</span>
   <div class="fork"><div class="mkf">
     <svg class="a1" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="10" y1="0" x2="1" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
@@ -74,7 +78,8 @@ nav a:hover,nav a:focus{color:var(--ink);border-bottom-color:var(--mk);}
     <div><span class="term">구성</span> : 단, 지, 무, 물</div>
     <div><span class="term">조절</span> : 단, 비, 무, 물</div>
   </div></div>
-</div></div>
+</div>
+</div>
 
 <h4 id="2)_식품_구성_자전거"><a id="식품_구성_자전거"></a><span class="num">2)</span> 식품 구성 자전거</h4>
 <div class="stack ind">
@@ -97,24 +102,30 @@ nav a:hover,nav a:focus{color:var(--ink);border-bottom-color:var(--mk);}
 <section class="pg" id="p03">
 <h3 id="4._옷의_기능,_옷차림"><a id="옷의_기능,_옷차림"></a><span class="num">4.</span> 옷의 기능, 옷차림</h3>
 <h4 id="1)_옷의_기능"><a id="옷의_기능"></a><span class="num">1)</span> 옷의 기능</h4>
-<div class="bracket">
-  <div><span class="term">신체 보호</span> : 체온, 청결, 안전, 능률</div>
-  <div><span class="term">표현</span> : 직업·신분, 예의, 개성</div>
+<div class="stack ind">
+  <div class="bracket">
+    <div><span class="term">신체 보호</span> : 체온, 청결, 안전, 능률</div>
+    <div><span class="term">표현</span> : 직업·신분, 예의, 개성</div>
+  </div>
 </div>
 
 <h4 id="2)_옷차림"><a id="옷차림"></a><span class="num">2)</span> 옷차림</h4>
-<div class="row"><span class="mk">⇒</span><span class="desc">TPO에 맞게</span></div>
+<div class="stack ind">
+  <div class="row"><span class="mk">⇒</span><span class="desc">TPO에 맞게</span></div>
+</div>
 
 <h3 id="5._가정일"><a id="가정일"></a><span class="num">5.</span> 가정일</h3>
 <h4 id="1)_의의"><a id="의의"></a><span class="num">1)</span> 의의</h4>
-<div class="row">노작 교육 ; 노작 : 직접 힘을 기울여 무언가 만드는 것</div>
+<div class="stack ind">
+  <div class="row">노작 교육 ; 노작 : 직접 힘을 기울여 무언가 만드는 것</div>
+</div>
 
 <h3 id="6._직업,_진로_발달_계획"><a id="직업,_진로_발달_계획"></a><span class="num">6.</span> 직업, 진로 발달 계획</h3>
 <h4 id="1)_일과_직업"><a id="일과_직업"></a><span class="num">1)</span> 일과 직업</h4>
 <div class="stack ind">
   <div class="row">일 : 목표를 위한 모든 정신·육체적 활동</div>
   <div class="row">직업 : 지속적으로 일을 하여 대가를 받는 활동</div>
-  <div class="wide"><div class="row ind">
+  <div class="ind"><div class="branch">
     <span class="term">요건</span>
     <div class="fork"><div class="mkf">
       <svg class="a1" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="10" y1="0" x2="1" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>

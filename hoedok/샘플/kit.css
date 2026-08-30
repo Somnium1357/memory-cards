@@ -101,9 +101,14 @@ h4{font-family:var(--fb);font-weight:500;font-size:1rem;margin:16px 0 5px;color:
 .fork>.mkf>svg.a2{top:50%;height:calc(50% - .5lh);}
 /* 위는 스크립트가 못 돌 때의 폴백(반 줄 기준). 스크립트가 돌면 실측값으로 덮인다. */
 
-/* ── 아래로 갈라지는 꺾쇠 ⌄ — 말 밑에 갈래를 단다. 팔 끝은 첫·끝 갈래의 **가로 중앙**.
-   마크업: <div class="forkdown"><div class="mkd">…svg 둘…</div><div class="row">…갈래들…</div></div>
-   svg 는 .d1/.d2 두 개를 쓰고 위치는 kit.js 가 잡는다. ── */
+/* ── 아래로 갈라지는 꺾쇠 — 말 밑에 갈래를 단다. 팔 끝은 첫·끝 갈래의 **가로 중앙**.
+   svg 는 .d1/.d2 두 개, 위치·폭은 kit.js 가 잡는다 — d1 은 왼팔 상자(첫 갈래 중앙~꼭짓점),
+   d2 는 오른팔 상자(꼭짓점~끝 갈래 중앙). 꼭짓점이 위(말 쪽), 팔 끝이 아래(갈래 쪽)다.
+   마크업 정본 (2026-08-30 신설 — 그대로 복사하라. 지어내면 두 팔이 안 만난다):
+   <div class="forkdown"><div class="mkd">
+    <svg class="d1" viewBox="0 0 100 10" preserveAspectRatio="none" fill="none"><line x1="0" y1="9" x2="100" y2="1" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+    <svg class="d2" viewBox="0 0 100 10" preserveAspectRatio="none" fill="none"><line x1="0" y1="1" x2="100" y2="9" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+   </div><div class="row">…갈래들…</div></div> ── */
 .forkdown{display:flex;flex-direction:column;align-items:flex-start;gap:3px;}
 .forkdown>.mkd{position:relative;height:11px;align-self:stretch;color:var(--mk);}
 .forkdown>.mkd>svg{position:absolute;top:0;height:100%;display:block;}
@@ -162,6 +167,12 @@ h4{font-family:var(--fb);font-weight:500;font-size:1rem;margin:16px 0 5px;color:
 .converge .link{flex:0 0 auto;text-align:center;color:var(--dim);
   font-size:.875rem;line-height:1.2;}
 .converge .link b{display:block;font-weight:500;color:var(--ink2);}
+
+/* ── 도식 슬롯 — 볼트 도식 svg 를 <img> 로 건다 (조판 지시서 §6-6).
+   <figure class="fig"><img class="dg" src="도식/도식_….svg" alt="…"></figure>
+   ⚠ svg 내부 테마는 prefers-color-scheme 만 본다 — 페이지 data-theme 와 어긋날 수 있다(§7 미결). */
+.fig{margin:10px 0;}
+.fig img,img.dg{max-width:100%;height:auto;display:block;}
 
 /* ── 표 ── */
 table{border-collapse:collapse;font-size:.9375rem;}

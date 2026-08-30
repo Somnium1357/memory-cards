@@ -1,44 +1,52 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 545" width="880" height="545">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 540" width="880" height="540">
   <!-- 판 도식 정본 형식: <style> 없음 · 색 전부 currentColor -->
   <g stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round">
-    <line x1="260" y1="40" x2="260" y2="56"/>
-    <line x1="260" y1="82" x2="260" y2="98"/>
-    <line x1="260" y1="124" x2="260" y2="140"/>
-    <line x1="240" y1="164" x2="218" y2="182"/>
-    <line x1="280" y1="164" x2="302" y2="182"/>
-    <line x1="260" y1="304" x2="260" y2="326"/>
-    <line x1="230" y1="362" x2="152" y2="388"/>
-    <line x1="290" y1="362" x2="388" y2="388"/>
+    <line x1="260" y1="42" x2="260" y2="58"/>
+    <line x1="260" y1="84" x2="260" y2="100"/>
+    <line x1="260" y1="126" x2="260" y2="142"/>
+    <line x1="238" y1="168" x2="208" y2="192"/>
+    <line x1="282" y1="168" x2="300" y2="192"/>
+    <line x1="260" y1="322" x2="260" y2="340"/>
+    <line x1="234" y1="372" x2="158" y2="396"/>
+    <line x1="286" y1="372" x2="362" y2="396"/>
   </g>
   <g fill="currentColor">
-    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(260,58) rotate(90)"/>
-    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(260,100) rotate(90)"/>
-    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(260,142) rotate(90)"/>
-    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(218,182) rotate(141)"/>
-    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(302,182) rotate(39)"/>
-    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(260,328) rotate(90)"/>
-    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(152,388) rotate(162)"/>
-    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(388,388) rotate(15)"/>
+    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(260,60) rotate(90)"/>
+    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(260,102) rotate(90)"/>
+    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(260,144) rotate(90)"/>
+    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(208,192) rotate(141)"/>
+    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(300,192) rotate(53)"/>
+    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(260,342) rotate(90)"/>
+    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(158,396) rotate(162.5)"/>
+    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(362,396) rotate(17.5)"/>
   </g>
   <g fill="currentColor" font-size="16">
     <g text-anchor="middle">
-      <text x="260" y="32">천 (=선을 향하니 선함)</text>
-      <text x="260" y="74">성선 (사람 안에 천이 있으니 성도 선함)</text>
-      <text x="260" y="116">불인인지심 (성선의 증거)</text>
-      <text x="260" y="158">사단과 사덕</text>
-      <text x="260" y="352">사단을 갖춰 사덕을 완성</text>
-      <text x="140" y="410" font-weight="500">수양 (내적)</text>
-      <text x="400" y="410" font-weight="500">정치 (외부)</text>
+      <text x="260" y="34">천 <tspan font-size="14">(=선을 향하니 선함)</tspan></text>
+      <text x="260" y="76">성선 <tspan font-size="14">(사람 안에 천이 있으니 성도 선함)</tspan></text>
+      <text x="260" y="118">불인인지심 <tspan font-size="14">(성선의 증거)</tspan></text>
+      <text x="260" y="160">사단과 사덕</text>
+      <text x="205" y="216">측은</text>
+      <text x="205" y="248">수오</text>
+      <text x="205" y="280">사양</text>
+      <text x="205" y="312">시비</text>
+      <text x="244" y="216">→</text>
+      <text x="244" y="248">→</text>
+      <text x="244" y="280">→</text>
+      <text x="244" y="312">→</text>
+      <text x="260" y="364">사단을 갖춰 사덕을 완성</text>
+      <text x="150" y="416" font-weight="500">수양 (내적)</text>
+      <text x="370" y="416" font-weight="500">정치 (외부)</text>
     </g>
-    <text x="195" y="210">측은 → 인(사랑)</text>
-    <text x="195" y="240">수오 → 의(정의)</text>
-    <text x="195" y="270">사양 → 예(예의)</text>
-    <text x="195" y="300">시비 → 지(지혜)</text>
-    <text x="60" y="440">호연지기, 과욕</text>
-    <text x="60" y="468">인의의 실현</text>
-    <text x="82" y="496">상지 : 뜻을 고상하게 – 마음 보존</text>
-    <text x="82" y="524">지지 : 본성을 유지 – 본성 함양</text>
-    <text x="330" y="440">왕도 : 덕을 통한 정치</text>
-    <text x="330" y="468">교육 &gt; 선정 : 본성 회복을 위한 교육이 최우선</text>
+    <text x="284" y="216">인 <tspan font-size="14">(사랑)</tspan></text>
+    <text x="284" y="248">의 <tspan font-size="14">(정의)</tspan></text>
+    <text x="284" y="280">예 <tspan font-size="14">(예의)</tspan></text>
+    <text x="284" y="312">지 <tspan font-size="14">(지혜)</tspan></text>
+    <text x="70" y="446">호연지기, 과욕</text>
+    <text x="70" y="474">인의의 실현</text>
+    <text x="92" y="502" font-size="15">상지 : 뜻을 고상하게 – 마음 보존</text>
+    <text x="92" y="530" font-size="15">지지 : 본성을 유지 – 본성 함양</text>
+    <text x="290" y="446">왕도 : 덕을 통한 정치</text>
+    <text x="290" y="474">교육 &gt; 선정 : 본성 회복을 위한 교육이 최우선</text>
   </g>
 </svg>

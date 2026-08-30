@@ -42,6 +42,8 @@
    관계를 나르는 기호(⇒·→·↓·브레이스)가 본문보다 흐리면 안 된다 (독립 검수 08-30 #33) */
 
 *{box-sizing:border-box;}
+/* 복귀·회전 때 iOS 가 미세 확대하며 가로 스크롤을 만드는 것 차단 — 가로 넘침은 .wide 안에서만 */
+html,body{max-width:100%;overflow-x:hidden;}
 body{margin:0;background:var(--bg);color:var(--ink);
   font-family:var(--fb);font-size:1rem;font-weight:400;line-height:1.75;
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
@@ -58,19 +60,21 @@ h3{font-family:var(--fb);font-weight:700;font-size:1.0625rem;line-height:1.5;
   color:var(--ink);margin:34px 0 10px;}
 h3:first-of-type{margin-top:22px;}
 /* h4 는 700 — 인라인 .term(500)과 같아지면 위계가 붕괴한다 (독립 검수 08-30 #8) */
-h4{font-family:var(--fb);font-weight:700;font-size:1rem;margin:16px 0 5px;color:var(--ink);}
+h4{font-family:var(--fb);font-weight:700;font-size:1rem;margin:16px 0 5px var(--step);color:var(--ink);}
+/* h4 는 h3 본문 급이라 한 단 안쪽에서 시작한다 (들여쓰기 사다리 — 지시.md) */
 
 /* ── 흐름 ── */
 .stack{display:flex;flex-direction:column;gap:var(--gap);}
 .row{display:flex;align-items:baseline;gap:.5em;flex-wrap:wrap;}
 .ind{padding-left:var(--step);}
+.ind2{padding-left:calc(var(--step)*2);}   /* h4 본문용 — 사다리 두 단 */
 .stack>.row>.desc,.ind>.desc{max-width:46em;}   /* 트리 밖 줄글 상한 */
 
 /* ── 글자 역할 — 굵기와 회색 단계로만 ── */
 .term{font-weight:500;white-space:nowrap;}
 .desc{color:var(--ink2);}
 .num{color:var(--dim);font-variant-numeric:tabular-nums;}
-.row>.num:first-child{min-width:2em;}   /* 두 자리 번호에서 본문 x 가 안 밀리게 */
+.row>.num:first-child{min-width:1.7em;}   /* 두 자리 번호 정렬용 — 더 주면 한 자리 번호가 제목과 벌어진다 */
 .quiet{color:var(--dim);font-size:.9375em;}
 .key{font-weight:500;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--mk);}
 .mk{color:var(--mk);}

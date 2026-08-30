@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="36 20 650 172" width="650" height="172">
+  <!-- 판 도식 정본 형식: <style> 없음 · 색 전부 currentColor -->
+  <g stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path transform="translate(90,120)" d="M-8,-40 L-14,38 C16,46 36,10 26,-36"/>
+    <path transform="translate(240,120)" d="M-6,-40 L-12,36 C8,46 32,34 36,16 C40,-6 32,-26 22,-38"/>
+    <path transform="translate(410,120)" d="M2,-42 L-4,36 C-26,40 -48,24 -42,8 C-38,-4 -20,-2 -4,8 C12,16 30,22 40,18 C52,12 54,-16 46,-42"/>
+    <path transform="translate(600,120)" d="M0,-42 L-4,30 C-18,38 -30,34 -30,22 C-30,10 -44,8 -50,16 C-36,32 -8,36 16,30 C30,26 42,22 48,26 C60,16 56,-20 46,-42"/>
+  </g>
+  <g fill="currentColor">
+    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(116,84) rotate(-102)"/>
+    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(262,82) rotate(-130)"/>
+    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(456,78) rotate(-107)"/>
+    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(646,78) rotate(-117)"/>
+  </g>
+  <g fill="currentColor" text-anchor="middle">
+    <g font-size="16">
+      <text x="90" y="48">2/4</text>
+      <text x="240" y="48">3/4</text>
+      <text x="410" y="48">4/4</text>
+      <text x="600" y="48">6/8</text>
+    </g>
+<!-- 박 번호는 노트(p05)에 없다 — 4/4 번호판은 도식_8.음악_4박자지휘.svg (p07 용) -->
+  </g>
+</svg>

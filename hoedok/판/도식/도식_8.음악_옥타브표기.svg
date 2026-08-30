@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="40 8 332 98" width="332" height="98">
+  <!-- 판 도식 정본 형식: <style> 없음 · 색 전부 currentColor -->
+  <g stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round">
+    <!-- 배성 : 삐침 하나 -->
+    <path d="M60,20 L58,58"/>
+    <path d="M50,20 L59,32"/>
+    <!-- 중성 : 표기 없음 (획 없음) -->
+    <!-- 청성 : 삐침 둘 -->
+    <path d="M240,20 L238,58"/>
+    <path d="M230,18 L239,28"/>
+    <path d="M231,32 L239,40"/>
+    <!-- 중청성 : 같은 것 둘 -->
+    <path d="M328,20 L326,58"/>
+    <path d="M318,18 L327,28"/>
+    <path d="M319,32 L327,40"/>
+    <path d="M352,20 L350,58"/>
+    <path d="M342,18 L351,28"/>
+    <path d="M343,32 L351,40"/>
+  </g>
+  <g fill="currentColor" font-size="16" text-anchor="middle">
+    <text x="60" y="80">배성</text>
+    <text x="150" y="80">중성</text>
+    <text x="240" y="80">청성</text>
+    <text x="340" y="80">중청성</text>
+    <text x="150" y="98" font-size="13">(표기 없음)</text>
+  </g>
+</svg>

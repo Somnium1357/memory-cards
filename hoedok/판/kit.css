@@ -20,7 +20,7 @@
   --bg:#13151A; --ink:#E8EAF0; --ink2:#C3C8D4; --dim:#828A9B;
   --mk:#7A849B; --hair:#2B303C; --ac:#8CA7FF;
   --fd:"Nanum Myeongjo",serif;
-  --fb:"Noto Sans KR",system-ui,sans-serif;
+  --fb:"Noto Sans KR","Noto Music",system-ui,sans-serif;  /* Noto Music = U+1D1xx 음악 기호 폴백 */
   --fm:"IBM Plex Mono",ui-monospace,monospace;
   --gap:7px;
   --step:1.55em;              /* 들여쓰기 한 단 — 문서 전체가 이 하나만 쓴다 */
@@ -51,6 +51,10 @@ body{margin:0;background:var(--bg);color:var(--ink);
 /* ── 표제 — 크기·종류·굵기·여백을 함께 쓴다 ── */
 h1{font-family:var(--fd);font-weight:700;font-size:2rem;line-height:1.3;
   margin:0 0 6px;letter-spacing:-.015em;text-wrap:balance;}
+/* 대주제 배너 — 절(h2)이 잘게 나뉜 재조직 과목에서 조립기가 회독본 ## 를 얹는 층 (h2 위) */
+.part{font-family:var(--fd);font-weight:700;font-size:1.7rem;line-height:1.3;
+  letter-spacing:-.015em;margin:88px 0 -26px;padding-bottom:12px;
+  border-bottom:3px solid var(--mk);}
 h2{font-family:var(--fd);font-weight:700;font-size:1.4375rem;line-height:1.35;
   margin:52px 0 16px;letter-spacing:-.01em;padding-bottom:9px;
   border-bottom:1px solid var(--hair);}
@@ -210,6 +214,12 @@ h4{font-family:var(--fb);font-weight:700;font-size:1rem;margin:16px 0 5px var(--
    모른다). 도식 svg 정본 형식 = <style> 없음 · 색은 전부 currentColor. */
 .fig svg{max-width:100%;height:auto;display:block;color:var(--ink);}
 .fig svg text{font-family:var(--fb);}
+/* 교재 발췌 크롭(흰 바탕 선화) — 다크 테마에선 반전해 지면에 앉힌다 */
+img.photo{max-width:100%;height:auto;display:block;border-radius:4px;}
+:root[data-theme="b"] img.photo{filter:invert(.9) hue-rotate(180deg);}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme]) img.photo{filter:invert(.9) hue-rotate(180deg);}
+}
 
 /* ── 표 ── */
 table{border-collapse:collapse;font-size:.9375rem;}
@@ -235,7 +245,7 @@ td.h{font-weight:500;color:var(--ink2);}
 .head .num{font-size:.9375rem;}
 .head .nm{font-weight:500;font-size:1.0625rem;}
 .foot{margin-top:56px;padding-top:20px;border-top:1px solid var(--hair);
-  color:var(--dim);font-size:.9375rem;max-width:46ch;}
+  color:var(--dim);font-size:.9375rem;}
 
 /* 프린트 — 트리·표가 쪽 경계에서 잘리지 않게 */
 @media print{

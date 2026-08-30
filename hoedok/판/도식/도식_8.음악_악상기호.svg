@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 104" width="380" height="104">
+  <!-- 판 도식 정본 형식: <style> 없음 · 색 전부 currentColor -->
+  <g fill="currentColor" stroke="none">
+    <ellipse cx="46" cy="58" rx="7" ry="5.5" transform="rotate(-15 46 58)"/>
+    <ellipse cx="176" cy="58" rx="7" ry="5.5" transform="rotate(-15 176 58)"/>
+    <ellipse cx="306" cy="58" rx="7" ry="5.5" transform="rotate(-15 306 58)"/>
+    <circle cx="46" cy="74" r="2.6"/>
+  </g>
+  <g stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round">
+    <line x1="52.5" y1="56" x2="52.5" y2="20"/>
+    <line x1="182.5" y1="56" x2="182.5" y2="20"/>
+    <line x1="312.5" y1="56" x2="312.5" y2="20"/>
+    <line x1="169" y1="74" x2="183" y2="74"/>
+    <path d="M300 80 L313 74 L300 68"/>
+  </g>
+  <g fill="currentColor" font-size="16" text-anchor="middle">
+    <text x="50" y="98">스타카토</text>
+    <text x="180" y="98">테누토</text>
+    <text x="310" y="98">악센트</text>
+  </g>
+</svg>

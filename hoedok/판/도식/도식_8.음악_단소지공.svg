@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="56 6 268 340" width="268" height="340">
+  <!-- 판 도식 정본 형식: <style> 없음 · 색 전부 currentColor -->
+  <g stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- 관 (리코더와 같은 둥근 관) -->
+    <path d="M150,34 L150,312 C150,334 182,334 182,312 L182,34 C182,22 150,22 150,34 Z"/>
+    <!-- 앞 지공 -->
+    <circle cx="166" cy="95" r="5"/>
+    <circle cx="166" cy="140" r="5"/>
+    <circle cx="166" cy="185" r="5"/>
+    <circle cx="166" cy="230" r="5"/>
+    <!-- 뒷구멍 -->
+    <circle cx="134" cy="272" r="5"/>
+    <!-- 지시선 (앞 지공) -->
+    <line x1="186" y1="95" x2="208" y2="95"/>
+    <line x1="186" y1="140" x2="208" y2="140"/>
+    <line x1="186" y1="185" x2="208" y2="185"/>
+    <line x1="186" y1="230" x2="208" y2="230"/>
+    <!-- 지시선 (뒷구멍 · 점선) -->
+    <line x1="116" y1="272" x2="129" y2="272" stroke-dasharray="3 3"/>
+  </g>
+  <g fill="currentColor" font-size="16">
+    <text x="216" y="100">5공 <tspan font-size="13">(거의 X)</tspan></text>
+    <text x="216" y="145">4공 <tspan font-size="13">(우·검)</tspan></text>
+    <text x="216" y="190">3공 <tspan font-size="13">(좌·중)</tspan></text>
+    <text x="216" y="235">2공 <tspan font-size="13">(좌·검)</tspan></text>
+    <g text-anchor="end">
+      <text x="112" y="270">1공</text>
+      <text x="112" y="292" font-size="13">(좌엄)</text>
+    </g>
+  </g>
+</svg>

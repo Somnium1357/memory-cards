@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="8 12 626 314" width="626" height="314">
+  <!-- 판 도식 정본 형식: <style> 없음 · 색 전부 currentColor -->
+  <g stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- 통 -->
+    <ellipse cx="200" cy="200" rx="28" ry="88"/>
+    <ellipse cx="440" cy="200" rx="24" ry="72"/>
+    <ellipse cx="440" cy="200" rx="11" ry="32"/>
+    <path d="M200,112 C280,142 360,142 440,128"/>
+    <path d="M200,288 C280,258 360,258 440,272"/>
+    <!-- 조임줄 -->
+    <path d="M206,146 L424,158 L206,198 L424,204 L206,252 L424,244"/>
+    <!-- 조이개 -->
+    <path d="M344,161 L356,161 L350,146 Z"/>
+    <!-- 궁굴채 -->
+    <line x1="115" y1="88" x2="115" y2="142"/>
+    <circle cx="115" cy="148" r="6"/>
+    <!-- 열채 -->
+    <line x1="530" y1="92" x2="530" y2="160"/>
+    <!-- 지시선 -->
+    <line x1="452" y1="86" x2="446" y2="124"/>
+    <line x1="514" y1="294" x2="443" y2="203"/>
+    <line x1="334" y1="88" x2="347" y2="138"/>
+    <path d="M362,60 C374,48 382,42 391,37"/>
+    <line x1="108" y1="200" x2="168" y2="200"/>
+    <line x1="540" y1="200" x2="474" y2="200"/>
+  </g>
+  <g fill="currentColor">
+    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(172,200)"/>
+    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(470,200) rotate(180)"/>
+    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(350,145) rotate(75.5)"/>
+    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(393,36) rotate(-30)"/>
+    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(445,129) rotate(99)"/>
+    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(440,200) rotate(-128.2)"/>
+  </g>
+  <g fill="currentColor" font-size="16">
+    <g text-anchor="middle">
+      <text x="115" y="72">궁굴채</text>
+      <text x="330" y="78">조이개</text>
+      <text x="452" y="78">변죽</text>
+      <text x="530" y="78">열채</text>
+      <text x="62" y="196">북편</text>
+      <text x="62" y="220" font-size="13">두꺼움, 낮음</text>
+    </g>
+    <text x="399" y="41">조이면 음 ↑ , 음색</text>
+    <text x="556" y="194">채편</text>
+    <text x="556" y="218" font-size="13">얇음, 높음</text>
+    <text x="520" y="306">복판</text>
+  </g>
+</svg>

@@ -123,7 +123,7 @@
     b.id='themeBtn';
     b.setAttribute('aria-label','테마 전환');
     b.textContent = document.documentElement.dataset.theme==='b' ? '☀' : '☾';
-    b.style.cssText='position:fixed;top:14px;right:14px;z-index:9;width:34px;height:34px;'
+    b.style.cssText='position:fixed;top:12px;right:12px;z-index:9;width:30px;height:30px;opacity:.92;'
       +'border:1px solid var(--hair);border-radius:50%;background:var(--bg);color:var(--dim);'
       +'font-size:15px;cursor:pointer;line-height:1;';
     b.onclick=function(){
@@ -139,6 +139,6 @@
 
 
 /* 구조 선 svg 는 전부 장식이다 — 일괄로 스크린리더에서 뺀다 */
-document.querySelectorAll('.mkf svg,.mkd svg,.converge>svg,.fork svg').forEach(function(e){
+document.querySelectorAll('.mkf svg,.mkd svg,.converge>svg,.fork svg,.fig svg').forEach(function(e){
   e.setAttribute('aria-hidden','true');});
 

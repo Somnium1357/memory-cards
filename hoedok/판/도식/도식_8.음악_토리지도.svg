@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 375" width="390" height="375">
+  <!-- 판 도식 정본 형식: <style> 없음 · 색 전부 currentColor -->
+  <g stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- 한반도 약도 (지리 왜곡 무방 · 토리 자리만 보이면 된다) -->
+    <path d="M140,40 L190,20 L240,35 L262,90 L240,130 L252,170 L240,210 L258,250
+             L240,300 L210,340 L175,355 L145,330 L136,280 L155,240 L140,200
+             L125,155 L136,100 Z"/>
+    <path d="M172,100 C186,160 180,220 192,280"/>
+    <!-- 지시선 (라벨 → 지역 · 화살촉은 지역 쪽) -->
+    <line x1="86" y1="51" x2="136" y2="69"/>
+    <line x1="310" y1="37" x2="250" y2="51"/>
+    <line x1="82" y1="180" x2="129" y2="180"/>
+    <line x1="82" y1="314" x2="138" y2="312"/>
+  </g>
+  <g fill="currentColor">
+    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(140,70) rotate(19.4)"/>
+    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(246,52) rotate(166.8)"/>
+    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(133,180)"/>
+    <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(142,312) rotate(-1.9)"/>
+  </g>
+  <g fill="currentColor" font-size="16" text-anchor="middle">
+    <text x="50" y="46">서도</text>
+    <text x="350" y="40">동북</text>
+    <text x="40" y="185">경기</text>
+    <text x="40" y="319">남도</text>
+  </g>
+</svg>

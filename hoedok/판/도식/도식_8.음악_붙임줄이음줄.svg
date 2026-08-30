@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="38 6 246 180" width="246" height="180">
+  <!-- 판 도식 정본 형식: <style> 없음 · 색 전부 currentColor -->
+  <g stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round">
+    <!-- 붙임줄 : 같은 높이의 두 음 -->
+    <line x1="67" y1="58" x2="67" y2="20"/>
+    <line x1="117" y1="58" x2="117" y2="20"/>
+    <path d="M60,68 C74,84 96,84 110,68"/>
+    <!-- 이음줄 : 다른 높이의 두 음 -->
+    <line x1="67" y1="148" x2="67" y2="110"/>
+    <line x1="117" y1="164" x2="117" y2="126"/>
+    <path d="M58,159 C74,175 94,182 112,176"/>
+  </g>
+  <g fill="currentColor">
+    <ellipse cx="60" cy="60" rx="7.5" ry="5.5" transform="rotate(-20 60 60)"/>
+    <ellipse cx="110" cy="60" rx="7.5" ry="5.5" transform="rotate(-20 110 60)"/>
+    <ellipse cx="60" cy="150" rx="7.5" ry="5.5" transform="rotate(-20 60 150)"/>
+    <ellipse cx="110" cy="166" rx="7.5" ry="5.5" transform="rotate(-20 110 166)"/>
+  </g>
+  <g fill="currentColor" font-size="16">
+    <text x="150" y="64">붙임줄 <tspan font-size="13">(같은음)</tspan></text>
+    <text x="150" y="158">이음줄 <tspan font-size="13">(다른음)</tspan></text>
+  </g>
+</svg>

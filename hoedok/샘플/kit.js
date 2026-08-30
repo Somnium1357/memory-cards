@@ -32,17 +32,33 @@
 /* .converge 브레이스 — 왼쪽 묶음 높이에 맞춘다. 손으로 px 을 박지 않아도 되게. */
 (function(){
   function fitBrace(){
+    /* 🔴 감싸지 않는다 — 브레이스 끝이 첫 항목·끝 항목의 글자 중앙에 와야 한다.
+       왼쪽 묶음 전체 높이로 늘이면 첫·끝 줄을 감싸 보인다(fork 와 같은 문제였다). */
     document.querySelectorAll('.converge').forEach(function(c){
       var kids = c.children, svg = null, left = null;
       for (var i=0;i<kids.length;i++){
         if (kids[i].tagName.toLowerCase()==='svg'){ svg = kids[i]; break; }
         left = kids[i];
       }
-      if(!svg || !left) return;
-      var h = left.getBoundingClientRect().height;
-      if(!h) return;
+      if(!svg || !left || !left.children.length) return;
+      var lb = left.getBoundingClientRect();
+      /* 왼쪽이 중첩 구조면 자식 상자가 아니라 본문 항목(.term/.mid)의 글자 중앙을 잰다 */
+      var marks = left.querySelectorAll('.term,.mid');
+      var a, b;
+      if(marks.length >= 2){
+        a = marks[0].getBoundingClientRect();
+        b = marks[marks.length-1].getBoundingClientRect();
+      } else {
+        a = left.children[0].getBoundingClientRect();
+        b = left.children[left.children.length-1].getBoundingClientRect();
+      }
+      var top = (a.top + a.height/2) - lb.top;
+      var bot = lb.bottom - (b.top + b.height/2);
+      var h = Math.max(8, lb.height - top - bot);
       svg.setAttribute('preserveAspectRatio','none');
       svg.style.height = h.toFixed(1)+'px';
+      svg.style.alignSelf = 'flex-start';
+      svg.style.marginTop = top.toFixed(1)+'px';
       if(!svg.style.width) svg.style.width = '11px';
       svg.querySelectorAll('path,line').forEach(function(e){
         e.setAttribute('vector-effect','non-scaling-stroke'); });

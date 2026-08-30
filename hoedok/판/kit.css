@@ -138,6 +138,24 @@ h4{font-family:var(--fb);font-weight:500;font-size:1rem;margin:16px 0 5px;color:
 .chain .arrow{color:var(--mk);}
 .par{display:flex;flex-direction:column;gap:2px;}
 
+/* ── 세로 사슬 — 단계가 ↓ 로 아래로 이어지고, 단계 오른쪽에 주석이 붙는다 (2026-08-30 신설).
+   노트 원형: 단계명 밑에 ↓, 단계명 오른쪽에 ⇒ 주석. ↓ 를 .row 줄머리에 앉히면 의미가 죽는다.
+   마크업 정본:
+   <div class="vchain">
+     <div class="stp">준비</div>
+     <div class="arw">↓</div>
+     <div class="stp">선정</div><div class="ann"><span class="mk">⇒</span> 너무 모범 답안 …</div>
+     <div class="arw">↓</div>
+     …
+   </div>
+   .stp = 단계(1열) · .ann = 그 단계 오른쪽 주석(2열, 있을 때만 .stp 바로 다음에) ·
+   .arw = 단계 사이 ↓(1열). 이 세 가지 외에 다른 자식을 넣지 마라. ── */
+.vchain{display:grid;grid-template-columns:max-content minmax(0,1fr);
+  column-gap:1.6em;row-gap:2px;align-items:baseline;}
+.vchain>.stp{grid-column:1;}
+.vchain>.arw{grid-column:1;color:var(--mk);padding-left:.7em;line-height:1.15;}
+.vchain>.ann{grid-column:2;color:var(--ink2);max-width:46em;}
+
 /* ── 칸 ── */
 .lanes{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;min-width:520px;}
 .lanes>*{padding:0 14px;border-left:1px solid var(--hair);}

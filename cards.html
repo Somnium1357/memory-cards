@@ -4774,6 +4774,19 @@ function todayRatings(){          // 카드 → 오늘 마지막 채점 등급
   todayRateIdx=m; todayRateLen=state.log.length; todayRateDay=tk;
   return m;
 }
+/* 분류(브레드크럼) — 🔴 **`node` 경로가 정본**이고 앞면의 `〔…〕` 접두는 폴백이다.
+   같은 정보를 두 곳에 두면 어긋난다: 앞면 접두가 아예 없던 169장(루틴이 08-30 복원)과
+   **과목만 있고 대주제가 빠진 189장**이 그렇게 생겼다(동하 「분류 안 나옴」).
+   실측(7,991장): node에서 조립한 값이 현재 접두와 **7,802장 일치**하고, 다른 189장은
+   전부 접두 쪽이 모자란 것이었다 — 즉 node를 쓰면 맞는 것은 그대로고 빠진 것만 채워진다.
+   ⚠ 앞면 **본문**은 여전히 접두를 떼어 쓴다(그 문자열은 카드 데이터의 일부다). 여기서 바꾸는 것은
+   「무엇을 분류로 보여줄 것인가」뿐이고, 카드 데이터·문법은 안 건드린다. */
+function scopeOf(c){
+  const p=(c.node||'').split('/').filter(Boolean);
+  if(p.length>=2) return p[0]+' · '+p[1];
+  const m=(c.front||'').match(/^〔([^〕]*)〕/);   // node가 얕으면(현재 0장) 옛 방식으로 떨어진다
+  return m?m[1]:(c.subj||'');
+}
 function settledToday(c){         // 오늘 처리 끝난 카드 = 오늘 한 번이라도 채점됐다
   /* 2026-08-21 이전에는 「마지막 채점이 다시가 아님」이었다. 「다시」를 누르면 그날 10장 뒤에
      다시 나오는 규칙이 있었기 때문. 재출을 없애면서 정의도 단순해졌다 —
@@ -4864,12 +4877,16 @@ function playSess(sx){          // 세션 화면의 [이어가기] — 남은 �
   curSess=sx; viewSess=sx; curPreset=asPreset(sx);
   lastPlaySid=sx.id;   // curSess가 끊겨도 이 id로 큐의 주인을 되찾는다 (syncSessQueue 참고)
   refillSess(sx);
-  queue=unleak(dropSettled(sessCards(sx)), sx.how.order!=='doc'); qPos=0;  // 다른 세션에서 오늘 푼 것은 빼고 이어간다
+  const all=sessCards(sx);
+  // 다른 세션에서 오늘 푼 것은 빼고 이어간다 — 단 지목 세션(pick)은 그대로 푼다
+  queue=unleak(sx.pick?all:dropSettled(all), sx.how.order!=='doc'); qPos=0;
   // 🔴 저장된 큐를 이어 풀 때도 한 번 더 건다 — 큐는 조립 뒤에도 「내용 추가」로 뒤에 붙는다
   phase = stOnly(sx.how.status,'new') ? 'new' : 'review';
   sessionDone=0; doneCredited=0; newServed=0; undoSnap=null; undoRun++; updateUndo(); sessReset();
   go('scrSolve');
-  if(!queue.length){ finishSess(); } else showCard();
+  /* 🔴 큐가 비었는데 세션에 카드는 있었다 = 전부 오늘 이미 푼 것이다. 말없이 돌려보내면
+     「눌렀는데 아무 일도 안 일어난다」가 된다(동하 2026-08-30). 이유를 말한다. */
+  if(!queue.length){ if(all.length) toast('오늘 이미 푼 카드뿐이에요'); finishSess(); } else showCard();
 }
 function finishSess(){         // 큐 소진 = 세션 화면으로 복귀 (성적표는 거기서)
   if(curSess){
@@ -5165,8 +5182,13 @@ function showCard(){
      통째로 재주입되고, 다른 기기 채점은 병합으로 뒤늦게 들어온다. 두 경로 다 아래에서 막았지만,
      여기서 한 번 더 거른다 — 조립 시점에 없던 사실이 나중에 생길 수 있는 구조라서.
      당일 재출이 없어진 뒤로는 「오늘 채점된 카드」 전부가 대상이다. */
+  /* 🔴 예외 하나 — **사람이 그 카드를 집어서 만든 세션**(`pick`)은 안 거른다.
+     「바로 풀기」는 자동 조립이 아니라 지목이다. 당일 재출 금지는 **앱이 스스로 또 내미는 것**을
+     막는 규칙이지, 동하가 찍은 카드를 막는 규칙이 아니다(2026-08-30 실측: 오늘 푼 카드를
+     상세에서 「바로 풀기」하면 큐가 0장이 되어 **아무 말 없이 홈으로 튕겼다**). */
   let skipped=0;
-  while(queue[qPos] && settledToday(queue[qPos])){ qPos++; skipped++; }
+  const picked = !!(curSess && curSess.pick);
+  while(!picked && queue[qPos] && settledToday(queue[qPos])){ qPos++; skipped++; }
   if(skipped) syncSessQueue();
   const c=cur();
   if(!c){ showSummaryOrNew(); return; }
@@ -5175,7 +5197,7 @@ function showCard(){
   $('revealHint').style.display='block';
   $('revealHint').textContent = c.typ==='도식' ? '다 그렸으면 탭하세요' : '카드를 탭하면 정답';
   const m=c.front.match(/^〔([^〕]*)〕\s*(.*)$/s);
-  $('cScope').textContent=m?m[1]:''; $('cFront').textContent=m?m[2]:c.front;
+  $('cScope').textContent=scopeOf(c); $('cFront').textContent=m?m[2]:c.front;
   $('cBackWrap').classList.remove('on');
   $('gradeBar').classList.remove('on');
   renderTable(c,false);
@@ -6654,7 +6676,7 @@ function renderCardSheet(){
     ...userTags(c.id).map(t=>`<button class="utag" data-untag="${esc(t)}">#${esc(t)} ✕</button>`),
     ...((s.ann||[]).map(t=>`<button class="utag ann" data-unann="${esc(t)}">@${esc(t)} ✕</button>`))];
   $('csSheet').innerHTML=`
-    <div class="cs-scope">${esc(m?m[1]:c.subj)}</div>
+    <div class="cs-scope">${esc(scopeOf(c))}</div>
     <div class="cs-front">${esc(m?m[2]:c.front)}</div>
     ${hasItems?`<div class="cs-items">${c.items.map(i=>`<div>· ${esc(i)}</div>`).join('')}</div>`
               :`<div class="cs-back">${esc(c.back)}</div>`}
@@ -6715,7 +6737,7 @@ function renderCardSheet(){
   const mb=$('csMemoSave'); if(mb)mb.onclick=()=>{ setFlag(c,$('csMemo').value); toast('메모 저장'); };
   $('csBury').onclick=()=>{ buried(c)?unburyCard(c):buryCard(c); rr(); };
   $('csRetire').onclick=()=>{ offCard(c, !(state.cards[c.id]||{}).retired); rr(); };
-  $('csSolve').onclick=()=>{ closeCardSheet(); startAdHoc([c], '카드 1장'); };
+  $('csSolve').onclick=()=>{ closeCardSheet(); startAdHoc([c], '카드 1장', null, true); };
   $('csDueSet').onclick=()=>{ const n=+$('csDueN').value;
     if(!$('csDueN').value.trim()||!isFinite(n)||n<0){ toast('며칠 뒤인지 숫자로'); return; }
     if(setDueDays(c,n)){ toast(n===0?'오늘로 옮겼어요':`${n}일 뒤로 옮겼어요`); rr(); }
@@ -6726,7 +6748,10 @@ function renderCardSheet(){
   $('csClose').onclick=closeCardSheet;
 }
 $('ovlCard').onclick=(e)=>{ if(e.target===$('ovlCard'))closeCardSheet(); };
-function startAdHoc(cards, label, note){ // 목록·상세에서 바로 풀기 = 임시 세션도 정식 세션으로 만든다
+/* pick=true = **사람이 그 카드를 지목했다.** 오늘 이미 푼 카드도 거르지 않는다(playSess·showCard).
+   상세에서 「바로 풀기」한 한 장이 그렇다 — 목록 세션은 조건으로 뽑은 묶음이라 안 준다.
+   그쪽까지 주면 방금 푼 카드가 목록 세션에 섞여 되돌아온다. */
+function startAdHoc(cards, label, note, pick){ // 목록·상세에서 바로 풀기 = 임시 세션도 정식 세션으로 만든다
   if(!cards.length){ toast('풀 카드가 없어요'); return; }
   if(curSess) syncSessQueue();             // 하던 세션은 남은 큐 그대로 보존 (멀티세션)
   /* 🔴 mode는 반드시 'manual' — 임시 세션은 담은 카드만 푼다. 비우면 'auto'가 되어
@@ -6734,7 +6759,7 @@ function startAdHoc(cards, label, note){ // 목록·상세에서 바로 풀기 =
      전 카드를 채워 버린다 (감사 U1 — 재현 확정). */
   const sx=newSessObj(label||'임시 세션',
     {status:'all', order:'shuffle', weights:{}, limit:null, bury:false, newAfter:false}, {}, 'manual');
-  sx.q=cards.map(c=>c.id); sx.day=todayKey(); sx.temp=true;
+  sx.q=cards.map(c=>c.id); sx.day=todayKey(); sx.temp=true; if(pick) sx.pick=true;
   sessions.unshift(sx); saveSessionsFlush();
   playSess(sx);
   toast(note||`${cards.length}장 세션 — 채점은 정규로 반영돼요`);

@@ -3403,6 +3403,9 @@ let DATA=[], BYID={}, ALLTAGS=[], ALLTYPS=[], TAGMETA={};
 /* 이번 부팅의 DATA가 **원격에서 방금 받은 것**인가 (캐시 폴백이면 false).
    BYID로 「없는 카드」를 판정하는 곳은 이 값을 먼저 봐야 한다 — pruneOrphans 참고. */
 let dataFresh=false;
+/* 카드 본문을 마지막으로 **원격에서** 받은 시각·날짜. refreshRemote가 다시 받을지 정하는 데 쓴다.
+   실패(캐시 폴백)면 갱신하지 않는다 — 다음 복귀 때 다시 시도해야 하기 때문이다. */
+let dataAt=0, dataDay='';
 let state={cards:{},log:[],hoedok:{}}, sha={}, cfg=null;
 let logWeeks={};                       // 주 키 → 로그 배열 (이번 주 + 통계가 불러온 과거 주)
 const dirtyFiles=new Set(), dirtyLogs=new Set();
@@ -3943,6 +3946,20 @@ async function refreshRemote(){     // 포그라운드 복귀 시 원격 상태 
   refreshing=true;
   try{
     if(dirty) await push();          // 내 것 먼저 올리고
+    /* 🔴 카드 본문도 다시 받는다. 예전에는 여기서 **상태 파일만** 당겨서, 앱을 켜 둔 채로는
+       밤 루틴이 고친 문면·분류·새 카드가 **영영 안 들어왔다** — `loadData()` 호출처가 부팅 한 곳뿐이었다.
+       실측(동하 2026-08-30): 분류 복원 배포(00:06) **10시간 뒤**에도 옛 앞면이 보였다.
+       기기는 온라인이었고 그날 앱이 86번 올리고 있었다 — 「오프라인 폴백」이 아니라 **안 받는 것**이었다.
+       ⚠ 3.3MB(gzip 530KB)라 포그라운드마다 받지 않는다 — **날이 바뀌었거나 60분이 지났을 때**만.
+          밤 루틴이 하루 한 번 갈아엎으므로 날 바뀜이 주된 방아쇠고, 60분은 낮 배포용 바닥이다.
+       ⚠ 풀이 중에는 이 함수가 위에서 미뤄지므로 카드가 **손 밑에서 바뀌지 않는다**. */
+    if(!dataDay || dataDay!==todayKey() || Date.now()-dataAt>36e5){
+      await loadData();
+      /* 🔴 큐는 **카드 객체**를 들고 있다(`queue.push(BYID[id])`). loadData가 BYID를 새 객체로
+         갈아끼우므로 다시 묶지 않으면 화면은 옛 객체를 계속 그린다 — 받아 놓고도 문면이 안 바뀐다.
+         사라진 카드는 옛 객체를 그대로 둔다(풀던 자리를 말없이 빼앗지 않는다 — 정리는 pruneSolvedFromQueues 몫). */
+      queue=queue.map(c=>BYID[c.id]||c);
+    }
     const [sc, fb, sess, wk] = await Promise.all([
       ghGet(MARKS_PATH), ghGet(FB_PATH), ghGet(SESS_PATH), ghGet(logPath(thisWeek()))]);
     if(sc||fb||sess||wk){
@@ -4237,6 +4254,7 @@ async function loadData(){
     const j=await r.json();
     DATA=j.cards||[];
     dataFresh=true;                 // 원격 = 최신 카드 ID 전량을 안다
+    dataAt=Date.now(); dataDay=todayKey();
     lsSet(K_DATA, JSON.stringify(j));
   }catch(e){
     dataFresh=false;                // 캐시 폴백 = 밤새 재생성된 새 ID를 모른다

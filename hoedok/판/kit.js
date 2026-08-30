@@ -49,8 +49,22 @@
         a = marks[0].getBoundingClientRect();
         b = marks[marks.length-1].getBoundingClientRect();
       } else {
-        a = left.children[0].getBoundingClientRect();
-        b = left.children[left.children.length-1].getBoundingClientRect();
+        /* .term/.mid 가 없으면 왼쪽 안의 「세로 목록」(.bracket/.stack/.kids, 항목 2+)을 찾아
+           그 첫·끝 항목을 잰다 — 왼쪽이 라벨+목록의 가로 묶음(.branch)이면 직계 자식은 가로
+           형제라 첫·끝 중앙이 같은 점이 되어 브레이스가 8px 로 주저앉는다 (체육 p02 실사고) */
+        var list = null;
+        var cands = left.querySelectorAll('.bracket,.stack,.kids');
+        for (var ci = 0; ci < cands.length; ci++){
+          if (cands[ci].children.length >= 2){ list = cands[ci]; break; }
+        }
+        if (!list){
+          list = left;
+          while (list.children.length === 1 && list.firstElementChild &&
+                 list.firstElementChild.children.length) list = list.firstElementChild;
+        }
+        var ks = list.children;
+        a = ks[0].getBoundingClientRect();
+        b = ks[ks.length-1].getBoundingClientRect();
       }
       var top = (a.top + a.height/2) - lb.top;
       var bot = lb.bottom - (b.top + b.height/2);

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 160" width="460" height="160">
+  <g class="ln" stroke="currentColor" stroke-width="1.4" fill="none">
+    <line x1="50" y1="80" x2="446" y2="80"/>
+    <line x1="50" y1="72" x2="50" y2="88"/>
+    <line x1="140" y1="72" x2="140" y2="88"/>
+    <line x1="302" y1="72" x2="302" y2="88"/>
+    <line x1="410" y1="72" x2="410" y2="88"/>
+    <path d="M140,52 L140,44 L410,44 L410,52"/>
+  </g>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(446,80)"/>
+  <g class="tx" fill="currentColor" font-size="15" text-anchor="middle">
+    <text x="275" y="38">여유</text>
+    <text x="50" y="106">0</text>
+    <text x="140" y="106">안정</text>
+    <text x="302" y="106">목표</text>
+    <text x="410" y="106">최대</text>
+    <text x="302" y="124" font-size="13">(60%)</text>
+    <text x="410" y="124" font-size="13">(220 − 연령)</text>
+    <text x="221" y="70" font-size="13">6</text>
+    <text x="356" y="70" font-size="13">4</text>
+    <text x="230" y="150" font-size="13">목표 = 여유를 운동 강도로 내분한 점 (60%면 6:4)</text>
+  </g>
+</svg>

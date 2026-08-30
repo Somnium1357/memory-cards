@@ -9,18 +9,20 @@
 <style>
 /* 🔴 max-width:none — kit.css 의 .wrap{max-width:720px} 이 폭 지정을 눌러 온 것을 해제 (독립 검수 #1) */
 .wrap{width:min(100%,1160px);max-width:none;margin:0 auto;padding:44px clamp(18px,4vw,32px) 90px;}
-.src,.foot,p.note,p.sub{max-width:46em;}
+.src,p.note,p.sub{max-width:46em;}
 .eyebrow{color:var(--dim);font-size:.875rem;letter-spacing:.08em;margin:0 0 10px;}
 h1{font-family:var(--fd);font-weight:700;font-size:1.75rem;margin:0 0 4px;}
 .src{color:var(--dim);font-size:.875rem;margin:0 0 6px;}
-nav{margin:26px 0 0;display:flex;flex-wrap:wrap;gap:9px 0;}
-nav a{padding-right:16px;margin-right:16px;border-right:1px solid var(--hair);border-bottom:0;}
-nav a:last-child{border-right:0;margin-right:0;padding-right:0;}
+/* nav — 구분선 대신 간격만 (줄바꿈 시 첫 줄 끝에 구분선이 매달리는 문제 · 독립검수 #6) */
+nav{margin:26px 0 0;display:flex;flex-wrap:wrap;gap:9px 28px;}
 nav a{color:var(--ink2);text-decoration:none;border-bottom:1px solid var(--hair);font-size:.9375rem;}
 nav a span{color:var(--dim);font-size:.8125rem;}
 nav a:hover,nav a:focus{color:var(--ink);border-bottom-color:var(--mk);}
-.pg{margin:0 0 8px;}
-.pg>h2:first-child{margin-top:44px;}
+/* 쪽 경계가 여백 리듬을 오염시키지 않게 — h2/h3 위 여백은 문서 전체에서 한 값 (독립검수 #4·#5) */
+.pg{margin:0;}
+.pg>h2:first-child{margin-top:52px;}
+.pg h3:first-of-type{margin-top:34px;}
+main>.pg:first-of-type>h2:first-child{margin-top:36px;}
 .foot{margin-top:56px;padding-top:20px;border-top:1px solid var(--hair);
   color:var(--dim);font-size:.875rem;}
 .foot a{color:var(--ink2);}
@@ -29,7 +31,7 @@ nav a:hover,nav a:focus{color:var(--ink);border-bottom-color:var(--mk);}
 <p class="eyebrow">회독본</p>
 <h1>10.실과</h1>
 <p class="src">노트 p2–p3 · 2쪽 · 글자는 전사본, 배치는 노트</p>
-<nav><a href="#p02">인간 발달과 주도적 삶 <span>2쪽</span></a></nav>
+<nav><a href="#인간_발달과_주도적_삶">인간 발달과 주도적 삶 <span>2쪽</span></a></nav>
 <section class="pg" id="p02">
 <h2 id="인간_발달과_주도적_삶">인간 발달과 주도적 삶</h2>
 
@@ -156,5 +158,5 @@ nav a:hover,nav a:focus{color:var(--ink);border-bottom-color:var(--mk);}
   </div></div>
 </div>
 </div>
-</section><p class="foot"><a href="5.도덕.html">← 5.도덕</a> · <a href="index.html">목록</a></p></main>
+</section><p class="foot"><a href="7.체육.html">← 7.체육</a> · <a href="index.html">목록</a></p></main>
 <script src="kit.js"></script>

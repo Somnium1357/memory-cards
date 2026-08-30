@@ -9,18 +9,20 @@
 <style>
 /* 🔴 max-width:none — kit.css 의 .wrap{max-width:720px} 이 폭 지정을 눌러 온 것을 해제 (독립 검수 #1) */
 .wrap{width:min(100%,1160px);max-width:none;margin:0 auto;padding:44px clamp(18px,4vw,32px) 90px;}
-.src,.foot,p.note,p.sub{max-width:46em;}
+.src,p.note,p.sub{max-width:46em;}
 .eyebrow{color:var(--dim);font-size:.875rem;letter-spacing:.08em;margin:0 0 10px;}
 h1{font-family:var(--fd);font-weight:700;font-size:1.75rem;margin:0 0 4px;}
 .src{color:var(--dim);font-size:.875rem;margin:0 0 6px;}
-nav{margin:26px 0 0;display:flex;flex-wrap:wrap;gap:9px 0;}
-nav a{padding-right:16px;margin-right:16px;border-right:1px solid var(--hair);border-bottom:0;}
-nav a:last-child{border-right:0;margin-right:0;padding-right:0;}
+/* nav — 구분선 대신 간격만 (줄바꿈 시 첫 줄 끝에 구분선이 매달리는 문제 · 독립검수 #6) */
+nav{margin:26px 0 0;display:flex;flex-wrap:wrap;gap:9px 28px;}
 nav a{color:var(--ink2);text-decoration:none;border-bottom:1px solid var(--hair);font-size:.9375rem;}
 nav a span{color:var(--dim);font-size:.8125rem;}
 nav a:hover,nav a:focus{color:var(--ink);border-bottom-color:var(--mk);}
-.pg{margin:0 0 8px;}
-.pg>h2:first-child{margin-top:44px;}
+/* 쪽 경계가 여백 리듬을 오염시키지 않게 — h2/h3 위 여백은 문서 전체에서 한 값 (독립검수 #4·#5) */
+.pg{margin:0;}
+.pg>h2:first-child{margin-top:52px;}
+.pg h3:first-of-type{margin-top:34px;}
+main>.pg:first-of-type>h2:first-child{margin-top:36px;}
 .foot{margin-top:56px;padding-top:20px;border-top:1px solid var(--hair);
   color:var(--dim);font-size:.875rem;}
 .foot a{color:var(--ink2);}
@@ -29,7 +31,7 @@ nav a:hover,nav a:focus{color:var(--ink);border-bottom-color:var(--mk);}
 <p class="eyebrow">회독본</p>
 <h1>5.도덕</h1>
 <p class="src">노트 p2–p13 · 12쪽 · 글자는 전사본, 배치는 노트</p>
-<nav><a href="#p02">도덕 교과서의 편찬 방향 <span>2쪽</span></a> <a href="#p03">도덕 수업 모형 <span>3쪽</span></a> <a href="#p05">콜버그 - 도덕성 발달 이론 <span>5쪽</span></a> <a href="#p07">도덕 교육의 관점 <span>7쪽</span></a> <a href="#p08">도덕 교육의 이론적 기초 <span>8쪽</span></a> <a href="#p12">도덕과 일반 이론 <span>12쪽</span></a> <a href="#p13">도덕과 평가 방법 <span>13쪽</span></a></nav>
+<nav><a href="#도덕_교과서의_편찬_방향">도덕 교과서의 편찬 방향 <span>2쪽</span></a> <a href="#도덕_수업_모형">도덕 수업 모형 <span>3쪽</span></a> <a href="#콜버그_-_도덕성_발달_이론">콜버그 - 도덕성 발달 이론 <span>5쪽</span></a> <a href="#도덕_교육의_관점">도덕 교육의 관점 <span>7쪽</span></a> <a href="#도덕_교육의_이론적_기초">도덕 교육의 이론적 기초 <span>8쪽</span></a> <a href="#도덕과_일반_이론">도덕과 일반 이론 <span>12쪽</span></a> <a href="#도덕과_평가_방법">도덕과 평가 방법 <span>13쪽</span></a></nav>
 <section class="pg" id="p02">
 <h2 id="도덕_교과서의_편찬_방향"><a id="교과서_편찬_방향"></a>도덕 교과서의 편찬 방향</h2>
 
@@ -918,5 +920,5 @@ nav a:hover,nav a:focus{color:var(--ink);border-bottom-color:var(--mk);}
   <div class="sub">서술형(지), 구술시험(통합), 토론법(지), 실기(과), 연구 보고서(과), 포트폴리오(과)</div>
 </div>
 </div>
-</section><p class="foot"><a href="index.html">목록</a> · <a href="10.실과.html">10.실과 →</a></p></main>
+</section><p class="foot"><a href="index.html">목록</a> · <a href="7.체육.html">7.체육 →</a></p></main>
 <script src="kit.js"></script>

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 170" width="460" height="170">
+  <g class="ln" stroke="currentColor" stroke-width="1.4" fill="none">
+    <rect x="10" y="60" width="74" height="34" rx="6"/>
+    <rect x="176" y="16" width="86" height="34" rx="6"/>
+    <rect x="176" y="104" width="86" height="34" rx="6"/>
+    <rect x="366" y="60" width="74" height="34" rx="6"/>
+    <path d="M84,77 C120,77 130,33 167,33"/>
+    <path d="M84,77 C120,77 130,121 167,121"/>
+    <path d="M262,33 C300,33 310,77 357,77"/>
+    <path d="M262,121 C300,121 310,77 357,77"/>
+  </g>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(174,33) rotate(0)"/>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(174,121) rotate(0)"/>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(364,77) rotate(0)"/>
+  <g class="tx" fill="currentColor" font-size="16" text-anchor="middle">
+    <text x="47" y="83">시작</text>
+    <text x="219" y="39">확장</text>
+    <text x="219" y="127">세련</text>
+    <text x="403" y="83">적용</text>
+  </g>
+  <g class="sb" fill="currentColor" font-size="12" text-anchor="middle">
+    <text x="219" y="64">과제 내 / 과제 간</text>
+  </g>
+</svg>

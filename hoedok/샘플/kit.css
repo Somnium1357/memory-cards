@@ -177,7 +177,8 @@ h4{font-family:var(--fb);font-weight:700;font-size:1rem;margin:16px 0 5px var(--
 /* ── 나란한 n칸 — 선 대신 여백으로 가른다 ── */
 /* 나란한 단 — .n2/.n3/.n4 로 개수를, .fit 으로 「내용폭대로」를 준다.
    기본은 균등분할이라 좌우 내용량이 다르면 한쪽만 줄바꿈된다 — 그때 .fit 을 쓴다. */
-.cols{display:grid;grid-template-columns:repeat(var(--n,2),minmax(0,1fr));gap:0 34px;}
+.cols{display:grid;grid-template-columns:repeat(var(--n,2),minmax(0,1fr));gap:0 34px;
+  align-items:start;}   /* 칸 세로 중앙 정렬이 나란한 단의 첫 줄을 어긋나게 한다 (독립검수 #43) */
 .cols.n2{--n:2;} .cols.n3{--n:3;} .cols.n4{--n:4;}
 .cols.fit{grid-template-columns:repeat(var(--n,2),max-content);gap:0 30px;}
 
@@ -195,8 +196,9 @@ h4{font-family:var(--fb);font-weight:700;font-size:1rem;margin:16px 0 5px var(--
 .converge{display:flex;align-items:center;gap:15px;flex-wrap:nowrap;}
 .converge>*{flex:0 0 auto;}      /* 안 주면 .wide 안에서 넘치는 대신 안쪽이 뭉개진다 */
 .converge>svg{flex:0 0 auto;color:var(--mk);}
-.converge .link{flex:0 0 auto;text-align:center;color:var(--dim);
-  font-size:.875rem;line-height:1.2;}
+/* 이음말은 그 문단의 뜻을 나르는 낱말 — 본문보다 흐리면 안 된다 (독립검수 #22) */
+.converge .link{flex:0 0 auto;text-align:center;color:var(--ink2);
+  font-size:.9375rem;line-height:1.25;}
 .converge .link b{display:block;font-weight:500;color:var(--ink2);}
 
 /* ── 도식 슬롯 — 볼트 도식 svg 를 <img> 로 건다 (조판 지시서 §6-6).

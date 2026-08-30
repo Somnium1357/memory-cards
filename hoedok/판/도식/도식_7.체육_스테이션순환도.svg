@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 200" width="260" height="200">
+  <g class="ln" stroke="currentColor" stroke-width="1.4" fill="none">
+    <circle cx="130" cy="48" r="26"/>
+    <circle cx="58" cy="148" r="26"/>
+    <circle cx="202" cy="148" r="26"/>
+    <line x1="111.3" y1="74.0" x2="76.7" y2="122.0"/>
+    <line x1="90.0" y1="148.0" x2="170.0" y2="148.0"/>
+    <line x1="183.3" y1="122.0" x2="148.7" y2="74.0"/>
+  </g>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(76.7,122.0) rotate(125.8)"/>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(170.0,148.0) rotate(0.0)"/>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(148.7,74.0) rotate(-125.8)"/>
+  <g class="tx" fill="currentColor" font-size="17" text-anchor="middle">
+    <text x="130" y="54">A</text>
+    <text x="58" y="154">B</text>
+    <text x="202" y="154">C</text>
+  </g>
+</svg>

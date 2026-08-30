@@ -67,7 +67,8 @@ h4{font-family:var(--fb);font-weight:500;font-size:1rem;margin:16px 0 5px;}
 
 /* ── 가지 · 묶음 — 등뼈에서 팔이 글자 중앙으로 ── */
 .branch{display:flex;align-items:center;}
-.branch>:first-child{padding-right:15px;flex:0 0 auto;}
+.branch>*{flex:0 0 auto;}   /* 같은 이유 — 가지도 줄어들면 안 된다 */
+.branch>:first-child{padding-right:15px;}
 .kids,.bracket{display:flex;flex-direction:column;}
 .kids>*,.bracket>*{position:relative;padding-left:24px;padding-top:2px;padding-bottom:2px;}
 .kids>*::before,.bracket>*::before{content:'';position:absolute;left:0;top:0;bottom:0;
@@ -81,6 +82,7 @@ h4{font-family:var(--fb);font-weight:500;font-size:1rem;margin:16px 0 5px;}
 /* ── 꺾쇠 — 팔 끝이 첫 항목·끝 항목의 **글자 중앙**에 닿아야 한다.
    항목 높이가 제각각이라 고정 여백으로는 못 맞춘다. 아래 스크립트가 재서 맞춘다. ── */
 .fork{display:flex;align-items:stretch;gap:13px;}
+.fork>*{flex:0 0 auto;}   /* 안 끄면 좁은 화면에서 글자가 세로로 접힌다 */
 .fork>.mkf{flex:0 0 12px;align-self:stretch;position:relative;color:var(--mk);}
 .fork>.mkf>svg{position:absolute;left:0;right:0;width:100%;display:block;overflow:visible;}
 .fork>.mkf>svg.a1{top:.5lh;height:calc(50% - .5lh);}

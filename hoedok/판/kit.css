@@ -1,0 +1,212 @@
+
+/* ═══════════════════════════════════════════════════════
+   회독본 조판 키트 — 읽는 문서용
+
+   따른 원칙
+   1. 위계는 「크기」 하나로 만들지 않는다. 크기 · 종류(세리프/산세리프) ·
+      굵기 · **위쪽 여백** 넷을 함께 쓴다. 크기만 조금씩 다르면 평평해 보인다.
+   2. 표제의 위 여백 > 아래 여백. 표제는 뒤따르는 내용에 붙어야 한다(근접성).
+   3. 색으로 위계를 만들지 않는다. 강조색은 거의 쓰지 않고, 회색 단계로 낸다.
+   4. 한글 본문은 400 이상. 300은 얇아서 화면에서 흐려진다. 행간은 1.75.
+   5. 한 줄은 40~50자. 그보다 길면 눈이 다음 줄을 못 찾는다.
+   6. 선을 줄이고 여백으로 묶는다. 상자·테두리는 마지막 수단이다.
+   7. 들여쓰기는 한 가지 폭으로만. 축이 여럿이면 흩어져 보인다.
+   ═══════════════════════════════════════════════════════ */
+
+/* 테마 — 카드앱 규약을 따른다: data-theme="b"(다크) / "c"(페이퍼 웜).
+   같은 origin 이라 앱의 localStorage(cards_theme_v1)를 kit.js 가 읽어 맞춘다.
+   저장값이 없으면 prefers-color-scheme. 색값은 앱 팔레트에서 가져와 앱과 결이 같다. */
+:root, :root[data-theme="b"]{
+  --bg:#13151A; --ink:#E8EAF0; --ink2:#C3C8D4; --dim:#828A9B;
+  --mk:#5E6678; --hair:#2B303C; --ac:#8CA7FF;
+  --fd:"Nanum Myeongjo",serif;
+  --fb:"Noto Sans KR",system-ui,sans-serif;
+  --fm:"IBM Plex Mono",ui-monospace,monospace;
+  --gap:7px;
+  --step:1.55em;              /* 들여쓰기 한 단 — 문서 전체가 이 하나만 쓴다 */
+  color-scheme:dark;
+}
+:root[data-theme="c"]{
+  --bg:#F3EDDE; --ink:#2F2A20; --ink2:#4C4536; --dim:#6E6450;
+  --mk:#B4A98D; --hair:#E0D8C2; --ac:#AE5B33;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme]){
+    --bg:#F3EDDE; --ink:#2F2A20; --ink2:#4C4536; --dim:#6E6450;
+    --mk:#B4A98D; --hair:#E0D8C2; --ac:#AE5B33;
+    color-scheme:light;
+  }
+}
+
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:var(--fb);font-size:1rem;font-weight:400;line-height:1.75;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+
+/* ── 표제 — 크기·종류·굵기·여백을 함께 쓴다 ── */
+h1{font-family:var(--fd);font-weight:700;font-size:2rem;line-height:1.3;
+  margin:0 0 6px;letter-spacing:-.015em;text-wrap:balance;}
+h2{font-family:var(--fd);font-weight:700;font-size:1.4375rem;line-height:1.35;
+  margin:52px 0 16px;letter-spacing:-.01em;padding-bottom:9px;
+  border-bottom:1px solid var(--hair);}
+h2:first-child{margin-top:36px;}
+/* h3 > h4 — 검토 지적: h3 를 소형 회색 라벨로 두면 h4 가 부모보다 도드라진다 */
+h3{font-family:var(--fb);font-weight:700;font-size:1.0625rem;line-height:1.5;
+  color:var(--ink);margin:34px 0 10px;}
+h3:first-of-type{margin-top:22px;}
+h4{font-family:var(--fb);font-weight:500;font-size:1rem;margin:16px 0 5px;color:var(--ink);}
+
+/* ── 흐름 ── */
+.stack{display:flex;flex-direction:column;gap:var(--gap);}
+.row{display:flex;align-items:baseline;gap:.5em;flex-wrap:wrap;}
+.ind{padding-left:var(--step);}
+.stack>.row>.desc,.ind>.desc{max-width:46em;}   /* 트리 밖 줄글 상한 */
+
+/* ── 글자 역할 — 굵기와 회색 단계로만 ── */
+.term{font-weight:500;white-space:nowrap;}
+.desc{color:var(--ink2);}
+.num{color:var(--dim);font-variant-numeric:tabular-nums;}
+.quiet{color:var(--dim);font-size:.9375em;}
+.key{font-weight:500;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--mk);}
+.mk{color:var(--mk);}
+
+/* ── 부연 · 보조 ── */
+.sub{color:var(--ink2);padding-left:var(--step);position:relative;max-width:46em;}
+.sub::before{content:'↳';position:absolute;left:.15em;color:var(--mk);}
+.note{color:var(--ink2);font-size:.9375rem;padding-left:var(--step);position:relative;max-width:46em;}
+.note::before{content:'※';position:absolute;left:.1em;color:var(--mk);font-size:.875rem;}
+
+/* ── 가지 · 묶음 — 등뼈에서 팔이 글자 중앙으로 ── */
+.branch{display:flex;align-items:center;}
+.branch>*{flex:0 0 auto;}   /* 같은 이유 — 가지도 줄어들면 안 된다 */
+.branch>:first-child{padding-right:12px;}
+.kids,.bracket{display:flex;flex-direction:column;}
+.kids>*,.bracket>*{position:relative;padding-left:17px;padding-top:2px;padding-bottom:2px;}
+.kids>*::before,.bracket>*::before{content:'';position:absolute;left:0;top:0;bottom:0;
+  border-left:1px solid var(--mk);}
+.kids>*:first-child::before,.bracket>*:first-child::before{top:50%;}
+.kids>*:last-child::before,.bracket>*:last-child::before{bottom:50%;}
+.kids>*:only-child::before,.bracket>*:only-child::before{display:none;}
+.kids>*::after,.bracket>*::after{content:'';position:absolute;left:0;top:50%;width:10px;
+  border-top:1px solid var(--mk);}
+
+/* ── 꺾쇠 — 팔 끝이 첫 항목·끝 항목의 **글자 중앙**에 닿아야 한다.
+   항목 높이가 제각각이라 고정 여백으로는 못 맞춘다. 아래 스크립트가 재서 맞춘다. ── */
+.fork{display:flex;align-items:stretch;gap:13px;}
+.fork>*{flex:0 0 auto;}   /* 안 끄면 좁은 화면에서 글자가 세로로 접힌다 */
+.fork>.mkf{flex:0 0 12px;align-self:stretch;position:relative;color:var(--mk);}
+.fork>.mkf>svg{position:absolute;left:0;right:0;width:100%;display:block;overflow:visible;}
+.fork>.mkf>svg.a1{top:.5lh;height:calc(50% - .5lh);}
+.fork>.mkf>svg.a2{top:50%;height:calc(50% - .5lh);}
+/* 위는 스크립트가 못 돌 때의 폴백(반 줄 기준). 스크립트가 돌면 실측값으로 덮인다. */
+
+/* ── 아래로 갈라지는 꺾쇠 — 말 밑에 갈래를 단다. 팔 끝은 첫·끝 갈래의 **가로 중앙**.
+   svg 는 .d1/.d2 두 개, 위치·폭은 kit.js 가 잡는다 — d1 은 왼팔 상자(첫 갈래 중앙~꼭짓점),
+   d2 는 오른팔 상자(꼭짓점~끝 갈래 중앙). 꼭짓점이 위(말 쪽), 팔 끝이 아래(갈래 쪽)다.
+   마크업 정본 (2026-08-30 신설 — 그대로 복사하라. 지어내면 두 팔이 안 만난다):
+   <div class="forkdown"><div class="mkd">
+    <svg class="d1" viewBox="0 0 100 10" preserveAspectRatio="none" fill="none"><line x1="0" y1="9" x2="100" y2="1" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+    <svg class="d2" viewBox="0 0 100 10" preserveAspectRatio="none" fill="none"><line x1="0" y1="1" x2="100" y2="9" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+   </div><div class="row">…갈래들…</div></div> ── */
+.forkdown{display:flex;flex-direction:column;align-items:flex-start;gap:3px;}
+.forkdown>.mkd{position:relative;height:11px;align-self:stretch;color:var(--mk);}
+.forkdown>.mkd>svg{position:absolute;top:0;height:100%;display:block;}
+.forkdown>.row{gap:1.6em;}
+
+/* ── 줄 — 같은 위계를 가로 일직선에 놓고, 칸마다 위·아래에 주석을 단다.
+   주석 길이가 달라도 가운데 줄은 어긋나지 않는다(subgrid).
+   <div class="line">
+     <div class="col"><span class="up"></span><span class="mid">음소</span><span class="down">자음 모음</span></div>
+     <div class="col"><span class="mid mk">-</span></div>   ← 구분자도 한 칸
+   </div>
+   빈 칸은 그냥 비워 둔다. .col 안에는 up·mid·down 순서로만 넣는다. ── */
+.line{display:grid;grid-auto-flow:column;grid-auto-columns:max-content;
+  grid-template-rows:auto auto auto;column-gap:11px;align-items:center;}
+.line>.col{display:grid;grid-template-rows:subgrid;grid-row:1/4;
+  justify-items:start;align-items:center;row-gap:1px;}
+/* 행을 명시한다 — 안 그러면 up 이 없는 칸에서 mid 가 1행으로 올라가 줄이 어긋난다 */
+.line .up{grid-row:1;} .line .mid{grid-row:2;} .line .down{grid-row:3;}
+.line .mid{font-weight:500;white-space:nowrap;}
+.line .up,.line .down{color:var(--ink2);font-size:.9375rem;white-space:nowrap;}
+@supports not (grid-template-rows:subgrid){
+  .line>.col{display:flex;flex-direction:column;align-items:flex-start;}
+}
+
+/* ── 사슬 ── */
+.chain{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.chain .arrow{color:var(--mk);}
+.par{display:flex;flex-direction:column;gap:2px;}
+
+/* ── 칸 ── */
+.lanes{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;min-width:520px;}
+.lanes>*{padding:0 14px;border-left:1px solid var(--hair);}
+.lanes>*:first-child{border-left:0;padding-left:0;}
+
+/* ── 나란한 n칸 — 선 대신 여백으로 가른다 ── */
+/* 나란한 단 — .n2/.n3/.n4 로 개수를, .fit 으로 「내용폭대로」를 준다.
+   기본은 균등분할이라 좌우 내용량이 다르면 한쪽만 줄바꿈된다 — 그때 .fit 을 쓴다. */
+.cols{display:grid;grid-template-columns:repeat(var(--n,2),minmax(0,1fr));gap:0 34px;}
+.cols.n2{--n:2;} .cols.n3{--n:3;} .cols.n4{--n:4;}
+.cols.fit{grid-template-columns:repeat(var(--n,2),max-content);gap:0 30px;}
+
+/* ── 수렴 — 여럿이 모여 하나로, 거기서 다시 여럿.
+   마크업 정본:
+     <div class="wide"><div class="converge">
+       <div class="stack">…왼쪽 항목들…</div>
+       <svg width="11" height="70" viewBox="0 0 11 70" fill="none" aria-hidden="true">
+         <path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor"
+               stroke-width="1.2" stroke-linecap="round"/></svg>
+       <div class="link"><b>이음말</b>⟶</div>
+       <div class="stack">…오른쪽 항목들…</div>
+     </div></div>
+   height 는 왼쪽 묶음 높이에 맞춰 잡는다(항목 하나당 약 28px). ── */
+.converge{display:flex;align-items:center;gap:15px;flex-wrap:nowrap;}
+.converge>*{flex:0 0 auto;}      /* 안 주면 .wide 안에서 넘치는 대신 안쪽이 뭉개진다 */
+.converge>svg{flex:0 0 auto;color:var(--mk);}
+.converge .link{flex:0 0 auto;text-align:center;color:var(--dim);
+  font-size:.875rem;line-height:1.2;}
+.converge .link b{display:block;font-weight:500;color:var(--ink2);}
+
+/* ── 도식 슬롯 — 볼트 도식 svg 를 <img> 로 건다 (조판 지시서 §6-6).
+   <figure class="fig"><img class="dg" src="도식/도식_….svg" alt="…"></figure>
+   ⚠ svg 내부 테마는 prefers-color-scheme 만 본다 — 페이지 data-theme 와 어긋날 수 있다(§7 미결). */
+.fig{margin:10px 0;}
+.fig img,img.dg{max-width:100%;height:auto;display:block;}
+
+/* ── 표 ── */
+table{border-collapse:collapse;font-size:.9375rem;}
+th,td{border:1px solid var(--hair);padding:6px 12px;text-align:center;}
+th{font-weight:500;color:var(--ink2);}
+td.h{font-weight:500;color:var(--ink2);}
+
+.wide{overflow-x:auto;scrollbar-width:thin;
+  background:
+    linear-gradient(90deg,var(--bg) 40%,transparent) left/28px 100%,
+    linear-gradient(270deg,var(--bg) 40%,transparent) right/28px 100%,
+    radial-gradient(farthest-side at 0 50%,rgba(0,0,0,.28),transparent) left/12px 100%,
+    radial-gradient(farthest-side at 100% 50%,rgba(0,0,0,.28),transparent) right/12px 100%;
+  background-repeat:no-repeat;background-attachment:local,local,scroll,scroll;}
+
+
+/* 문서 틀 — 상자를 쓰지 않는다. 표제와 여백이 절을 가른다. */
+.wrap{max-width:720px;margin:0 auto;padding:56px 24px 96px;}
+.eyebrow{color:var(--dim);font-size:.875rem;letter-spacing:.08em;margin:0 0 10px;}
+.sheet{margin:0;}
+.item{margin:0;}
+.head{display:flex;align-items:baseline;gap:.45em;margin-bottom:6px;}
+.head .num{font-size:.9375rem;}
+.head .nm{font-weight:500;font-size:1.0625rem;}
+.foot{margin-top:56px;padding-top:20px;border-top:1px solid var(--hair);
+  color:var(--dim);font-size:.9375rem;max-width:46ch;}
+
+/* 프린트 — 트리·표가 쪽 경계에서 잘리지 않게 */
+@media print{
+  .branch,.fork,.converge,.bracket,table,.line{break-inside:avoid;}
+  h2,h3,h4{break-after:avoid;}
+  #themeBtn,nav{display:none;}
+  :root{--bg:#fff;--ink:#111;--ink2:#333;--dim:#666;--mk:#999;--hair:#ddd;}
+}
+
+/* 키보드 포커스 */
+a:focus-visible,button:focus-visible{outline:2px solid var(--ac);outline-offset:2px;}

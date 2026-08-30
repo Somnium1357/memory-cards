@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 320" width="560" height="320">
+  <style>
+    @media (prefers-color-scheme: dark) {
+      .ln { stroke: #dcdcdc !important; }
+      .ah { fill: #dcdcdc !important; }
+      .tx { fill: #dcdcdc !important; }
+    }
+  </style>
+  <g class="ln" stroke="#1a1a1a" stroke-width="1.4" fill="none">
+    <line x1="152" y1="72" x2="286" y2="72"/>
+    <line x1="152" y1="256" x2="286" y2="256"/>
+    <line x1="148" y1="164" x2="188" y2="164"/>
+    <line x1="234" y1="164" x2="286" y2="164"/>
+    <line x1="110" y1="148" x2="110" y2="90"/>
+    <line x1="132" y1="90" x2="132" y2="148"/>
+    <line x1="110" y1="182" x2="110" y2="238"/>
+    <line x1="132" y1="238" x2="132" y2="182"/>
+    <line x1="210" y1="148" x2="210" y2="118"/>
+    <line x1="210" y1="182" x2="210" y2="206"/>
+    <line x1="372" y1="164" x2="398" y2="164"/>
+    <path d="M 342 62 C 362 62 348 156 366 164 C 348 172 362 266 342 266"/>
+  </g>
+  <path class="ah" fill="#1a1a1a" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(286.0,72.0) rotate(0.0)"/>
+  <path class="ah" fill="#1a1a1a" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(286.0,256.0) rotate(0.0)"/>
+  <path class="ah" fill="#1a1a1a" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(286.0,164.0) rotate(0.0)"/>
+  <path class="ah" fill="#1a1a1a" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(110.0,90.0) rotate(-90.0)"/>
+  <path class="ah" fill="#1a1a1a" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(132.0,148.0) rotate(90.0)"/>
+  <path class="ah" fill="#1a1a1a" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(110.0,238.0) rotate(90.0)"/>
+  <path class="ah" fill="#1a1a1a" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(132.0,182.0) rotate(-90.0)"/>
+  <path class="ah" fill="#1a1a1a" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(210.0,118.0) rotate(-90.0)"/>
+  <path class="ah" fill="#1a1a1a" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(398.0,164.0) rotate(0.0)"/>
+  <g class="tx" fill="#1a1a1a" font-family="Malgun Gothic, Apple SD Gothic Neo, Noto Sans KR, sans-serif" font-size="16" text-anchor="middle">
+    <text x="123" y="32" font-size="16">영혼</text>
+    <text x="318" y="32" font-size="16">덕</text>
+    <text x="123" y="77" font-size="16">욕구</text>
+    <text x="123" y="169" font-size="16">이성</text>
+    <text x="123" y="261" font-size="16">기개</text>
+    <text x="318" y="77" font-size="16">절제</text>
+    <text x="318" y="169" font-size="16">지혜</text>
+    <text x="318" y="261" font-size="16">용기</text>
+    <text x="210" y="169" font-size="16">앎</text>
+    <text x="214" y="110" font-size="16">이데아</text>
+    <text x="210" y="224" font-size="16">현상</text>
+    <text x="86" y="122" font-size="12.5">지배</text>
+    <text x="158" y="122" font-size="12.5">동의</text>
+    <text x="86" y="212" font-size="12.5">판단</text>
+    <text x="158" y="212" font-size="12.5">수호</text>
+    <text x="406" y="170" text-anchor="start">조화 : 정의</text>
+  </g>
+</svg>

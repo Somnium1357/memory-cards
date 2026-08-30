@@ -1,12 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 320" width="560" height="320">
-  <style>
-    @media (prefers-color-scheme: dark) {
-      .ln { stroke: #dcdcdc !important; }
-      .ah { fill: #dcdcdc !important; }
-      .tx { fill: #dcdcdc !important; }
-    }
-  </style>
-  <g class="ln" stroke="#1a1a1a" stroke-width="1.4" fill="none">
+  <g class="ln" stroke="currentColor" stroke-width="1.4" fill="none">
     <line x1="152" y1="72" x2="286" y2="72"/>
     <line x1="152" y1="256" x2="286" y2="256"/>
     <line x1="148" y1="164" x2="188" y2="164"/>
@@ -20,16 +13,16 @@
     <line x1="372" y1="164" x2="398" y2="164"/>
     <path d="M 342 62 C 362 62 348 156 366 164 C 348 172 362 266 342 266"/>
   </g>
-  <path class="ah" fill="#1a1a1a" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(286.0,72.0) rotate(0.0)"/>
-  <path class="ah" fill="#1a1a1a" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(286.0,256.0) rotate(0.0)"/>
-  <path class="ah" fill="#1a1a1a" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(286.0,164.0) rotate(0.0)"/>
-  <path class="ah" fill="#1a1a1a" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(110.0,90.0) rotate(-90.0)"/>
-  <path class="ah" fill="#1a1a1a" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(132.0,148.0) rotate(90.0)"/>
-  <path class="ah" fill="#1a1a1a" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(110.0,238.0) rotate(90.0)"/>
-  <path class="ah" fill="#1a1a1a" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(132.0,182.0) rotate(-90.0)"/>
-  <path class="ah" fill="#1a1a1a" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(210.0,118.0) rotate(-90.0)"/>
-  <path class="ah" fill="#1a1a1a" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(398.0,164.0) rotate(0.0)"/>
-  <g class="tx" fill="#1a1a1a" font-family="Malgun Gothic, Apple SD Gothic Neo, Noto Sans KR, sans-serif" font-size="16" text-anchor="middle">
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(286.0,72.0) rotate(0.0)"/>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(286.0,256.0) rotate(0.0)"/>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(286.0,164.0) rotate(0.0)"/>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(110.0,90.0) rotate(-90.0)"/>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(132.0,148.0) rotate(90.0)"/>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(110.0,238.0) rotate(90.0)"/>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(132.0,182.0) rotate(-90.0)"/>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(210.0,118.0) rotate(-90.0)"/>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(398.0,164.0) rotate(0.0)"/>
+  <g class="tx" fill="currentColor" font-size="16" text-anchor="middle">
     <text x="123" y="32" font-size="16">영혼</text>
     <text x="318" y="32" font-size="16">덕</text>
     <text x="123" y="77" font-size="16">욕구</text>

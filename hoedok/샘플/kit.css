@@ -117,7 +117,7 @@ h4{font-family:var(--fb);font-weight:700;font-size:1rem;margin:16px 0 5px;color:
    </div><div class="row">…갈래들…</div></div> ── */
 .forkdown{display:flex;flex-direction:column;align-items:flex-start;gap:3px;}
 .forkdown>.root{align-self:flex-start;}   /* 가로 위치는 kit.js 가 꼭짓점에 맞춘다 */
-.forkdown>.mkd{position:relative;height:11px;align-self:stretch;color:var(--mk);}
+.forkdown>.mkd{position:relative;height:16px;align-self:stretch;color:var(--mk);}
 .forkdown>.mkd>svg{position:absolute;top:0;height:100%;display:block;}
 .forkdown>.row{gap:1.6em;}
 
@@ -163,6 +163,7 @@ h4{font-family:var(--fb);font-weight:700;font-size:1rem;margin:16px 0 5px;color:
 .vchain>.arw{grid-column:1;color:var(--mk);padding-left:.7em;line-height:1.15;}
 .vchain>.ann{grid-column:2;color:var(--ink2);max-width:46em;
   padding-left:1.15em;text-indent:-1.15em;}   /* 행걸이 — 둘째 줄이 ⇒ 밑으로 안 파고들게 */
+.vchain>.ann>*{text-indent:0;}   /* 행걸이는 글줄에만 — 주석 안 블록(.bracket 등)까지 끌면 선과 글자가 겹친다 */
 
 /* ── 칸 ── */
 .lanes{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;min-width:520px;}
@@ -199,6 +200,10 @@ h4{font-family:var(--fb);font-weight:700;font-size:1rem;margin:16px 0 5px;color:
    ⚠ svg 내부 테마는 prefers-color-scheme 만 본다 — 페이지 data-theme 와 어긋날 수 있다(§7 미결). */
 .fig{margin:10px 0;}
 .fig img,img.dg{max-width:100%;height:auto;display:block;}
+/* 도식은 조립기가 svg 를 인라인으로 박는다(테마·글꼴이 페이지를 따르게 — <img> 는 data-theme 를
+   모른다). 도식 svg 정본 형식 = <style> 없음 · 색은 전부 currentColor. */
+.fig svg{max-width:100%;height:auto;display:block;color:var(--ink);}
+.fig svg text{font-family:var(--fb);}
 
 /* ── 표 ── */
 table{border-collapse:collapse;font-size:.9375rem;}

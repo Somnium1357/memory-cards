@@ -1,25 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="30 10 240 140" width="240" height="140">
-  <style>
-    @media (prefers-color-scheme: dark) {
-      line { stroke: #dcdcdc !important; }
-      path { fill: #dcdcdc !important; }
-      text { fill: #dcdcdc !important; }
-    }
-  </style>
-
   <!-- 화살촉은 marker 대신 명시 path로 그린다 (2026-08-17 실측):
        ① marker-start + orient="auto"는 시작 화살촉이 선 안쪽을 향해 뒤집혀 보인다
        ② renderer에 따라 marker를 아예 안 그린다 → 로컬 검수가 불가능하다
        path는 어디서나 같게 나오고 검수할 수 있다.
        ▸ 꼭대기는 두 선의 끝을 좌우로 벌려(141/159) 화살촉이 겹치지 않게 한다.
        ▸ 가로선 양 끝은 글자에서 6px 이상 띄운다(안 띄우면 화살촉이 글자에 묻힌다). -->
-  <g stroke="#1a1a1a" stroke-width="1.4">
+  <g stroke="currentColor" stroke-width="1.4">
     <line x1="141" y1="48"  x2="84"  y2="110"/>
     <line x1="159" y1="48"  x2="216" y2="110"/>
     <line x1="92"  y1="128" x2="208" y2="128"/>
   </g>
 
-  <g fill="#1a1a1a">
+  <g fill="currentColor">
     <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(84,110) rotate(132.6)"/>
     <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(141,48) rotate(-47.4)"/>
     <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(216,110) rotate(47.4)"/>
@@ -28,7 +20,7 @@
     <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(92,128) rotate(180)"/>
   </g>
 
-  <g fill="#1a1a1a" font-family="Malgun Gothic, Apple SD Gothic Neo, Noto Sans KR, sans-serif" font-size="16" text-anchor="middle">
+  <g fill="currentColor" font-size="16" text-anchor="middle">
     <text x="150" y="36">행동</text>
     <text x="68"  y="134">개인</text>
     <text x="232" y="134">자극</text>

@@ -71,13 +71,18 @@
       var box = f.querySelector(':scope > .mkd ~ *');
       if(!mk || !box || !box.children.length) return;
       var fb = mk.getBoundingClientRect();
-      var a = box.children[0].getBoundingClientRect();
-      var b = box.children[box.children.length-1].getBoundingClientRect();
+      /* 팔 끝은 갈래 「상자」가 아니라 「머리(첫 줄 라벨)」의 가로 중앙에 — 내용이 넓게 뻗은
+         갈래에서 상자 중앙을 재면 팔이 옆으로 누워 형체를 잃는다 */
+      function headRect(el){ var h = el.firstElementChild; return (h || el).getBoundingClientRect(); }
+      var a = headRect(box.children[0]);
+      var b = headRect(box.children[box.children.length-1]);
       var l = (a.left + a.width/2) - fb.left, r = (b.left + b.width/2) - fb.left;
       var mid = (l + r) / 2;
       var d1 = mk.querySelector('.d1'), d2 = mk.querySelector('.d2');
-      if(d1){ d1.style.left = l+'px'; d1.style.width = Math.max(1, mid-l)+'px'; }
-      if(d2){ d2.style.left = mid+'px'; d2.style.width = Math.max(1, r-mid)+'px'; }
+      /* 갈래가 넓어도 팔은 꼭짓점에서 70px 까지만 — 다 뻗으면 ∧ 가 누워서 형체를 잃는다 */
+      var L = Math.max(l, mid-70), R = Math.min(r, mid+70);
+      if(d1){ d1.style.left = L+'px'; d1.style.width = Math.max(1, mid-L)+'px'; }
+      if(d2){ d2.style.left = mid+'px'; d2.style.width = Math.max(1, R-mid)+'px'; }
       var root = f.querySelector(':scope > .root');
       if(root){ root.style.marginLeft = Math.max(0, mid - root.offsetWidth/2)+'px'; }
     });

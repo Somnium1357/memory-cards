@@ -42,9 +42,29 @@
       }
       if(!svg || !left || !left.children.length) return;
       var lb = left.getBoundingClientRect();
-      /* 왼쪽이 중첩 구조면 자식 상자가 아니라 본문 항목(.term/.mid)의 글자 중앙을 잰다 */
-      var marks = left.querySelectorAll('.term,.mid');
       var a, b;
+      /* 🔴 명시 계약 (2026-08-31): 조각이 브레이스가 감쌀 첫 항목에 data-b="s", 끝 항목에
+         data-b="e"(하나뿐이면 "se")를 단다 — kit 은 그 둘만 잰다. 아래 추측 사슬은 표시가
+         없는 옛 조각용 비상망이다 (추측은 세 번 틀렸다: 체육 p02·영어 p02·p03). */
+      var ms = left.querySelector('[data-b="s"],[data-b="se"]');
+      var me = left.querySelector('[data-b="e"],[data-b="se"]');
+      if (ms && me){
+        a = ms.getBoundingClientRect();
+        b = me.getBoundingClientRect();
+        var top0 = (a.top + a.height/2) - lb.top;
+        var bot0 = lb.bottom - (b.top + b.height/2);
+        var h0 = Math.max(8, lb.height - top0 - bot0);
+        svg.setAttribute('preserveAspectRatio','none');
+        svg.style.height = h0.toFixed(1)+'px';
+        svg.style.alignSelf = 'flex-start';
+        svg.style.marginTop = top0.toFixed(1)+'px';
+        if(!svg.style.width) svg.style.width = '11px';
+        svg.querySelectorAll('path,line').forEach(function(e){
+          e.setAttribute('vector-effect','non-scaling-stroke'); });
+        return;
+      }
+      /* — 이하 비상망(추측 사슬) — 왼쪽이 중첩 구조면 본문 항목(.term/.mid)의 글자 중앙을 잰다 */
+      var marks = left.querySelectorAll('.term,.mid');
       if(marks.length >= 2){
         a = marks[0].getBoundingClientRect();
         b = marks[marks.length-1].getBoundingClientRect();

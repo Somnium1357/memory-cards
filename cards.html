@@ -3292,6 +3292,7 @@ function logPath(wk){ return `cards-log-${wk}.json`; }
 const K_REST='cards_rest_v1', K_CFG='cards_cfg_v1', K_STATE='cards_state_cache_v1', K_DIRTY='cards_dirty_v1',
       K_THEME='cards_theme_v1', K_PRESETS='cards_presets_v1', K_LASTP='cards_last_preset_v1',
       K_DATA='cards_data_cache_v1', K_SWIPE='cards_swipe_v1', K_INTAKE='cards_intake_v1',
+      K_RESUME='cards_resume_v1',        // 회독본 갔다 돌아올 자리 (세션·카드·답면 · 오늘 것만)
       K_KBD='cards_kbd_v1', K_SESS='cards_sessions_v1',
       K_SCHED='cards_sched_v2', K_MARKS='cards_marks_v1', K_FB='cards_fb_v1', K_PLAN='cards_plan_v1', K_LOGP='cards_log_v2_',
       K_UOPEN='cards_units_open_v1', K_DLOGS='cards_dirty_logs_v1', K_HOEDOK='cards_hoedok_v1',
@@ -4295,7 +4296,77 @@ function hoedokURI(k, deep){   // deep=true면 3층 제목부터 찾는다 (지�
     if(!done) return null;
     file=file.replace(/\.md$/,'');
   }
-  return `obsidian://open?vault=${enc(OBSIDIAN_VAULT)}&file=${enc(file)}`+(head?`%23${enc(head)}`:'');
+  /* 🔴 **조판본(`hoedok/판/`)으로 간다** — 옵시디언이 아니다 (동하 2026-09-01 「회독본 인티해」).
+     같은 오리진이라 앱을 안 떠나고, 동하가 말한 **옵시디언 콜드스타트**(꺼진 상태에서 URI를 받으면
+     볼트를 먼저 여느라 파일·제목 지정을 흘린다 — 앱에서 못 고친다)가 통째로 사라진다.
+     🔴 **합성 앵커(`대주제_-_중주제`)를 먼저 시도한다.** 그게 이 전환의 핵심 이득이다 —
+     중주제 이름이 과목 안에서 겹치면(국어 「평가」×3 · 「교육과정」×2 · 「단어」·「문장」·「수업 모형」×2)
+     이름만으로는 **문서 첫 등장으로 가서 남의 절에 떨어진다.** 조판 세션이 TOPFIX로 겹치는
+     11개 조합 전부에 합성 앵커를 달아 뒀다(실측 11/11).
+     ⚠ 합성이 없으면 바로 이름으로 떨어진다 — 실측상 그 5,051장은 **전부 과목 안에서 유일한 이름**이라
+     오도달이 안 난다. 그래도 순서는 반드시 **합성 먼저**여야 한다. */
+  /* 판 색인을 못 받았으면 옛 옵시디언 링크로 떨어진다 — 조용히 깨지는 것보다 낫다 */
+  const P=PAN&&PAN[m.subj];
+  if(!P) return `obsidian://open?vault=${enc(OBSIDIAN_VAULT)}&file=${enc(file)}`+(head?`%23${enc(head)}`:'');
+  /* 🔴 합성의 앞자리는 **원 대주제**다 — `TAGMETA.tag`가 아니다. 분할 대주제의 `tag`는
+     「대주제 — 그룹명」(`읽기 — 이론·지도`)인데 그건 **앱·계획 쪽 개념**이고 조판본엔 없다.
+     조판본 합성은 회독본 `##` 제목에서 만들어지므로 `읽기_-_평가` 꼴이다.
+     🔴 **합성을 먼저 시도한다** — 중주제 이름이 과목 안에서 겹치면(국어 「평가」×3 등) 이름만으로는
+     문서 첫 등장으로 가서 **남의 절에 떨어진다.** 합성은 대주제까지 박혀 있어 그 위험이 없다.
+     ⚠ 후보는 전부 **색인에 있는지 확인하고** 쓴다. 없는 앵커를 쓰면 판 꼭대기로 떨어진다. */
+  const panFile=PAN_DIR+enc(m.subj)+'.html';
+  const rawTop=(rowUnit(k).split('|')[1]||'').split('#')[0];
+  const mid=isMidRow(k)?rowMid(k):'';
+  const cand=[];
+  if(mid&&rawTop) cand.push(anch(rawTop)+'_-_'+anch(mid));   // ① 합성 — 겹쳐도 안전
+  if(deep&&isSubRow(k)&&rowSub(k)) cand.push(anch(rowSub(k)));
+  if(mid) cand.push(anch(mid));                              // ② 바로 이름
+  if(head) cand.push(anch(head));                            // ③ 회독본이 맞춘 제목(별칭 포함)
+  if(rawTop) cand.push(anch(rawTop));                        // ④ 대주제
+  for(const a of cand) if(P.has(a)) return panFile+'#'+enc(a);
+  return panFile;                                            // 아무것도 못 맞추면 그 과목 판을 연다
+}
+/* 조판본 앵커 규칙 — 조판 세션과 합의한 계약이다(제목 전문에서 **공백 연속만** `_` 하나로).
+   🔴 이 변환을 바꾸면 링크가 통째로 깨진다. 계약 정본은 인수인계 §5.8. */
+const PAN_DIR='hoedok/%ED%8C%90/';     // hoedok/판/ — 앱과 같은 오리진
+function anch(s){ return String(s||'').trim().replace(/\s+/g,'_'); }
+/* 🔴 **판의 앵커 목록을 읽는다 — 추측하지 않는다.** 조판본은 회독본과 **다르게 묶은 자리가 127군데**라
+   회독본 제목으로 앵커를 유추하면 빗나간다(실측: 후보를 순서대로 쓰면 **5,205장이 없는 앵커**로 갔다.
+   틀린 절로 가진 않고 그 과목 판 꼭대기로 떨어지지만, 그러면 전환의 의미가 없다).
+   조판 세션이 `hoedok/판/anchors.json`을 조립기에 정식 편입했다 — **재조립마다 자동 갱신**된다.
+   ⚠ 못 받으면 `PAN=null`이고 그때는 **옛 옵시디언 링크로 떨어진다**(아래 hoedokURI) —
+   링크가 조용히 깨지는 것보다 옛 동작이 낫다. 「못 받았다 ≠ 없다」(§2.14와 같은 결). */
+let PAN=null;
+async function loadPan(){
+  try{ const r=await fetch(PAN_DIR+'anchors.json?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok) return; const j=await r.json();
+    const m={}; for(const k in j) m[k]=new Set(j[k]||[]);
+    if(Object.keys(m).length) PAN=m;
+  }catch(e){}
+}
+
+/* ── 회독본 갔다 돌아올 자리 (동하 2026-09-01) ─────────────────────────────
+   조판본은 **같은 탭**에서 열린다(PWA에서 새 탭은 Safari로 튀어나간다). 그래서 돌아오면 페이지가
+   새로 뜨고, 예전에는 **홈에서 다시 시작**했다 — 「몇 번째 카드였나(qPos)」와 「답면을 봤나(revealed)」가
+   메모리 변수라 날아갔기 때문이다. 카드 자체는 무사했다(`syncSessQueue`가 남은 큐를 **보던 카드부터**
+   저장한다 — 실측 확인). 잃는 것은 **화면 상태**뿐이라 그것만 적어 두면 된다.
+   ⚠ 오늘 것만 되살린다 · 그 사이 다른 기기에서 풀었거나 미뤘으면 되살리지 않는다(홈으로 간다). */
+function saveResume(){
+  const c=(typeof cur==='function')?cur():null;
+  if(!curSess||!c) return;
+  try{ lsSet(K_RESUME, JSON.stringify({sid:curSess.id, cid:c.id, rev:!!revealed, day:todayKey()})); }catch(e){}
+}
+function clearResume(){ try{ lsSet(K_RESUME,''); }catch(e){} }
+function tryResume(){
+  let r=null; try{ r=JSON.parse(lsGet(K_RESUME)||'null'); }catch(e){}
+  if(!r||r.day!==todayKey()) return false;
+  const sx=sessions.find(s=>s.id===r.sid), c=BYID[r.cid];
+  if(!sx||!c||settledToday(c)||buried(c)) return false;
+  playSess(sx);                                  // 저장 큐가 그 카드부터라 보통 첫 장이 그 카드다
+  const now=cur();
+  if(!now||now.id!==r.cid) return true;          // 순서가 달라졌으면 이어가기 상태로만 둔다 — 건너뛰지 않는다
+  if(r.rev) reveal();
+  return true;
 }
 /* 카드에서 여는 회독본 — **그 카드의 중주제부터** 찾는다 (동하 2026-08-22).
    대주제 키로 열면 늘 대주제 제목으로 떨어져, 열고 나서 다시 찾아 내려가야 했다.
@@ -5060,6 +5131,7 @@ function playSess(sx){          // 세션 화면의 [이어가기] — 남은 �
   if(!queue.length){ if(all.length) toast('오늘 이미 푼 카드뿐이에요'); finishSess(); } else showCard();
 }
 function finishSess(){         // 큐 소진 = 세션 화면으로 복귀 (성적표는 거기서)
+  clearResume();               // 다 푼 자리로 되돌아갈 일은 없다
   if(curSess){
     const n=sess.r[1]+sess.r[2]+sess.r[3]+sess.r[4];
     if(n){
@@ -5381,6 +5453,7 @@ function showCard(){
   $('phaseLine').textContent = whyNow(c);   // 이 카드가 왜 지금 나왔는지 (동하 2026-08-21)
   syncRail(); counts();
   $('cardScroll').scrollTop=0;
+  saveResume();                  // 회독본 갔다 돌아올 자리 (앞면 상태)
 }
 function reveal(){
   const c=cur(); if(!c||revealed)return;
@@ -5421,6 +5494,7 @@ function reveal(){
   $('cBackWrap').classList.add('on');
   $('gradeBar').classList.add('on');
   $('cMeta').classList.add('on');
+  saveResume();                  // 답면까지 봤다는 표시 — 돌아오면 여기로 복귀한다
   renderCardTags(c);
   intervalsPreview(c); syncGradeButtons();
   // 긴 앞면이면 방금 펼친 답면이 화면 밖이라 공개된 줄도 모른다 — 뷰포트 아래쪽(80% 밑)에
@@ -7476,8 +7550,13 @@ function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show');
   await loadAll();
   $('loading').style.display='none';
   if(cfg===null||!cfg.token) openSetup();
-  go('scrHome');     // 세션은 홈에서 골라 들어간다 (즉시 시작 폐지 — 동하 확정 2026-08-20)
-  loadHoedok().then(()=>{    // 회독본 색인 갱신은 뒤에서 — 끝나면 보고 있던 화면만 다시 그린다
+  /* 세션은 홈에서 골라 들어간다 (즉시 시작 폐지 — 동하 확정 2026-08-20).
+     🔴 **예외 하나 — 회독본 갔다 돌아온 경우**(동하 2026-09-01). 조판본을 같은 탭에서 열므로
+     돌아오면 페이지가 새로 뜬다. 그때만 풀던 카드(답면까지)로 복귀한다. 「즉시 시작」이 아니라
+     **떠나기 전 자리로 되돌리는 것**이라 위 확정과 어긋나지 않는다. 조건이 하나라도 안 맞으면 홈이다. */
+  go('scrHome');
+  try{ tryResume(); }catch(e){ console.warn('[복귀] 실패 — 홈으로', e); }
+  Promise.all([loadPan(), loadHoedok()]).then(()=>{    // 회독본·판 색인 갱신은 뒤에서 — 끝나면 보고 있던 화면만 다시 그린다
     const scr=[...document.querySelectorAll('.scr.on')].map(x=>x.id)[0];
     if(scr==='scrSession')renderSession(); else if(scr==='scrUnits')renderUnits();
   });

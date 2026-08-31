@@ -5975,7 +5975,16 @@ function renderSession(){
       :noScope?'<b>담아 둔 범위가 없어요.</b> 아래 「＋ 범위 넓히기」로 넣으세요 — 직접 추가 세션은 담은 것만 풉니다.'
       :'담아 둔 범위를 다 풀었어요. 아래에서 범위를 넓히거나 다음 진도를 시작하세요.'}</div>`}
     ${(refillQ&&refillQ.length)?`<button class="more-btn" id="ssRefill">＋ 이어서 채우기 (${refillQ.length}장)</button>
-      <div class="why">이 세션의 <b>범위에 아직 남은 카드</b>를 오늘 큐에 얹어요. 오늘 푼 것은 빼고요</div>`:''}
+      <div class="why">이 세션의 <b>범위에 아직 남은 카드</b>를 오늘 큐에 얹어요. 오늘 푼 것은 빼고요${(()=>{
+        /* 구성 한 줄 — 세션 설정에 있는 상태만 센다(동하 2026-09-01 「듀 몇 장, 신규 몇 장 …
+           세션 설정에 맞춰서」). 'all'이면 실측 기준 due·신규로 가른다. 약점은 due·신규와 겹치는
+           딱지라(별개 집합이 아니다) 설정에 있을 때만 겹쳐서 보여준다. */
+        const cs=refillQ.map(id=>BYID[id]).filter(Boolean), st=stArr(sx.how.status);
+        const p=[], has=k=>st.includes('all')||st.includes(k);
+        if(has('due')){ const n2=cs.filter(c=>isDue(c)).length; if(n2)p.push(`복습 ${n2}`); }
+        if(has('new')){ const n2=cs.filter(c=>isNew(c)).length; if(n2)p.push(`신규 ${n2}`); }
+        if(st.includes('weak')){ const n2=cs.filter(c=>isWeak(c)).length; if(n2)p.push(`약점 ${n2}`); }
+        return p.length?`<br>구성: <b>${p.join(' · ')}</b>`:'';})()}</div>`:''}
     <div class="ss-line"><span>${esc(sessDesc(sx))}</span></div>
     <div class="why">${esc(howPlain(sx))}</div>`;
   if(sx.lastScore) h+=`<div class="h-sec" style="margin-top:4px">마지막 성적</div>`+scoreHtml(sx.lastScore)+trendHtml(sx);

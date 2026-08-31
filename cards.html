@@ -4712,7 +4712,16 @@ function refillSess(sx){ // 전체 범위 세션은 날이 바뀌면 스스로 �
   sx.q=[...keep, ...fresh.filter(id=>!have.has(id))];
   sx.day=todayKey(); saveSessionsSoon();
 }
-function sessRemain(sx){ return (curSess&&curSess.id===sx.id) ? queue.length-qPos : (sx.q||[]).length; }
+/* 🔴 **「몇 장」은 실제로 낼 장수다** (동하 2026-09-01: 「카드 장수 보여주는 건 학습량 어림하는
+   용도인데, 그건 실제 카드량에 붙는 거니까」). 예전에는 **저장 큐 길이**를 그대로 셌다 —
+   저장 큐에는 **다른 세션에서 오늘 이미 푼 카드**가 남아 있어서(되돌리기 발판) 실제보다 많게 보였다.
+   실측: 「일일 복습」과 「누적복습 5차」가 195장, 3차와 88장 겹친다 — 한쪽에서 풀면 다른 쪽 숫자가
+   안 줄어드는데 들어가 보면 건너뛰어 빨리 끝났다. 숫자와 실제가 어긋나는 자리였다.
+   ⚠ **저장 큐는 그대로 둔다** — 지우면 되돌리기가 카드를 되살릴 자리를 잃는다. 세는 것만 바꾼다.
+   ⚠ 그래서 되돌리기로 되살아날 카드는 이 숫자에 안 잡힌다. 「지금 풀 것」을 세는 값이므로 그게 맞다. */
+function sessRemain(sx){ return (curSess&&curSess.id===sx.id)
+  ? queue.slice(qPos).filter(c=>!settledToday(c)&&!buried(c)).length
+  : dropSettled(sessCards(sx)).length; }
 function addScopeToSess(sx, sel){ // 내용 추가 — sel={units:[],mids:[]}
   const have=new Set(sx.q);
   const p=asPreset(sx);

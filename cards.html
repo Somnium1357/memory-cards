@@ -3857,7 +3857,14 @@ function mergeFbInto(remote, base){   // 피드백: u 최신 엔트리가 통째
       mine.flag=r.flag!==undefined?r.flag:null;
       mine.ft=Array.isArray(r.type)?r.type.slice():[];
       mine.ann=(r.ann||[]).slice();    // 합집합이면 다른 기기의 주석 제거가 여기서 부활한다 — 최신 것으로 교체
-    } else mine.ann=[...new Set([...(mine.ann||[]), ...(r.ann||[])])];
+    }
+    /* 🔴 **`u`가 같으면 합치지 않는다** (09-01 감사 🟡7). 예전엔 `>`가 아닌 모든 경우를 합집합으로
+       보내서, **같은 카드를 같은 시각으로 들고 있는 캐시**가 소진된 주석을 도로 붙였다
+       (끄기 push 실패 → 밤 루틴이 소진 → 아침 부팅에서 부활 → push로 원격 복귀 → 다음 reap은
+       「원격에 있음」이라 영영 안 걷는다). 같은 u = 같은 판이므로 합칠 것이 없다.
+       진짜 구식(`r.u < mine.u`)일 때만 합집합을 남긴다 — 오래된 기기가 **먼저 달아 둔** 주석이
+       최신 판에 없을 수 있어서다(그건 제거가 아니라 미전파다). */
+    else if((r.u||'') < (mine.u||'')) mine.ann=[...new Set([...(mine.ann||[]), ...(r.ann||[])])];
   }
 }
 function mergeLogInto(remote, wk){    // 로그: (카드|시각) 합집합
@@ -4374,9 +4381,11 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
        🔴 얹기만 하고 「올려야 할 것」으로 표시하지 않으면, 지난번에 못 올린 채점이 스스로는
           영영 안 올라간다(다음 채점이 주 로그 전체를 올릴 때 딸려 갈 뿐). 표시까지 한다. */
     if(wasDirty && cSc){ mergeMarksInto({cards:(cSc.cards||{})}, fbBase()); markDirty('marks'); }
+    /* 🔴 **캐시를 먼저 얹고, 걷어내기는 그 뒤다** (09-01 감사 🟡7). 예전에는 fb만 순서가 거꾸로여서
+       (reap → 캐시 병합) **캐시가 되살린 주석을 걷어낼 기회가 없었다.** marks는 처음부터 이 순서다. */
+    if(wasDirty && cFb){ mergeFbInto({cards:(cFb.cards||{})}, fbBase()); markDirty('fb'); }
     if(fb) reapFb(fb);                                            // 원격에서 소진된 것은 로컬에서도 뺀다
     if(sc) reapMarks(sc);                                         // 원격에서 해제된 마크도 마찬가지
-    if(wasDirty && cFb){ mergeFbInto({cards:(cFb.cards||{})}, fbBase()); markDirty('fb'); }
     if(wasDirty && cLg){ mergeLogInto(cLg, wk);                   markDirty('log', wk); }
     // K_DLOGS가 정본, 없는 기기(이 기능 이전)는 캐시 전수로 폴백
     const pend=(lsGet(K_DLOGS)||'').split('|').filter(Boolean);
@@ -4541,9 +4550,16 @@ function fixDoneOnce(){
   saveSessionsSoon();
 }
 function loadSessions(){
+  /* 🔴 K_SESS에는 `sessFile()` **객체**가 들어 있다(`{v,sessions,hoedok,…}`). 예전엔 배열로 파싱해
+     **항상 빈 배열**이 됐고, 그래서 유령 「일일 복습」이 생겼다(09-01 감사 🟡9). 평소엔 loadAll이
+     곧 덮어써 무해했지만, **원격도 캐시도 못 읽은 netFail 부팅**에서는 그 유령 때문에
+     `!sessions.length` 검사가 거짓이 되어 「세션 목록을 못 받았어요」 배너가 안 떴다 —
+     저장이 안 되는 세션을 경고 없이 굴리게 된다. 배열과 객체 둘 다 받는다(옛 캐시 호환). */
   const v=lsGet(K_SESS);
-  if(v){ try{ sessions=JSON.parse(v); }catch(e){ sessions=[]; } }
+  if(v){ try{ const j=JSON.parse(v); sessions=Array.isArray(j)?j:((j&&j.sessions)||[]); }
+         catch(e){ sessions=[]; } }
   if(!Array.isArray(sessions)) sessions=[];
+  sessions=sessions.filter(x=>x&&!x.del);      // 캐시에는 삭제 툼스톤도 같이 들어 있다
   if(!sessions.length){                       // 예전 프리셋이 있으면 승계, 없으면 일일 복습 하나
     const old=lsGet(K_PRESETS);
     let migrated=[];
@@ -4845,7 +4861,12 @@ function settledToday(c){         // 오늘 처리 끝난 카드 = 오늘 한 �
      재출 채점은 일정에 반영되지 않아(「기록만」) 누를 이유가 없는 버튼이었다. */
   return todayRatings()[c.id]!==undefined;
 }
-function dropSettled(list){ return list.filter(c=>!settledToday(c)); }
+/* 🔴 **미룸도 같이 거른다**(09-01 감사 🟡6). 「내일로」를 사이드바에서 누르면 `removeCurFromQueue`가
+   화면·저장 큐를 정리하지만, **목록·상세의 「내일로」는 마크만 단다.** 그래서 이미 담긴 큐에 그 카드가
+   있으면 그날 그대로 다시 나왔다 — 「미룸 = 오늘 큐에서 빼기」가 진입 경로마다 다르게 굴었다.
+   ⚠ 큐를 **새로 짜는** 경로는 `inScope`가 이미 미룸을 뺀다(3438·inScope 첫 줄). 여기서 막는 것은
+   **이미 담긴 큐**를 다시 낼 때다. 저장 큐에서 지우지는 않는다 — 되돌리기 발판은 그대로. */
+function dropSettled(list){ return list.filter(c=>!settledToday(c) && !buried(c)); }
 /* 저장된 큐에서 지우지는 않는다 — 되돌리기가 그 카드를 되살릴 수 있어야 하므로,
    「오늘 정리된 카드」는 세션을 시작·재개할 때(playSess)와 큐를 새로 짤 때(buildQueue) 거른다. */
 function buildQueue(p, status){
@@ -5240,7 +5261,8 @@ function showCard(){
      상세에서 「바로 풀기」하면 큐가 0장이 되어 **아무 말 없이 홈으로 튕겼다**). */
   let skipped=0;
   const picked = !!(curSess && curSess.pick);
-  while(!picked && queue[qPos] && settledToday(queue[qPos])){ qPos++; skipped++; }
+  // 오늘 푼 것 + 오늘 미룬 것을 건너뛴다 (미룸은 09-01 감사 🟡6 — dropSettled의 같은 처방)
+  while(!picked && queue[qPos] && (settledToday(queue[qPos])||buried(queue[qPos]))){ qPos++; skipped++; }
   if(skipped) syncSessQueue();
   const c=cur();
   if(!c){ showSummaryOrNew(); return; }

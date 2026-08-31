@@ -98,10 +98,12 @@ h4{font-family:var(--fb);font-weight:700;font-size:1rem;margin:16px 0 5px var(--
 .kids>*,.bracket>*{position:relative;padding-left:17px;padding-top:2px;padding-bottom:2px;}
 .kids>*::before,.bracket>*::before{content:'';position:absolute;left:0;top:0;bottom:0;
   border-left:1px solid var(--mk);}
-.kids>*:first-child::before,.bracket>*:first-child::before{top:50%;}
-.kids>*:last-child::before,.bracket>*:last-child::before{bottom:50%;}
+/* 눈금·선 끝은 「첫 줄의 세로 중앙」(padding 2px + 반 행 .875em) — 50% 로 두면 여러 줄
+   자식에서 눈금이 본문 가운데(부연 줄)에 찍힌다 (과학 7회차 실측 · 한 줄 자식에선 50% 와 동치) */
+.kids>*:first-child::before,.bracket>*:first-child::before{top:calc(2px + .875em);}
+.kids>*:last-child::before,.bracket>*:last-child::before{bottom:calc(100% - 2px - .875em);}
 .kids>*:only-child::before,.bracket>*:only-child::before{display:none;}
-.kids>*::after,.bracket>*::after{content:'';position:absolute;left:0;top:50%;width:10px;
+.kids>*::after,.bracket>*::after{content:'';position:absolute;left:0;top:calc(2px + .875em);width:10px;
   border-top:1px solid var(--mk);}
 
 /* ── 꺾쇠 — 팔 끝이 첫 항목·끝 항목의 **글자 중앙**에 닿아야 한다.

@@ -171,3 +171,50 @@
 document.querySelectorAll('.mkf svg,.mkd svg,.converge>svg,.fork svg,.fig svg').forEach(function(e){
   e.setAttribute('aria-hidden','true');});
 
+
+/* ── 위키 접기 (09-01) — 절(h2)·항(h3) 접기, 해시 이동 시 자동 펼침, 좁은 화면 목차 접힘, ↑ 버튼 ── */
+(function(){
+  var main=document.querySelector('main.wrap'); if(!main) return;
+  var flow=[].slice.call(document.querySelectorAll('main.wrap .pg > *'));
+  if(!flow.length) return;
+  function rangeOf(h){
+    var i=flow.indexOf(h), out=[];
+    for(var j=i+1;j<flow.length;j++){var e=flow[j];
+      if(e.classList&&e.classList.contains('part'))break;
+      if(e.tagName==='H2')break;
+      if(h.tagName==='H3'&&e.tagName==='H3')break;
+      out.push(e);}
+    return out;}
+  function setClosed(h,closed){
+    h.classList.toggle('closed',closed);
+    rangeOf(h).forEach(function(e){
+      if(closed){e.classList.add('clpsd');}
+      else{e.classList.remove('clpsd');
+        if(e.tagName==='H3'&&e.classList.contains('closed'))
+          rangeOf(e).forEach(function(x){x.classList.add('clpsd');});}
+    });}
+  [].slice.call(document.querySelectorAll('main.wrap .pg > h2, main.wrap .pg > h3'))
+    .forEach(function(h){h.classList.add('tg');
+      h.addEventListener('click',function(ev){
+        if(ev.target.closest('a'))return;
+        setClosed(h,!h.classList.contains('closed'));});});
+  function expandTo(id){
+    if(!id)return; var el=document.getElementById(id); if(!el)return;
+    var node=el, i=flow.indexOf(node);
+    while(i<0&&node&&node!==main){node=node.parentElement; i=flow.indexOf(node);}
+    for(var j=i;j>=0;j--){var e=flow[j];
+      if(e.tagName==='H3'||e.tagName==='H2'){
+        if(e.classList.contains('closed'))setClosed(e,false);
+        if(e.tagName==='H2')break;}}
+    el.classList&&el.classList.remove('clpsd');}
+  window.addEventListener('hashchange',function(){
+    expandTo(decodeURIComponent(location.hash.slice(1)));});
+  if(location.hash)expandTo(decodeURIComponent(location.hash.slice(1)));
+  var tb=document.querySelector('.tocbox');
+  if(tb) tb.open=window.matchMedia('(min-width:921px)').matches;
+  var fb=document.createElement('button'); fb.className='fab'; fb.textContent='↑';
+  fb.title='맨 위(목차)로';
+  fb.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});
+    var t=document.querySelector('.tocbox'); if(t&&!t.open)t.open=true;});
+  document.body.appendChild(fb);
+})();

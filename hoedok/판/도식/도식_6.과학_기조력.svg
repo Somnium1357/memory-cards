@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 190" width="380" height="212">
+  <!-- 기조력: 지구를 감싼 물이 달 방향(과 반대쪽)으로 부푼다 -->
+  <ellipse cx="120" cy="95" rx="86" ry="58" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="6 4" opacity=".85"/>
+  <circle cx="120" cy="95" r="52" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="120" y="100" text-anchor="middle" font-size="15" fill="currentColor">지구</text>
+  <text x="120" y="24" text-anchor="middle" font-size="12" fill="currentColor" opacity=".75">물</text>
+  <line x1="120" y1="30" x2="120" y2="40" stroke="currentColor" stroke-width="1" opacity=".6"/>
+  <circle cx="296" cy="95" r="15" fill="none" stroke="currentColor" stroke-width="1.8"/>
+  <text x="296" y="128" text-anchor="middle" font-size="13" fill="currentColor">달</text>
+  <line x1="212" y1="95" x2="274" y2="95" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 4" opacity=".55"/>
+</svg>

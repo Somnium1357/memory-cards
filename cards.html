@@ -4285,11 +4285,14 @@ function hoedokURI(k, deep){   // deep=true면 3층 제목부터 찾는다 (지�
       const t=A[c];                                     // 제목 뒤 부연이 붙은 경우
       if(t!==undefined&&H[t]!==undefined){ file=HOEDOK.f[H[t]]; head=t; done=true; break; }
     }
-    if(!done){
-      const any=Object.values(H)[0];            // 제목을 하나도 못 찾으면 그 과목 파일만 연다
-      if(any===undefined) return null;
-      file=HOEDOK.f[any]; head='';
-    }
+    /* 🔴 **제목을 하나도 못 맞추면 링크를 만들지 않는다**(09-01 감사 🟡F2).
+       예전에는 그 과목 **파일 꼭대기**를 열었다. 회독본이 없는 과목(13.총창)은 이미 null이었는데,
+       「회독본은 있지만 그 절이 없는」 경우만 파일만 열고 있었다 — 두 경우의 규칙이 갈라져 있었다.
+       실측: 교육과정 카드 **301장**(체육 155·미술 77·음악 46·사회 23)이 여기 걸렸다. 회독본에
+       「2022 개정 교육과정」 절이 아예 없어서(4과목 전부 0건) 열어 봐야 **내용이 없다** —
+       「회독본 ↗」이라 써 놓고 엉뚱한 데로 보내는 것은 링크가 없느니만 못하다.
+       ▸ 회독본에 그 절이 생기면 색인이 자동으로 잡아 링크도 저절로 돌아온다(코드에 목록을 안 박는 이유). */
+    if(!done) return null;
     file=file.replace(/\.md$/,'');
   }
   return `obsidian://open?vault=${enc(OBSIDIAN_VAULT)}&file=${enc(file)}`+(head?`%23${enc(head)}`:'');

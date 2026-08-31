@@ -3761,6 +3761,50 @@ async function ghPut(path, buildBody, onConflict){   // 충돌(409·422)이면 �
   const j=await r.json(); sha[path]=j.content.sha;
 }
 
+/* ── 세션 「축소」 기록 (09-01 감사 🔴2) ───────────────────────────────────────────
+   병합이 q·scope를 **합집합**으로 합쳐서, 「추가」는 전파되는데 **「축소」는 전파되지 않았다.**
+   낡은 사본을 든 기기가 병합에 한 번만 참여해도 뺀 단위·비운 큐가 살아나고 그게 push되어 정본이 됐다.
+   (`ex` 제외 목록은 최신 우선이라 이 문제가 없었다 — 규칙이 갈라져 있었다.)
+   🔴 고침 = **사람이 일부러 줄인 것만** 원소 툼스톤으로 남긴다. 자동으로 줄어드는 것
+   (오늘 푼 것·미룸·refill 재조립)은 남기지 않는다 — 그건 각 기기가 스스로 다시 판정하는 값이라
+   툼스톤으로 굳히면 다른 기기의 정상 동작을 막는다.
+   ⚠ §3.2㉠의 「로그는 합집합이 미덕」과 충돌하지 않는다. 저긴 채점 기록이고 여긴 **오늘 큐**다. */
+const QDEL_CAP=800;                       // 툼스톤 상한 — 세션 파일이 무한히 커지지 않게 (오래된 것부터 버린다)
+function stampShrink(sx, key, atKey, ids){
+  if(!ids || !ids.length) return;
+  const now=new Date().toISOString();
+  const d=sx[key]||(sx[key]={});
+  for(const id of ids) d[id]=now;
+  sx[atKey]=now;
+  const ks=Object.keys(d);
+  if(ks.length>QDEL_CAP){ ks.sort((a,b)=>(d[a]||'').localeCompare(d[b]||''));
+    for(const k of ks.slice(0, ks.length-QDEL_CAP)) delete d[k]; }
+}
+function qShrink(sx, removed){ stampShrink(sx,'qDel','qAt',removed); }        // 큐에서 뺀 카드
+function scShrink(sx, removed){ stampShrink(sx,'scDel','scAt',removed); }     // 범위에서 뺀 단위·중주제
+function qGrow(sx){ sx.qAt=new Date().toISOString(); }                        // 큐를 늘렸다 = 이 사본이 더 새롭다
+function scGrow(sx){ sx.scAt=new Date().toISOString(); }
+/* 합집합 뒤에 「상대가 그 뒤로 안 건드린 축소」를 반영해 도로 뺀다.
+   한쪽이 지웠고(툼스톤) **그쪽 목록에 지금도 없고**, 상대가 그 시각 뒤로 목록을 건드린 적이 없으면 뺀다.
+   🔴 두 조건이 다 필요하다 — ①지운 쪽이 나중에 다시 넣었으면 그 추가가 이겨야 하고(그래서 목록 확인)
+   ②상대가 그 뒤에 새로 넣었으면 그것도 이겨야 한다(그래서 `at` 비교). **축소가 추가를 영영 막지 않는다.** */
+function applyShrink(union, a, b, aList, bList, delKey, atKey){
+  const da=a[delKey]||{}, db=b[delKey]||{};
+  const inA=new Set(aList||[]), inB=new Set(bList||[]);
+  return union.filter(id=>{
+    if(da[id] && !inA.has(id) && da[id] > (b[atKey]||'')) return false;
+    if(db[id] && !inB.has(id) && db[id] > (a[atKey]||'')) return false;
+    return true;
+  });
+}
+function mergeShrinkMaps(a, b, key){        // 툼스톤은 합집합·같은 id는 최신 시각
+  const out={...(a[key]||{})};
+  for(const id in (b[key]||{})) if(!out[id] || b[key][id]>out[id]) out[id]=b[key][id];
+  const ks=Object.keys(out);
+  if(ks.length>QDEL_CAP){ ks.sort((x,y)=>(out[x]||'').localeCompare(out[y]||''));
+    for(const k of ks.slice(0, ks.length-QDEL_CAP)) delete out[k]; }
+  return out;
+}
 function mergeSessions(remote, local, log){
   // 세션 병합: id별 합집합 · 같은 id면 큐는 「양쪽 합집합 − 오늘 이미 푼 것」, 나머지 필드는 u 최신 우선
   const tk=todayKey(), solved=new Set();
@@ -3773,9 +3817,17 @@ function mergeSessions(remote, local, log){
       const prev=byId[sx.id];
       if(!prev){ byId[sx.id]=JSON.parse(JSON.stringify(sx)); continue; }
       const newer=(sx.lastAt||0)>=(prev.lastAt||0)?sx:prev, older=newer===sx?prev:sx;
-      const q=[...new Set([...(newer.q||[]), ...(older.q||[])])].filter(id=>!solved.has(id));
+      /* 🔴 합집합 → **축소 반영** → 오늘 푼 것 제외 (09-01 감사 🔴2).
+         예전엔 합집합이 끝이라 「빼기」·「큐 비우기」가 낡은 사본과 만나면 되살아났다. */
+      const q=applyShrink(
+        [...new Set([...(newer.q||[]), ...(older.q||[])])],
+        newer, older, newer.q, older.q, 'qDel', 'qAt').filter(id=>!solved.has(id));
       const merged=JSON.parse(JSON.stringify(newer));
       merged.q=q;
+      merged.qDel=mergeShrinkMaps(newer, older, 'qDel');
+      merged.qAt=[newer.qAt||'', older.qAt||''].sort().pop()||undefined;
+      merged.scDel=mergeShrinkMaps(newer, older, 'scDel');
+      merged.scAt=[newer.scAt||'', older.scAt||''].sort().pop()||undefined;
       /* 🔴 일회성 정정(doneFix)이 한쪽에만 있으면 max를 쓰지 않는다 — max면 **정정 전 큰 값이 이겨**
          정정이 되돌아간다. 마커 있는 쪽을 따르고 마커를 물려준다. 둘 다 있으면 평소대로 max. */
       const nf=newer.doneFix, of=older.doneFix;
@@ -3783,9 +3835,12 @@ function mergeSessions(remote, local, log){
                   : (of&&!nf) ? (older.done||0)
                   : Math.max(newer.done||0, older.done||0);
       if(nf||of) merged.doneFix = nf||of;
+      /* scope도 같은 처방 — 「빼기」가 범위에서 뺀 단위·중주제가 낡은 사본에서 되살아나던 자리다 */
+      const nu=(newer.scope&&newer.scope.units)||[], ou=(older.scope&&older.scope.units)||[];
+      const nm=(newer.scope&&newer.scope.mids)||[],  om=(older.scope&&older.scope.mids)||[];
       merged.scope={ ...newer.scope,
-        units:[...new Set([...((newer.scope&&newer.scope.units)||[]), ...((older.scope&&older.scope.units)||[])])],
-        mids:[...new Set([...((newer.scope&&newer.scope.mids)||[]), ...((older.scope&&older.scope.mids)||[])])] };
+        units:applyShrink([...new Set([...nu,...ou])], newer, older, nu, ou, 'scDel','scAt'),
+        mids: applyShrink([...new Set([...nm,...om])], newer, older, nm, om, 'scDel','scAt') };
       byId[sx.id]=merged;
     }
   }
@@ -4608,9 +4663,10 @@ function sessCards(sx){ return (sx.q||[]).map(id=>BYID[id]).filter(Boolean); }  
    71 → **238**(due+신규)로 붇는다. 「도형 추가했다 뺐더니 130장이 생겼다」와 같은 놀람이라 안 넣는다. */
 function applyStatus(sx){
   const st=stArr(sx.how.status);
-  const before=(sx.q||[]).length;
+  const beforeQ=(sx.q||[]).slice(), before=beforeQ.length;
   sx.q=(sx.q||[]).filter(id=>{ const c=BYID[id]; return c && (settledToday(c) || matchStatus(c, st)); });
   const off=before-sx.q.length;                     // 조건 밖이라 빠진 것
+  qShrink(sx, beforeQ.filter(id=>!sx.q.includes(id)));   // 설정을 바꿔 뺀 것도 사람의 축소다 (감사 🔴2)
   if(curSess&&curSess.id===sx.id){ queue=[...queue.slice(0,qPos), ...dropSettled(sessCards(sx))]; counts(); }
   saveSessionsSoon();
   return {off, add:0};
@@ -4682,6 +4738,13 @@ function addScopeToSess(sx, sel){ // 내용 추가 — sel={units:[],mids:[]}
     sx.scope.mids=[...new Set([...(sx.scope.mids||[]), ...(sel.mids||[])])];
   }                                      // 자동 충전 세션은 오늘 큐에만 얹고 범위는 그대로
   sx.q=[...sx.q, ...add];
+  /* 🔴 늘린 시각을 찍는다 — 안 찍으면 **옛 툼스톤이 새 추가를 도로 지운다**(감사 🔴2의 반대 방향 사고).
+     툼스톤에 있던 카드를 다시 넣었으면 그 항목은 지운다 — 사람이 마음을 바꾼 것이다. */
+  if(add.length){ qGrow(sx); if(sx.qDel) for(const id of add) delete sx.qDel[id]; }
+  if(sel && ((sel.units||[]).length||(sel.mids||[]).length)){
+    scGrow(sx);
+    if(sx.scDel) for(const k of [...(sel.units||[]), ...(sel.mids||[])]) delete sx.scDel[k];
+  }
   if(curSess&&curSess.id===sx.id){ for(const id of add){ if(BYID[id])queue.push(BYID[id]); } counts(); }
   sx.day=todayKey(); saveSessionsFlush();
   return add.length;
@@ -6070,6 +6133,7 @@ function renderSession(){
   const bc=$('ssClear'); if(bc)bc.onclick=()=>{
     const n=sessRemain(sx);
     const doIt=()=>{
+      qShrink(sx, (sx.q||[]).slice());            // 🔴 비운 것도 사람의 축소 — 낡은 사본이 되살리지 못하게
       sx.q=[]; sx.day=todayKey();                 // 자동 충전 세션도 오늘은 다시 안 채운다
       if(live){ queue=queue.slice(0,qPos); counts(); }
       saveSessionsFlush(); push();
@@ -6079,7 +6143,9 @@ function renderSession(){
     else doIt();
   };
   const br=$('ssRefill'); if(br)br.onclick=()=>{
-    sx.q=refillQ.slice(); sx.day=todayKey(); saveSessionsFlush();
+    sx.q=refillQ.slice(); sx.day=todayKey();
+    qGrow(sx); if(sx.qDel) for(const id of refillQ) delete sx.qDel[id];   // 사람이 다시 채웠다 = 축소 취소
+    saveSessionsFlush();
     if(live){ for(const id of refillQ){ if(BYID[id])queue.push(BYID[id]); } counts(); }
     toast(`${refillQ.length}장 채웠어요`); renderSession();
   };
@@ -6190,9 +6256,11 @@ function removeUnitFromSess(sx, k){ // 세션에서 단위 빼기 — 큐에서 
   const hit = isSubRow(k) ? (c=>tagKey(c)===u && cardSubKey(c)===k)
             : isMid       ? (c=>tagKey(c)===u && midKey(u,(c.tags||[])[1]||'(기타)')===k)
                           : (c=>tagKey(c)===u);
+  const beforeQ=sx.q.slice(), beforeU=(sx.scope.units||[]).slice(), beforeM=(sx.scope.mids||[]).slice();
   const before=sx.q.length;
   sx.q=sx.q.filter(id=>{ const c=BYID[id]; return c && !hit(c); });
   const gone=before-sx.q.length;
+  qShrink(sx, beforeQ.filter(id=>!sx.q.includes(id)));   // 🔴 사람이 뺀 것 = 툼스톤 (감사 🔴2)
   /* 🔴 범위 모델에는 「포함」만 있고 「제외」가 없다. 대주제로 담은 세션에서 중주제 하나를 빼려면
      그 대주제를 **중주제들로 전개**하고 뺀 것만 빼야 한다 (동하 2026-08-21 — 손으로 하던 절차). */
   const mk=isSubRow(k)?rowUnit(k)+'||'+rowMid(k):null;   // 3층이면 그 부모 중주제 키
@@ -6207,6 +6275,11 @@ function removeUnitFromSess(sx, k){ // 세션에서 단위 빼기 — 큐에서 
     sx.scope.units=(sx.scope.units||[]).filter(x=>x!==k);        // 자동 충전 세션은 애초에 비어 있어 무해
     sx.scope.mids=(sx.scope.mids||[]).filter(x=>isMid?x!==k:rowUnit(x)!==k);
   }
+  /* 범위에서 빠진 단위·중주제도 툼스톤 — 안 그러면 낡은 사본과 병합될 때 되살아난다.
+     ⚠ 전개(대주제 → 중주제들)로 **새로 생긴** 키는 툼스톤이 아니다. 빠진 것만 센다. */
+  scShrink(sx, [...beforeU.filter(x=>!(sx.scope.units||[]).includes(x)),
+                ...beforeM.filter(x=>!(sx.scope.mids||[]).includes(x))]);
+  if((sx.scope.units||[]).length>beforeU.length || (sx.scope.mids||[]).length>beforeM.length) scGrow(sx);
   if(curSess&&curSess.id===sx.id){
     const head=queue.slice(0,qPos);
     queue=[...head, ...queue.slice(qPos).filter(c=>!hit(c))];

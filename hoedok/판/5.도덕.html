@@ -10,13 +10,6 @@
 .eyebrow{color:var(--dim);font-size:.875rem;letter-spacing:.08em;margin:0 0 10px;}
 h1{font-family:var(--fd);font-weight:700;font-size:1.75rem;margin:0 0 4px;}
 .src{color:var(--dim);font-size:.875rem;margin:0 0 6px;}
-/* nav — 구분선 대신 간격만 (줄바꿈 시 첫 줄 끝에 구분선이 매달리는 문제 · 독립검수 #6) */
-nav{margin:26px 0 0;display:flex;flex-wrap:wrap;gap:9px 28px;}
-nav a{color:var(--ink2);text-decoration:none;border-bottom:1px solid var(--hair);font-size:.9375rem;}
-nav a span{color:var(--dim);font-size:.8125rem;}
-nav a:hover,nav a:focus{color:var(--ink);border-bottom-color:var(--mk);}
-nav .navpart{font-weight:700;color:var(--ink);font-size:.9375rem;
-  flex-basis:100%;margin:4px 0 -4px;}   /* 대주제 묶음 머리 — 제 줄을 차지한다 */
 /* 쪽 경계가 여백 리듬을 오염시키지 않게 — h2/h3 위 여백은 문서 전체에서 한 값 (독립검수 #4·#5) */
 .pg{margin:0;}
 .pg>h2:first-child{margin-top:52px;}
@@ -27,7 +20,7 @@ main>.pg:first-of-type>h2:first-child{margin-top:36px;}
 .foot a{color:var(--ink2);}
 </style>
 <div class="layout">
-<aside class="sidebar"><details class="tocbox" open><summary>목차</summary><div class="tochead"><a href="index.html">← 목록</a></div><nav class="tnav"><a href="#도덕_교과서의_편찬_방향">도덕 교과서의 편찬 방향 <span>2쪽</span></a><a href="#도덕_수업_모형">도덕 수업 모형 <span>3쪽</span></a><a href="#콜버그_-_도덕성_발달_이론">콜버그 - 도덕성 발달 이론 <span>5쪽</span></a><a href="#도덕_교육의_관점">도덕 교육의 관점 <span>7쪽</span></a><a href="#도덕_교육의_이론적_기초">도덕 교육의 이론적 기초 <span>8쪽</span></a><a href="#도덕과_일반_이론">도덕과 일반 이론 <span>12쪽</span></a><a href="#도덕과_평가_방법">도덕과 평가 방법 <span>13쪽</span></a></nav></details></aside>
+<aside class="sidebar"><div class="tochead"><a href="index.html">← 목록</a><b>5.도덕</b></div><details class="tgrp" open><summary><a class="gh" href="#교과서_편찬_방향">교과서 편찬 방향</a></summary><nav class="tnav"><a href="#기본형_단원">기본형 단원</a><a href="#자율융합형_단원">자율융합형 단원</a><a href="#철학적_탐구_공동체">철학적 탐구 공동체</a></nav></details><details class="tgrp" open><summary><a class="gh" href="#도덕_수업_모형">도덕 수업 모형</a></summary><nav class="tnav"><a href="#역할놀이_수업_모형_(과정·기능)">역할놀이 수업 모형 (과정·기능)</a><a href="#개념_분석_수업_모형_(지식·이해)">개념 분석 수업 모형 (지식·이해)</a><a href="#가치_명료화_수업_모형_(지식·이해)">가치 명료화 수업 모형 (지식·이해)</a><a href="#가치_분석_수업_모형_(지식·이해)">가치 분석 수업 모형 (지식·이해)</a><a href="#가치_갈등_해결_수업_모형_(지식·이해)">가치 갈등 해결 수업 모형 (지식·이해)</a><a href="#합리적_의사_결정_수업_모형_(지식·이해,_과정·기능)">합리적 의사 결정 수업 모형 (지식·이해, 과정·기능)</a><a href="#집단_탐구_수업_모형_(지식·이해→탐구/가치·태도→정착)">집단 탐구 수업 모형 (지식·이해→탐구/가치·태도→정착)</a><a href="#도덕적_토론_수업_모형">도덕적 토론 수업 모형</a><a href="#도덕_이야기_수업_모형">도덕 이야기 수업 모형</a><a href="#경험_학습_수업_모형">경험 학습 수업 모형</a></nav></details><details class="tgrp" open><summary><a class="gh" href="#도덕_교육의_관점">도덕 교육의 관점</a></summary><nav class="tnav"><a href="#도덕_사회화론">도덕 사회화론</a><a href="#도덕성_발달론">도덕성 발달론</a></nav></details><details class="tgrp" open><summary><a class="gh" href="#도덕_교육의_이론적_기초">도덕 교육의 이론적 기초</a></summary><nav class="tnav"><a href="#도덕_심리학">도덕 심리학</a><a href="#서양_윤리학">서양 윤리학</a><a href="#동양_윤리학">동양 윤리학</a></nav></details><div class="tgrp one"><a class="gh" href="#도덕과의_기능">도덕과의 기능</a></div><details class="tgrp" open><summary><a class="gh" href="#도덕과_교수·학습_방법">도덕과 교수·학습 방법</a></summary><nav class="tnav"><a href="#도덕과_학습_지도의_원리">도덕과 학습 지도의 원리</a><a href="#도덕과_학습_지도의_방법_(설명_→_타이틀_인출)">도덕과 학습 지도의 방법 (설명 → 타이틀 인출)</a></nav></details><div class="tgrp one"><a class="gh" href="#도덕과_평가_방법">도덕과 평가 방법</a></div></aside>
 <main class="wrap">
 <p class="eyebrow">회독본</p>
 <h1>5.도덕</h1>

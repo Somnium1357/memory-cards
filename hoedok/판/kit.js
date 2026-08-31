@@ -172,11 +172,10 @@ document.querySelectorAll('.mkf svg,.mkd svg,.converge>svg,.fork svg,.fig svg').
   e.setAttribute('aria-hidden','true');});
 
 
-/* ── 위키 접기 (09-01) — 절(h2)·항(h3) 접기, 해시 이동 시 자동 펼침, 좁은 화면 목차 접힘, ↑ 버튼 ── */
+/* ── 위키 v2 (09-01) — 절 접기 + 해시 자동 펼침 + 사이드바 서랍(☰) + ↑ ── */
 (function(){
   var main=document.querySelector('main.wrap'); if(!main) return;
   var flow=[].slice.call(document.querySelectorAll('main.wrap .pg > *'));
-  if(!flow.length) return;
   function rangeOf(h){
     var i=flow.indexOf(h), out=[];
     for(var j=i+1;j<flow.length;j++){var e=flow[j];
@@ -210,11 +209,21 @@ document.querySelectorAll('.mkf svg,.mkd svg,.converge>svg,.fork svg,.fig svg').
   window.addEventListener('hashchange',function(){
     expandTo(decodeURIComponent(location.hash.slice(1)));});
   if(location.hash)expandTo(decodeURIComponent(location.hash.slice(1)));
-  var tb=document.querySelector('.tocbox');
-  if(tb) tb.open=window.matchMedia('(min-width:921px)').matches;
+  /* 서랍 */
+  var sb=document.querySelector('.sidebar');
+  if(sb){
+    var btn=document.createElement('button'); btn.className='tocbtn'; btn.textContent='☰ 목차';
+    var scrim=document.createElement('div'); scrim.className='scrim';
+    function setOpen(o){sb.classList.toggle('open',o); document.body.classList.toggle('tocopen',o);}
+    btn.addEventListener('click',function(){setOpen(!sb.classList.contains('open'));});
+    scrim.addEventListener('click',function(){setOpen(false);});
+    sb.addEventListener('click',function(ev){
+      var a=ev.target.closest('a');
+      if(a&&window.matchMedia('(max-width:1449px)').matches)setOpen(false);});
+    document.body.appendChild(btn); document.body.appendChild(scrim);
+  }
   var fb=document.createElement('button'); fb.className='fab'; fb.textContent='↑';
-  fb.title='맨 위(목차)로';
-  fb.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});
-    var t=document.querySelector('.tocbox'); if(t&&!t.open)t.open=true;});
+  fb.title='맨 위로';
+  fb.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
   document.body.appendChild(fb);
 })();

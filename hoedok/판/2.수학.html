@@ -10,13 +10,6 @@
 .eyebrow{color:var(--dim);font-size:.875rem;letter-spacing:.08em;margin:0 0 10px;}
 h1{font-family:var(--fd);font-weight:700;font-size:1.75rem;margin:0 0 4px;}
 .src{color:var(--dim);font-size:.875rem;margin:0 0 6px;}
-/* nav — 구분선 대신 간격만 (줄바꿈 시 첫 줄 끝에 구분선이 매달리는 문제 · 독립검수 #6) */
-nav{margin:26px 0 0;display:flex;flex-wrap:wrap;gap:9px 28px;}
-nav a{color:var(--ink2);text-decoration:none;border-bottom:1px solid var(--hair);font-size:.9375rem;}
-nav a span{color:var(--dim);font-size:.8125rem;}
-nav a:hover,nav a:focus{color:var(--ink);border-bottom-color:var(--mk);}
-nav .navpart{font-weight:700;color:var(--ink);font-size:.9375rem;
-  flex-basis:100%;margin:4px 0 -4px;}   /* 대주제 묶음 머리 — 제 줄을 차지한다 */
 /* 쪽 경계가 여백 리듬을 오염시키지 않게 — h2/h3 위 여백은 문서 전체에서 한 값 (독립검수 #4·#5) */
 .pg{margin:0;}
 .pg>h2:first-child{margin-top:52px;}
@@ -27,7 +20,7 @@ main>.pg:first-of-type>h2:first-child{margin-top:36px;}
 .foot a{color:var(--ink2);}
 </style>
 <div class="layout">
-<aside class="sidebar"><details class="tocbox" open><summary>목차</summary><div class="tochead"><a href="index.html">← 목록</a></div><nav class="tnav"><a href="#수학의_가치와_특성">수학의 가치와 특성 <span>2쪽</span></a><a href="#수학_수업_모형">수학 수업 모형 <span>3쪽</span></a><a href="#폴리아">폴리아 <span>4쪽</span></a><a href="#평면도형과_구성_요소">평면도형과 구성 요소 <span>5쪽</span></a><a href="#평면도형">평면도형 <span>7쪽</span></a><a href="#입체도형">입체도형 <span>12쪽</span></a><a href="#디에네스,_개념_학습_이론">디에네스, 개념 학습 이론 <span>15쪽</span></a><a href="#반_힐레,_기하_사고_수준_이론">반 힐레, 기하 사고 수준 이론 <span>15쪽</span></a><a href="#측정_각론_—_길이·들이·무게·시각과_시간">측정 각론 — 길이·들이·무게·시각과 시간 <span>16쪽</span></a><a href="#넓이와_부피">넓이와 부피 <span>20쪽</span></a><a href="#수와_연산_—_자연수·약수와_배수·수의_범위">수와 연산 — 자연수·약수와 배수·수의 범위 <span>23쪽</span></a><a href="#수와_연산_-_자연수의_덧셈과_뺄셈">수와 연산 - 자연수의 덧셈과 뺄셈 <span>26쪽</span></a><a href="#수와_연산_-_자연수의_곱셈">수와 연산 - 자연수의 곱셈 <span>28쪽</span></a><a href="#수와_연산_-_자연수의_나눗셈">수와 연산 - 자연수의 나눗셈 <span>30쪽</span></a><a href="#수와_연산_-_분수">수와 연산 - 분수 <span>31쪽</span></a><a href="#수와_연산_-_분수의_덧셈·뺄셈">수와 연산 - 분수의 덧셈·뺄셈 <span>32쪽</span></a><a href="#수와_연산_-_분수의_곱셈">수와 연산 - 분수의 곱셈 <span>33쪽</span></a><a href="#수와_연산_-_분수의_나눗셈">수와 연산 - 분수의 나눗셈 <span>34쪽</span></a><a href="#수와_연산_-_소수">수와 연산 - 소수 <span>35쪽</span></a><a href="#수와_연산_-_소수의_사칙연산">수와 연산 - 소수의 사칙연산 <span>36쪽</span></a></nav></details></aside>
+<aside class="sidebar"><div class="tochead"><a href="index.html">← 목록</a><b>2.수학</b></div><details class="tgrp" open><summary><a class="gh" href="#수학의_가치와_특성">수학의 가치와 특성</a></summary><nav class="tnav"><a href="#수학의_가치_(=_필요성)">수학의 가치 (= 필요성)</a><a href="#수학적_사고">수학적 사고</a><a href="#수학적_지식의_형태와_특성">수학적 지식의 형태와 특성</a></nav></details><details class="tgrp" open><summary><a class="gh" href="#수학_수업_모형">수학 수업 모형</a></summary><nav class="tnav"><a href="#개념_학습_모형">개념 학습 모형</a><a href="#원리_탐구_학습_모형">원리 탐구 학습 모형</a><a href="#귀납_추론_학습_모형">귀납 추론 학습 모형</a><a href="#문제_해결_학습_모형">문제 해결 학습 모형</a></nav></details><details class="tgrp" open><summary><a class="gh" href="#폴리아">폴리아</a></summary><nav class="tnav"><a href="#문제_해결_4단계">문제 해결 4단계</a><a href="#문제_해결_전략">문제 해결 전략</a></nav></details><details class="tgrp" open><summary><a class="gh" href="#도형과_측정">도형과 측정</a></summary><nav class="tnav"><a href="#평면도형과_구성_요소">평면도형과 구성 요소</a><a href="#평면도형">평면도형</a><a href="#입체도형">입체도형</a><a href="#디에네스,_개념_학습_이론">디에네스, 개념 학습 이론</a><a href="#반_힐레,_기하_사고_수준_이론">반 힐레, 기하 사고 수준 이론</a><a href="#측정_각론">측정 각론</a><a href="#넓이와_부피">넓이와 부피</a></nav></details><details class="tgrp" open><summary><a class="gh" href="#수와_연산">수와 연산</a></summary><nav class="tnav"><a href="#자연수">자연수</a><a href="#약수와_배수">약수와 배수</a><a href="#수의_범위와_올림,_버림,_반올림">수의 범위와 올림, 버림, 반올림</a><a href="#수와_연산_-_자연수의_덧셈과_뺄셈">자연수의 덧셈과 뺄셈</a><a href="#수와_연산_-_자연수의_곱셈">자연수의 곱셈</a><a href="#수와_연산_-_자연수의_나눗셈">자연수의 나눗셈</a><a href="#수와_연산_-_분수">분수</a><a href="#수와_연산_-_분수의_덧셈·뺄셈">분수의 덧셈·뺄셈</a><a href="#수와_연산_-_분수의_곱셈">분수의 곱셈</a><a href="#수와_연산_-_분수의_나눗셈">분수의 나눗셈</a><a href="#수와_연산_-_소수">소수</a><a href="#수와_연산_-_소수의_사칙연산">소수의 사칙연산</a></nav></details></aside>
 <main class="wrap">
 <p class="eyebrow">회독본</p>
 <h1>2.수학</h1>

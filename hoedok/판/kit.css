@@ -325,36 +325,48 @@ td.h{font-weight:500;color:var(--ink2);}
 /* 키보드 포커스 */
 a:focus-visible,button:focus-visible{outline:2px solid var(--ac);outline-offset:2px;}
 
-/* ── 위키 레이아웃 (09-01 동하 지시 — 접기·사이드바 목차·상시 목록 접근) ── */
+/* ── 위키 레이아웃 v2 (09-01) — 사이드바는 서랍식: ≥1450px 상시 고정 · 그 아래(아이패드 포함)는
+   ☰ 버튼으로 여닫는 오버레이라 본문 폭을 절대 안 뺏는다. 목차는 회독본 위계(쪽수 없음). ── */
 .layout{display:flex;align-items:flex-start;}
-.sidebar{flex:0 0 250px;position:sticky;top:0;max-height:100vh;overflow-y:auto;
+.sidebar{flex:0 0 252px;position:sticky;top:0;max-height:100vh;overflow-y:auto;
   padding:22px 14px 48px 20px;border-right:1px solid var(--hair);
-  font-size:.875rem;scrollbar-width:thin;}
-.tocbox>summary{display:none;}
-.tochead{margin:0 0 12px;}
-.tochead a{color:var(--ink2);text-decoration:none;border-bottom:1px solid var(--hair);font-size:.875rem;}
+  font-size:.875rem;scrollbar-width:thin;background:var(--bg);}
+.tochead{margin:0 0 12px;display:flex;flex-direction:column;gap:4px;}
+.tochead a{color:var(--ink2);text-decoration:none;border-bottom:1px solid var(--hair);
+  font-size:.84rem;align-self:flex-start;}
 .tochead a:hover{color:var(--ink);border-bottom-color:var(--mk);}
+.tochead b{font-family:var(--fd);font-size:1.05rem;}
 .tgrp{margin:4px 0;}
-.tgrp>summary{font-weight:700;color:var(--ink);cursor:pointer;padding:4px 0;list-style-position:outside;}
-.tnav a{display:block;padding:2.5px 0 2.5px 2px;color:var(--ink2);text-decoration:none;
+.tgrp>summary{font-weight:700;color:var(--ink);cursor:pointer;padding:4px 0;}
+.tgrp>summary .gh{color:inherit;text-decoration:none;}
+.tgrp>summary .gh:hover{color:var(--ac);}
+.tgrp.one{font-weight:700;padding:4px 0;}
+.tnav a{display:block;padding:2.5px 0;color:var(--ink2);text-decoration:none;
   border:0;font-size:.84rem;line-height:1.45;}
 .tgrp .tnav{padding-left:14px;}
-.tnav a span{color:var(--dim);font-size:.78rem;}
 .tnav a:hover,.tnav a:focus{color:var(--ink);}
-@media (max-width:920px){
+.tocbtn{display:none;position:fixed;top:10px;left:10px;z-index:11;
+  padding:7px 12px;border:1px solid var(--hair);border-radius:8px;
+  background:var(--bg);color:var(--ink2);font-size:.9rem;cursor:pointer;
+  box-shadow:0 2px 8px rgba(0,0,0,.25);}
+.tocbtn:hover{color:var(--ink);border-color:var(--mk);}
+.scrim{display:none;position:fixed;inset:0;z-index:9;background:rgba(0,0,0,.35);}
+@media (max-width:1449px){
   .layout{display:block;}
-  .sidebar{position:static;max-height:none;flex:none;border-right:0;
-    border-bottom:1px solid var(--hair);padding:14px 18px;}
-  .tocbox>summary{display:list-item;font-weight:700;cursor:pointer;font-size:1rem;}
+  .tocbtn{display:block;}
+  .sidebar{position:fixed;left:0;top:0;bottom:0;width:280px;max-width:84vw;max-height:none;
+    z-index:10;transform:translateX(-103%);transition:transform .16s ease;
+    box-shadow:6px 0 22px rgba(0,0,0,.3);padding-top:52px;}
+  .sidebar.open{transform:none;}
+  .sidebar.open~.scrim, body.tocopen .scrim{display:block;}
 }
-@media print{.sidebar,.fab{display:none;}}
+@media print{.sidebar,.fab,.tocbtn,.scrim{display:none;}}
 /* 절 접기 — kit.js 가 h2/h3 에 토글을 단다 */
 h2.tg,h3.tg{cursor:pointer;}
 h2.tg::before,h3.tg::before{content:'▾';display:inline-block;width:.95em;margin-left:-.1em;
   color:var(--mk);font-size:.72em;vertical-align:.18em;transition:transform .12s;}
 h2.tg.closed::before,h3.tg.closed::before{transform:rotate(-90deg);}
 .clpsd{display:none !important;}
-/* 맨 위(목차)로 — 좁은 화면에서 목록 접근이 스크롤 없이 되게 */
 .fab{position:fixed;right:14px;bottom:14px;z-index:8;width:40px;height:40px;border-radius:50%;
   border:1px solid var(--hair);background:var(--bg);color:var(--ink2);font-size:17px;
   cursor:pointer;opacity:.92;box-shadow:0 2px 8px rgba(0,0,0,.25);}

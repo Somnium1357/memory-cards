@@ -231,3 +231,34 @@ document.querySelectorAll('.mkf svg,.mkd svg,.converge>svg,.fork svg,.fig svg').
     document.body.appendChild(btn); document.body.appendChild(scrim);
   }
 })();
+
+/* ── 눈금 실측 (09-01) — bracket/kids 자식마다 라벨 첫 글줄 중앙을 재서 --tick 으로 ── */
+(function(){
+  function firstLineCenter(el){
+    var w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT),n;
+    while((n=w.nextNode())){
+      if(n.textContent.trim()){
+        var r=document.createRange(); r.selectNodeContents(n);
+        var rects=r.getClientRects();
+        if(rects.length) return rects[0].top+rects[0].height/2;
+      }
+    }
+    var b=el.getBoundingClientRect(); return b.top+b.height/2;
+  }
+  function fitTicks(){
+    var kids=document.querySelectorAll('.bracket > *, .kids > *');
+    for(var i=0;i<kids.length;i++){
+      var ch=kids[i];
+      if(ch.tagName==='svg'||ch.tagName==='SVG')continue;
+      var src=ch;
+      if(ch.classList.contains('branch')&&ch.firstElementChild) src=ch.firstElementChild;
+      else if(ch.classList.contains('bsub')){ch.style.removeProperty('--tick');continue;}
+      var y=firstLineCenter(src)-ch.getBoundingClientRect().top;
+      if(isFinite(y)&&y>0) ch.style.setProperty('--tick', y.toFixed(1)+'px');
+    }
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fitTicks);
+  else fitTicks();
+  window.addEventListener('load',fitTicks);
+  var t; window.addEventListener('resize',function(){clearTimeout(t);t=setTimeout(fitTicks,150);});
+})();

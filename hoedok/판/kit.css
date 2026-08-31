@@ -121,16 +121,16 @@ h4{font-family:var(--fb);font-weight:700;font-size:1rem;margin:16px 0 5px var(--
   border-left:1px solid var(--mk);}
 /* 눈금·선 끝은 「첫 줄의 세로 중앙」(padding 2px + 반 행 .875em) — 50% 로 두면 여러 줄
    자식에서 눈금이 본문 가운데(부연 줄)에 찍힌다 (과학 7회차 실측 · 한 줄 자식에선 50% 와 동치) */
-.kids>*:first-child::before,.bracket>*:first-child::before{top:calc(2px + .875em);}
-.kids>*:last-child::before,.bracket>*:last-child::before{bottom:calc(100% - 2px - .875em);}
+/* 눈금 위치는 kit.js 가 「라벨 첫 글줄 중앙」을 실측해 --tick 으로 넘긴다 (09-01 —
+   라벨 칸이 여러 블록[라벨+↳정의]이면 CSS 근사가 빗나가는 계통의 근치). 아래 값은 JS 폴백. */
+.kids>*:first-child::before,.bracket>*:first-child::before{top:var(--tick,calc(2px + .875em));}
+.kids>*:last-child::before,.bracket>*:last-child::before{bottom:calc(100% - var(--tick,calc(2px + .875em)));}
 .kids>*:only-child::before,.bracket>*:only-child::before{display:none;}
-.kids>*::after,.bracket>*::after{content:'';position:absolute;left:0;top:calc(2px + .875em);width:10px;
+.kids>*::after,.bracket>*::after{content:'';position:absolute;left:0;top:var(--tick,calc(2px + .875em));width:10px;
   border-top:1px solid var(--mk);}
-/* 자식이 .branch 면 라벨이 상자 세로 중앙(중앙 정렬 규칙)에 있다 — 눈금도 중앙으로
-   (첫 줄 기준을 그대로 쓰면 팔이 라벨 위를 짚는다. 국어 독립검수 15곳 실측) */
-.kids>.branch::after,.bracket>.branch::after{top:50%;}
-.kids>.branch:first-child::before,.bracket>.branch:first-child::before{top:50%;}
-.kids>.branch:last-child::before,.bracket>.branch:last-child::before{bottom:50%;}
+.kids>.branch::after,.bracket>.branch::after{top:var(--tick,50%);}
+.kids>.branch:first-child::before,.bracket>.branch:first-child::before{top:var(--tick,50%);}
+.kids>.branch:last-child::before,.bracket>.branch:last-child::before{bottom:calc(100% - var(--tick,50%));}
 
 /* ── 꺾쇠 — 팔 끝이 첫 항목·끝 항목의 **글자 중앙**에 닿아야 한다.
    항목 높이가 제각각이라 고정 여백으로는 못 맞춘다. 아래 스크립트가 재서 맞춘다. ── */

@@ -4389,13 +4389,20 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
       }catch(e){ logWeeks[owk]=logWeeks[owk]||[]; }   // 토큰 문제로 부팅이 깨지지 않게
       mergeLogInto(c, owk); markDirty('log', owk);
     }
-    const sf=sess||cSess;
+    /* 🔴 wasDirty 부팅(캐시에 못 올린 변경이 있음)에서는 **로컬 캐시를 밑판으로 깔고 원격을 병합**한다.
+       예전에는 원격(sess)을 밑판으로 깔고 `mergeSessInto(sess)`를 불렀다 — 메모리가 이미 원격인데
+       원격을 또 병합하는 **자기병합**이라, 캐시(cSess)에만 있던 새 세션·done·범위 편집·삭제 툼스톤이
+       통째로 버려졌다(09-01 독립 감사 🔴①, 실측 확정). marks·fb·log는 캐시를 병합하는데 세션만 샜다.
+       고침 = 캐시를 깔고 원격을 병합 — refreshRemote가 매일 쓰는 검증된 방향과 동일하다
+       (로컬이 메모리, 원격이 인자). 안 더러운 부팅은 종전대로 원격이 그대로 이긴다. */
+    const both = wasDirty && cSess && sess;
+    const sf = both ? cSess : (sess||cSess);
     if(sf){
       sessions=(sf.sessions||[]).filter(x=>!x.del); sessTomb=(sf.sessions||[]).filter(x=>x.del);
       state.hoedok=sf.hoedok||{};
       if(sf.cap!==undefined){ intake.cap=sf.cap; intake.capAt=sf.capAt||0; }
       if(sf.rest && (sf.restAt||0) > (rest.at||0)){ rest.dow=sf.rest.dow; rest.days=sf.rest.days||[]; rest.at=sf.restAt; restReset(); }
-      if(wasDirty && cSess && sess) mergeSessInto(sess);
+      if(both) mergeSessInto(sess);
     }
     normalizeSessions();
   }

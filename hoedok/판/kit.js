@@ -217,7 +217,13 @@ document.querySelectorAll('.mkf svg,.mkd svg,.converge>svg,.fork svg,.fig svg').
     function setOpen(o){sb.classList.toggle('open',o); document.body.classList.toggle('tocopen',o);}
     btn.addEventListener('click',function(){setOpen(!sb.classList.contains('open'));});
     scrim.addEventListener('click',function(){setOpen(false);});
-    sb.addEventListener('click',function(ev){ if(ev.target.closest('a'))setOpen(false);});
+    var tv=sb.querySelector('.toc-view'), lv=sb.querySelector('.list-view');
+    sb.addEventListener('click',function(ev){
+      var sw=ev.target.closest('.toc-switch');
+      if(sw&&tv&&lv){ev.preventDefault(); tv.hidden=true; lv.hidden=false; return;}
+      var bk=ev.target.closest('.toc-back');
+      if(bk){ev.preventDefault(); if(tv&&lv){lv.hidden=true; tv.hidden=false;} return;}
+      if(ev.target.closest('a'))setOpen(false);});
     document.body.appendChild(btn); document.body.appendChild(scrim);
   }
 })();

@@ -363,3 +363,5 @@ h2.tg::before,h3.tg::before{content:'▾';display:inline-block;width:.95em;margi
   color:var(--mk);font-size:.72em;vertical-align:.18em;transition:transform .12s;}
 h2.tg.closed::before,h3.tg.closed::before{transform:rotate(-90deg);}
 .clpsd{display:none !important;}
+.list-view .tnav a.cur{color:var(--ink);font-weight:700;}
+.toc-view[hidden],.list-view[hidden]{display:none;}

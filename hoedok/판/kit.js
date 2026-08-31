@@ -42,6 +42,10 @@
       }
       if(!svg || !left || !left.children.length) return;
       var lb = left.getBoundingClientRect();
+      /* 🔴 marginTop 은 flex 컨테이너(.converge) 위끝 기준이다 — 왼쪽 묶음 위끝 기준으로 재면
+         오른쪽 묶음이 더 높을 때(align-items:center 로 왼쪽이 내려앉는다) 브레이스가 그 차이만큼
+         떠오른다. 두 자리 실측 후 고침 (2026-09-01 · 수학 p23 · 음악 p07, 둘 다 -17.5px). */
+      var cb = c.getBoundingClientRect();
       var a, b;
       /* 🔴 명시 계약 (2026-08-31): 조각이 브레이스가 감쌀 첫 항목에 data-b="s", 끝 항목에
          data-b="e"(하나뿐이면 "se")를 단다 — kit 은 그 둘만 잰다. 아래 추측 사슬은 표시가
@@ -57,7 +61,7 @@
         svg.setAttribute('preserveAspectRatio','none');
         svg.style.height = h0.toFixed(1)+'px';
         svg.style.alignSelf = 'flex-start';
-        svg.style.marginTop = top0.toFixed(1)+'px';
+        svg.style.marginTop = ((a.top + a.height/2) - cb.top).toFixed(1)+'px';
         if(!svg.style.width) svg.style.width = '11px';
         svg.querySelectorAll('path,line').forEach(function(e){
           e.setAttribute('vector-effect','non-scaling-stroke'); });
@@ -101,7 +105,7 @@
       svg.setAttribute('preserveAspectRatio','none');
       svg.style.height = h.toFixed(1)+'px';
       svg.style.alignSelf = 'flex-start';
-      svg.style.marginTop = top.toFixed(1)+'px';
+      svg.style.marginTop = ((a.top + a.height/2) - cb.top).toFixed(1)+'px';
       if(!svg.style.width) svg.style.width = '11px';
       svg.querySelectorAll('path,line').forEach(function(e){
         e.setAttribute('vector-effect','non-scaling-stroke'); });

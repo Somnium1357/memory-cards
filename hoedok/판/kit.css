@@ -20,8 +20,9 @@
   --bg:#13151A; --ink:#E8EAF0; --ink2:#C3C8D4; --dim:#828A9B;
   --mk:#7A849B; --hair:#2B303C; --ac:#8CA7FF;
   /* 인앱 폰트 (동하 지시 08-31) — 앱이 자가 서빙하는 SerifKR·NotoMusic 을 그대로 쓴다.
-     Google Fonts 의존 제거. @font-face 는 이 파일 머리 아래 (경로 = 레포 루트 상대). */
-  --fd:"NotoMusic","SerifKR","Apple Myungjo","Nanum Myeongjo",Georgia,serif;
+     Google Fonts 의존 제거. @font-face 는 이 파일 머리 아래 (경로 = 레포 루트 상대).
+     🔴 표제(--fd)는 앱과 같이 테마별(09-01 동하): 다크 = 산세리프 · 웜 = SerifKR 명조. */
+  --fd:"NotoMusic",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Malgun Gothic",sans-serif;
   --fb:"NotoMusic",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Malgun Gothic",sans-serif;
   --fm:"IBM Plex Mono",ui-monospace,monospace;
   --gap:7px;
@@ -31,12 +32,14 @@
 :root[data-theme="c"]{
   --bg:#F3EDDE; --ink:#2F2A20; --ink2:#4C4536; --dim:#6E6450;
   --mk:#6F654B; --hair:#E0D8C2; --ac:#AE5B33;
+  --fd:"NotoMusic","SerifKR","Apple Myungjo","Nanum Myeongjo",Georgia,serif;
   color-scheme:light;
 }
 @media (prefers-color-scheme:light){
   :root:not([data-theme]){
     --bg:#F3EDDE; --ink:#2F2A20; --ink2:#4C4536; --dim:#6E6450;
     --mk:#6F654B; --hair:#E0D8C2; --ac:#AE5B33;
+    --fd:"NotoMusic","SerifKR","Apple Myungjo","Nanum Myeongjo",Georgia,serif;
     color-scheme:light;
   }
 }

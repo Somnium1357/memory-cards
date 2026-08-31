@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 270 116" width="270" height="116">
+  <g class="hi">
+    <g class="ln" stroke="currentColor" stroke-width="1.4" fill="none">
+      <path d="M67,54 A10,10 0 0 1 47,54 A16.5,16.5 0 0 1 80,54 A24,24 0 0 1 32,54"/>
+      <path d="M67,54 A10,10 0 0 1 47,54 A16.5,16.5 0 0 1 80,54 A24,24 0 0 1 32,54" transform="rotate(180 60 54)"/>
+    </g>
+    <g class="ah" fill="currentColor">
+      <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(32,54) rotate(-105)"/>
+      <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="rotate(180 60 54) translate(32,54) rotate(-105)"/>
+    </g>
+    <g class="tx" fill="currentColor" font-size="14" text-anchor="middle">
+      <text x="60" y="108">고기압</text>
+    </g>
+  </g>
+  <g class="lo">
+    <g transform="translate(260,0) scale(-1,1)">
+      <g class="ln" stroke="currentColor" stroke-width="1.4" fill="none">
+        <path d="M67,54 A10,10 0 0 1 47,54 A16.5,16.5 0 0 1 80,54 A24,24 0 0 1 32,54"/>
+        <path d="M67,54 A10,10 0 0 1 47,54 A16.5,16.5 0 0 1 80,54 A24,24 0 0 1 32,54" transform="rotate(180 60 54)"/>
+      </g>
+      <g class="ah" fill="currentColor">
+        <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(67,54) rotate(-107)"/>
+        <path d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="rotate(180 60 54) translate(67,54) rotate(-107)"/>
+      </g>
+    </g>
+    <g class="tx" fill="currentColor" font-size="14" text-anchor="middle">
+      <text x="200" y="108">저기압</text>
+    </g>
+  </g>
+</svg>

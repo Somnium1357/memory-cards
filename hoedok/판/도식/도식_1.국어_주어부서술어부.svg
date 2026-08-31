@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 96" width="340" height="96">
+  <g class="tx" fill="currentColor" font-size="14" text-anchor="middle">
+    <text x="105" y="24">주어부</text>
+    <text x="237" y="24">서술어부</text>
+  </g>
+  <g class="ln" stroke="currentColor" stroke-width="1.4" fill="none">
+    <path d="M40,42 L40,32 L170,32 L170,42"/>
+    <path d="M176,42 L176,32 L300,32 L300,42"/>
+    <line x1="40" y1="58" x2="300" y2="58"/>
+    <line x1="40" y1="50" x2="40" y2="66"/>
+    <line x1="170" y1="50" x2="170" y2="66"/>
+    <line x1="300" y1="50" x2="300" y2="66"/>
+  </g>
+  <g class="tx" fill="currentColor" font-size="14" text-anchor="middle">
+    <text x="170" y="86">주어</text>
+  </g>
+</svg>

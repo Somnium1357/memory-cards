@@ -1,0 +1,162 @@
+<h2>수와 연산 - 자연수의 덧셈과 뺄셈</h2>
+
+<h3><span class="num">1.</span> 배경 지식 <span class="quiet">(받아올림·내림 전)</span></h3>
+
+<h4><span class="num">1)</span> 덧셈과 뺄셈 지도의 목적</h4>
+<div class="ind2">
+<div class="stack">
+  <div><span class="term">원리 이해</span> <span class="mk">→</span> <span class="desc">구체적인 조작 활동</span></div>
+  <div><span class="term">기능 숙달</span> <span class="mk">→</span> <span class="desc">세로셈 표준 알고리즘 지도. <span class="quiet">(행동주의)</span></span></div>
+  <div><span class="term">감각 형성</span> <span class="mk">→</span> <span class="desc">다양한 계산 방법 구성 <span class="quiet">(어림셈과 함께 구성주의)</span></span></div>
+</div>
+<div class="ind" style="margin-top:6px">
+<div class="converge">
+  <div class="stack">
+    <div data-b="s"><span class="term">가르기</span> <span class="quiet">(분해)</span> <span class="mk">→</span> <span class="desc">거꾸로 세기</span></div>
+    <div data-b="e"><span class="term">모으기</span> <span class="quiet">(합성)</span> <span class="mk">→</span> <span class="desc">이어 세기</span></div>
+  </div>
+  <svg width="11" height="56" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+  <div class="link">보수 관계 이해</div>
+</div>
+</div>
+</div>
+
+<h4><span class="num">2)</span> 덧셈과 뺄셈 상황</h4>
+<div class="ind2">
+<div class="stack">
+  <div class="branch">
+    <div><span class="term">덧셈</span></div>
+    <div class="fork"><div class="mkf">
+     <svg class="a1" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="10" y1="0" x2="1" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+     <svg class="a2" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="1" y1="0" x2="10" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+    </div><div class="stack">
+      <div><span class="desc">합병</span></div>
+      <div><span class="desc">첨가</span></div>
+    </div></div>
+    <div class="row" style="margin-left:16px"><span class="mk">→</span><span class="desc">이미 있는 것/새로 더해지는 것 구분 유무</span></div>
+  </div>
+  <div class="branch" style="margin-top:8px">
+    <div><span class="term">뺄셈</span></div>
+    <div class="fork"><div class="mkf">
+     <svg class="a1" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="10" y1="0" x2="1" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+     <svg class="a2" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="1" y1="0" x2="10" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+    </div><div class="stack">
+      <div><span class="term">제거</span> : <span class="desc">나머지</span></div>
+      <div><span class="term">비교</span> : <span class="desc">두 양의 차 <span class="mk">⇒</span> 그림으로 표현시 반드시 일대일 대응 관계</span></div>
+    </div></div>
+  </div>
+</div>
+</div>
+
+<h4><span class="num">3)</span> 문장제 유형</h4>
+<div class="ind2">
+<div class="cols n2 fit">
+  <div class="line">
+    <div class="col"><span class="mid">a</span><span class="down">초기값</span></div>
+    <div class="col"><span class="mid mk">+</span></div>
+    <div class="col"><span class="mid">b</span><span class="down">변화값</span></div>
+    <div class="col"><span class="mid mk">=</span></div>
+    <div class="col"><span class="mid">c</span><span class="down">결과</span></div>
+  </div>
+  <div class="stack">
+    <div class="row"><span class="mk">→</span><span class="term">등호</span> : <span class="desc">연산 표시 X, 좌변과 우변이 같다는 관계 표시</span></div>
+    <div class="sub"><span class="mk">∴</span> 읽을 때 '~와 같습니다' 로 <span class="quiet">('는' X)</span></div>
+  </div>
+</div>
+</div>
+
+<h4><span class="num">4)</span> 연산 법칙</h4>
+<div class="ind2">
+<div class="wide"><div class="converge">
+  <div class="stack">
+    <div data-b="s"><span class="term">덧셈의 교환법칙</span> <span class="mk">⇒</span> <span class="desc">a+b = b+a</span></div>
+    <div data-b="e"><span class="term">덧셈의 결합법칙</span> <span class="mk">⇒</span> <span class="desc">(a+b)+c = a+(b+c)</span></div>
+  </div>
+  <svg width="11" height="56" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+  <div class="link" style="text-align:left">
+    <div><span class="mk">→</span> 뺄셈에서는 성립하지 X <span class="quiet">(연산 결과 바뀌는 예 제시하여 지도)</span></div>
+    <div><span class="mk">⇒</span> 뺄셈은 -1을 곱한 것으로 생각하여 곱셈의 분배법칙 이용, 덧셈으로 전환</div>
+  </div>
+</div></div>
+<div class="row" style="margin-top:8px"><span class="term">항등원</span><span class="mk">⇒</span><span class="desc">a+e = e+a = a, e=0</span> <span class="mk">⇒</span> <span class="desc">뺄셈에서는 a-0=a, a-a=0 상황 지도</span></div>
+</div>
+
+<h4><span class="num">5)</span> 계산 전략</h4>
+<div class="ind2">
+<div class="branch">
+  <div><span class="term">구체물 활용</span></div>
+  <div class="bracket">
+    <div><span class="term">수 세기</span> : <span class="desc">수 세기 전략 <span class="quiet">(모두, 이어, 거꾸로...)</span></span></div>
+    <div><span class="term">수 지식</span> : <span class="desc">수 관계 지식<span class="quiet">(규칙성)</span>, 연산법칙 <span class="quiet">(결합, 교환...)</span></span></div>
+  </div>
+</div>
+</div>
+
+<h3><span class="num">2.</span> 각론</h3>
+
+<h4><span class="num">1)</span> 10이 되는 더하기와 빼기</h4>
+<div class="ind2">
+<div class="row"><span class="mk">⇒</span><span class="desc">10의 보수 관계 이해, 받아올림·내림의 기초</span></div>
+<div class="row"><span class="mk">⊕</span><span class="term">덧셈</span> <span class="mk">⇒</span> <span class="desc">교환법칙 이해</span></div>
+</div>
+
+<h4><span class="num">2)</span> 더해서 10이 되는 두 수를 이용한 세 수의 덧셈</h4>
+<div class="ind2">
+<div class="row"><span class="mk">⇒</span><span class="desc">순서대로 더한 값<span class="quiet">((a+b)+c)</span> 과 10이 되는 두 수를 먼저 더해 10을 만들고 나머지 한 수는 더한 값<span class="quiet">(a+(b+c))</span> 이 같음</span></div>
+<div class="sub">(a+b)가 10이 아니도록 설정</div>
+<div class="sub">(b+c)가 10이 되도록 설정</div>
+</div>
+
+<h4><span class="num">3)</span> (몇)+(몇) = (십몇), (십몇)-(몇) = (몇)</h4>
+<div class="ind2">
+<div class="stack">
+  <div><span class="term">덧셈</span> <span class="mk">⇒</span> <span class="desc">가산수, 피가산수를 분해, 더해서 10이 되는 수를 만듦</span></div>
+  <div class="sub">결합법칙에 의해 결과 같음</div>
+  <div class="branch" style="margin-top:8px">
+    <div><span class="term">뺄셈</span></div>
+    <div class="bracket">
+      <div><span class="term">피감수를 분해</span> : <span class="desc">10에서 먼저 빼고, 나머지 더함 <span class="mk">⇒</span> <span class="key">감가법</span></span></div>
+      <div><span class="term">감수를 분해</span> : <span class="desc">빼서 10을 만들고, 10에서 추가로 뺌 <span class="mk">⇒</span> <span class="key">감감법</span></span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<h3><span class="num">3.</span> 받아올림·내림</h3>
+
+<h4><span class="num">1)</span> 계산 원리</h4>
+<div class="ind2">
+<div class="bracket">
+  <div><span class="term">덧셈</span> : <span class="desc">자릿값에 의한 전개식으로 분해, 교환·결합법칙</span></div>
+  <div><span class="term">뺄셈</span> : <span class="desc">자릿값에 의한 전개식으로 분해, 교환·결합법칙 + 덧셈에 대한 곱셈의 분배법칙</span></div>
+</div>
+</div>
+
+<h4><span class="num">2)</span> 조작 활동</h4>
+<div class="ind2">
+<div class="stack">
+  <div class="desc">자릿값에 맞는 수 모형으로 나타내기 <span class="quiet">(덧-각각, 뺄-피감수)</span>, 같은 모형끼리 더하기/빼는 수만큼 덜어내기</div>
+  <div class="mk" style="padding-left:2.4em;line-height:1.2">↓</div>
+  <div class="desc">받아올림<span class="quiet">(더해서 10개 이상, 10개→1개)</span>, 받아내림<span class="quiet">(뺄 수 X, 1개→10개)</span>의 의미가 드러나는 조작 활동</div>
+</div>
+</div>
+
+<h4><span class="num">3)</span> 세로셈 표준 알고리즘</h4>
+<div class="ind2">
+<div class="stack">
+  <div class="desc">세로셈으로 나타내고, 자리에 맞게 수 쓰고, 일의 자리부터, 각 자리끼리 더하기/빼기</div>
+  <div class="mk" style="padding-left:2.4em;line-height:1.2">↓</div>
+  <div class="desc">합≥10 이면 받아올림, 뺄 수 없으면 받아내림</div>
+</div>
+</div>
+
+<h4><span class="num">4)</span> 오류 유형</h4>
+<div class="ind2">
+<div class="wide"><div class="fork"><div class="mkf">
+ <svg class="a1" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="10" y1="0" x2="1" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+ <svg class="a2" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="1" y1="0" x2="10" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+</div><div class="stack">
+  <div><span class="term">덧셈</span> : <span class="desc">받아올림 X/아래에 쓰는 오류 <span class="mk">⇒</span> 받아올림 이해 X <span class="quiet">; 구체물 조작 활동</span></span></div>
+  <div><span class="term">뺄셈</span> : <span class="desc">받아내림 대신 큰 수 - 작은 수 <span class="mk">⇒</span> 자릿값, 받아내림 이해 X, 한 자리수 뺄셈 관성 <span class="quiet">; 구체물 조작 활동</span></span></div>
+</div></div></div>
+</div>

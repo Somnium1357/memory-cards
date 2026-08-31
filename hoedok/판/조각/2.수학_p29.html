@@ -1,0 +1,75 @@
+<h2>수와 연산 - 자연수의 곱셈</h2>
+
+<h4><span class="num">3)</span> (몇십몇) × (몇), (세 자리 수) × (한 자리 수)</h4>
+<div class="ind2">
+<div><span class="term">계산 원리</span></div>
+<div class="ind">
+<div class="stack">
+  <div class="desc">곱해지는 수를 자릿값에 대한 전개식으로 분해한 뒤 분배법칙 적용</div>
+  <div class="desc">33 × 2 = (30+3)×2 = (30×2) + (3×2) = 60 + 6 = 66</div>
+</div>
+</div>
+<div style="margin-top:12px"><span class="term">알고리즘</span></div>
+<div class="ind">
+<div class="stack">
+  <div><span class="term">세로셈 부분곱 알고리즘</span> : <span class="desc">세로셈으로 나타내고 각 자리에 맞춰 수를 쓴<span class="quiet">(이하 세로셈 표현)</span> 뒤 곱해지는 수 분해, 부분곱의 합</span></div>
+  <div><span class="term">세로셈 표준 알고리즘</span> : <span class="desc">세로셈 표현 뒤 곱해지는 수를 일의 자리부터 곱하고 결과 ≥ 10이면 바로 윗자리로 올림</span></div>
+</div>
+</div>
+</div>
+
+<h3><span class="num">4.</span> 곱하는 수가 두 자리 수인 곱셈 <span class="quiet">⇒ 곱하는 수 조작</span></h3>
+
+<h4><span class="num">1)</span> 곱하는 수가 (몇십)</h4>
+<div class="ind2">
+<div><span class="term">계산 원리</span></div>
+<div class="ind">
+<div class="row"><span class="mk">⇒</span><span class="desc">곱하는 수 몇십을 10×(몇)으로 바꾼 후 교환법칙·결합법칙</span></div>
+<div class="stack">
+  <div class="desc">47 × 20 = 47 × (10 × 2) = 47 × (2 × 10) = (47 × 2) × 10 = 94 × 10 = 940</div>
+  <div class="desc">곱하는 수 10배 <span class="mk">→</span> 결과 10배임을 이해</div>
+</div>
+</div>
+<div style="margin-top:12px"><span class="term">알고리즘</span> <span class="mk">→</span> <span class="desc">(곱해지는 수)×(몇) 뒤에 0 ~ 세로셈 X</span></div>
+</div>
+
+<h4><span class="num">2)</span> 곱하는 수가 (몇십몇)</h4>
+<div class="ind2">
+<div><span class="term">계산 원리</span></div>
+<div class="ind">
+<div class="stack">
+  <div class="desc">곱하는 수를 자릿값에 대한 전개식으로 분해한 뒤 분배법칙 적용</div>
+  <div class="desc">17 × 35 = 17 × (30+5) = (17 × 30) + (17 × 5) = 510 + 85 = 595</div>
+</div>
+</div>
+<div style="margin-top:12px"><span class="term">알고리즘</span></div>
+<div class="ind">
+<div class="stack">
+  <div><span class="term">세로셈 부분곱 알고리즘</span> : <span class="desc">세로셈 표현 뒤 곱하는 수 분해, 부분곱의 합</span></div>
+  <div><span class="term">세로셈 표준 알고리즘</span> : <span class="desc">세로셈 표현 뒤 곱하는 수를 일의 자리부터 곱하고 결과 ≥ 10이면 바로 윗자리로 올림</span></div>
+</div>
+</div>
+</div>
+
+<h3><span class="num">5.</span> 곱셈 오류 지도</h3>
+
+<h4><span class="num">1)</span> 자릿값 무시</h4>
+<div class="ind2">
+<div class="stack">
+  <div><span class="term">원인</span> : <span class="desc">자릿값 개념 형성 X</span></div>
+  <div><span class="term">지도</span> : <span class="desc">자릿값 의미 지도</span></div>
+</div>
+</div>
+
+<h4><span class="num">2)</span> 자릿값 위치가 정확하지 않음</h4>
+<div class="ind2">
+<div><span class="term">지도</span> : <span class="desc">보조선 사용</span></div>
+</div>
+
+<h4><span class="num">3)</span> 올림 계산 X</h4>
+<div class="ind2">
+<div class="stack">
+  <div><span class="term">원인</span> : <span class="desc">자릿값 이해 X, 올림 처리 오개념</span></div>
+  <div><span class="term">지도</span> : <span class="desc">곱한 결과가 10 이상이면 바로 윗자리로 올리도록 지도</span></div>
+</div>
+</div>

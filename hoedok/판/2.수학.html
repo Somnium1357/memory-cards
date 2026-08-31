@@ -1,0 +1,3161 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>회독본 — 2.수학</title>
+<link rel="stylesheet" href="kit.css">
+<style>
+/* 🔴 max-width:none — kit.css 의 .wrap{max-width:720px} 이 폭 지정을 눌러 온 것을 해제 (독립 검수 #1) */
+.wrap{width:min(100%,1160px);max-width:none;margin:0 auto;padding:44px clamp(18px,4vw,32px) 90px;}
+.src,p.note,p.sub{max-width:46em;}
+.eyebrow{color:var(--dim);font-size:.875rem;letter-spacing:.08em;margin:0 0 10px;}
+h1{font-family:var(--fd);font-weight:700;font-size:1.75rem;margin:0 0 4px;}
+.src{color:var(--dim);font-size:.875rem;margin:0 0 6px;}
+/* nav — 구분선 대신 간격만 (줄바꿈 시 첫 줄 끝에 구분선이 매달리는 문제 · 독립검수 #6) */
+nav{margin:26px 0 0;display:flex;flex-wrap:wrap;gap:9px 28px;}
+nav a{color:var(--ink2);text-decoration:none;border-bottom:1px solid var(--hair);font-size:.9375rem;}
+nav a span{color:var(--dim);font-size:.8125rem;}
+nav a:hover,nav a:focus{color:var(--ink);border-bottom-color:var(--mk);}
+nav .navpart{font-weight:700;color:var(--ink);font-size:.9375rem;
+  flex-basis:100%;margin:4px 0 -4px;}   /* 대주제 묶음 머리 — 제 줄을 차지한다 */
+/* 쪽 경계가 여백 리듬을 오염시키지 않게 — h2/h3 위 여백은 문서 전체에서 한 값 (독립검수 #4·#5) */
+.pg{margin:0;}
+.pg>h2:first-child{margin-top:52px;}
+.pg h3:first-of-type{margin-top:34px;}
+main>.pg:first-of-type>h2:first-child{margin-top:36px;}
+.foot{margin-top:56px;padding-top:20px;border-top:1px solid var(--hair);
+  color:var(--dim);font-size:.875rem;}
+.foot a{color:var(--ink2);}
+</style>
+<main class="wrap">
+<p class="eyebrow">회독본</p>
+<h1>2.수학</h1>
+<p class="src">노트 p2–p36 · 35쪽 · 글자는 전사본, 배치는 노트</p>
+<nav><a href="#수학의_가치와_특성">수학의 가치와 특성 <span>2쪽</span></a> <a href="#수학_수업_모형">수학 수업 모형 <span>3쪽</span></a> <a href="#폴리아">폴리아 <span>4쪽</span></a> <a href="#평면도형과_구성_요소">평면도형과 구성 요소 <span>5쪽</span></a> <a href="#평면도형">평면도형 <span>7쪽</span></a> <a href="#입체도형">입체도형 <span>12쪽</span></a> <a href="#디에네스,_개념_학습_이론">디에네스, 개념 학습 이론 <span>15쪽</span></a> <a href="#반_힐레,_기하_사고_수준_이론">반 힐레, 기하 사고 수준 이론 <span>15쪽</span></a> <a href="#측정_각론_—_길이·들이·무게·시각과_시간">측정 각론 — 길이·들이·무게·시각과 시간 <span>16쪽</span></a> <a href="#넓이와_부피">넓이와 부피 <span>20쪽</span></a> <a href="#수와_연산_—_자연수·약수와_배수·수의_범위">수와 연산 — 자연수·약수와 배수·수의 범위 <span>23쪽</span></a> <a href="#수와_연산_-_자연수의_덧셈과_뺄셈">수와 연산 - 자연수의 덧셈과 뺄셈 <span>26쪽</span></a> <a href="#수와_연산_-_자연수의_곱셈">수와 연산 - 자연수의 곱셈 <span>28쪽</span></a> <a href="#수와_연산_-_자연수의_나눗셈">수와 연산 - 자연수의 나눗셈 <span>30쪽</span></a> <a href="#수와_연산_-_분수">수와 연산 - 분수 <span>31쪽</span></a> <a href="#수와_연산_-_분수의_덧셈·뺄셈">수와 연산 - 분수의 덧셈·뺄셈 <span>32쪽</span></a> <a href="#수와_연산_-_분수의_곱셈">수와 연산 - 분수의 곱셈 <span>33쪽</span></a> <a href="#수와_연산_-_분수의_나눗셈">수와 연산 - 분수의 나눗셈 <span>34쪽</span></a> <a href="#수와_연산_-_소수">수와 연산 - 소수 <span>35쪽</span></a> <a href="#수와_연산_-_소수의_사칙연산">수와 연산 - 소수의 사칙연산 <span>36쪽</span></a></nav>
+<section class="pg" id="p02">
+<h2 id="수학의_가치와_특성">수학의 가치와 특성</h2>
+
+<h3 id="1._수학의_가치_(=_필요성)"><a id="수학의_가치_(=_필요성)"></a><a id="수학의_가치"></a><span class="num">1.</span> 수학의 가치 <span class="quiet">(= 필요성)</span></h3>
+<div class="ind">
+<div class="row"><span class="mk">⇒</span><span class="desc">실용, 도야, 심미, 문화</span></div>
+</div>
+
+<h3 id="2._수학적_사고"><a id="수학적_사고"></a><span class="num">2.</span> 수학적 사고</h3>
+<div class="ind">
+<div class="row"><span class="num">1)</span><span class="term">귀납적 사고</span><span class="quiet">(구체 <span class="mk">→</span> 일반)</span></div>
+<div class="ind"><div class="row"><span class="mk">⇒</span><span class="desc">잠정적 <span class="quiet">(≒ 개연적)</span>, 반드시 참은 아님</span></div></div>
+<div class="row" style="margin-top:8px"><span class="num">2)</span><span class="term">연역적 사고</span><span class="quiet">(일반 <span class="mk">→</span> 구체)</span></div>
+<div class="ind"><div class="row"><span class="mk">⇒</span><span class="desc">귀납으로 형성, 연역으로 구체. 반드시 참</span></div></div>
+<div class="row" style="margin-top:8px"><span class="num">3)</span><span class="term">유추적 사고</span><span class="quiet">(구체 <span class="mk">→</span> 구체, by 유사성)</span></div>
+<div class="ind"><div class="row"><span class="mk">⇒</span><span class="desc">잠정적</span></div></div>
+<div class="row" style="margin-top:8px"><span class="num">4)</span><span class="term">직관적/논리적 사고</span></div>
+<div class="ind"><div class="row"><span class="mk">⇒</span><span class="desc">단계에 따라 논리적 or not</span></div></div>
+<div class="row" style="margin-top:8px"><span class="num">5)</span><span class="term">가역적 사고</span><span class="quiet">(역방향 변화)</span></div>
+<div class="ind"><div class="row"><span class="mk">⇒</span><span class="desc">거꾸로 풀기</span></div></div>
+</div>
+
+<h3 id="3._수학적_지식의_형태와_특성"><a id="수학적_지식의_형태와_특성"></a><span class="num">3.</span> 수학적 지식의 형태와 특성</h3>
+
+<h4 id="형태">형태</h4>
+<div class="ind2">
+<div class="bracket">
+  <div><span class="term">개념</span> : <span class="desc">결정적 속성의 명명</span></div>
+  <div><span class="term">원리</span> : <span class="desc">일반적인 성질</span></div>
+  <div><span class="term">법칙</span> : <span class="desc">보편적 규칙</span></div>
+</div>
+</div>
+
+<h4 id="특성">특성</h4>
+<div class="ind2">
+<div class="cols n2 fit">
+  <div class="stack">
+    <div class="row"><span class="num">1)</span><span class="term">추상화</span></div>
+    <div class="row"><span class="num">2)</span><span class="term">형식화</span></div>
+    <div class="row"><span class="num">3)</span><span class="term">이상화</span></div>
+    <div class="row"><span class="num">4)</span><span class="term">일반·특수화</span></div>
+  </div>
+  <div class="stack">
+    <div class="row"><span class="num">5)</span><span class="term">계통성</span></div>
+    <div class="row"><span class="num">6)</span><span class="term">논리·직관성</span></div>
+    <div class="row"><span class="num">7)</span><span class="term">실용성</span></div>
+    <div class="row"><span class="num">8)</span><span class="term">역동성</span></div>
+  </div>
+</div>
+</div>
+</section>
+<section class="pg" id="p03">
+<h2 id="수학_수업_모형">수학 수업 모형</h2>
+
+<h3 id="1._개념_학습_모형"><a id="개념_학습_모형"></a><span class="num">1.</span> 개념 학습 모형</h3>
+
+<h4 id="1)_속성_모형"><a id="속성_모형"></a><span class="num">1)</span> 속성 모형</h4>
+<div class="ind2">
+<div class="vchain">
+  <div class="stp"><span class="term">개념 정의</span></div>
+  <div class="arw">↓</div>
+  <div class="stp"><span class="term">속성 제시</span></div><div class="ann"><span class="mk">:</span> 결정, 비결정 모두</div>
+  <div class="arw">↓</div>
+  <div class="stp"><span class="term">예·비예 검토</span></div>
+  <div class="arw">↓</div>
+  <div class="stp"><span class="term">개념 분석·익히기</span></div>
+</div>
+</div>
+
+<h4 id="2)_개념_형성_모형"><a id="개념_형성_모형"></a><span class="num">2)</span> 개념 형성 모형</h4>
+<div class="ind2">
+<div class="vchain">
+  <div class="stp"><span class="term">범례 분류</span></div><div class="ann"><span class="mk">:</span> 정례 + 비례</div>
+  <div class="arw">↓</div>
+  <div class="stp"><span class="term">공통점 추상화</span></div>
+  <div class="arw">↓</div>
+  <div class="stp"><span class="term">개념 정의</span></div>
+  <div class="arw">↓</div>
+  <div class="stp"><span class="term">개념 익히기</span></div>
+</div>
+</div>
+
+<h3 id="2._원리_탐구_학습_모형"><a id="원리_탐구_학습_모형"></a><span class="num">2.</span> 원리 탐구 학습 모형</h3>
+
+<h4 id="단계">단계</h4>
+<div class="ind2">
+<div class="vchain">
+  <div class="stp"><span class="term">문제 제시</span></div>
+  <div class="arw">↓</div>
+  <div class="stp"><span class="term">수학적 원리의 필요성 인식</span></div>
+  <div class="arw">↓</div>
+  <div class="stp"><span class="term">수학적 원리가 내재된 조작 활동</span></div><div class="ann"><span class="mk">⇒</span> 발달 단계 <span class="quiet">(구체적 조작기)</span> 맞춰서.</div>
+  <div class="arw">↓</div>
+  <div class="stp"><span class="term">수학적 원리의 형식화</span></div>
+  <div class="arw">↓</div>
+  <div class="stp"><span class="term">수학적 원리 익히기·적용하기</span></div>
+</div>
+</div>
+
+<h3 id="3._귀납_추론_학습_모형"><a id="귀납_추론_학습_모형"></a><span class="num">3.</span> 귀납 추론 학습 모형</h3>
+
+<h4 id="단계__2">단계</h4>
+<div class="ind2">
+<div class="vchain">
+  <div class="stp"><span class="term">사례 수집·관찰·실험</span></div>
+  <div class="arw">↓</div>
+  <div class="stp"><span class="term">추측하기</span></div>
+  <div class="arw">↓</div>
+  <div class="stp"><span class="term">추측의 검증</span></div><div class="ann"><span class="mk">⇒</span> 정당화와 다름 <span class="quiet">(귀납적임)</span>, 추가 사례로 검증.</div>
+  <div class="arw">↓</div>
+  <div class="stp"><span class="term">일반화·정당화.</span></div><div class="ann"><span class="mk">⇒</span> 연역적 정당화, 생략 가능.</div>
+</div>
+</div>
+
+<h3 id="4._문제_해결_학습_모형"><a id="문제_해결_학습_모형"></a><span class="num">4.</span> 문제 해결 학습 모형</h3>
+
+<h4 id="단계__3">단계</h4>
+<div class="ind2">
+<div class="vchain">
+  <div class="stp"><span class="term">문제 이해</span></div>
+  <div class="arw">↓</div>
+  <div class="stp"><span class="term">해결 계획 수립</span></div>
+  <div class="arw">↓</div>
+  <div class="stp"><span class="term">해결 계획 실행</span></div>
+  <div class="arw">↓</div>
+  <div class="stp"><span class="term">반성</span></div>
+</div>
+</div>
+</section>
+<section class="pg" id="p04">
+<h2 id="폴리아">폴리아</h2>
+
+<h3 id="1._문제_해결_4단계"><a id="문제_해결_4단계"></a><span class="num">1.</span> 문제 해결 4단계</h3>
+<div class="ind">
+<div class="row"><span class="num">1)</span><span class="term">문제 이해</span></div>
+<div class="ind"><div class="row"><span class="mk">⇒</span><span class="desc">구하고자 하는 것은?</span></div></div>
+
+<div class="row" style="margin-top:8px"><span class="num">2)</span><span class="term">해결 계획의 수립</span></div>
+<div class="ind">
+<div class="branch">
+  <div><span class="mk">⇒</span></div>
+  <div class="bracket">
+    <div class="desc">유사한 문제 경험, 전략, 해결 방법? <span class="quiet">(유추적 사고)</span></div>
+    <div class="desc">전략, 선택 이유?</div>
+  </div>
+</div>
+</div>
+
+<div class="row" style="margin-top:8px"><span class="num">3)</span><span class="term">해결 계획의 실행</span></div>
+
+<div class="row" style="margin-top:8px"><span class="num">4)</span><span class="term">반성</span></div>
+<div class="ind">
+<div class="branch">
+  <div><span class="mk">⇒</span></div>
+  <div class="bracket">
+    <div class="desc">검토</div>
+    <div class="desc">새로운 방법</div>
+    <div class="desc">확장 <span class="quiet">(새로운 문제 만들기)</span></div>
+  </div>
+</div>
+</div>
+</div>
+
+<h3 id="2._문제_해결_전략"><a id="문제_해결_전략"></a><span class="num">2.</span> 문제 해결 전략</h3>
+<div class="ind">
+<div class="stack">
+  <div class="row"><span class="num">1)</span><span class="term">실제로 해 보기</span></div>
+  <div class="row"><span class="num">2)</span><span class="term">단순화하기</span></div>
+  <div class="row"><span class="num">3)</span><span class="term">예상과 확인</span></div>
+  <div class="row"><span class="num">4)</span><span class="term">거꾸로 풀기</span></div>
+</div>
+</div>
+</section>
+<section class="pg" id="p05">
+<h2 id="평면도형과_구성_요소"><a id="도형과_측정"></a>평면도형과 구성 요소</h2>
+
+<h3 id="도형_개념의_형성">도형 개념의 형성</h3>
+<div class="ind">
+<div class="bracket">
+  <div><span class="term">외연</span> : <span class="desc">사례</span></div>
+  <div><span class="term">내포</span> : <span class="desc">결정적 속성</span></div>
+</div>
+</div>
+
+<h3 id="도형_개념의_정의">도형 개념의 정의</h3>
+<div class="ind">
+<div class="bracket">
+  <div><span class="term">예시적</span> : <span class="desc">직관적, 시각적, 사례</span></div>
+  <div><span class="term">명명적</span> : <span class="desc">상위 개념 <span class="mk">→</span><span class="quiet">(종차)</span> 하위개념</span></div>
+  <div><span class="term">공리적</span> : <span class="desc">약속, <span class="quiet">(예시, 내포 X)</span></span></div>
+  <div><span class="term">발생적</span> : <span class="desc">형성 과정</span></div>
+</div>
+</div>
+
+<h3 id="도형_학습_단계">도형 학습 단계</h3>
+<div class="ind">
+<div class="bracket">
+  <div><span class="term">수집·관찰</span> : <span class="desc">직관적 사고, 모양 측면</span></div>
+  <div><span class="term">실험·조작</span> : <span class="desc">귀납적 사고, 구성 요소/성질 추출</span></div>
+  <div><span class="term">이론화</span> : <span class="desc">연역적 사고, 관계 <span class="quiet">; 추론, 특수화</span></span></div>
+</div>
+</div>
+
+<h3 id="[1-2학년군_○,△,□_지도]">[1-2학년군 ○,△,□ 지도]</h3>
+
+<h4 id="성취기준">성취기준</h4>
+<div class="ind2">
+<div class="stack">
+  <div><span class="term">2수 03-03</span> : <span class="desc">삼·사·원 모양 찾기</span></div>
+  <div><span class="term">2수 03-04</span> : <span class="desc">삼·사·원 직관적 이해</span></div>
+  <div><span class="term">2수 03-05</span> : <span class="desc">삼·사 공통점</span></div>
+</div>
+</div>
+
+<h4 id="유의점">유의점</h4>
+<div class="ind2">
+<div class="desc">일상 언어 사용, 직관적, 흥미 유발</div>
+<div class="ind" style="margin-top:8px">
+<div class="bracket">
+  <div><span class="term">○,△,□</span> <span class="quiet">(<span class="mk">→</span> 정의 X, 수집·관찰만, 일상 용어)</span></div>
+  <div>
+    <div class="branch">
+      <div><span class="term">삼·사각형</span></div>
+      <div class="fork"><div class="mkf">
+       <svg class="a1" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="10" y1="0" x2="1" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+       <svg class="a2" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="1" y1="0" x2="10" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+      </div><div class="stack">
+        <div class="desc">예시적 정의</div>
+        <div class="desc">구성 요소 <span class="quiet">(변, 꼭짓점)</span></div>
+        <div class="desc">공통점</div>
+      </div></div>
+    </div>
+  </div>
+  <div>
+    <div><span class="term">원</span> <span class="mk">-</span> <span class="desc">예시적 정의</span></div>
+    <div class="desc">cf) 구성 요소 지도 X</div>
+    <div class="ind"><div class="quiet">(∴ 컴퍼스 X)</div></div>
+  </div>
+</div>
+</div>
+</div>
+</section>
+<section class="pg" id="p06">
+<h3 id="도형의_기초">도형의 기초</h3>
+
+<h4 id="배경_지식">배경 지식</h4>
+<div class="ind2">
+<div class="bracket">
+  <div class="branch">
+    <div><span class="term">점·선·직선·각·직각</span></div>
+    <div class="vchain">
+      <div class="stp"><span class="desc">학문 수학</span></div>
+      <div class="arw">↓</div><div class="ann"><span class="quiet">교수학적 변환</span></div>
+      <div class="stp"><span class="desc">학교 수학</span></div>
+    </div>
+  </div>
+  <div><span class="term">위계성</span> : <span class="desc">논리적 순서에 따라</span></div>
+  <div class="branch">
+    <div><span class="term">각도에 따른 각의 분류</span></div>
+    <div class="bracket">
+      <div class="branch">
+        <div><span class="term">열각</span></div>
+        <div class="bracket">
+          <div class="desc">예각</div>
+          <div class="desc">직각</div>
+          <div class="desc">둔각</div>
+        </div>
+      </div>
+      <div class="desc">우각</div>
+      <div class="desc">평각</div>
+    </div>
+  </div>
+  <div class="branch">
+    <div><span class="term">위치 관계</span></div>
+    <div class="bracket">
+      <div class="branch">
+        <div><span class="term">2차원</span></div>
+        <div class="bracket">
+          <div class="desc">만난다 <span class="mk">-</span> 수직</div>
+          <div class="desc">평행</div>
+        </div>
+      </div>
+      <div class="branch">
+        <div><span class="term">공간</span></div>
+        <div class="bracket">
+          <div class="branch">
+            <div><span class="desc">한 평면</span></div>
+            <div class="bracket">
+              <div class="desc">만난다</div>
+              <div class="desc">평행</div>
+            </div>
+          </div>
+          <div class="desc">한 평면 × <span class="mk">-</span> 꼬인 위치</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<h4 id="핵심_각론">핵심 각론</h4>
+<div class="ind2">
+<div class="wide">
+<div class="bracket">
+  <div class="branch">
+    <div><span class="term">점·직선·반직선</span> <span class="mk">-</span> <span class="desc">정의</span></div>
+    <div class="bracket">
+      <div><span class="term">점</span> : <span class="desc">무정의</span></div>
+      <div><span class="term">직선</span> : <span class="desc">"선분"을 "양쪽"으로 "끝없이" 늘림</span></div>
+      <div><span class="term">반직선</span> : <span class="desc">"선분"의 한 점 시작 <span class="mk">→</span> 다른 점 지나게 한쪽, 무한.</span></div>
+    </div>
+  </div>
+  <div class="branch">
+    <div><span class="term">각</span></div>
+    <div class="bracket">
+      <div><span class="term">정의</span> : <span class="desc">"한 점" 시작 "두 반직선" <span class="quiet">(<span class="mk">→</span> 선분으로 지도 X.)</span></span></div>
+      <div><span class="term">구성요소</span> : <span class="desc">변, 꼭짓점</span></div>
+      <div class="branch">
+        <div><span class="term">각의 종류</span></div>
+        <div class="bracket">
+          <div><span class="term">직각</span> : <span class="desc">발생적 정의</span></div>
+          <div><span class="term">예각, 둔각</span> : <span class="desc">직각의 크기 지도 이후 비교하여 지도</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="branch">
+    <div><span class="term">위치 관계</span></div>
+    <div class="bracket">
+      <div class="branch">
+        <div><span class="term">수직</span></div>
+        <div class="bracket">
+          <div><span class="term">정의</span> <span class="mk">-</span> <span class="desc">두 직선이 이루는 각이 직각일 때 두 직선은 수직 <span class="quiet">; 이때 한 직선은 다른 직선에 대한 수선</span></span></div>
+          <div><span class="term">그리는법</span> : <span class="desc">각도기</span></div>
+        </div>
+      </div>
+      <div class="branch">
+        <div><span class="term">평행</span></div>
+        <div class="bracket">
+          <div><span class="term">정의</span> <span class="mk">-</span> <span class="desc">한 직선에 수직인 두 직선</span></div>
+          <div><span class="term">그리는법</span> <span class="mk">-</span> <span class="desc">한 삼각자의 빗면 아닌 면에 삼각자로 수선 두 번</span></div>
+          <div class="branch">
+            <div><span class="term">사이의 거리</span></div>
+            <div class="bracket">
+              <div><span class="term">정의</span> : <span class="desc">평행선 사이 선분 중 평행선에 수직인 것</span></div>
+              <div><span class="term">측정</span> : <span class="desc">~의 길이</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+</section>
+<section class="pg" id="p07">
+<h2 id="평면도형">평면도형</h2>
+
+<h3 id="삼각형">삼각형</h3>
+
+<h4 id="배경지식">배경지식</h4>
+<div class="ind2">
+<div class="wide">
+<div class="bracket">
+  <div class="branch">
+    <div><span class="term">삼각형의 종류</span></div>
+    <div class="bracket">
+      <div class="branch">
+        <div><span class="term">각의 크기</span></div>
+        <div class="bracket">
+          <div><span class="term">직각삼각형</span> <span class="mk">-</span> <span class="desc">a²+b²=c²</span> <span class="mk">-</span> <span class="desc">한각 직각</span></div>
+          <div><span class="term">예각삼각형</span> <span class="mk">-</span> <span class="desc">a²+b²&gt;c²</span> <span class="mk">-</span> <span class="desc">세각 예각 <span class="mk">→</span> 한 각도 둔각 X</span></div>
+          <div><span class="term">둔각삼각형</span> <span class="mk">-</span> <span class="desc">a²+b²&lt;c²</span> <span class="mk">-</span> <span class="desc">한각 둔각</span></div>
+        </div>
+      </div>
+      <div class="branch">
+        <div><span class="term">변의 길이</span></div>
+        <div class="bracket">
+          <div class="desc">부등변</div>
+          <div class="desc">이등변</div>
+          <div class="desc">정삼각형</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="branch">
+    <div><span class="term">다각형 분류</span></div>
+    <div class="bracket">
+      <div><span class="term">분할적</span> : <span class="desc">A∩B=∅</span></div>
+      <div><span class="term">계층적</span> : <span class="desc">A∩B≠∅</span></div>
+    </div>
+  </div>
+  <div class="branch">
+    <div><span class="term">필요·충분조건</span></div>
+    <div class="bracket">
+      <div><span class="term">필요</span> : <span class="desc">A는 B의 필요 <span class="mk">→</span> B이려면 A가 필요. <span class="mk">→</span> A⊃B</span></div>
+      <div><span class="term">충분</span> : <span class="desc">A는 B의 충분 <span class="mk">→</span> A이면 B이기에 충분. <span class="mk">→</span> A⊂B</span></div>
+      <div><span class="term">필충</span> : <span class="desc">A=B. <span class="quiet">(= A⊂B, A⊃B)</span></span></div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<h4 id="각론">각론</h4>
+<div class="ind2">
+<div class="branch">
+  <div><span class="term">변의 길이</span></div>
+  <div class="bracket">
+    <div><span class="term">이등변</span> <span class="mk">-</span> <span class="desc">정의 : 두 변의 길이가 같은 삼각형 <span class="quiet">(학교수학은 계층적 정의)</span></span></div>
+  </div>
+</div>
+</div>
+</section>
+<section class="pg" id="p08">
+<h3 id="사각형">사각형</h3>
+
+<h4 id="배경지식__2">배경지식</h4>
+<div class="ind2">
+<div class="bracket">
+  <div>
+    <div><span class="term">여러 가지 사각형의 정의와 성질</span></div>
+    <div class="ind" style="margin-top:8px">
+      <div class="branch">
+        <div><span class="term">정의</span></div>
+        <div class="bracket">
+          <div><span class="term">사다리꼴</span> : <span class="desc">적어도 한 쌍의 변이 평행</span></div>
+          <div><span class="term">평행사변형</span> : <span class="desc">마주보는 두 쌍의 변이 평행</span></div>
+          <div><span class="term">마름모</span> : <span class="desc">네 변의 길이가 같은</span></div>
+          <div><span class="term">직사각형</span> : <span class="desc">네 각이 모두 직각</span></div>
+          <div><span class="term">정사각형</span> : <span class="desc">네 각이 모두 직각, 네 변의 길이가 같은</span></div>
+        </div>
+      </div>
+      <div class="branch" style="margin-top:8px">
+        <div><span class="term">성질</span></div>
+        <div class="bracket">
+          <div class="branch">
+            <div><span class="term">대각선</span></div>
+            <div class="bracket">
+              <div class="desc">이등분 <span class="mk">→</span> 평행사변형 <span class="quiet">(포함 사각형)</span></div>
+              <div class="desc">수직이등분 <span class="mk">→</span> 마름모 <span class="quiet">(포함 사각형)</span></div>
+            </div>
+          </div>
+          <div>
+            <div><span class="term">이외 성질</span> : <span class="desc">자명하나, 변,각의 크기는 "마주보는"</span></div>
+            <div class="ind"><div class="quiet">(cf. 마름모가 아닌 연꼴 <span class="mk">→</span> 평행사변형 아님)</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div><span class="term">여러 가지 사각형의 관계</span></div>
+    <div class="ind">
+      <div class="desc">자명하게 기억.</div>
+      <figure class="fig" role="img" aria-label="여러 가지 사각형의 포함 관계 — 사각형 ⊃ 사다리꼴 ⊃ 평행사변형 ⊃ (직사각형·마름모) ⊃ 정사각형 벤 다이어그램"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 190" width="400" height="238">
+  <g class="ln" stroke="currentColor" stroke-width="1.4" fill="none">
+    <rect x="14" y="14" width="292" height="162" rx="4"/>
+    <rect x="34" y="40" width="258" height="124" rx="4"/>
+    <rect x="52" y="66" width="158" height="80" rx="4"/>
+    <rect x="130" y="66" width="150" height="80" rx="4"/>
+  </g>
+  <g class="tx" fill="currentColor" font-size="14">
+    <text x="22" y="30" text-anchor="start">사각형</text>
+    <text x="42" y="56" text-anchor="start">평행사변형</text>
+    <text x="86" y="84" text-anchor="middle">마름모</text>
+    <text x="250" y="84" text-anchor="middle">직사각형</text>
+    <text x="170" y="112" text-anchor="middle">정사각형</text>
+  </g>
+</svg></figure>
+    </div>
+  </div>
+</div>
+</div>
+
+<h4 id="핵심_각론__2">핵심 각론</h4>
+<div class="ind2">
+<div class="wide">
+<div class="bracket">
+  <div class="branch">
+    <div><span class="term">직사각형과 정사각형</span></div>
+    <div class="bracket">
+      <div><span class="term">정의</span> : <span class="desc">학문적 정의 그대로</span></div>
+      <div><span class="term">오개념</span> : <span class="desc">반례 지도</span></div>
+    </div>
+  </div>
+  <div>
+    <div><span class="term">여러 가지 사각형과 그 성질</span></div>
+    <div class="ind" style="margin-top:8px">
+    <div class="bracket">
+      <div class="branch">
+        <div><span class="term">사다리꼴</span></div>
+        <div class="bracket"><div class="desc">정의</div></div>
+      </div>
+      <div class="branch">
+        <div><span class="term">평행사변형</span></div>
+        <div class="bracket">
+          <div class="desc">정의</div>
+          <div>
+            <div class="desc">성질 + 지도 방법</div>
+            <div class="row"><span class="mk">⇒</span><span class="desc">잘라보기, 자<span class="quiet">(변의 길이)</span>, 각도기<span class="quiet">(각의 크기)</span></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="branch">
+        <div><span class="term">마름모</span></div>
+        <div class="bracket">
+          <div><span class="desc">정의 : 학문 수학</span></div>
+          <div>
+            <div class="desc">성질 + 지도 방법</div>
+            <div class="row"><span class="mk">⇒</span><span class="desc">접어보기, 잘라보기, 자<span class="quiet">(변의 길이)</span>, 각도기<span class="quiet">(각의 크기)</span></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="branch">
+        <div><span class="term">직사각형과 정사각형</span></div>
+        <div class="bracket"><div class="desc">성질 + 지도 방법</div></div>
+      </div>
+    </div>
+    </div>
+  </div>
+</div>
+</div>
+<div class="note">(cf) "대각선" 용어는 지도 X, "마주 보는 꼭짓점끼리 이은 선"</div>
+</div>
+</section>
+<section class="pg" id="p09">
+<h3 id="다각형">다각형</h3>
+
+<h4 id="배경지식__3">배경지식</h4>
+<div class="ind2">
+<div class="bracket">
+  <div>
+    <div><span class="term">다각형과 정다각형의 정의</span></div>
+    <div class="ind">
+      <div><span class="term">다각형</span> : <span class="desc">선분으로만 둘러쌓인 도형</span></div>
+      <div><span class="term">정다각형</span> : <span class="desc">모든 변의 길이,각의 크기 같음</span></div>
+    </div>
+  </div>
+  <div>
+    <div><span class="term">볼록다각형과 오목다각형</span></div>
+    <div class="ind">
+      <div class="bracket">
+        <div><span class="term">정의</span> <span class="mk">→</span> <span class="desc">도형 내부의 임의의 두 점 이은 선분 중 도형 밖을 지나는 선분이 있는가?</span></div>
+        <div><span class="term">특징</span> <span class="mk">→</span> <span class="desc">오목다각형 : 우각, 도형 밖의 대각선</span></div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div><span class="term">대각선</span></div>
+    <div class="ind">
+      <div><span class="term">정의</span> <span class="desc">인접하지 않는 두 꼭짓점을 이은 선분</span></div>
+      <div><span class="term">다각형의 대각선 수</span> <span class="desc">n(n-3)/2</span></div>
+      <div><span class="term">사각형의 종류에 따른 대각선의 특징</span> <span class="desc">사각형 파트에서</span></div>
+      <div style="margin-top:8px"><span class="term">오각형 내각의 합 구하기</span></div>
+      <div class="ind">
+        <div class="wide"><div class="converge">
+          <div class="stack">
+            <div class="desc" data-b="s">한 점에서 그을 수 있는 대각선 수</div>
+            <div class="desc">+1 하면 다각형을 나누는 삼각형의 수</div>
+            <div class="desc">×180 = 내각의 합</div>
+            <div class="desc" data-b="e">∴ n각형의 내각의 합 = {(n-3)+1}×180 = (n-2)×180°</div>
+          </div>
+          <svg width="11" height="112" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          <div class="link">연역적인 방법</div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<h4 id="핵심_각론__3">핵심 각론</h4>
+<div class="ind2">
+<div class="bracket">
+  <div>
+    <div><span class="term">다각형과 정다각형의 정의</span></div>
+    <div class="ind">
+      <div class="desc">"선분으로만 구성", "닫혀 있음"</div>
+      <div class="quiet">(cf) 각(반직선,열려있음), 원(선분 X)</div>
+    </div>
+  </div>
+  <div class="branch">
+    <div><span class="term">대각선</span></div>
+    <div class="bracket">
+      <div class="desc">정의</div>
+      <div class="desc">다각형의 대각선 수</div>
+      <div class="desc">사각형의 종류에 따른 대각선의 특징</div>
+      <div class="desc">대각선을 이용하여 팔각형의 모든 각의 합 구하기</div>
+    </div>
+  </div>
+  <div>
+    <div><span class="term">모양 만들기와 채우기</span></div>
+    <div class="ind">
+      <div class="row"><span class="desc">같은 정다각형</span><span class="mk">⇒</span><span class="desc">한 각의 크기가 360°의 약수</span></div>
+      <div class="sub"><span class="term">한 각의 크기</span> : <span class="desc">(n-2)/n × 180</span></div>
+    </div>
+  </div>
+</div>
+</div>
+</section>
+<section class="pg" id="p10">
+<h3 id="원">원</h3>
+
+<h4 id="배경지식__4">배경지식</h4>
+<div class="ind2">
+<div class="wide">
+<div class="bracket">
+  <div class="branch">
+    <div><span class="term">원</span></div>
+    <div class="bracket">
+      <div class="branch">
+        <div><span class="term">정의</span></div>
+        <div class="bracket">
+          <div><span class="term">학문</span> : <span class="desc">한 점에서 같은 거리에 있는 점들의 집합</span></div>
+          <div><span class="term">학교</span> : <span class="desc">예시적 정의</span></div>
+        </div>
+      </div>
+      <div><span class="term">구성요소</span> : <span class="desc">중심, 반지름, 지름</span></div>
+    </div>
+  </div>
+  <div><span class="term">원의 성질</span></div>
+  <div class="branch">
+    <div><span class="term">원의 성질을 이용한 원의 중심 찾기</span></div>
+    <div class="fork"><div class="mkf">
+     <svg class="a1" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="10" y1="0" x2="1" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+     <svg class="a2" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="1" y1="0" x2="10" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+    </div><div class="stack">
+      <div class="desc">서로 다른 두 현의 수직이등분선의 교점</div>
+      <div class="desc">원에 내접하는 서로 다른 두 직각삼각형의 빗변의 교점</div>
+    </div></div>
+  </div>
+</div>
+</div>
+</div>
+
+<h4 id="핵심_각론__4">핵심 각론</h4>
+<div class="ind2">
+<div class="bracket">
+  <div>
+    <div><span class="term">여러 가지 방법으로 원 만들기</span></div>
+    <div class="ind"><div class="row"><span class="mk">→</span><span class="desc">누름못, 자</span></div></div>
+  </div>
+  <div>
+    <div><span class="term">원의 구성요소 알아보기</span></div>
+    <div class="ind">
+      <div class="desc">원의 지름, 원의 반지름, 원의 중심</div>
+      <div class="branch" style="margin-top:8px">
+        <div><span class="term">지도 방법</span></div>
+        <div class="bracket">
+          <div class="desc">누름못 이용 <span class="mk">⇒</span> "중심" 기반 정의</div>
+          <div class="desc">종이접기 이용 <span class="mk">⇒</span> "지름" 기반 정의</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div><span class="term">원의 성질</span></div>
+    <div class="ind"><div class="desc">성질 + 지도 방법</div></div>
+  </div>
+</div>
+</div>
+</section>
+<section class="pg" id="p11">
+<h3 id="변환">변환</h3>
+
+<h4 id="배경지식__5">배경지식</h4>
+<div class="ind2">
+<div class="bracket">
+  <div class="bracket">
+    <div class="branch">
+      <div><span class="term">합동변환</span></div>
+      <div class="bracket">
+        <div>
+          <div><span class="term">평행이동</span><span class="quiet">(밀기)</span></div>
+          <div class="ind">
+            <div><span class="term">학문</span> : <span class="desc">절대적 위치<span class="quiet">(좌표)</span></span></div>
+            <div><span class="term">학교</span> : <span class="desc">상대적 위치만 <span class="mk">-</span> 얼마나 이동했는지 알 수 없음</span></div>
+          </div>
+        </div>
+        <div class="bsub"><div class="converge">
+          <div class="stack">
+            <div data-b="s"><span class="term">대칭이동</span><span class="quiet">(뒤집기)</span></div>
+            <div data-b="e"><span class="term">회전이동</span><span class="quiet">(돌리기)</span></div>
+          </div>
+          <svg width="11" height="34" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          <div class="link" style="text-align:left">
+            <div class="desc">학문수학 VS 학교수학</div>
+            <div class="row"><span class="desc">학교수학</span><span class="mk">⇒</span><span class="desc">축·중심 지도하지 X</span></div>
+            <div class="ind"><div class="row"><span class="mk">∴</span><span class="desc">위치에 대해 다루지 X</span></div></div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+    <div><span class="term">닮음변환</span> <span class="mk">→</span> <span class="desc">비와 비율</span></div>
+  </div>
+  <div class="branch">
+    <div><span class="term">공간 감각</span></div>
+    <div class="bracket">
+      <div><span class="term">의미</span> <span class="desc">초등학교 도형 지도의 목적</span></div>
+      <div class="branch">
+        <div><span class="term">하위요인</span></div>
+        <div class="bracket">
+          <div>
+            <div class="desc">공간에서의 위치 지각 능력</div>
+            <div class="sub">위치 변화에 대한 이해</div>
+          </div>
+          <div>
+            <div class="desc">공간 관계에 대한 지각 능력</div>
+            <div class="sub">돌리거나 뒤집어도 합동임의 이해</div>
+          </div>
+          <div>
+            <div class="desc">시각적 기억 능력</div>
+            <div class="sub">도형의 원래 모양</div>
+            <div class="ind"><div class="row"><span class="mk">⇒</span><span class="desc">가역적 사고 <span class="mk">→</span> 거꾸로 풀기</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<h4 id="핵심_각론__5">핵심 각론</h4>
+<div class="ind2">
+<div class="wide">
+<div class="bracket">
+  <div>
+    <div><span class="term">평면 도형의 이동</span></div>
+    <div class="ind">
+      <div class="converge">
+        <div class="stack">
+          <div class="desc" data-b="s">밀기</div>
+          <div class="desc">뒤집기</div>
+          <div class="desc" data-b="e">돌리기</div>
+        </div>
+        <svg width="11" height="84" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        <div class="link">생활 용어, 정의 X</div>
+      </div>
+    </div>
+  </div>
+  <div><span class="term">점의 이동</span> <span class="desc">격자 사용, 위치와 방향</span></div>
+  <div><span class="term">도형의 합동의 의미</span> <span class="desc">포개었을 때 완전히 겹쳐짐</span></div>
+  <div>
+    <div><span class="term">합동인 도형의 성질</span> <span class="desc">대응변, 각 같음</span></div>
+    <div class="sub"><span class="term">지도</span> : <span class="desc">포개보기, 자<span class="quiet">(변)</span>, 각도기<span class="quiet">(각)</span></span></div>
+  </div>
+  <div class="bsub"><div class="converge">
+    <div class="stack">
+      <div class="branch" data-b="s">
+        <div><span class="term">선대칭 도형</span></div>
+        <div class="bracket">
+          <div><span class="term">의미</span> <span class="desc">한 직선을 중심으로 접으면 포개어짐</span></div>
+          <div><span class="term">성질</span> <span class="desc">대응점을 이은 선분이 대칭축에 수직이등분됨</span></div>
+        </div>
+      </div>
+      <div class="branch" data-b="e">
+        <div><span class="term">점대칭 도형</span></div>
+        <div class="bracket">
+          <div><span class="term">의미</span> <span class="desc">한 점을 중심으로 180° 돌리면 포개어짐</span></div>
+          <div><span class="term">성질</span> <span class="desc">대응점을 이은 선분이 대칭의 중심을 지나고, 그에 의해 이등분됨</span></div>
+        </div>
+      </div>
+    </div>
+    <svg width="11" height="62" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+    <div class="link">(<span class="mk">→</span> 대응각·변 당연히 같음.)</div>
+  </div></div>
+</div>
+</div>
+</div>
+</section>
+<section class="pg" id="p12">
+<h2 id="입체도형"><a id="직육면체와_정육면체"></a>입체도형</h2>
+
+<h3 id="입체도형__2">입체도형</h3>
+
+<h4 id="배경지식__6">배경지식</h4>
+<div class="ind2">
+<div class="bracket">
+  <div>
+    <div><span class="term">입체도형</span></div>
+    <div class="ind">
+      <div class="bracket">
+        <div>
+          <div><span class="term">다면체</span> <span class="desc">모든 면이 평면으로 둘러싸인 입체도형</span></div>
+          <div class="ind"><div><span class="term">성질</span> <span class="desc">오일러 공식 <span class="quiet">(V-e+f=2)</span></span></div></div>
+        </div>
+        <div class="desc">학교수학에서는 무정의로 사용</div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div><span class="term">직육면체와 정육면체의 정의</span></div>
+    <div class="ind">
+      <div><span class="term">육면체</span> : <span class="desc">6개의 다각형으로 둘러싸임</span></div>
+      <div class="branch">
+        <div><span class="term">직육면체</span></div>
+        <div class="bracket">
+          <div class="desc">모든 면이 수직 <span class="quiet">(학문)</span></div>
+          <div class="desc">직사각형 6개 <span class="quiet">(학교)</span></div>
+        </div>
+      </div>
+      <div><span class="term">정육면체</span> <span class="mk">-</span> <span class="desc">정사각형 6개</span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<h4 id="핵심_각론__6">핵심 각론</h4>
+<div class="ind2">
+<div class="wide">
+<div><span class="term">직육면체와 정육면체</span></div>
+<div class="ind">
+<div class="bracket">
+  <div><span class="term">정의</span> <span class="desc">직육면체, 정육면체 포함 관계 명시적 지도 X</span></div>
+  <div><span class="term">구성요소</span> <span class="desc">꼭짓점, 면, 모서리</span></div>
+  <div><span class="term">성질</span> <span class="desc">밑면 : 임의로 한 쌍<span class="quiet">(마주보는)</span> <span class="mk">⇒</span> 나머지 두 쌍은 옆면</span></div>
+  <div>
+    <div><span class="term">겨냥도와 전개도</span></div>
+    <div class="ind">
+      <div class="branch">
+        <div><span class="term">의미</span></div>
+        <div class="bracket">
+          <div><span class="term">겨냥</span> : <span class="desc">보이지 않는 부분을 보이게 그린 것</span></div>
+          <div><span class="term">전개</span> : <span class="desc">입체도형을 모서리를 따라 잘라 펼쳐놓은 것<span class="quiet">(cf. 원기둥)</span></span></div>
+        </div>
+      </div>
+      <div class="branch" style="margin-top:8px">
+        <div><span class="term">그리는 방법</span></div>
+        <div class="bracket">
+          <div class="branch">
+            <div><span class="term">겨냥</span></div>
+            <div class="bracket">
+              <div class="desc">평행, 길이성질 유지</div>
+              <div class="desc">수직은 유지 X</div>
+            </div>
+          </div>
+          <div class="branch">
+            <div><span class="term">전개</span></div>
+            <div class="bracket">
+              <div class="desc">겹치는 면 X</div>
+              <div class="desc">접었을 때 만나는 길이 같게</div>
+              <div class="desc">같은 사각형은 같게</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="pg" id="p13">
+<h3 id="각기둥과_각뿔">각기둥과 각뿔</h3>
+
+<h4 id="배경지식__7">배경지식</h4>
+<div class="ind2">
+<div class="bracket">
+  <div>
+    <div><span class="term">다면체</span></div>
+    <div class="ind">
+      <div><span class="term">정의</span> <span class="desc">"평면" 인 "다각형" 으로 둘러쌓인 입체도형</span></div>
+      <div><span class="term">종류</span> <span class="desc">볼록다면체, 오목다면체 <span class="mk">⇒</span> 모서리끼리 이으면 도형 밖의 평면</span></div>
+    </div>
+  </div>
+  <div>
+    <div><span class="term">각기둥</span></div>
+    <div class="ind">
+      <div><span class="term">정의</span> <span class="desc">(한 직선에 평행한 셋 이상의 평면[옆면]) 그 직선과 만나는 (평행하고 합동인 두 다각형[밑면])</span></div>
+      <div class="branch" style="margin-top:8px">
+        <div><span class="term">종류</span></div>
+        <div class="bracket">
+          <div><span class="term">직각기둥</span> <span class="desc">옆면이 밑면에 수직, 직사각형</span></div>
+          <div><span class="term">빗각기둥</span> <span class="desc">옆면이 밑면에 수직 X, 평행사변형</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div><span class="term">각뿔</span></div>
+    <div class="ind">
+      <div><span class="term">정의</span> <span class="desc">밑면이 다각형이고, (밑면 위가 아닌 한 정점을 공통의 꼭짓점으로 가지는 삼각형[옆면])</span></div>
+      <div class="branch" style="margin-top:8px">
+        <div><span class="term">종류</span></div>
+        <div class="bracket">
+          <div><span class="term">직각뿔</span> <span class="desc">정점에서 내린 수선의 발이 밑면의 무게중심</span></div>
+          <div><span class="term">빗각뿔</span> <span class="desc">not 직각뿔</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<h4 id="핵심_각론__7">핵심 각론</h4>
+<div class="ind2">
+<div class="bracket">
+  <div>
+    <div><span class="term">각기둥</span></div>
+    <div class="ind">
+      <div><span class="term">정의</span> <span class="desc">학교수학 : (서로 평행한 두 면[밑면])이 합동, 모든 면이 다각형</span></div>
+      <div><span class="term">구성요소</span> <span class="desc">꼭짓점, 모서리, 면(밑면, 옆면), 높이</span></div>
+      <div class="sub"><span class="term">높이 측정</span> : <span class="desc">삼각자 + 자<span class="quiet">(≒버니어 캘리퍼스)</span>, 옆면끼리 만난 선분, 대응점끼리 이은 선분</span></div>
+      <div><span class="term">성질</span> <span class="desc"><span class="quiet">(사각기둥 제외)</span> 밑면 1쌍, 옆면 모두 직사각형, 눕혀도 유지</span></div>
+      <div style="margin-top:8px"><span class="term">전개도</span></div>
+      <div class="ind">
+        <div class="converge">
+          <div class="stack">
+            <div class="desc" data-b="s">의미</div>
+            <div class="desc" data-b="e">그리는 방법</div>
+          </div>
+          <svg width="11" height="56" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          <div class="link">앞의 전개도와 동일</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div><span class="term">각뿔</span></div>
+    <div class="ind">
+      <div><span class="term">정의</span> <span class="desc">바닥에 놓인 면이 다각형, 나머지가[옆면] 모두 삼각형</span></div>
+      <div><span class="term">구성요소</span></div>
+      <div class="ind">
+        <div class="desc">각기둥과 같음</div>
+        <div class="sub"><span class="term">높이 측정</span> : <span class="desc">자 + 삼각자만 가능 <span class="quiet">(옆모서리 측정 X)</span></span></div>
+      </div>
+      <div><span class="term">성질</span> <span class="desc">밑면 하나 <span class="quiet">(삼각뿔 제외)</span></span></div>
+    </div>
+  </div>
+</div>
+</div>
+</section>
+<section class="pg" id="p14">
+<h3 id="원기둥,_원뿔,_구">원기둥, 원뿔, 구</h3>
+
+<h4 id="배경지식__8">배경지식</h4>
+<div class="ind2">
+<div class="stack" style="gap:8px">
+  <div><span class="term">곡면체</span></div>
+
+  <div class="branch">
+    <div><span class="term">회전체</span></div>
+    <div class="kids">
+      <div><span class="term">정의</span> : <span class="desc">평면도형을 같은 도형 위 직선을 축으로 잡고 회전. <span class="quiet">(학교 지도 X)</span></span></div>
+      <div><span class="term">구성요소</span> : <span class="desc">원기둥, 원뿔, 구 <span class="mk">⇒</span> 발생적으로 정의 <span class="quiet">(학교에서는 경험만)</span></span></div>
+      <div><span class="term">성질</span> : <span class="desc">다양한 원뿔곡선 생각</span></div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">원기둥</span></div>
+    <div class="kids">
+      <div><span class="term">정의</span> : <span class="desc">평행·합동의 두 원 대응점 연결</span></div>
+      <div><span class="term">구성요소</span> : <span class="desc">모선, 밑면, 옆면</span></div>
+      <div class="branch">
+        <div><span class="term">종류</span></div>
+        <div class="kids">
+          <div><span class="term">직원기둥</span> : <span class="desc">모선 ⊥ 밑면</span></div>
+          <div><span class="term">빗원기둥</span> : <span class="desc">모선 not ⊥ 밑면</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">원뿔</span></div>
+    <div class="kids">
+      <div><span class="term">정의</span> : <span class="desc">원과 그 평면 밖의 정점을 이은 선분으로 만들어짐</span></div>
+      <div><span class="term">구성요소</span> : <span class="desc">밑면, 꼭짓점, 옆면, 모선</span></div>
+      <div class="branch">
+        <div><span class="term">종류</span></div>
+        <div class="kids">
+          <div><span class="term">직원뿔</span> : <span class="desc">정점과 밑면의 중심을 이은 선분 ⊥ 밑면</span></div>
+          <div><span class="term">빗원뿔</span> : <span class="desc">정점과 밑면의 중심을 이은 선분 not ⊥ 밑면</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">구</span></div>
+    <div class="kids">
+      <div><span class="term">정의</span> : <span class="desc">한 점에서 같은 거리</span></div>
+      <div><span class="term">구성요소</span> : <span class="desc">중심, 지름, 반지름</span></div>
+      <div><span class="term">성질</span> : <span class="desc">평면으로 자르면 원 <span class="quiet">(<span class="mk">⇒</span> 현의 수직이등분성을 회전시킴)</span></span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<h4 id="핵심_각론__8">핵심 각론</h4>
+<div class="ind2">
+<div class="stack" style="gap:8px">
+  <div class="branch">
+    <div><span class="term">원기둥</span></div>
+    <div class="kids">
+      <div><span class="term">정의</span> : <span class="desc">예시적 or 밑면만 명명</span></div>
+      <div><span class="term">구성요소</span> : <span class="desc">밑면, 옆면, 높이 <span class="mk">⇒</span> 모선 X</span></div>
+      <div><span class="term">원기둥 만들기</span> : <span class="desc">회전체 명시 X, 모선이 그리는 면이 옆면임을 암묵적으로 보임</span></div>
+      <div class="branch">
+        <div><span class="term">전개도</span></div>
+        <div class="kids">
+          <div>
+            <div><span class="term">의미</span> : <span class="desc">모서리가 없이 밑면의 둘레와 옆면을 따라 자름</span></div>
+            <div class="row"><span class="mk">⇒</span><span class="desc">점선은 "모서리를 따라 접는 선"이므로 점선 없음</span></div>
+          </div>
+          <div><span class="term">전개도 조건</span> : <span class="desc">원의 둘레의 길이와 가로가 같은 직사각형, 마주 보는 합동인 원</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">원뿔</span></div>
+    <div class="kids">
+      <div><span class="term">정의</span> : <span class="desc">예시 or 밑면만 명명</span></div>
+      <div><span class="term">구성요소</span> : <span class="desc">밑면, 모선, 높이</span></div>
+      <div><span class="term">원뿔 만들기</span> : <span class="desc">직각삼각형 회전</span></div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">구</span></div>
+    <div class="kids">
+      <div class="branch">
+        <div><span class="term">정의</span></div>
+        <div class="kids">
+          <div><span class="term">예시적</span> : <span class="desc">일반적</span></div>
+          <div><span class="term">발생적</span> : <span class="desc">반원의 회전체</span></div>
+        </div>
+      </div>
+      <div class="branch">
+        <div><span class="term">구성요소와 성질</span></div>
+        <div class="kids">
+          <div><span class="term">예시</span> : <span class="desc">중심-가장 깊은 점 / 반지름 / 지름</span></div>
+          <div><span class="term">발생</span> : <span class="desc">중심 : 반원의 중심 / 반지름 : 반원의 반지름 / 지름</span></div>
+        </div>
+      </div>
+      <div><span class="term">구 만들기</span> : <span class="desc">반원 회전</span></div>
+    </div>
+  </div>
+</div>
+</div>
+</section>
+<section class="pg" id="p15">
+<h2 id="디에네스,_개념_학습_이론">디에네스, 개념 학습 이론</h2>
+<div class="ind">
+<div class="row"><span class="mk">⇒</span><span class="desc"><span class="term">청킹</span> : <span class="key">자유게</span>시판에 <span class="key">공표</span>했다. 내 이<span class="key">상형</span>이 <span class="key">수지구역</span>.</span></div>
+</div>
+
+<h3 id="1._개념_학습_단계_(→_구분_기준)"><a id="개념_학습_단계_(→_구분_기준)"></a><a id="개념_학습_단계"></a><span class="num">1.</span> 개념 학습 단계 <span class="quiet">(→ 구분 기준)</span></h3>
+<div class="ind">
+<div class="stack" style="gap:8px">
+  <div class="branch">
+    <div style="min-width:7em"><span class="quiet">규칙·조건 O?</span></div>
+    <div class="bracket">
+      <div class="row"><span class="num">1)</span><span class="term">자유 놀이 단계</span> : <span class="desc">예와 비예를 모두 제공</span></div>
+      <div class="row"><span class="num">2)</span><span class="term">게임 단계</span> : <span class="desc">규칙과 조건이 있는 놀이</span></div>
+    </div>
+  </div>
+  <div class="branch">
+    <div style="min-width:7em"><span class="quiet">연역? 귀납?</span></div>
+    <div class="bracket">
+      <div class="row"><span class="num">3)</span><span class="term">공통점 찾기 단계</span> : <span class="desc">공통점을 추상화 <span class="quiet">; 귀납적 사고</span></span></div>
+      <div class="bsub"><div class="converge">
+        <div class="stack">
+          <div class="row" data-b="s"><span class="num">4)</span><span class="term">표현 단계</span> : <span class="desc">일상 용어로 표현</span></div>
+          <div class="row" data-b="e"><span class="num">5)</span><span class="term">상징화 단계</span> : <span class="desc">수학 용어로 표현</span></div>
+        </div>
+        <svg width="11" height="56" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        <div class="link">용어 종류</div>
+      </div></div>
+      <div class="row"><span class="num">6)</span><span class="term">형식화 단계</span> : <span class="desc">일반적 성질에서 특수한 성질 유도 <span class="quiet">; 연역적 사고</span></span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<h3 id="2._개념_학습_원리"><a id="개념_학습_원리"></a><span class="num">2.</span> 개념 학습 원리</h3>
+<div class="ind">
+<div class="stack" style="gap:8px">
+  <div class="row" style="padding-left:calc(11em + 17px)"><span class="num">1)</span><span class="term">역동성의 원리</span> : <span class="desc">다양한 활동 필요</span></div>
+  <div class="row" style="padding-left:calc(11em + 17px)"><span class="num">2)</span><span class="term">구성의 원리</span> : <span class="desc">구성 게임<span class="quiet">(전체적, 목표를 만들어보는 게임)</span> 먼저, 분석 게임<span class="quiet">(성질·구성요소)</span> 나중에</span></div>
+  <div class="branch">
+    <div style="min-width:11em"><span class="quiet">바뀌는게 구체물의 종류?<br>비결정적 속성?</span></div>
+    <div class="bracket">
+      <div class="row"><span class="num">3)</span><span class="term">지각적 다양성의 원리</span> : <span class="desc">다양한 구체적 예시. <span class="quiet">(수학적 동형)</span></span></div>
+      <div class="row"><span class="num">4)</span><span class="term">수학적 다양성의 원리</span> : <span class="desc">결정적 속성은 같고, 비결정적 속성이 다른 다양한 예시 제공</span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<h2 id="반_힐레,_기하_사고_수준_이론">반 힐레, 기하 사고 수준 이론</h2>
+
+<h3 id="1._기하_사고_수준"><a id="기하_사고_수준"></a><span class="num">1.</span> 기하 사고 수준</h3>
+<div class="ind">
+<div class="stack" style="gap:12px">
+  <div>
+    <div class="row"><span class="num">1)</span><span class="term">시각적 인식 수준</span> <span class="mk">→</span> <span class="desc">직관적 사고.</span> <span class="quiet">(1~2학년군)</span></div>
+    <div class="ind"><div class="row"><span class="mk">⇒</span><span class="desc">구체물<span class="quiet">(사고 대상)</span>의 모양<span class="quiet">(사고 수단)</span>을 직관적으로 인식하는 단계</span></div></div>
+  </div>
+
+  <div>
+    <div class="row"><span class="num">2)</span><span class="term">분석적 수준.</span> <span class="mk">→</span> <span class="desc">귀납적 사고</span> <span class="quiet">(3~4학년군)</span></div>
+    <div class="ind">
+      <div class="row"><span class="mk">⇒</span><span class="desc">도형<span class="quiet">(사고 대상)</span>들을 분석하여 구성 요소 및 성질<span class="quiet">(사고 수단)</span>을 파악하는 단계</span></div>
+      <div style="margin-top:8px"><span class="term">특징</span></div>
+      <div class="bracket">
+        <div class="desc">관찰·실험과 같은 구체적 조작 활동을 통해 귀납적으로 도형의 구성 요소·성질 파악</div>
+        <div class="desc">구체물의 대소 관계 파악</div>
+        <div class="desc">도형을 성질이나 구성 요소에 따라 분류</div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="row"><span class="num">3)</span><span class="term">비형식적 연역</span><span class="quiet">(=관계적)</span> <span class="term">수준</span> <span class="mk">→</span> <span class="desc">연역적 사고</span> <span class="quiet">(5~6학년군)</span></div>
+    <div class="ind">
+      <div class="row"><span class="mk">⇒</span><span class="desc">도형·도형의 성질<span class="quiet">(사고 대상)</span>이 논리적으로 정렬<span class="quiet">(명제(사고 수단))</span></span></div>
+      <div style="margin-top:8px"><span class="term">특징</span></div>
+      <div class="bracket">
+        <div class="desc">도형 사이의 포함관계를 이해</div>
+        <div class="desc">이미 알고 있는 도형의 성질로부터 다른 도형의 성질을 비형식적으로 연역</div>
+        <div class="desc">여러 성질을 열거하고, 필요충분한 성질을 선택하여 도형을 정의</div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="row"><span class="num">4)</span><span class="term">형식적 수준</span> <span class="quiet">(중·고)</span></div>
+    <div class="ind"><div class="row"><span class="mk">⇒</span><span class="desc">형식적 연역 <span class="quiet">(명제 → 논리)</span></span></div></div>
+  </div>
+
+  <div>
+    <div class="row"><span class="num">5)</span><span class="term">엄밀한 수준</span></div>
+    <div class="ind"><div class="row"><span class="mk">⇒</span><span class="desc">다양한 공리체계 이해 <span class="quiet">(논리 → 추상화)</span></span></div></div>
+  </div>
+</div>
+</div>
+
+<h3 id="2._기하_학습_단계"><a id="기하_학습_단계"></a><span class="num">2.</span> 기하 학습 단계</h3>
+<div class="ind">
+<div class="converge">
+  <div class="stack">
+    <div class="row" data-b="s"><span class="num">1)</span><span class="term">질의 안내</span> <span class="mk">⇒</span> <span class="desc">문제 소개</span></div>
+    <div class="row"><span class="num">2)</span><span class="term">안내된 탐구</span> <span class="mk">⇒</span> <span class="desc">정답이 하나인 활동<span class="quiet">(동치)</span></span></div>
+    <div class="row"><span class="num">3)</span><span class="term">명료화</span></div>
+    <div class="row"><span class="num">4)</span><span class="term">자유 탐구</span> <span class="mk">⇒</span> <span class="desc">정답이 여럿인 활동</span></div>
+    <div class="row" data-b="e"><span class="num">5)</span><span class="term">통합</span> <span class="mk">⇒</span> <span class="desc">수준 상승</span></div>
+  </div>
+  <svg width="11" height="140" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+  <div class="link">한 시간에 1~5 여러 번 / 여러 시간에 걸쳐 1~5 <span class="mk">⇒</span> 교사 재량</div>
+</div>
+</div>
+</section>
+<section class="pg" id="p16">
+<h2 id="측정_각론_—_길이·들이·무게·시각과_시간">측정 각론 — 길이·들이·무게·시각과 시간</h2>
+
+<h3 id="길이"><a id="측정_각론"></a>길이</h3>
+
+<h4 id="배경지식__9">배경지식</h4>
+<div class="ind2">
+<div class="stack" style="gap:10px">
+  <div class="branch">
+    <div><span class="term">양의 종류</span></div>
+    <div class="kids">
+      <div><span class="term">이산량</span></div>
+      <div class="branch">
+        <div><span class="term">연속량</span></div>
+        <div class="bracket">
+          <div class="bsub"><div class="converge">
+            <div class="stack">
+              <div data-b="s"><span class="term">외연량</span></div>
+              <div data-b="e"><span class="term">내포량</span></div>
+            </div>
+            <svg width="11" height="56" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            <div class="link">가법성 유무에 따라 분류.</div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div><span class="term">측정 지도 계열</span></div>
+    <div class="ind">
+      <div class="branch">
+        <div><span class="term">비교</span></div>
+        <div class="kids">
+          <div><span class="term">직관적 비교</span> : <span class="desc">감각을 통해 즉각적으로 비교. / 장 ; 빠름, 단 ; 비슷하면 비교 X</span></div>
+          <div><span class="term">직접 비교</span> : <span class="desc">직접 견주어 비교 / 장 ; 간편함, 단 ; 옮길 수 있어야, 얼마나 다른지 X</span></div>
+          <div>
+            <div><span class="term">간접 비교</span> : <span class="desc">매개물을 사용</span></div>
+            <div class="sub"><span class="term">직접 측정을 통한 간접 비교</span> : <span class="desc">임의 단위 = 매개물.</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="branch" style="margin-top:8px">
+        <div><span class="term">측정</span></div>
+        <div class="kids">
+          <div class="branch">
+            <div><span class="quiet">직접</span></div>
+            <div class="bracket">
+              <div><span class="term">임의 단위</span> : <span class="desc">물건이나 신체의 일부를 단위로</span></div>
+              <div><span class="term">표준 단위</span> : <span class="desc">널리 통용되는 단위</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div><span class="term">단위의 특성</span> : <span class="desc">단위 크기와 단위수의 역관계</span></div>
+  <div><span class="term">단명수와 복명수</span> : <span class="desc">한 개 단위 사용, 두개 이상 사용 <span class="mk">⇒</span> 단위 간 관계 지도 중점, cm-km, g-t 와 같은 과도한 단위 환산 X</span></div>
+
+  <div class="branch">
+    <div><span class="term">어림 측정 전략</span></div>
+    <div class="kids">
+      <div><span class="term">참조물과 비교하기 전략</span> : <span class="desc">이미 잘 알고 있는 참조물과 비교</span></div>
+      <div>
+        <div><span class="term">덩어리 짓기 전략</span> : <span class="desc">임의의 부분으로 <span class="quiet">(덧셈)</span></span></div>
+        <div class="sub"><span class="desc">부분으로 나누기</span></div>
+      </div>
+      <div><span class="term">단위화 하기 전략</span> : <span class="desc">부분의 크기가 모두 같음 <span class="quiet">(곱셈)</span></span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<h4 id="핵심_각론__9">핵심 각론</h4>
+<div class="ind2">
+<div class="stack" style="gap:10px">
+  <div class="branch">
+    <div><span class="term">비교</span></div>
+    <div class="kids">
+      <div class="branch">
+        <div><span class="term">직관적 비교</span></div>
+        <div class="kids">
+          <div><span class="term">지도 방법</span> : <span class="desc">감각-시각</span></div>
+          <div><span class="term">장점/단점</span></div>
+        </div>
+      </div>
+      <div class="branch">
+        <div><span class="term">직접 비교</span></div>
+        <div class="kids">
+          <div><span class="term">지도 방법</span></div>
+          <div><span class="term">장점/단점</span></div>
+        </div>
+      </div>
+      <div class="branch">
+        <div><span class="term">간접 비교</span></div>
+        <div class="kids">
+          <div class="branch">
+            <div><span class="term">지도 방법</span></div>
+            <div class="bracket">
+              <div><span class="term">매개물&gt;측정 대상</span> : <span class="desc">매개물에 대상 길이 표시</span></div>
+              <div><span class="term">매개물&lt;측정 대상</span> : <span class="desc">직접 측정을 통한 간접 비교</span></div>
+            </div>
+          </div>
+          <div><span class="term">장점</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">임의 단위에 의한 직접 측정</span></div>
+    <div class="kids">
+      <div class="branch">
+        <div><span class="term">지도 방법</span></div>
+        <div class="bracket">
+          <div><span class="desc">같은 길이/다른 단위수</span></div>
+          <div><span class="desc">같은 단위수/다른 길이</span></div>
+        </div>
+      </div>
+      <div><span class="term">불편한 점</span></div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">표준 단위에 의한 직접 측정</span></div>
+    <div class="kids">
+      <div><span class="desc">1cm 약속하기</span></div>
+      <div><span class="desc">1m 약속하기</span></div>
+      <div><span class="desc">길이를 '몇cm'와 '몇m 몇cm'로 나타내기</span></div>
+      <div><span class="desc">1mm 약속하기</span></div>
+      <div><span class="desc">길이를 '몇cm 몇mm'와 '몇mm'로 나타내기</span></div>
+      <div><span class="desc">1km 약속하기</span></div>
+      <div><span class="desc">길이를 '몇km 몇m'와 '몇m'로 나타내기</span></div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">어림</span></div>
+    <div class="kids">
+      <div><span class="desc">어림 전략</span></div>
+      <div><span class="desc">주어진 상황에 알맞은 단위 선택하기</span></div>
+    </div>
+  </div>
+
+  <div><span class="term">길이의 덧셈과 뺄셈</span> : <span class="desc">가법성에 따라 성립</span></div>
+</div>
+</div>
+</section>
+<section class="pg" id="p17">
+<h3 id="들이">들이</h3>
+
+<h4 id="핵심_각론__10">핵심 각론</h4>
+<div class="ind2">
+<div class="stack" style="gap:10px">
+  <div class="branch">
+    <div><span class="term">비교</span></div>
+    <div class="kids">
+      <div class="branch">
+        <div><span class="term">직관적 비교</span></div>
+        <div class="kids">
+          <div><span class="term">지도 방법</span> : <span class="desc">시각</span></div>
+          <div><span class="term">장점/단점</span> : <span class="desc">빠름 / 부정확 <span class="mk">⇒</span> 학생들이 높이로 판단하는 경향</span></div>
+        </div>
+      </div>
+      <div class="branch">
+        <div><span class="term">직접 비교</span></div>
+        <div class="kids">
+          <div><span class="term">지도 방법</span> : <span class="desc">물을 가득 채운 후 다른 곳에 부어서 비교</span></div>
+          <div><span class="term">장점/단점</span> : <span class="desc">간편 / 옮겨 담기 힘듦</span></div>
+          <div><span class="term">유의사항</span> : <span class="desc">물은 매개물 X, 직접 비교의 도구</span></div>
+        </div>
+      </div>
+      <div class="branch">
+        <div><span class="term">간접 비교</span></div>
+        <div class="kids">
+          <div class="branch">
+            <div><span class="term">지도 방법</span></div>
+            <div class="bracket">
+              <div><span class="desc">들이가 더 큰 매개물</span></div>
+              <div><span class="desc">들이가 더 작은 매개물</span></div>
+            </div>
+          </div>
+          <div><span class="term">장점/단점</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">임의 단위에 의한 직접 측정</span></div>
+    <div class="kids">
+      <div><span class="term">지도방법</span></div>
+      <div class="branch">
+        <div><span class="term">불편한 점</span></div>
+        <div class="bracket">
+          <div><span class="desc">같은 들이/다른 단위수</span></div>
+          <div><span class="desc">다른 들이/같은 단위수</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">표준 단위에 의한 직접 측정</span></div>
+    <div class="kids">
+      <div class="branch">
+        <div><span class="term">1L와 1mL 약속하기</span> :</div>
+        <div class="line">
+          <div class="col"><span class="mid">1</span><span class="down">1mL</span></div>
+          <div class="col"><span class="mid">,</span></div>
+          <div class="col"><span class="mid">1000</span><span class="down">1L</span></div>
+        </div>
+        <div style="padding-left:14px"><span class="desc">수 모형 사용</span></div>
+      </div>
+      <div><span class="desc">들이를 '몇L 몇mL'와 '몇mL'로 나타내기</span></div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">어림</span></div>
+    <div class="kids">
+      <div class="branch">
+        <div><span class="term">어림 전략</span></div>
+        <div class="kids">
+          <div><span class="desc">참조물과 비교하기 전략</span></div>
+          <div><span class="desc">덩어리 짓기 전략</span></div>
+          <div><span class="desc">단위화 하기 전략</span></div>
+        </div>
+      </div>
+      <div><span class="desc">여러 가지 물건의 들이를 어림하고 재어 보기</span></div>
+      <div><span class="desc">들이에 알맞은 단위 선택 하기</span></div>
+    </div>
+  </div>
+
+  <div><span class="term">들이의 덧셈과 뺄셈</span> : <span class="desc">가법성</span></div>
+</div>
+</div>
+</section>
+<section class="pg" id="p18">
+<h3 id="무게">무게</h3>
+
+<h4 id="핵심_각론__11">핵심 각론</h4>
+<div class="ind2">
+<div class="stack" style="gap:10px">
+  <div class="branch">
+    <div><span class="term">비교</span></div>
+    <div class="kids">
+      <div class="branch">
+        <div><span class="term">직관적 비교</span></div>
+        <div class="kids">
+          <div><span class="term">지도 방법</span> : <span class="desc">시각 불가능 <span class="mk">→</span> 손으로 들어서 비교 <span class="quiet">(감각적)</span></span></div>
+          <div><span class="term">장점/단점</span> : <span class="desc">빠르다 / 비슷하면 X</span></div>
+        </div>
+      </div>
+      <div class="branch">
+        <div><span class="term">직접 비교</span></div>
+        <div class="kids">
+          <div><span class="term">지도 방법</span> : <span class="desc">양팔저울 이용</span></div>
+          <div><span class="term">장점/단점</span> : <span class="desc">쉽게 비교 / 얼마나 무거운지 X</span></div>
+          <div><span class="term">유의 사항</span> : <span class="desc">양팔저울 매개물 X</span></div>
+        </div>
+      </div>
+      <div class="branch">
+        <div><span class="term">간접 비교</span></div>
+        <div class="kids">
+          <div><span class="term">지도 방법</span> : <span class="desc">무거운 매개물 X</span></div>
+          <div><span class="term">장점</span> : <span class="desc">얼마나 무거운지 O</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">임의 단위에 의한 직접 측정</span></div>
+    <div class="kids">
+      <div><span class="term">지도 방법</span></div>
+      <div class="branch">
+        <div><span class="term">불편한 점</span></div>
+        <div class="bracket">
+          <div><span class="desc">무게 같은데 단위수 다름</span></div>
+          <div><span class="desc">단위수 같은데 무게 다름</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">표준 단위에 의한 직접 측정</span></div>
+    <div class="kids">
+      <div><span class="desc">1kg과 1g 지도</span></div>
+      <div><span class="desc">무게를 '몇kg 몇g'과 '몇g'으로 나타내기</span></div>
+      <div><span class="desc">1t 지도</span></div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">어림</span></div>
+    <div class="kids">
+      <div class="branch">
+        <div><span class="term">어림 전략</span></div>
+        <div class="kids">
+          <div><span class="desc">참조물과 비교하기 전략</span></div>
+          <div><span class="desc">덩어리 짓기 전략</span></div>
+          <div><span class="desc">단위화 하기 전략</span></div>
+        </div>
+      </div>
+      <div><span class="desc">알맞은 무게의 단위 선택 하기</span></div>
+    </div>
+  </div>
+
+  <div class="row"><span class="term">무게의 덧셈과 뺄셈</span> <span class="mk">⇒</span> <span class="desc">받아올림 가능</span></div>
+</div>
+</div>
+</section>
+<section class="pg" id="p19">
+<h3 id="시각과_시간">시각과 시간</h3>
+
+<h4 id="배경지식__10">배경지식</h4>
+<div class="ind2">
+<div class="stack" style="gap:10px">
+  <div>
+    <div class="row"><span class="term">시간의 특성</span> <span class="mk">⇒</span> <span class="desc">추상적, 비교·임의 단위 측정 불가</span></div>
+    <div class="sub"><span class="desc">표준 단위 직접 측정만 지도</span></div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">시각과 시간의 의미</span></div>
+    <div class="bracket">
+      <div><span class="term">시각</span> : <span class="desc">시간 흐름의 위치</span></div>
+      <div><span class="term">시간</span> : <span class="desc">양</span></div>
+    </div>
+  </div>
+
+  <div>
+    <div><span class="term">시간의 덧셈과 뺄셈 유형</span></div>
+    <div class="ind" style="margin-top:4px">
+    <div class="bracket">
+      <div><span class="desc">(시각)+(시각)</span></div>
+      <div><span class="desc">(시각)-(시각)=(시간)</span></div>
+      <div><span class="desc">(시간)+(시간)=(시간)</span></div>
+      <div><span class="desc">(시간)-(시간)=(시간)</span></div>
+      <div><span class="desc">(시각)+(시간)=(시각)</span></div>
+      <div><span class="desc">(시각)-(시간)=(시각)</span></div>
+      <div><span class="desc">(시간)+(시각)</span></div>
+      <div><span class="desc">(시간)-(시각)</span></div>
+    </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<h4 id="핵심_각론__12">핵심 각론</h4>
+<div class="ind2">
+<div class="stack" style="gap:10px">
+  <div class="branch">
+    <div><span class="term">시각 지도</span></div>
+    <div class="bracket">
+      <div class="branch">
+        <div>
+          <div><span class="term">시, 분 지도</span></div>
+          <div class="quiet">(1~2)</div>
+        </div>
+        <div class="bracket">
+          <div><span class="desc">몇 시</span></div>
+          <div><span class="desc">몇 시 30분</span></div>
+          <div><span class="desc">몇 시 몇 분</span></div>
+          <div><span class="desc">몇 시 몇 분 전</span></div>
+        </div>
+      </div>
+      <div>
+        <div><span class="term">초 지도</span></div>
+        <div class="quiet">(3~4)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div>
+      <div><span class="term">시간 지도</span></div>
+      <div class="quiet">(두 단계 이상 변환X)</div>
+    </div>
+    <div class="bracket">
+      <div><span class="term">1시간과 1분의 관계</span> : <span class="desc">시간 띠 활용</span></div>
+      <div><span class="desc">1일 = 24시간</span></div>
+      <div class="bsub"><div class="converge">
+        <div class="stack">
+          <div data-b="s"><span class="desc">1주일 = 7일</span></div>
+          <div data-b="e"><span class="desc">1년 = 12개월</span></div>
+        </div>
+        <svg width="11" height="56" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        <div class="link">시간 양 단위임을 지도</div>
+      </div></div>
+      <div><span class="term">1분과 1초의 관계</span></div>
+    </div>
+  </div>
+
+  <div><span class="term">시간의 덧셈과 뺄셈</span></div>
+</div>
+</div>
+</section>
+<section class="pg" id="p20">
+<h2 id="넓이와_부피">넓이와 부피</h2>
+
+<h3 id="다각형의_둘레와_넓이">다각형의 둘레와 넓이</h3>
+
+<h4 id="배경지식__11">배경지식</h4>
+<div class="ind2">
+<div class="stack" style="gap:10px">
+  <div class="branch">
+    <div><span class="term">넓이의 성질</span></div>
+    <div class="bracket">
+      <div><span class="term">보존성</span> : <span class="desc">잘라 붙여도 보존됨</span></div>
+      <div><span class="term">가법성</span> : <span class="desc">서로 더할 수 있음 <span class="quiet">(→ 외연량임)</span></span></div>
+      <div><span class="term">승법성</span> : <span class="desc">길이의 곱으로 표현됨</span></div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">넓이를 구하기<br>위한 조작활동</span></div>
+    <div class="bracket">
+      <div><span class="term">단위 반복하기</span> : <span class="desc">단위 넓이의 개수 일일이 세기</span></div>
+      <div class="bsub"><div class="converge">
+        <div class="stack">
+          <div data-b="s"><span class="term">배열 구조 만들기</span> : <span class="desc">규칙을 활용해 단위 넓이의 개수 구하기</span></div>
+          <div data-b="e"><span class="term">분할하기</span></div>
+        </div>
+        <svg width="11" height="56" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        <div class="link">공식(=간접측정) 유도</div>
+      </div></div>
+      <div><span class="term">제거하기</span></div>
+      <div class="branch">
+        <div><span class="term">변형하기</span></div>
+        <div class="bracket">
+          <div><span class="term">등적 변형</span> : <span class="desc">같은 넓이의 다른 모양</span></div>
+          <div><span class="term">배적 변형</span> : <span class="desc">넓이를 n배</span></div>
+          <div><span class="term">반적 변형</span> : <span class="desc">넓이를 1/n배</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div><span class="term">둘레</span></div>
+    <div class="ind">
+      <div class="stack" style="gap:10px">
+        <div class="branch">
+          <div><span class="term">정다각형</span></div>
+          <div class="bracket">
+            <div><span class="term">직접측정 방법</span> : <span class="desc">굴리기 / 더하기</span></div>
+            <div>
+              <div><span class="term">간접측정 방법</span></div>
+              <div class="sub"><span class="term">성질 이용</span> : <span class="desc">정다각형의 모든 변의 길이는 같다</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="branch">
+          <div><span class="term">여러 가지<br>사각형</span></div>
+          <div class="converge">
+            <div class="bracket">
+              <div data-b="s"><span class="term">직사각형</span></div>
+              <div><span class="term">평행사변형</span></div>
+              <div data-b="e"><span class="term">마름모</span></div>
+            </div>
+            <svg width="11" height="84" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            <div class="stack">
+              <div><span class="term">직접측정 방법</span></div>
+              <div>
+                <div><span class="term">간접측정 방법</span></div>
+                <div class="sub"><span class="term">성질 이용</span> : <span class="desc">마주보는 두 변/네 변의 길이가 같다</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<h4 id="핵심_각론__13">핵심 각론</h4>
+<div class="ind2">
+<div class="stack" style="gap:10px">
+  <div class="branch">
+    <div><span class="term">비교</span></div>
+    <div class="converge">
+      <div class="bracket">
+        <div data-b="s"><span class="term">직관적 비교</span></div>
+        <div><span class="term">직접 비교</span></div>
+        <div data-b="e"><span class="term">간접 비교</span> : <span class="desc">투명 종이에 본뜨기 / 임의 단위</span></div>
+      </div>
+      <svg width="11" height="84" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      <div class="link">지도 방법</div>
+      <div class="stack">
+        <div><span class="term">포함</span> : <span class="desc">겹쳐 보기</span></div>
+        <div><span class="term">포함×</span> : <span class="desc">공통 부분 잘라내서 반복 <span class="mk">⇒</span> 넓이의 보존성 <span class="quiet">(구체적 조작기)</span></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div><span class="term">둘레</span></div>
+    <div class="ind">
+      <div class="stack" style="gap:10px">
+        <div class="branch">
+          <div><span class="term">임의 단위에 의한<br>직접 측정</span></div>
+          <div class="bracket">
+            <div class="branch">
+              <div><span class="term">불편한 점</span></div>
+              <div class="bracket">
+                <div><span class="desc">같은 넓이/다른 단위수</span></div>
+                <div><span class="desc">원처럼 빈틈없이 붙일 수 없는 단위</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="branch">
+          <div><span class="term">표준 단위에 의한<br>직접 측정</span></div>
+          <div class="bracket">
+            <div><span class="desc">1cm²</span></div>
+            <div><span class="desc">1m²</span></div>
+            <div><span class="desc">1km²</span></div>
+          </div>
+        </div>
+
+        <div>
+          <div><span class="term">측정</span></div>
+          <div class="ind">
+            <div class="stack" style="gap:10px">
+              <div class="branch">
+                <div><span class="term">직사각형/정사각형</span></div>
+                <div class="bracket">
+                  <div><span class="term">단위 반복하기</span> : <span class="desc">직접 측정</span></div>
+                  <div><span class="term">배열 구조 만들기</span></div>
+                </div>
+              </div>
+
+              <div class="branch">
+                <div><span class="term">평행사변형</span></div>
+                <div class="bracket">
+                  <div class="branch">
+                    <div><span class="term">구성요소</span></div>
+                    <div class="bracket">
+                      <div><span class="term">밑변</span> : <span class="desc">평행한 두 변<span class="quiet">(두 쌍)</span></span></div>
+                      <div><span class="term">높이</span> : <span class="desc">밑변 사이의 거리</span></div>
+                    </div>
+                  </div>
+                  <div><span class="term">단위 반복하기</span></div>
+                  <div>
+                    <div><span class="term">등적 변형</span></div>
+                    <div class="sub"><span class="desc">밑변의 길이와 높이가 같은 평행사변형 넓이 비교</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="branch">
+                <div><span class="term">삼각형</span></div>
+                <div class="bracket">
+                  <div class="row"><span class="mk">⇒</span><span class="desc">둔각삼각형의 높이 지도</span></div>
+                  <div class="branch">
+                    <div><span class="term">구성요소</span></div>
+                    <div class="bracket">
+                      <div><span class="term">밑변</span> : <span class="desc">어느 한 변</span></div>
+                      <div><span class="term">높이</span> : <span class="desc">밑변과 마주보는 꼭짓점에서 내린 수선의 길이</span></div>
+                    </div>
+                  </div>
+                  <div><span class="term">단위 반복하기</span></div>
+                  <div><span class="term">배적 변형</span> : <span class="desc">평행사변형</span></div>
+                  <div>
+                    <div><span class="term">등적 변형</span></div>
+                    <div class="sub"><span class="desc">밑변의 길이와 높이가 같은 삼각형 넓이 비교</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="branch">
+                <div><span class="term">사다리꼴</span></div>
+                <div class="bracket">
+                  <div class="branch">
+                    <div><span class="term">구성요소</span></div>
+                    <div class="bracket">
+                      <div><span class="term">밑변</span> : <span class="desc">평행한 두 변</span></div>
+                      <div><span class="term">높이</span> : <span class="desc">밑변 사이의 거리</span></div>
+                    </div>
+                  </div>
+                  <div><span class="term">단위 반복하기</span></div>
+                  <div><span class="term">배적 변형</span> : <span class="desc">평행사변형</span></div>
+                  <div><span class="term">등적 변형</span> : <span class="desc">분할 <span class="quiet">(평·사, 삼각형)</span></span></div>
+                  <div><span class="term">분할하기</span> : <span class="desc">삼각형 2개 <span class="quiet">(분배법칙 X)</span></span></div>
+                  <div><span class="term">제거하기</span></div>
+                </div>
+              </div>
+
+              <div class="branch">
+                <div><span class="term">마름모</span></div>
+                <div class="bracket">
+                  <div><span class="term">등적 변형</span></div>
+                  <div><span class="term">배적 변형</span> : <span class="desc">직사, 삼각</span></div>
+                  <div><span class="term">반적 변형</span> : <span class="desc">삼각</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</section>
+<section class="pg" id="p21">
+<h3 id="원주율과_원의_넓이">원주율과 원의 넓이</h3>
+
+<h4 id="핵심_각론__14">핵심 각론</h4>
+<div class="ind2">
+<div class="stack" style="gap:12px">
+  <div class="branch">
+    <div><span class="term">원주율</span></div>
+    <div class="bracket">
+      <div class="branch">
+        <div><span class="term">원주</span></div>
+        <div class="bracket">
+          <div><span class="term">도형</span> : <span class="desc">원의 둘레</span></div>
+          <div><span class="term">길이</span> : <span class="desc">원의 둘레의 길이</span></div>
+        </div>
+      </div>
+      <div class="row"><span class="term">원주와 지름의 관계</span> <span class="mk">→</span> <span class="desc">3~4배 사이</span></div>
+      <div class="branch">
+        <div><span class="term">원주율</span></div>
+        <div class="converge">
+          <div class="stack">
+            <div data-b="s"><span class="term">비율 속성</span></div>
+            <div><span class="term">상수 속성</span></div>
+            <div data-b="e"><span class="term">무한 속성</span></div>
+          </div>
+          <svg width="11" height="84" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          <div class="link">귀납적으로 상수 속성 발견</div>
+        </div>
+      </div>
+      <div><span class="term">원주율을 이용하여 원주/지름 구하기</span> : <span class="desc">간접측정</span></div>
+    </div>
+  </div>
+
+  <div>
+    <div><span class="term">원의 넓이</span></div>
+    <div class="ind">
+      <div><span class="term">지도 방법</span></div>
+      <div class="ind">
+        <div class="stack" style="gap:10px">
+          <div class="branch">
+            <div><span class="term">원의 넓이 어림하기</span></div>
+            <div class="bracket">
+              <div><span class="desc">내·외접하는 정다각형의 넓이 <span class="quiet">(→ n ∝ 정밀도)</span></span></div>
+              <div><span class="desc">격자 세어보기</span></div>
+            </div>
+          </div>
+          <div class="branch">
+            <div><span class="term">원의 넓이 구하는<br>식 만들기</span></div>
+            <div class="converge">
+              <div class="bracket">
+                <div data-b="s"><span class="desc">직사각형으로 바꾸어 식 만들기 <span class="quiet">(→ r × (1/2·2πr))</span></span></div>
+                <div class="bsub"><div class="converge">
+                  <div class="stack">
+                    <div data-b="s"><span class="desc">이등변삼각형으로 바꾸어 식 만들기</span></div>
+                    <div data-b="e"><span class="desc">직각삼각형으로 바꾸어 식 만들기</span></div>
+                  </div>
+                  <svg width="11" height="56" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                  <div class="link">1/2×r×2πr</div>
+                </div></div>
+              </div>
+              <svg width="11" height="84" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              <div class="link">등적 변형</div>
+            </div>
+          </div>
+          <div class="row"><span class="term">원의 넓이 구하는 식을 이용하여 넓이 구하기</span> <span class="mk">→</span> <span class="desc">간접측정</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</section>
+<section class="pg" id="p22">
+<h3 id="직육면체와_정육면체의_겉넓이와_부피">직육면체와 정육면체의 겉넓이와 부피</h3>
+
+<h4 id="핵심_각론__15">핵심 각론</h4>
+<div class="ind2">
+<div class="stack" style="gap:12px">
+  <div class="branch">
+    <div><span class="term">겉넓이</span></div>
+    <div class="bracket">
+      <div class="branch">
+        <div><span class="term">직육면체의 겉넓이<br>구하는 방법</span></div>
+        <div class="bracket">
+          <div><span class="desc">6면 더하기</span></div>
+          <div><span class="desc">밑면 성질 이용 <span class="quiet">(→ 한 꼭짓점에서 만나는 세 면 × 2)</span></span></div>
+          <div><span class="desc">옆면과 밑면</span></div>
+        </div>
+      </div>
+      <div class="row"><span class="term">정육면체의 겉넓이 구하는 방법</span> <span class="mk">→</span> <span class="desc">한 면 × 6 <span class="quiet">(유추적 사고)</span></span></div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">부피</span></div>
+    <div class="bracket">
+      <div class="branch">
+        <div><span class="term">비교</span></div>
+        <div class="bracket">
+          <div><span class="term">직관적 비교</span></div>
+          <div class="branch">
+            <div><span class="term">직접 비교</span></div>
+            <div class="bracket">
+              <div class="row"><span class="term">지도방법</span> <span class="mk">→</span> <span class="desc">밑면 넓이나 높이 같아야</span></div>
+            </div>
+          </div>
+          <div class="branch">
+            <div><span class="term">간접 비교</span></div>
+            <div class="bracket">
+              <div><span class="desc">부피 작은 매개물</span></div>
+              <div><span class="term">물의 부피</span> : <span class="desc">불규칙한 모양 가능</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="branch">
+        <div><span class="term">측정</span></div>
+        <div class="bracket">
+          <div class="branch">
+            <div><span class="term">임의 단위에 의한<br>직접 측정</span></div>
+            <div class="bracket">
+              <div><span class="term">지도 방법</span></div>
+              <div class="branch">
+                <div><span class="term">불편한 점</span></div>
+                <div class="bracket">
+                  <div><span class="desc">단위수 다양, 비교 불가</span></div>
+                  <div><span class="desc">꽉 채우기 불가 <span class="quiet">(빈틈)</span></span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="branch">
+            <div><span class="term">표준 단위에 의한<br>직접 측정</span></div>
+            <div class="bracket">
+              <div><span class="desc">1cm³ 지도</span></div>
+              <div><span class="desc">1m³ 지도</span></div>
+            </div>
+          </div>
+
+          <div class="branch">
+            <div><span class="term">간접측정</span></div>
+            <div class="bracket">
+              <div class="branch">
+                <div><span class="term">지도 방법</span></div>
+                <div class="bracket">
+                  <div><span class="term">배열 구조</span> : <span class="desc">가로줄수 × 세로줄 × 높이</span></div>
+                  <div><span class="term">부피 요인</span> : <span class="desc">가로,세로,높이에 비례 <span class="mk">⇒</span> 가×세×높</span></div>
+                </div>
+              </div>
+              <div><span class="term">겉넓이와 부피의 관계</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</section>
+<section class="pg" id="p23">
+<h2 id="수와_연산_—_자연수·약수와_배수·수의_범위">수와 연산 — 자연수·약수와 배수·수의 범위</h2>
+
+<h3 id="자연수">자연수</h3>
+
+<h4 id="배경지식__12">배경지식</h4>
+<div class="ind2">
+<div class="stack" style="gap:12px">
+  <div class="branch">
+    <div><span class="term">수 세기</span></div>
+    <div class="bracket">
+      <div><span class="term">수 세기 원리</span> : <span class="desc">일대일대응, 안정된 순서, 순서무관, 집합수, 추상</span></div>
+      <div><span class="term">수 세기 전략</span> : <span class="desc">이어, 거꾸로, 뛰어, 묶어</span></div>
+      <div><span class="term">수 세기 모델</span> : <span class="desc">비례, 비비례</span></div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">자연수의 의미</span></div>
+    <div class="bracket">
+      <div><span class="term">집합수</span> : <span class="desc">개수</span></div>
+      <div><span class="term">순서수</span> : <span class="desc">위치</span></div>
+      <div><span class="term">이름수</span> : <span class="desc">이름, 번호</span></div>
+      <div><span class="term">측정수</span></div>
+    </div>
+  </div>
+
+  <div><span class="term">명수법</span> : <span class="desc">하나둘씩 / 일이삼</span></div>
+
+  <div class="branch">
+    <div><span class="term">기수법</span></div>
+    <div class="bracket">
+      <div><span class="term">가법적 기수법</span> : <span class="desc">Σ기본수</span></div>
+      <div><span class="term">승법적 기수법</span> : <span class="desc">Σ기본수 × 자릿값 기호가 나타내는 수</span></div>
+      <div><span class="term">위치적 기수법</span> : <span class="desc">위치에 따라 자릿값 변화, Σ기본수×자릿값</span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<h4 id="핵심_각론__16">핵심 각론</h4>
+<div class="ind2">
+<div class="stack" style="gap:14px">
+  <div>
+    <div class="row"><span class="term">네 자리 이하의 수</span> : <span class="desc">수의 필요성 인식</span></div>
+    <div class="ind" style="margin-top:6px">
+      <div class="converge">
+        <div class="stack">
+          <div data-b="s"><span class="desc">9까지의 수</span></div>
+          <div><span class="desc">50까지의 수</span></div>
+          <div><span class="desc">100까지의 수</span></div>
+          <div><span class="desc">세 자리 수</span></div>
+          <div data-b="e"><span class="desc">네 자리 수</span></div>
+        </div>
+        <svg width="11" height="140" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        <div class="stack">
+          <div><span class="term">수 개념</span></div>
+          <div><span class="term">명수법</span></div>
+          <div><span class="term">자릿값, 위치적 기수법</span></div>
+          <div><span class="term">수 계열</span></div>
+          <div><span class="term">크기 비교</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="row"><span class="term">다섯 자리 이상의 수</span> : <span class="desc">자릿값 작은 단위 생략, 어림은 5~6학년이므로 연결X</span></div>
+    <div class="ind" style="margin-top:6px">
+      <div class="converge">
+        <div class="stack">
+          <div data-b="s"><span class="desc">다섯 자리 수</span></div>
+          <div><span class="desc">십만, 백만, 천만</span></div>
+          <div data-b="e"><span class="desc">억, 조</span></div>
+        </div>
+        <svg width="11" height="112" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        <div class="stack">
+          <div><span class="term">명수법</span></div>
+          <div><span class="term">자릿값, 위치적 기수법</span></div>
+          <div><span class="term">수 계열</span></div>
+          <div><span class="term">크기 비교</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</section>
+<section class="pg" id="p24">
+<h3 id="약수와_배수">약수와 배수</h3>
+
+<h4 id="배경지식__13">배경지식</h4>
+<div class="ind2">
+<div class="stack" style="gap:12px">
+  <div class="branch">
+    <div><span class="term">약수와 배수</span></div>
+    <div class="bracket">
+      <div><span class="term">의미</span> : <span class="desc">약수: 나누어 떨어짐 / 배수: 정수배</span></div>
+      <div><span class="term">성질</span> : <span class="desc">약수 개수 홀수면 제곱수, 크기랑 약수 개수 무관</span></div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">완전수, 부족수,<br>과잉수, 친화수</span></div>
+    <div class="bracket">
+      <div>
+        <div class="desc">N<sub>m</sub> 의 약수 d1...dn 에 대해 Σ(k=1→n) d<sub>k</sub> = D<sub>m</sub> 라하면</div>
+        <div class="ind">
+          <div class="bracket">
+            <div><span class="term">N &gt; D</span> : <span class="desc">부족</span></div>
+            <div><span class="term">N = D</span> : <span class="desc">완전</span></div>
+            <div><span class="term">N &lt; D</span> : <span class="desc">과잉</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="row"><span class="desc">N1=D2, N2=D1</span> <span class="mk">→</span> <span class="desc">N1,N2가 친화수</span></div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">배수 판정법</span></div>
+    <div class="bracket">
+      <div class="branch">
+        <div><span class="term">7의 배수 판정</span></div>
+        <div class="stack">
+          <div class="desc">N=10a+b, M=a-2b → N=10M+21b</div>
+          <div class="desc">N이 7의 배수 ⇔ M이 7의 배수</div>
+          <div class="desc">(⇒) 10M+21b → 7배수</div>
+          <div class="desc">7,10 서로소 → M 7배수</div>
+          <div class="desc">(⇐) N=7배수+7배수 → N→7배수</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">최대공약수/최소공배수<br>구하는 방법</span></div>
+    <div class="bracket">
+      <div><span class="desc">소인수분해 이용</span></div>
+      <div><span class="term">연제법</span> : <span class="desc">세로셈 표준 알고리즘</span></div>
+    </div>
+  </div>
+
+  <div><span class="term">유클리드 호제법</span> : <span class="desc">a=bq+r 에 대해 gcd(a,b)=gcd(b,r)</span></div>
+</div>
+</div>
+
+<h4 id="핵심_각론__17">핵심 각론</h4>
+<div class="ind2">
+<div class="stack" style="gap:12px">
+  <div class="branch">
+    <div><span class="term">약수와 배수</span></div>
+    <div class="bracket">
+      <div class="branch">
+        <div><span class="term">약수 지도</span></div>
+        <div class="bracket">
+          <div><span class="desc">나눗셈식</span></div>
+          <div><span class="desc">구체물 묶어세기</span></div>
+          <div class="row"><span class="desc">퀴즈네어 막대</span> <span class="mk">→</span> <span class="desc">막대 채우기</span></div>
+          <div><span class="desc">곱셈식</span></div>
+        </div>
+      </div>
+      <div class="branch">
+        <div><span class="term">배수 지도</span></div>
+        <div class="bracket">
+          <div><span class="desc">곱셈식</span></div>
+          <div><span class="desc">구체물 조작</span></div>
+          <div><span class="desc">퀴즈네어 막대</span></div>
+          <div><span class="desc">수 배열표</span></div>
+        </div>
+      </div>
+      <div class="branch">
+        <div>
+          <div><span class="term">약수와 배수의<br>관계 지도</span></div>
+          <div class="sub"><span class="desc">역연산 <span class="quiet">(가역적 사고)</span></span></div>
+        </div>
+        <div class="bracket">
+          <div><span class="desc">곱셈식과 나눗셈식</span></div>
+          <div class="row"><span class="desc">여러 수의 곱</span> <span class="mk">→</span> <span class="desc">평가 X</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">최대공약수와<br>최소공배수</span></div>
+    <div class="bracket">
+      <div class="branch">
+        <div><span class="term">최대공약수 지도</span></div>
+        <div class="bracket">
+          <div><span class="desc">약수의 나열</span></div>
+          <div class="row"><span class="desc">구체물 조작</span> <span class="mk">→</span> <span class="desc">퀴즈네어 막대 두개 각각 약수 파악</span></div>
+          <div><span class="desc">두 수/여러 수의 곱으로 나타낸 곱셈식</span></div>
+          <div class="row"><span class="desc">공약수로 나누기</span> <span class="mk">→</span> <span class="desc">연제법</span></div>
+        </div>
+      </div>
+      <div class="branch">
+        <div><span class="term">최소공배수 지도</span></div>
+        <div class="bracket">
+          <div><span class="desc">배수의 나열</span></div>
+          <div><span class="desc">퀴즈네어 막대</span></div>
+          <div><span class="desc">두 수/여러 수의 곱으로 나타낸 곱셈식</span></div>
+          <div class="row"><span class="desc">공약수로 나누기</span> <span class="mk">→</span> <span class="desc">연제법</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</section>
+<section class="pg" id="p25">
+<h3 id="수의_범위와_올림,_버림,_반올림">수의 범위와 올림, 버림, 반올림</h3>
+
+<h4 id="핵심_각론__18">핵심 각론</h4>
+<div class="ind2">
+<div class="stack" style="gap:14px">
+  <div class="branch">
+    <div><span class="term">수의 범위</span></div>
+    <div class="bracket">
+      <div class="branch">
+        <div><span class="term">이상, 이하</span></div>
+        <div class="bracket">
+          <div><span class="term">의미</span></div>
+          <div><span class="term">수의 범위를 나타내는 방법</span></div>
+        </div>
+      </div>
+      <div class="branch">
+        <div><span class="term">초과, 미만</span></div>
+        <div class="bracket">
+          <div><span class="term">의미</span></div>
+          <div><span class="term">수의 범위를 나타내는 방법</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div>
+      <div><span class="term">올림, 버림, 반올림</span> : <span class="desc">수학의 유용성</span></div>
+      <div class="sub"><span class="term">올림</span> : <span class="desc">바로 아래자리 X, 아래 모든자리 O</span></div>
+      <div class="sub"><span class="term">반올림</span> : <span class="desc">바로 아래자리 5,6,7,8,9</span></div>
+    </div>
+    <div class="bracket">
+      <div><span class="term">의미</span></div>
+      <div><span class="term">실생활 활용</span></div>
+    </div>
+  </div>
+</div>
+</div>
+</section>
+<section class="pg" id="p26">
+<h2 id="수와_연산_-_자연수의_덧셈과_뺄셈"><a id="수와_연산"></a><a id="자연수의_덧셈과_뺄셈"></a>수와 연산 - 자연수의 덧셈과 뺄셈</h2>
+
+<h3 id="1._배경_지식_(받아올림·내림_전)"><a id="배경_지식_(받아올림·내림_전)"></a><span class="num">1.</span> 배경 지식 <span class="quiet">(받아올림·내림 전)</span></h3>
+
+<h4 id="1)_덧셈과_뺄셈_지도의_목적"><a id="덧셈과_뺄셈_지도의_목적"></a><span class="num">1)</span> 덧셈과 뺄셈 지도의 목적</h4>
+<div class="ind2">
+<div class="stack">
+  <div><span class="term">원리 이해</span> <span class="mk">→</span> <span class="desc">구체적인 조작 활동</span></div>
+  <div><span class="term">기능 숙달</span> <span class="mk">→</span> <span class="desc">세로셈 표준 알고리즘 지도. <span class="quiet">(행동주의)</span></span></div>
+  <div><span class="term">감각 형성</span> <span class="mk">→</span> <span class="desc">다양한 계산 방법 구성 <span class="quiet">(어림셈과 함께 구성주의)</span></span></div>
+</div>
+<div class="ind" style="margin-top:6px">
+<div class="converge">
+  <div class="stack">
+    <div data-b="s"><span class="term">가르기</span> <span class="quiet">(분해)</span> <span class="mk">→</span> <span class="desc">거꾸로 세기</span></div>
+    <div data-b="e"><span class="term">모으기</span> <span class="quiet">(합성)</span> <span class="mk">→</span> <span class="desc">이어 세기</span></div>
+  </div>
+  <svg width="11" height="56" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+  <div class="link">보수 관계 이해</div>
+</div>
+</div>
+</div>
+
+<h4 id="2)_덧셈과_뺄셈_상황"><a id="덧셈과_뺄셈_상황"></a><span class="num">2)</span> 덧셈과 뺄셈 상황</h4>
+<div class="ind2">
+<div class="stack">
+  <div class="branch">
+    <div><span class="term">덧셈</span></div>
+    <div class="fork"><div class="mkf">
+     <svg class="a1" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="10" y1="0" x2="1" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+     <svg class="a2" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="1" y1="0" x2="10" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+    </div><div class="stack">
+      <div><span class="desc">합병</span></div>
+      <div><span class="desc">첨가</span></div>
+    </div></div>
+    <div class="row" style="margin-left:16px"><span class="mk">→</span><span class="desc">이미 있는 것/새로 더해지는 것 구분 유무</span></div>
+  </div>
+  <div class="branch" style="margin-top:8px">
+    <div><span class="term">뺄셈</span></div>
+    <div class="fork"><div class="mkf">
+     <svg class="a1" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="10" y1="0" x2="1" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+     <svg class="a2" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="1" y1="0" x2="10" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+    </div><div class="stack">
+      <div><span class="term">제거</span> : <span class="desc">나머지</span></div>
+      <div><span class="term">비교</span> : <span class="desc">두 양의 차 <span class="mk">⇒</span> 그림으로 표현시 반드시 일대일 대응 관계</span></div>
+    </div></div>
+  </div>
+</div>
+</div>
+
+<h4 id="3)_문장제_유형"><a id="문장제_유형"></a><span class="num">3)</span> 문장제 유형</h4>
+<div class="ind2">
+<div class="cols n2 fit">
+  <div class="line">
+    <div class="col"><span class="mid">a</span><span class="down">초기값</span></div>
+    <div class="col"><span class="mid mk">+</span></div>
+    <div class="col"><span class="mid">b</span><span class="down">변화값</span></div>
+    <div class="col"><span class="mid mk">=</span></div>
+    <div class="col"><span class="mid">c</span><span class="down">결과</span></div>
+  </div>
+  <div class="stack">
+    <div class="row"><span class="mk">→</span><span class="term">등호</span> : <span class="desc">연산 표시 X, 좌변과 우변이 같다는 관계 표시</span></div>
+    <div class="sub"><span class="mk">∴</span> 읽을 때 '~와 같습니다' 로 <span class="quiet">('는' X)</span></div>
+  </div>
+</div>
+</div>
+
+<h4 id="4)_연산_법칙"><a id="연산_법칙"></a><span class="num">4)</span> 연산 법칙</h4>
+<div class="ind2">
+<div class="wide"><div class="converge">
+  <div class="stack">
+    <div data-b="s"><span class="term">덧셈의 교환법칙</span> <span class="mk">⇒</span> <span class="desc">a+b = b+a</span></div>
+    <div data-b="e"><span class="term">덧셈의 결합법칙</span> <span class="mk">⇒</span> <span class="desc">(a+b)+c = a+(b+c)</span></div>
+  </div>
+  <svg width="11" height="56" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+  <div class="link" style="text-align:left">
+    <div><span class="mk">→</span> 뺄셈에서는 성립하지 X <span class="quiet">(연산 결과 바뀌는 예 제시하여 지도)</span></div>
+    <div><span class="mk">⇒</span> 뺄셈은 -1을 곱한 것으로 생각하여 곱셈의 분배법칙 이용, 덧셈으로 전환</div>
+  </div>
+</div></div>
+<div class="row" style="margin-top:8px"><span class="term">항등원</span><span class="mk">⇒</span><span class="desc">a+e = e+a = a, e=0</span> <span class="mk">⇒</span> <span class="desc">뺄셈에서는 a-0=a, a-a=0 상황 지도</span></div>
+</div>
+
+<h4 id="5)_계산_전략"><a id="계산_전략"></a><span class="num">5)</span> 계산 전략</h4>
+<div class="ind2">
+<div class="branch">
+  <div><span class="term">구체물 활용</span></div>
+  <div class="bracket">
+    <div><span class="term">수 세기</span> : <span class="desc">수 세기 전략 <span class="quiet">(모두, 이어, 거꾸로...)</span></span></div>
+    <div><span class="term">수 지식</span> : <span class="desc">수 관계 지식<span class="quiet">(규칙성)</span>, 연산법칙 <span class="quiet">(결합, 교환...)</span></span></div>
+  </div>
+</div>
+</div>
+
+<h3 id="2._각론"><span class="num">2.</span> 각론</h3>
+
+<h4 id="1)_10이_되는_더하기와_빼기"><a id="10이_되는_더하기와_빼기"></a><span class="num">1)</span> 10이 되는 더하기와 빼기</h4>
+<div class="ind2">
+<div class="row"><span class="mk">⇒</span><span class="desc">10의 보수 관계 이해, 받아올림·내림의 기초</span></div>
+<div class="row"><span class="mk">⊕</span><span class="term">덧셈</span> <span class="mk">⇒</span> <span class="desc">교환법칙 이해</span></div>
+</div>
+
+<h4 id="2)_더해서_10이_되는_두_수를_이용한_세_수의_덧셈"><a id="더해서_10이_되는_두_수를_이용한_세_수의_덧셈"></a><span class="num">2)</span> 더해서 10이 되는 두 수를 이용한 세 수의 덧셈</h4>
+<div class="ind2">
+<div class="row"><span class="mk">⇒</span><span class="desc">순서대로 더한 값<span class="quiet">((a+b)+c)</span> 과 10이 되는 두 수를 먼저 더해 10을 만들고 나머지 한 수는 더한 값<span class="quiet">(a+(b+c))</span> 이 같음</span></div>
+<div class="sub">(a+b)가 10이 아니도록 설정</div>
+<div class="sub">(b+c)가 10이 되도록 설정</div>
+</div>
+
+<h4 id="3)_(몇)+(몇)_=_(십몇),_(십몇)-(몇)_=_(몇)"><a id="(몇)+(몇)_=_(십몇),_(십몇)-(몇)_=_(몇)"></a><a id="(몇)+(몇)_=_(십몇),_(십몇)-(몇)_="></a><span class="num">3)</span> (몇)+(몇) = (십몇), (십몇)-(몇) = (몇)</h4>
+<div class="ind2">
+<div class="stack">
+  <div><span class="term">덧셈</span> <span class="mk">⇒</span> <span class="desc">가산수, 피가산수를 분해, 더해서 10이 되는 수를 만듦</span></div>
+  <div class="sub">결합법칙에 의해 결과 같음</div>
+  <div class="branch" style="margin-top:8px">
+    <div><span class="term">뺄셈</span></div>
+    <div class="bracket">
+      <div><span class="term">피감수를 분해</span> : <span class="desc">10에서 먼저 빼고, 나머지 더함 <span class="mk">⇒</span> <span class="key">감가법</span></span></div>
+      <div><span class="term">감수를 분해</span> : <span class="desc">빼서 10을 만들고, 10에서 추가로 뺌 <span class="mk">⇒</span> <span class="key">감감법</span></span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<h3 id="3._받아올림·내림"><a id="받아올림·내림"></a><span class="num">3.</span> 받아올림·내림</h3>
+
+<h4 id="1)_계산_원리"><a id="계산_원리"></a><span class="num">1)</span> 계산 원리</h4>
+<div class="ind2">
+<div class="bracket">
+  <div><span class="term">덧셈</span> : <span class="desc">자릿값에 의한 전개식으로 분해, 교환·결합법칙</span></div>
+  <div><span class="term">뺄셈</span> : <span class="desc">자릿값에 의한 전개식으로 분해, 교환·결합법칙 + 덧셈에 대한 곱셈의 분배법칙</span></div>
+</div>
+</div>
+
+<h4 id="2)_조작_활동"><a id="조작_활동"></a><span class="num">2)</span> 조작 활동</h4>
+<div class="ind2">
+<div class="stack">
+  <div class="desc">자릿값에 맞는 수 모형으로 나타내기 <span class="quiet">(덧-각각, 뺄-피감수)</span>, 같은 모형끼리 더하기/빼는 수만큼 덜어내기</div>
+  <div class="mk" style="padding-left:2.4em;line-height:1.2">↓</div>
+  <div class="desc">받아올림<span class="quiet">(더해서 10개 이상, 10개→1개)</span>, 받아내림<span class="quiet">(뺄 수 X, 1개→10개)</span>의 의미가 드러나는 조작 활동</div>
+</div>
+</div>
+
+<h4 id="3)_세로셈_표준_알고리즘"><a id="세로셈_표준_알고리즘"></a><span class="num">3)</span> 세로셈 표준 알고리즘</h4>
+<div class="ind2">
+<div class="stack">
+  <div class="desc">세로셈으로 나타내고, 자리에 맞게 수 쓰고, 일의 자리부터, 각 자리끼리 더하기/빼기</div>
+  <div class="mk" style="padding-left:2.4em;line-height:1.2">↓</div>
+  <div class="desc">합≥10 이면 받아올림, 뺄 수 없으면 받아내림</div>
+</div>
+</div>
+
+<h4 id="4)_오류_유형"><a id="오류_유형"></a><span class="num">4)</span> 오류 유형</h4>
+<div class="ind2">
+<div class="wide"><div class="fork"><div class="mkf">
+ <svg class="a1" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="10" y1="0" x2="1" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+ <svg class="a2" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="1" y1="0" x2="10" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+</div><div class="stack">
+  <div><span class="term">덧셈</span> : <span class="desc">받아올림 X/아래에 쓰는 오류 <span class="mk">⇒</span> 받아올림 이해 X <span class="quiet">; 구체물 조작 활동</span></span></div>
+  <div><span class="term">뺄셈</span> : <span class="desc">받아내림 대신 큰 수 - 작은 수 <span class="mk">⇒</span> 자릿값, 받아내림 이해 X, 한 자리수 뺄셈 관성 <span class="quiet">; 구체물 조작 활동</span></span></div>
+</div></div></div>
+</div>
+</section>
+<section class="pg" id="p27">
+<h3 id="4._덧셈과_뺄셈의_관계와_어림"><a id="덧셈과_뺄셈의_관계와_어림"></a><span class="num">4.</span> 덧셈과 뺄셈의 관계와 어림</h3>
+
+<h4 id="1)_관계"><a id="관계"></a><span class="num">1)</span> 관계</h4>
+<div class="ind2">
+<div class="converge">
+  <div class="stack">
+    <div class="branch" data-b="s">
+      <div><span class="term">덧 <span class="mk">→</span> 뺄</span> : <span class="desc">a+b=c</span> <span class="mk">→</span></div>
+      <div class="bracket">
+        <div><span class="desc">a=c-b</span></div>
+        <div><span class="desc">b=c-a</span></div>
+      </div>
+    </div>
+    <div class="branch" data-b="e" style="margin-top:8px">
+      <div><span class="term">뺄 <span class="mk">→</span> 덧</span> : <span class="desc">a-b=c</span> <span class="mk">→</span></div>
+      <div class="bracket">
+        <div><span class="desc">a=b+c</span></div>
+        <div><span class="desc">a=c+b</span></div>
+      </div>
+    </div>
+  </div>
+  <svg width="11" height="126" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+  <div class="link" style="text-align:left">
+    <div><span class="mk">⇒</span> <span class="term">역관계</span></div>
+    <div class="sub">가역적 사고.</div>
+  </div>
+</div>
+</div>
+
+<h4 id="2)_미지수_포함_덧·뺄셈식"><a id="미지수_포함_덧·뺄셈식"></a><span class="num">2)</span> 미지수 포함 덧·뺄셈식</h4>
+<div class="ind2">
+<div class="row"><span class="mk">⇒</span><span class="desc">그림 보고 식 세우기</span></div>
+</div>
+
+<h4 id="3)_어림_(구성주의)"><a id="어림_(구성주의)"></a><a id="어림"></a><span class="num">3)</span> 어림 <span class="quiet">(구성주의)</span></h4>
+<div class="ind2">
+<div class="row"><span class="mk">⇒</span><span class="desc">결과 어림, 타당한지 확인 <span class="mk">→</span> 주로 조화수<span class="quiet">(계산 쉬운 수)</span> 사용. + 앞자리, 조정</span></div>
+<div class="branch" style="margin-top:8px">
+  <div><span class="term">대안 알고리즘</span></div>
+  <div class="fork"><div class="mkf">
+   <svg class="a1" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="10" y1="0" x2="1" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+   <svg class="a2" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="1" y1="0" x2="10" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+  </div><div class="stack">
+    <div><span class="desc">부분합</span></div>
+    <div><span class="desc">부분차</span></div>
+  </div></div>
+</div>
+</div>
+</section>
+<section class="pg" id="p28">
+<h2 id="수와_연산_-_자연수의_곱셈"><a id="자연수의_곱셈"></a>수와 연산 - 자연수의 곱셈</h2>
+
+<h3 id="1._곱셈의_의미와_실생활_상황"><a id="곱셈의_의미와_실생활_상황"></a><span class="num">1.</span> 곱셈의 의미와 실생활 상황</h3>
+
+<h4 id="1)_배경_지식"><span class="num">1)</span> 배경 지식</h4>
+<div class="ind2">
+<div><span class="term">곱셈의 의미</span></div>
+<div class="ind" style="margin-top:4px">
+<div class="converge">
+  <div class="bracket">
+    <div data-b="s"><span class="term">동수누가</span> : <span class="desc">같은 수 반복해서 더하기</span> <span class="quiet">— 도입</span></div>
+    <div data-b="e"><span class="term">배</span> : <span class="desc">한 양을 확대·축소하는 연산</span> <span class="quiet">— 본질</span></div>
+  </div>
+  <svg width="11" height="56" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+  <div class="link"><span class="mk">⇒</span> 곱하는 수 자연수 X면 불가능</div>
+</div>
+</div>
+
+<div style="margin-top:12px"><span class="term">곱셈 상황</span></div>
+<div class="ind" style="margin-top:4px">
+<div class="bracket">
+  <div><span class="term">묶음</span> : <span class="desc">같은 개수씩 묶은 집합의 크기</span></div>
+  <div><span class="term">배열</span> : <span class="desc">직사각형으로 묶음이 배열</span></div>
+  <div><span class="term">비교</span> : <span class="desc">집합의 크기 비교, A가 B의 n배</span></div>
+  <div><span class="term">비율</span> : <span class="desc">비율과 항목의 수가 정해졌을때 전체</span></div>
+  <div><span class="term">넓이</span> : <span class="desc">직사각형의 넓이 <span class="quiet">(5-1)</span></span></div>
+  <div><span class="term">조합</span> : <span class="desc">경우의 수 <span class="quiet">(중등)</span></span></div>
+</div>
+</div>
+
+<div style="margin-top:12px"><span class="term">곱셈 지도 모델</span></div>
+<div class="ind" style="margin-top:4px">
+<div class="bracket">
+  <div><span class="desc">묶음</span></div>
+  <div><span class="desc">배열</span></div>
+  <div><span class="desc">직선</span></div>
+  <div><span class="desc">조합</span></div>
+</div>
+</div>
+</div>
+
+<h3 id="2._곱셈구구와_한_자리_수_곱셈"><a id="곱셈구구와_한_자리_수_곱셈"></a><span class="num">2.</span> 곱셈구구와 한 자리 수 곱셈</h3>
+
+<h4 id="1)_배경지식"><span class="num">1)</span> 배경지식</h4>
+<div class="ind2">
+<div class="bracket">
+  <div><span class="term">교환법칙</span> : <span class="desc">a×b = b×a</span></div>
+  <div><span class="term">결합법칙</span> : <span class="desc">(a×b)×c = a×(b×c)</span></div>
+  <div><span class="term">분배법칙</span> : <span class="desc">a×(b+c) = a×b + a×c</span></div>
+  <div><span class="term">항등원</span> : <span class="desc">a×e = e×a = a, e=1</span></div>
+  <div><span class="term">0</span> : <span class="desc">동수누가에 의해 0×a = 0, 교환법칙에 의해 a×0 = 0</span></div>
+</div>
+</div>
+
+<h4 id="2)_각론"><span class="num">2)</span> 각론</h4>
+<div class="ind2">
+<div><span class="term">곱셈구구의 원리</span></div>
+<div class="ind" style="margin-top:4px">
+<div class="bracket">
+  <div><span class="term">동수누가</span> : <span class="desc">n씩 더하기</span></div>
+  <div><span class="term">규칙성</span> : <span class="desc">곱하는 수 1 늘어날 때마다 n 늘어남</span></div>
+</div>
+</div>
+
+<div style="margin-top:12px"><span class="term">1단 곱셈구구</span></div>
+<div class="ind">
+<div class="row"><span class="mk">⇒</span><span class="desc">항등원 이해</span></div>
+</div>
+
+<div style="margin-top:12px"><span class="term">0의 곱</span> <span class="quiet">(0×a = a×0 = 0)</span></div>
+
+<div style="margin-top:12px"><span class="term">곱셈표</span></div>
+<div class="ind">
+<div class="row"><span class="mk">⇒</span><span class="desc">곱셈의 교환법칙 이해</span></div>
+</div>
+</div>
+
+<h3 id="3._곱하는_수가_한_자리_수인_곱셈_⇒_곱해지는_수_조작"><a id="곱하는_수가_한_자리_수인_곱셈_⇒_곱해지는_수_조작"></a><span class="num">3.</span> 곱하는 수가 한 자리 수인 곱셈 <span class="quiet">⇒ 곱해지는 수 조작</span></h3>
+
+<h4 id="1)_배경지식__2"><span class="num">1)</span> 배경지식</h4>
+<div class="ind2">
+<div><span class="term">배열 모델을 이용한 곱셈 해결 전략</span> <span class="quiet">(ex. 22×3)</span></div>
+<div class="ind" style="margin-top:4px">
+<div class="bracket">
+  <div><span class="term">동수누가</span> : <span class="desc">22씩 세 번 더하기</span></div>
+  <div><span class="term">뛰어 세기</span> : <span class="desc">22, 44, 66으로 뛰어 세기</span></div>
+</div>
+</div>
+<div style="margin-top:12px"><span class="term">수분할을 통한 부분곱</span> : <span class="desc">자릿값에 대한 전개식으로 분해, 분배법칙 적용하여 부분곱</span></div>
+<div class="ind">
+<div class="desc">22×3 = (20+2)×3 = (20×3) + (2×3) = 60 + 6 = 66</div>
+</div>
+</div>
+
+<h4 id="2)_(몇십)_×_(몇)"><a id="(몇십)_×_(몇)"></a><a id="(몇십)_×"></a><span class="num">2)</span> (몇십) × (몇)</h4>
+<div class="ind2">
+<div><span class="term">계산 원리</span></div>
+<div class="ind">
+<div class="row"><span class="mk">⇒</span><span class="desc">곱해지는 수 몇십을 10×(몇)으로 바꾼 후 결합법칙</span></div>
+<div class="stack">
+  <div class="desc">20×3 = (10×2)×3 = 10×(2×3) = 10×6 = 60</div>
+  <div class="desc">곱해지는 수 10배 <span class="mk">→</span> 결과 10배임을 이해</div>
+</div>
+</div>
+<div style="margin-top:12px"><span class="term">알고리즘</span> <span class="mk">→</span> <span class="desc">(몇)×(몇) 뒤에 0 ~ 세로셈 X</span></div>
+</div>
+</section>
+<section class="pg" id="p29">
+<h4 id="3)_(몇십몇)_×_(몇),_(세_자리_수)_×_(한_자리_수)"><a id="(몇십몇)_×_(몇),_(세_자리_수)_×_(한_자리_수)"></a><a id="(몇십몇)_×_(몇),_(세_자리_수)_×"></a><span class="num">3)</span> (몇십몇) × (몇), (세 자리 수) × (한 자리 수)</h4>
+<div class="ind2">
+<div><span class="term">계산 원리</span></div>
+<div class="ind">
+<div class="stack">
+  <div class="desc">곱해지는 수를 자릿값에 대한 전개식으로 분해한 뒤 분배법칙 적용</div>
+  <div class="desc">33 × 2 = (30+3)×2 = (30×2) + (3×2) = 60 + 6 = 66</div>
+</div>
+</div>
+<div style="margin-top:12px"><span class="term">알고리즘</span></div>
+<div class="ind">
+<div class="stack">
+  <div><span class="term">세로셈 부분곱 알고리즘</span> : <span class="desc">세로셈으로 나타내고 각 자리에 맞춰 수를 쓴<span class="quiet">(이하 세로셈 표현)</span> 뒤 곱해지는 수 분해, 부분곱의 합</span></div>
+  <div><span class="term">세로셈 표준 알고리즘</span> : <span class="desc">세로셈 표현 뒤 곱해지는 수를 일의 자리부터 곱하고 결과 ≥ 10이면 바로 윗자리로 올림</span></div>
+</div>
+</div>
+</div>
+
+<h3 id="4._곱하는_수가_두_자리_수인_곱셈_⇒_곱하는_수_조작"><a id="곱하는_수가_두_자리_수인_곱셈_⇒_곱하는_수_조작"></a><span class="num">4.</span> 곱하는 수가 두 자리 수인 곱셈 <span class="quiet">⇒ 곱하는 수 조작</span></h3>
+
+<h4 id="1)_곱하는_수가_(몇십)"><a id="곱하는_수가_(몇십)"></a><a id="곱하는_수가"></a><span class="num">1)</span> 곱하는 수가 (몇십)</h4>
+<div class="ind2">
+<div><span class="term">계산 원리</span></div>
+<div class="ind">
+<div class="row"><span class="mk">⇒</span><span class="desc">곱하는 수 몇십을 10×(몇)으로 바꾼 후 교환법칙·결합법칙</span></div>
+<div class="stack">
+  <div class="desc">47 × 20 = 47 × (10 × 2) = 47 × (2 × 10) = (47 × 2) × 10 = 94 × 10 = 940</div>
+  <div class="desc">곱하는 수 10배 <span class="mk">→</span> 결과 10배임을 이해</div>
+</div>
+</div>
+<div style="margin-top:12px"><span class="term">알고리즘</span> <span class="mk">→</span> <span class="desc">(곱해지는 수)×(몇) 뒤에 0 ~ 세로셈 X</span></div>
+</div>
+
+<h4 id="2)_곱하는_수가_(몇십몇)"><a id="곱하는_수가_(몇십몇)"></a><span class="num">2)</span> 곱하는 수가 (몇십몇)</h4>
+<div class="ind2">
+<div><span class="term">계산 원리</span></div>
+<div class="ind">
+<div class="stack">
+  <div class="desc">곱하는 수를 자릿값에 대한 전개식으로 분해한 뒤 분배법칙 적용</div>
+  <div class="desc">17 × 35 = 17 × (30+5) = (17 × 30) + (17 × 5) = 510 + 85 = 595</div>
+</div>
+</div>
+<div style="margin-top:12px"><span class="term">알고리즘</span></div>
+<div class="ind">
+<div class="stack">
+  <div><span class="term">세로셈 부분곱 알고리즘</span> : <span class="desc">세로셈 표현 뒤 곱하는 수 분해, 부분곱의 합</span></div>
+  <div><span class="term">세로셈 표준 알고리즘</span> : <span class="desc">세로셈 표현 뒤 곱하는 수를 일의 자리부터 곱하고 결과 ≥ 10이면 바로 윗자리로 올림</span></div>
+</div>
+</div>
+</div>
+
+<h3 id="5._곱셈_오류_지도"><a id="곱셈_오류_지도"></a><span class="num">5.</span> 곱셈 오류 지도</h3>
+
+<h4 id="1)_자릿값_무시"><a id="자릿값_무시"></a><span class="num">1)</span> 자릿값 무시</h4>
+<div class="ind2">
+<div class="stack">
+  <div><span class="term">원인</span> : <span class="desc">자릿값 개념 형성 X</span></div>
+  <div><span class="term">지도</span> : <span class="desc">자릿값 의미 지도</span></div>
+</div>
+</div>
+
+<h4 id="2)_자릿값_위치가_정확하지_않음"><a id="자릿값_위치가_정확하지_않음"></a><span class="num">2)</span> 자릿값 위치가 정확하지 않음</h4>
+<div class="ind2">
+<div><span class="term">지도</span> : <span class="desc">보조선 사용</span></div>
+</div>
+
+<h4 id="3)_올림_계산_X"><a id="올림_계산_X"></a><span class="num">3)</span> 올림 계산 X</h4>
+<div class="ind2">
+<div class="stack">
+  <div><span class="term">원인</span> : <span class="desc">자릿값 이해 X, 올림 처리 오개념</span></div>
+  <div><span class="term">지도</span> : <span class="desc">곱한 결과가 10 이상이면 바로 윗자리로 올리도록 지도</span></div>
+</div>
+</div>
+</section>
+<section class="pg" id="p30">
+<h2 id="수와_연산_-_자연수의_나눗셈"><a id="자연수의_나눗셈"></a>수와 연산 - 자연수의 나눗셈</h2>
+
+<h3 id="1._나눗셈의_의미와_실생활_상황,_곱셈과_나눗셈의_관계"><a id="나눗셈의_의미와_실생활_상황,_곱셈과_나눗셈의_관계"></a><span class="num">1.</span> 나눗셈의 의미와 실생활 상황, 곱셈과 나눗셈의 관계</h3>
+
+<h4 id="1)_실생활_상황"><a id="실생활_상황"></a><span class="num">1)</span> 실생활 상황</h4>
+<div class="ind2">
+<div class="bracket">
+  <div><span class="term">등분제</span> : <span class="desc">묶음의 크기 상황</span></div>
+  <div><span class="term">포함제</span> : <span class="desc">묶음의 수 상황</span></div>
+</div>
+</div>
+
+<h4 id="2)_곱셈과_나눗셈의_관계_-_역연산_(가역)"><a id="곱셈과_나눗셈의_관계_-_역연산_(가역)"></a><a id="곱셈과_나눗셈의_관계_-_역연산"></a><span class="num">2)</span> 곱셈과 나눗셈의 관계 - 역연산 <span class="quiet">(가역)</span></h4>
+<div class="ind2">
+<div class="row"><span class="mk">⇒</span><span class="desc">곱셈식 하나를 포함제·등분제 두 상황으로 표현</span></div>
+<div class="row"><span class="mk">∴</span><span class="desc">한 상황을 곱셈·나눗셈으로 표현하여 지도</span></div>
+</div>
+
+<h3 id="2._나누는_수가_한_자리인_나눗셈"><a id="나누는_수가_한_자리인_나눗셈"></a><span class="num">2.</span> 나누는 수가 한 자리인 나눗셈</h3>
+
+<h4 id="1)_배경_지식__2"><span class="num">1)</span> 배경 지식</h4>
+<div class="ind2">
+<div><span class="term">분배법칙</span> <span class="mk">→</span> <span class="desc">피제수 분해만 가능</span></div>
+<div class="branch" style="margin-top:8px">
+  <div><span class="term">세로셈 알고리즘</span></div>
+  <div class="bracket">
+    <div><span class="desc">자릿값에 따라 전개 X, 적절한 몫이 나오도록 분할 <span class="quiet">; 84÷6 = (60÷6)+(24÷6)</span></span></div>
+    <div><span class="desc">왼쪽<span class="quiet">(높은 자리)</span>부터</span></div>
+    <div><span class="desc">어림을 통한 잠정 몫 사용</span></div>
+  </div>
+</div>
+</div>
+
+<h4 id="2)_피제수_(몇십)"><a id="피제수_(몇십)"></a><a id="피제수"></a><span class="num">2)</span> 피제수 (몇십)</h4>
+<div class="ind2">
+<div><span class="term">계산 원리</span></div>
+<div class="ind">
+<div class="desc">(몇십) <span class="mk">→</span> 10×(몇), 결합법칙 <span class="quiet">(제수는 분수 곱셈으로)</span></div>
+</div>
+<div style="margin-top:12px"><span class="term">알고리즘</span></div>
+<div class="ind">
+<div class="desc">(몇)÷(몇)에 0 붙임, 세로셈 X</div>
+</div>
+</div>
+
+<h4 id="3)_피제수_(몇십몇)"><a id="피제수_(몇십몇)"></a><span class="num">3)</span> 피제수 (몇십몇)</h4>
+<div class="ind2">
+<div><span class="term">계산 원리</span></div>
+<div class="ind">
+<div class="desc">피제수 분할 후 분배법칙</div>
+</div>
+<div style="margin-top:12px"><span class="term">알고리즘</span> : <span class="desc">세로셈 표준</span></div>
+<div><span class="term">나머지</span> : <span class="desc">분수·소수 범위에서는 나머지 X, 몫 변화</span></div>
+</div>
+
+<div class="ind" style="margin-top:20px">
+<div class="desc">이하 동일 내용 반복으로 생략</div>
+<div class="row" style="margin-top:6px"><span class="term">혼합 계산</span> <span class="mk">→</span> <span class="desc">5~6학년군, 계산 순서 지도</span></div>
+</div>
+</section>
+<section class="pg" id="p31">
+<h2 id="수와_연산_-_분수"><a id="분수"></a>수와 연산 - 분수</h2>
+
+<h3 id="1._배경지식"><span class="num">1.</span> 배경지식</h3>
+
+<h4 id="1)_분수의_의미"><a id="분수의_의미"></a><span class="num">1)</span> 분수의 의미</h4>
+<div class="ind2">
+<div class="bracket">
+  <div><span class="term">전체-부분</span> : <span class="desc">전체 m부분중 n부분의 크기 <span class="quiet">; 이산·연속 상황 가능, 주로 진분수 지도</span></span></div>
+  <div><span class="term">측정</span> : <span class="desc">전체 단위 등분해 보조 단위, 측정값 <span class="quiet">; 연속 상황, 가분수 지도</span></span>
+    <div class="note">분수 맥락에서 등분할 = 크기 뿐 아니라 모양도 같게 분할</div>
+  </div>
+  <div><span class="term">몫</span> : <span class="desc">나눗셈의 몫</span></div>
+  <div><span class="term">비율</span></div>
+  <div><span class="term">연산자</span></div>
+</div>
+</div>
+
+<h4 id="2)_분수_지도_모델"><a id="분수_지도_모델"></a><span class="num">2)</span> 분수 지도 모델</h4>
+<div class="ind2">
+<div class="bracket">
+  <div><span class="term">영역 모델</span> : <span class="desc">영역<span class="quiet">(전체)</span>, 합동인 도형<span class="quiet">(부분)</span>으로 <span class="mk">⇒</span> 기준에 따라 각 도형이 나타내는 분수 바뀜</span></div>
+  <div><span class="term">넓이 모델</span> : <span class="desc">모양 무관, 같은 넓이로 분할</span></div>
+  <div><span class="term">길이 모델</span> : <span class="desc">기준에 따라 각 길이가 나타내는 분수 바뀜</span></div>
+  <div><span class="term">집합 모델</span> : <span class="desc">이산량</span></div>
+</div>
+</div>
+
+<h3 id="2._양의_등분할"><a id="양의_등분할"></a><span class="num">2.</span> 양의 등분할</h3>
+
+<h4 id="1)_전체에_대한_부분_→_분수"><a id="전체에_대한_부분_→_분수"></a><span class="num">1)</span> 전체에 대한 부분 <span class="mk">→</span> 분수</h4>
+<div class="ind2">
+<div class="row"><span class="term">분모</span> : <span class="desc">묶음·분할 수</span> <span class="mk">/</span> <span class="term">분자</span> : <span class="desc">색칠·선택</span></div>
+</div>
+
+<h4 id="2)_전체에_대한_분수_→_부분"><a id="전체에_대한_분수_→_부분"></a><span class="num">2)</span> 전체에 대한 분수 <span class="mk">→</span> 부분</h4>
+<div class="ind2">
+<div class="row"><span class="term">전체</span> : <span class="desc">분모로 등분</span> <span class="mk">/</span> <span class="term">부분</span> : <span class="desc">분자만큼 묶음</span></div>
+</div>
+
+<h3 id="3._분수의_분류"><a id="분수의_분류"></a><span class="num">3.</span> 분수의 분류</h3>
+
+<h4 id="1)_단위분수_=_분자가_1"><a id="단위분수_=_분자가_1"></a><span class="num">1)</span> 단위분수 = 분자가 1</h4>
+
+<h4 id="2)_진분수_/_가분수_/_대분수"><a id="진분수_/_가분수_/_대분수"></a><span class="num">2)</span> 진분수 / 가분수 / 대분수</h4>
+<div class="ind2">
+<div class="branch">
+  <div><span class="mk">⇒</span> <span class="desc">분모 &gt; 분자?</span></div>
+  <div class="bracket">
+    <div><span class="term">Y</span> : <span class="desc">진</span></div>
+    <div>
+      <div class="branch">
+        <div><span class="term">N</span> : <span class="desc">자연수 분리?</span></div>
+        <div class="bracket">
+          <div><span class="term">Y</span> : <span class="desc">대</span></div>
+          <div><span class="term">N</span> : <span class="desc">가</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<h3 id="4._분모가_같은_분수의_비교"><a id="분모가_같은_분수의_비교"></a><span class="num">4.</span> 분모가 같은 분수의 비교</h3>
+
+<h4 id="1)_단위분수,_진분수,_가분수,_대분수"><a id="단위분수,_진분수,_가분수,_대분수"></a><span class="num">1)</span> 단위분수, 진분수, 가분수, 대분수</h4>
+<div class="ind2">
+<div class="desc">분수 크기 비교에 전체 다르면 오개념 생길 수 있으니 유의</div>
+</div>
+
+<h3 id="5._크기가_같은_분수_만들기,_약분·통분"><a id="크기가_같은_분수_만들기,_약분·통분"></a><span class="num">5.</span> 크기가 같은 분수 만들기, 약분·통분</h3>
+
+<h4 id="1)_배경지식__3"><span class="num">1)</span> 배경지식</h4>
+<div class="ind2">
+<div><span class="term">크기가 같은 분수</span> <span class="quiet">(= 동치 분수)</span></div>
+<div class="ind" style="margin-top:4px">
+<div class="branch">
+  <div><span class="term">의미</span> :</div>
+  <div class="stack">
+    <div class="desc">전체 고정 - 같은 양</div>
+    <div class="desc">전체 변화 - 같은 비율</div>
+  </div>
+</div>
+<div class="branch" style="margin-top:8px">
+  <div><span class="term">방법</span> :</div>
+  <div class="stack">
+    <div class="desc">분모가 크게 - 재귀적 분할</div>
+    <div class="desc">분모가 작게 - 칸끼리 묶음</div>
+  </div>
+</div>
+</div>
+</div>
+
+<h4 id="2)_각론__2"><span class="num">2)</span> 각론</h4>
+<div class="ind2">
+<div class="stack">
+  <div><span class="term">약분</span> : <span class="desc">분모와 분자를 1이 아닌 공약수로 나눔 <span class="quiet">(기약분수 = 더 이상 약분 x)</span></span></div>
+  <div><span class="term">통분</span> : <span class="desc">분모가 같게 <span class="quiet">(= 공통분모)</span> 분모끼리 곱하거나 최소공배수로</span></div>
+</div>
+</div>
+
+<h3 id="5._분모가_다른_분수의_크기_비교"><a id="분모가_다른_분수의_크기_비교"></a><span class="num">5.</span> 분모가 다른 분수의 크기 비교</h3>
+
+<h4 id="1)_각론"><span class="num">1)</span> 각론</h4>
+<div class="ind2">
+<div><span class="term">통분의 필요성</span></div>
+<div class="ind">
+<div class="row"><span class="mk">⇒</span><span class="desc">분수의 단위는 분모가 결정하므로 단위를 같게 하기 위해</span></div>
+</div>
+</div>
+</section>
+<section class="pg" id="p32">
+<h2 id="수와_연산_-_분수의_덧셈·뺄셈"><a id="분수의_덧셈·뺄셈"></a>수와 연산 - 분수의 덧셈·뺄셈</h2>
+
+<h3 id="1._분모가_같은_진분수의_덧셈·뺄셈"><a id="분모가_같은_진분수의_덧셈·뺄셈"></a><span class="num">1.</span> 분모가 같은 진분수의 덧셈·뺄셈</h3>
+
+<h4 id="1)_(진분수)_+_(진분수)"><a id="(진분수)_+_(진분수)"></a><a id="(진분수)_+"></a><span class="num">1)</span> (진분수) + (진분수)</h4>
+<div class="ind2">
+<div><span class="term">계산 원리</span> : <span class="desc">단위분수 변환 <span class="mk">→</span> 분배법칙의 역 <span class="quiet">(∵ 분모가 같은 분수 덧셈 = 단위분수 개수의 합)</span></span></div>
+<div class="ind">
+<div class="desc">e.g. 2/6 + 3/6 = 1/6 × 2 + 1/6 × 3 = 1/6 × (2+3) = (2+3)/6 <span class="quiet">(<span class="mk">→</span> 계산 알고리즘)</span> = 5/6</div>
+</div>
+</div>
+
+<h4 id="2)_받아올림_있는_(대분수)_+_(대분수)"><a id="받아올림_있는_(대분수)_+_(대분수)"></a><a id="받아올림_있는_(대분수)_+"></a><span class="num">2)</span> 받아올림 있는 (대분수) + (대분수)</h4>
+<div class="ind2">
+<div class="converge">
+  <div class="stack">
+    <div data-b="s">
+      <div class="desc">자연수 부분 / 진분수 부분으로 나누어 계산</div>
+      <div class="ind"><div class="row"><span class="mk">⇒</span><span class="term">모델</span> : <span class="desc">'1'이 되는 모델 등분할 X</span></div></div>
+    </div>
+    <div data-b="e" style="margin-top:8px">
+      <div class="desc">가분수로 바꾸어 계산</div>
+      <div class="ind"><div class="row"><span class="mk">⇒</span><span class="term">모델</span> : <span class="desc">모든 영역을 분모로 등분할</span></div></div>
+    </div>
+  </div>
+  <svg width="11" height="118" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+  <div class="link">대분수는 항상 이 두 가지로 나뉨</div>
+</div>
+</div>
+
+<h4 id="3)_유의점"><span class="num">3)</span> 유의점</h4>
+<div class="ind2">
+<div class="desc">약분은 5~6학년군 내용이나 결과 기약분수 표현 강제 X</div>
+</div>
+
+<h4 id="4)_오류"><a id="오류"></a><span class="num">4)</span> 오류</h4>
+<div class="ind2">
+<div><span class="term">분모끼리, 분자끼리 더하는 오류</span></div>
+<div class="ind" style="margin-top:4px">
+<div class="bracket">
+  <div><span class="term">원인</span> : <span class="desc">분모·분자 의미 이해 X, 영역 모델 1개 크기 = 1 이해 X</span></div>
+  <div><span class="term">인지적 갈등</span> : <span class="desc">어림 활용</span></div>
+  <div><span class="term">지도</span> : <span class="desc">알고리즘, 구체물 조작</span></div>
+</div>
+</div>
+
+<div style="margin-top:12px"><span class="term">1을 분수로 잘못 바꾸는 오류</span></div>
+<div class="ind" style="margin-top:4px">
+<div class="bracket">
+  <div><span class="term">원인</span> : <span class="desc">자연수 받아내림</span></div>
+  <div><span class="term">지도</span> : <span class="desc">1을 크기가 같은 분수 여럿으로</span></div>
+</div>
+</div>
+</div>
+
+<h3 id="2._분모가_다른_진분수의_덧셈·뺄셈"><a id="분모가_다른_진분수의_덧셈·뺄셈"></a><span class="num">2.</span> 분모가 다른 진분수의 덧셈·뺄셈</h3>
+
+<h4 id="1)_(진분수)_+_(진분수)__2"><span class="num">1)</span> (진분수) + (진분수)</h4>
+<div class="ind2">
+<div class="stack">
+  <div><span class="term">조작 활동</span> <span class="mk">→</span> <span class="desc">재귀적 분할</span></div>
+  <div><span class="term">통분</span> <span class="mk">⇒</span> <span class="desc">분수의 단위는 분모가 결정하므로 단위 통일</span></div>
+  <div><span class="term">공통분모</span> <span class="mk">→</span> <span class="desc">LCM, 분모의 곱 등 방법 가능</span></div>
+</div>
+</div>
+
+<h4 id="2)_유의점"><span class="num">2)</span> 유의점</h4>
+<div class="ind2">
+<div class="desc">결과 약분 가능</div>
+</div>
+
+<h4 id="3)_오류"><span class="num">3)</span> 오류</h4>
+<div class="ind2">
+<div><span class="term">분모끼리, 분자끼리 더하는 오류</span></div>
+<div class="ind" style="margin-top:4px">
+<div class="bracket">
+  <div><span class="term">원인</span> : <span class="desc">분모·분자 의미 이해 X, 분모가 같은 분수의 덧셈 계산 방법 이해 X <span class="quiet">(cf. 동분모 오류 원인)</span></span></div>
+  <div><span class="desc">이하는 동분모와 같음</span></div>
+</div>
+</div>
+</div>
+</section>
+<section class="pg" id="p33">
+<h2 id="수와_연산_-_분수의_곱셈"><a id="분수의_곱셈"></a><a id="곱셈_상황과_단위"></a>수와 연산 - 분수의 곱셈</h2>
+
+<h3 id="1._배경지식__2"><span class="num">1.</span> 배경지식</h3>
+
+<h4 id="1)_분수의_곱셈_상황"><a id="분수의_곱셈_상황"></a><span class="num">1)</span> 분수의 곱셈 상황</h4>
+<div class="ind2">
+<div class="bracket">
+  <div><span class="term">묶음</span> : <span class="desc">동수누가, 승수 = 자연수 <span class="quiet">(주로 분수 × 자연수)</span></span></div>
+  <div><span class="term">비율</span> : <span class="desc">배, 승수 ≠ 자연수 <span class="quiet">(주로 자연수 × 분수)</span></span></div>
+  <div><span class="term">넓이</span> : <span class="desc">넓이 단위 사용 <span class="quiet">(주로 분수 × 분수)</span></span></div>
+</div>
+</div>
+
+<h4 id="2)_단위의_재개념화"><a id="단위의_재개념화"></a><span class="num">2)</span> 단위의 재개념화</h4>
+<div class="ind2">
+<div class="row"><span class="mk">⇒</span><span class="desc">기준량 변화</span></div>
+</div>
+
+<h3 id="2._(분수)_×_(자연수)_⇒_동수누가"><a id="(분수)_×_(자연수)_⇒_동수누가"></a><span class="num">2.</span> (분수) × (자연수) <span class="quiet">⇒ 동수누가</span></h3>
+
+<h4 id="1)_대분수_×_자연수"><a id="대분수_×_자연수"></a><span class="num">1)</span> 대분수 × 자연수</h4>
+<div class="ind2">
+<div><span class="term">오류</span> : <span class="desc">대분수를 가분수 표현 전에 약분</span></div>
+</div>
+
+<h3 id="3._(자연수)_×_(분수)"><a id="(자연수)_×_(분수)"></a><a id="(자연수)_×"></a><span class="num">3.</span> (자연수) × (분수)</h3>
+<div class="converge">
+  <div class="stack">
+    <h4 id="1)_자연수가_분모의_배수"><a id="자연수가_분모의_배수"></a><span class="num">1)</span> 자연수가 분모의 배수</h4>
+    <div class="ind2" data-b="s"><div><span class="term">조작</span> : <span class="desc">자연수를 분모로 등분할 <span class="mk">→</span> 분자만큼</span></div></div>
+    <h4 id="2)_자연수가_분모의_배수_X"><a id="자연수가_분모의_배수_X"></a><span class="num">2)</span> 자연수가 분모의 배수 X</h4>
+    <div class="ind2" data-b="e"><div><span class="term">조작</span> : <span class="desc">자연수를 1로 분할 - 분모로 등분할</span></div></div>
+  </div>
+  <svg width="11" height="100" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+  <div class="link">비교</div>
+</div>
+
+<h3 id="4._(분수)_×_(분수)"><a id="(분수)_×_(분수)"></a><a id="(분수)_×"></a><span class="num">4.</span> (분수) × (분수)</h3>
+
+<h4 id="1)_(진분수)_×_(진분수)_-_비율_상황_(4/5_×_2/3)"><a id="(진분수)_×_(진분수)_-_비율_상황_(4/5_×_2/3)"></a><a id="(진분수)_×_(진분수)_-_비율_상황"></a><span class="num">1)</span> (진분수) × (진분수) - 비율 상황 <span class="quiet">(4/5 × 2/3)</span></h4>
+<div class="ind2">
+<div><span class="term">조작</span> : <span class="desc">주차장 전체 넓이를 5로 나눈 것 중 4개 <span class="mk">→</span> 색칠한 부분을 3으로 나눈 것 중 2개 <span class="mk">→</span> 표시한 부분은 전체 5×3칸 중 4×2칸 <span class="mk">→</span> 4×2/5×3 = 8/15</span></div>
+<div class="note">조작 세 단계 아래에 기준량이 각각 적혀 있다 — 「5로 나눈 것 중 4개」 아래 (기준 : 1), 「3으로 나눈 것 중 2개」 아래 (기준 : 4/5), 「5×3칸 중 4×2칸」 아래 (기준 : 1). 앞의 두 기준을 잇는 긴 선 위에 「단위의 재개념화」가 적혀 있다</div>
+</div>
+
+<h4 id="2)_(진분수)_×_(진분수)_-_넓이_상황_(4/5_×_2/3)"><a id="(진분수)_×_(진분수)_-_넓이_상황_(4/5_×_2/3)"></a><a id="(진분수)_×_(진분수)_-_넓이_상황"></a><span class="num">2)</span> (진분수) × (진분수) - 넓이 상황 <span class="quiet">(4/5 × 2/3)</span></h4>
+<div class="ind2">
+<div><span class="term">조작</span> : <span class="desc">1칸의 넓이 = 1/5 × 1/3 = 1/15, 가로 4/5, 세로 2/3인 직사각형은 단위 넓이 가로 4칸, 세로 2칸 <span class="quiet">; 4×2 = 8칸</span> <span class="mk">→</span> 1/15 × 8 = 8/15</span></div>
+<div class="quiet">(선수학습 : 단위분수의 곱셈)</div>
+</div>
+
+<h3 id="5._세_분수의_곱셈"><a id="세_분수의_곱셈"></a><span class="num">5.</span> 세 분수의 곱셈</h3>
+<div class="ind">
+<div class="row"><span class="mk">⇒</span><span class="desc">결합법칙 이해</span></div>
+</div>
+</section>
+<section class="pg" id="p34">
+<h2 id="수와_연산_-_분수의_나눗셈"><a id="분수의_나눗셈"></a>수와 연산 - 분수의 나눗셈</h2>
+
+<h3 id="1._배경지식__3"><span class="num">1.</span> 배경지식</h3>
+
+<h4 id="1)_나눗셈_몫의_범위_확장"><a id="나눗셈_몫의_범위_확장"></a><span class="num">1)</span> 나눗셈 몫의 범위 확장</h4>
+<div class="ind2">
+<div class="desc">자연수 <span class="mk">→</span> 분·소수</div>
+</div>
+
+<h4 id="2)_분수의_나눗셈_상황"><a id="분수의_나눗셈_상황"></a><span class="num">2)</span> 분수의 나눗셈 상황</h4>
+<div class="ind2">
+<div class="stack">
+  <div><span class="term">포함제</span> <span class="mk">⇒</span> <span class="desc">나눈 몫이 자연수 <span class="quiet">(동수누감)</span></span></div>
+  <div><span class="term">등분제</span> <span class="mk">⇒</span> <span class="desc">나누는 수가 자연수</span></div>
+  <div><span class="term">곱의 역</span> <span class="mk">⇒</span> <span class="desc">곱셈식 중 승수·피승수 미지수</span></div>
+  <div><span class="term">카테시안 곱의 역</span> <span class="mk">⇒</span> <span class="desc">곱의 역 상황 中 단위 바뀌는 것 <span class="quiet">(길이 × 길이 = 넓이 등)</span></span></div>
+  <div><span class="term">단위 비율 결정</span> <span class="mk">⇒</span> <span class="desc">기본 단위에 해당하는 비율 구하기 상황</span></div>
+</div>
+</div>
+
+<h3 id="2._(자연수)_÷_(자연수)"><a id="(자연수)_÷_(자연수)"></a><a id="(자연수)_÷"></a><span class="num">2.</span> (자연수) ÷ (자연수)</h3>
+
+<h4 id="1)_몫_&lt;_1"><a id="몫_&lt;_1"></a><span class="num">1)</span> 몫 &lt; 1</h4>
+<div class="ind2">
+<div class="desc">등분제 상황으로 지도</div>
+</div>
+
+<h4 id="2)_몫_&gt;_1"><a id="몫_&gt;_1"></a><span class="num">2)</span> 몫 &gt; 1</h4>
+<div class="ind2">
+<div class="converge">
+  <div class="bracket">
+    <div data-b="s"><span class="desc">4÷3 = 3과 3/3 ÷ 3</span></div>
+    <div data-b="e"><span class="desc">4÷3 = 12/3 ÷ 3</span></div>
+  </div>
+  <svg width="11" height="56" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+  <div class="link">등분제</div>
+</div>
+</div>
+
+<h3 id="3._(분수)_÷_(자연수)"><a id="(분수)_÷_(자연수)"></a><a id="(분수)_÷"></a><span class="num">3.</span> (분수) ÷ (자연수)</h3>
+
+<h4 id="1)_분자가_제수의_배수"><a id="분자가_제수의_배수"></a><span class="num">1)</span> 분자가 제수의 배수</h4>
+<div class="ind2">
+<div class="row"><span class="mk">⇒</span><span class="desc">등분할하여 단위분수 <span class="mk">→</span> 갯수 나누기</span></div>
+</div>
+
+<h4 id="2)_분자가_제수의_배수_X"><a id="분자가_제수의_배수_X"></a><span class="num">2)</span> 분자가 제수의 배수 X</h4>
+<div class="ind2">
+<div class="row"><span class="mk">⇒</span><span class="desc">분자가 제수의 배수가 되도록 분할 <span class="quiet">(재귀적 분할)</span></span></div>
+</div>
+
+<h4 id="3)_분수의_곱셈으로_나타내기"><a id="분수의_곱셈으로_나타내기"></a><span class="num">3)</span> 분수의 곱셈으로 나타내기</h4>
+<div class="ind2">
+<div class="row"><span class="mk">⇒</span><span class="term">이유</span> : <span class="desc">m으로 나눈 것 중 하나 = m 등분한 것 중 1 <span class="quiet">(<span class="mk">→</span> 단위의 재개념화)</span> = 1/m 이므로 b/a ÷ m은 b/a의 1/m배, 따라서 b/a ÷ m = b/a × 1/m</span></div>
+</div>
+
+<div style="margin-top:20px"><span class="term">유의</span> : <span class="desc">'곱셈과 나눗셈의 관계' 나오면 일단 역연산 서술</span></div>
+
+<h3 id="4._분수의_나눗셈_상황_순서도_(cf._카테시안_곱의_역_→_조작활동_X,_계산만)"><a id="분수의_나눗셈_상황_순서도_(cf._카테시안_곱의_역_→_조작활동_X,_계산만)"></a><a id="분수의_나눗셈_상황_순서도"></a><span class="num">4.</span> 분수의 나눗셈 상황 순서도 <span class="quiet">(cf. 카테시안 곱의 역 → 조작활동 X, 계산만)</span></h3>
+<div class="ind">
+<div class="wide"><div class="branch">
+  <div><span class="term">제수 ∈ N ?</span></div>
+  <div class="bracket">
+    <div><span class="term">Y</span> : <span class="desc">등분제</span></div>
+    <div>
+      <div class="branch">
+        <div><span class="term">몫 ∈ N ?</span></div>
+        <div class="bracket">
+          <div><span class="term">Y</span> : <span class="desc">포함제</span></div>
+          <div>
+            <div class="branch">
+              <div><span class="term">통분 후 분자끼리 나누기 ?</span></div>
+              <div class="bracket">
+                <div><span class="term">Y</span> : <span class="desc">곱셈의 역</span> <span class="mk">⇒</span> <span class="desc">이중 척도 모델 사용</span></div>
+                <div><span class="desc">제수의 역수 곱하기 - 단위 비율 결정</span> <span class="mk">⇒</span> <span class="desc">이중 수직선 모델 사용</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+</div>
+</section>
+<section class="pg" id="p35">
+<h2 id="수와_연산_-_소수"><a id="소수"></a>수와 연산 - 소수</h2>
+
+<h3 id="1._배경지식__4"><span class="num">1.</span> 배경지식</h3>
+
+<h4 id="1)_소수의_개념"><a id="소수의_개념"></a><span class="num">1)</span> 소수의 개념</h4>
+<div class="ind2">
+<div class="bracket">
+  <div><span class="term">십진 분수</span> : <span class="desc">분모가 10ⁿ인 분수의 표현</span></div>
+  <div><span class="desc">십진 위치적 기수법의 완성</span></div>
+</div>
+</div>
+
+<h4 id="2)_소수의_유형"><a id="소수의_유형"></a><span class="num">2)</span> 소수의 유형</h4>
+<div class="ind2">
+<div class="cols n2 fit">
+  <div class="fork"><div class="mkf">
+   <svg class="a1" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="10" y1="0" x2="1" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+   <svg class="a2" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="1" y1="0" x2="10" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+  </div><div class="stack">
+    <div><span class="term">순소수</span> : <span class="desc">정수부 = 0</span></div>
+    <div><span class="term">대소수</span> : <span class="desc">정수부 ≠ 0</span></div>
+  </div></div>
+  <div class="fork"><div class="mkf">
+   <svg class="a1" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="10" y1="0" x2="1" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+   <svg class="a2" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="1" y1="0" x2="10" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
+  </div><div class="stack">
+    <div><span class="term">유한소수</span> : <span class="desc">0이 아닌 숫자가 유한 번 반복</span></div>
+    <div><span class="term">무한소수</span> : <span class="desc">0이 아닌 숫자가 무한 번 반복</span></div>
+  </div></div>
+</div>
+</div>
+
+<h4 id="3)_지도_모델"><a id="지도_모델"></a><span class="num">3)</span> 지도 모델</h4>
+<div class="ind2">
+<div class="bracket">
+  <div><span class="desc">영역</span></div>
+  <div><span class="desc">길이</span></div>
+  <div>
+    <div class="branch">
+      <div><span class="desc">부피</span></div>
+      <div class="bracket">
+        <div><span class="desc">소수 모형</span></div>
+        <div><span class="desc">자릿값 모형</span> <span class="mk">⇒</span> <span class="desc">크기 재정의</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<h3 id="2._각론__2"><span class="num">2.</span> 각론</h3>
+
+<h4 id="1)_단위소수_:_각_자리의_단위가_되는_소수"><a id="단위소수_:_각_자리의_단위가_되는_소수"></a><span class="num">1)</span> 단위소수 : 각 자리의 단위가 되는 소수</h4>
+<div class="ind2">
+<div class="row"><span class="mk">⇒</span><span class="term">오개념</span> : <span class="desc">단위소수 × 10 관련 <span class="quiet">(0.1 × 10 = 0.10)</span></span></div>
+</div>
+
+<h4 id="2)_소수의_크기_비교"><a id="소수의_크기_비교"></a><span class="num">2)</span> 소수의 크기 비교</h4>
+<div class="ind2">
+<div><span class="term">영역 모델 사용</span> <span class="mk">⇒</span> <span class="desc">영역 1칸이 단위소수 <span class="quiet">(0.60 = 0.01 × 60)</span></span></div>
+<div class="ind">
+<div class="row"><span class="mk">⇒</span><span class="term">오개념</span> <span class="quiet">;</span> <span class="desc">길이가 긴 소수가 크다 <span class="quiet">(0.28 &gt; 0.3)</span></span></div>
+<div class="sub">자릿값 이해 X</div>
+</div>
+</div>
+</section>
+<section class="pg" id="p36">
+<h2 id="수와_연산_-_소수의_사칙연산"><a id="소수의_사칙연산"></a>수와 연산 - 소수의 사칙연산</h2>
+
+<h3 id="1._소수의_덧셈과_뺄셈"><a id="소수의_덧셈과_뺄셈"></a><span class="num">1.</span> 소수의 덧셈과 뺄셈</h3>
+
+<h4 id="1)_계산_원리__2"><span class="num">1)</span> 계산 원리</h4>
+<div class="ind2">
+<div class="row"><span class="mk">⇒</span><span class="desc">단위소수의 개수로 바꾼 뒤 분배법칙의 역</span></div>
+</div>
+
+<h4 id="2)_알고리즘"><a id="알고리즘"></a><span class="num">2)</span> 알고리즘</h4>
+<div class="ind2">
+<div><span class="term">세로셈</span></div>
+<div class="ind">
+<div class="row"><span class="mk">⇒</span><span class="desc">소수점끼리 맞추어 세로로 <span class="mk">→</span> 같은 자리끼리 더하기·빼기 <span class="mk">→</span> 결과에 소수점 그대로 내려 찍기</span></div>
+</div>
+</div>
+
+<h4 id="3)_보충_지도"><a id="보충_지도"></a><span class="num">3)</span> 보충 지도</h4>
+<div class="ind2">
+<div><span class="term">받아내림 이해 X</span> <span class="mk">⇒</span> <span class="desc">수직선으로 지도 <span class="quiet">(≒ 자연수)</span></span></div>
+</div>
+
+<h4 id="4)_오류__2"><span class="num">4)</span> 오류</h4>
+<div class="ind2">
+<div class="stack">
+  <div><span class="term">덧셈</span> : <span class="desc">오른쪽 끝을 맞추어 계산 <span class="mk">⇒</span> 오른쪽 끝자리에 0 붙이고 자릿수 맞추어 계산</span></div>
+  <div><span class="term">뺄셈</span> : <span class="desc">빼야 할 수를 그대로 내려 씀 <span class="mk">⇒</span> 오른쪽 끝자리에 0 붙이고 자릿수 맞추어 계산</span></div>
+</div>
+</div>
+
+<h3 id="2._소수의_곱셈"><a id="소수의_곱셈"></a><span class="num">2.</span> 소수의 곱셈</h3>
+
+<h4 id="1)_계산_원리__3"><span class="num">1)</span> 계산 원리</h4>
+<div class="ind2">
+<div class="row"><span class="mk">⇒</span><span class="desc">분모가 10의 거듭제곱인 분수의 곱셈으로 표현하여 지도</span></div>
+<div class="ind">
+<div class="desc">e.g. 0.7 <span class="quiet">(7×1/10)</span> × 0.5 <span class="quiet">(5×1/10)</span> = 7/10 × 5/10 = (7×5)/(10×10) = 35/100 = 0.35</div>
+<div class="ind" style="margin-top:6px">
+<div class="converge">
+  <div class="stack">
+    <div data-b="s"><span class="num">①</span> <span class="desc">7×5의 1/100배가 됨</span></div>
+    <div data-b="e"><span class="num">②</span> <span class="desc">피승수·승수가 각각 1/10배 <span class="mk">⇒</span> 결과가 1/100</span></div>
+  </div>
+  <svg width="11" height="56" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+  <div class="link"><span class="mk">→</span> 이 사실 이해하도록 지도</div>
+</div>
+</div>
+</div>
+</div>
+
+<h4 id="2)_알고리즘__2"><span class="num">2)</span> 알고리즘</h4>
+<div class="ind2">
+<div class="row"><span class="mk">⇒</span><span class="desc">소수점 무시하고 자연수 곱셈 계산 <span class="mk">→</span> 승수·피승수 소수점 아래 자리의 수의 합만큼 곱한 결과의 소수점 왼쪽으로 옮겨 찍기</span></div>
+</div>
+
+<h3 id="3._제수가_자연수인_소수의_나눗셈"><a id="제수가_자연수인_소수의_나눗셈"></a><span class="num">3.</span> 제수가 자연수인 소수의 나눗셈</h3>
+
+<h4 id="1)_계산_원리__4"><span class="num">1)</span> 계산 원리</h4>
+<div class="ind2">
+<div class="row"><span class="mk">⇒</span><span class="desc">분모가 10의 거듭제곱인 분수의 나눗셈으로 표현하여 지도 <span class="quiet">; 분자가 나누어떨어지지 않을 때도 분모가 10ⁿ인 동치분수로 바꾸어야 다시 소수 변환이 편리</span></span></div>
+<div class="ind">
+<div class="desc">e.g. 4.2 <span class="quiet">(42×1/10)</span> ÷ 6 = 42/10 ÷ 6 = (42÷6)/10 = 7/10 = 0.7</div>
+<div class="ind"><div class="row"><span class="num">①</span><span class="desc">피제수가 1/10배 <span class="mk">⇒</span> 몫도 1/10배</span></div></div>
+</div>
+</div>
+
+<h4 id="2)_알고리즘__3"><span class="num">2)</span> 알고리즘</h4>
+<div class="ind2">
+<div class="branch">
+  <div class="row"><span class="mk">⇒</span><span class="desc">자연수 나눗셈처럼 소수로 계산</span></div>
+  <div class="bracket">
+    <div><span class="desc">나누어떨어지지 X - 피제수에 0 붙여 계산</span></div>
+    <div><span class="desc">몫의 소수점 - 피제수의 자연수부 바로 뒤에서 옮겨 적음</span></div>
+    <div><span class="desc">몫의 자연수부가 비어 있음 - 일의 자리에 0 쓰기</span></div>
+  </div>
+</div>
+</div>
+
+<h4 id="3)_(자연수)_÷_(자연수)_-_수_모형"><a id="(자연수)_÷_(자연수)_-_수_모형"></a><span class="num">3)</span> (자연수) ÷ (자연수) - 수 모형</h4>
+<div class="ind2">
+<div class="desc">e.g. 3 ÷ 4 = (2.8 + 0.2) ÷ 4 = 0.7 + 0.05 = 0.75</div>
+<div class="row" style="margin-top:6px"><span class="mk">⇒</span><span class="term">지도</span> : <span class="desc">3 = 백 모형 3개 <span class="mk">→</span> 4로 나눌 수 X, 십 모형 30개<span class="quiet">(백 모형이 모두 분해 ⇒ 일의 자리가 0)</span> <span class="mk">→</span> 4로 나누면 7 … 2 <span class="mk">→</span> 낱개 모형 20개 <span class="mk">→</span> 4로 나누면 5개</span></div>
+</div>
+</section><p class="foot"><a href="1.국어.html">← 1.국어</a> · <a href="index.html">목록</a> · <a href="3.영어.html">3.영어 →</a></p></main>
+<script src="kit.js"></script>

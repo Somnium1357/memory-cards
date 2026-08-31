@@ -1,0 +1,84 @@
+<h2>수와 연산 - 분수의 나눗셈</h2>
+
+<h3><span class="num">1.</span> 배경지식</h3>
+
+<h4><span class="num">1)</span> 나눗셈 몫의 범위 확장</h4>
+<div class="ind2">
+<div class="desc">자연수 <span class="mk">→</span> 분·소수</div>
+</div>
+
+<h4><span class="num">2)</span> 분수의 나눗셈 상황</h4>
+<div class="ind2">
+<div class="stack">
+  <div><span class="term">포함제</span> <span class="mk">⇒</span> <span class="desc">나눈 몫이 자연수 <span class="quiet">(동수누감)</span></span></div>
+  <div><span class="term">등분제</span> <span class="mk">⇒</span> <span class="desc">나누는 수가 자연수</span></div>
+  <div><span class="term">곱의 역</span> <span class="mk">⇒</span> <span class="desc">곱셈식 중 승수·피승수 미지수</span></div>
+  <div><span class="term">카테시안 곱의 역</span> <span class="mk">⇒</span> <span class="desc">곱의 역 상황 中 단위 바뀌는 것 <span class="quiet">(길이 × 길이 = 넓이 등)</span></span></div>
+  <div><span class="term">단위 비율 결정</span> <span class="mk">⇒</span> <span class="desc">기본 단위에 해당하는 비율 구하기 상황</span></div>
+</div>
+</div>
+
+<h3><span class="num">2.</span> (자연수) ÷ (자연수)</h3>
+
+<h4><span class="num">1)</span> 몫 &lt; 1</h4>
+<div class="ind2">
+<div class="desc">등분제 상황으로 지도</div>
+</div>
+
+<h4><span class="num">2)</span> 몫 &gt; 1</h4>
+<div class="ind2">
+<div class="converge">
+  <div class="bracket">
+    <div data-b="s"><span class="desc">4÷3 = 3과 3/3 ÷ 3</span></div>
+    <div data-b="e"><span class="desc">4÷3 = 12/3 ÷ 3</span></div>
+  </div>
+  <svg width="11" height="56" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+  <div class="link">등분제</div>
+</div>
+</div>
+
+<h3><span class="num">3.</span> (분수) ÷ (자연수)</h3>
+
+<h4><span class="num">1)</span> 분자가 제수의 배수</h4>
+<div class="ind2">
+<div class="row"><span class="mk">⇒</span><span class="desc">등분할하여 단위분수 <span class="mk">→</span> 갯수 나누기</span></div>
+</div>
+
+<h4><span class="num">2)</span> 분자가 제수의 배수 X</h4>
+<div class="ind2">
+<div class="row"><span class="mk">⇒</span><span class="desc">분자가 제수의 배수가 되도록 분할 <span class="quiet">(재귀적 분할)</span></span></div>
+</div>
+
+<h4><span class="num">3)</span> 분수의 곱셈으로 나타내기</h4>
+<div class="ind2">
+<div class="row"><span class="mk">⇒</span><span class="term">이유</span> : <span class="desc">m으로 나눈 것 중 하나 = m 등분한 것 중 1 <span class="quiet">(<span class="mk">→</span> 단위의 재개념화)</span> = 1/m 이므로 b/a ÷ m은 b/a의 1/m배, 따라서 b/a ÷ m = b/a × 1/m</span></div>
+</div>
+
+<div style="margin-top:20px"><span class="term">유의</span> : <span class="desc">'곱셈과 나눗셈의 관계' 나오면 일단 역연산 서술</span></div>
+
+<h3><span class="num">4.</span> 분수의 나눗셈 상황 순서도 <span class="quiet">(cf. 카테시안 곱의 역 → 조작활동 X, 계산만)</span></h3>
+<div class="ind">
+<div class="wide"><div class="branch">
+  <div><span class="term">제수 ∈ N ?</span></div>
+  <div class="bracket">
+    <div><span class="term">Y</span> : <span class="desc">등분제</span></div>
+    <div>
+      <div class="branch">
+        <div><span class="term">몫 ∈ N ?</span></div>
+        <div class="bracket">
+          <div><span class="term">Y</span> : <span class="desc">포함제</span></div>
+          <div>
+            <div class="branch">
+              <div><span class="term">통분 후 분자끼리 나누기 ?</span></div>
+              <div class="bracket">
+                <div><span class="term">Y</span> : <span class="desc">곱셈의 역</span> <span class="mk">⇒</span> <span class="desc">이중 척도 모델 사용</span></div>
+                <div><span class="desc">제수의 역수 곱하기 - 단위 비율 결정</span> <span class="mk">⇒</span> <span class="desc">이중 수직선 모델 사용</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+</div>

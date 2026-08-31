@@ -1,0 +1,83 @@
+<h2>수와 연산 - 소수의 사칙연산</h2>
+
+<h3><span class="num">1.</span> 소수의 덧셈과 뺄셈</h3>
+
+<h4><span class="num">1)</span> 계산 원리</h4>
+<div class="ind2">
+<div class="row"><span class="mk">⇒</span><span class="desc">단위소수의 개수로 바꾼 뒤 분배법칙의 역</span></div>
+</div>
+
+<h4><span class="num">2)</span> 알고리즘</h4>
+<div class="ind2">
+<div><span class="term">세로셈</span></div>
+<div class="ind">
+<div class="row"><span class="mk">⇒</span><span class="desc">소수점끼리 맞추어 세로로 <span class="mk">→</span> 같은 자리끼리 더하기·빼기 <span class="mk">→</span> 결과에 소수점 그대로 내려 찍기</span></div>
+</div>
+</div>
+
+<h4><span class="num">3)</span> 보충 지도</h4>
+<div class="ind2">
+<div><span class="term">받아내림 이해 X</span> <span class="mk">⇒</span> <span class="desc">수직선으로 지도 <span class="quiet">(≒ 자연수)</span></span></div>
+</div>
+
+<h4><span class="num">4)</span> 오류</h4>
+<div class="ind2">
+<div class="stack">
+  <div><span class="term">덧셈</span> : <span class="desc">오른쪽 끝을 맞추어 계산 <span class="mk">⇒</span> 오른쪽 끝자리에 0 붙이고 자릿수 맞추어 계산</span></div>
+  <div><span class="term">뺄셈</span> : <span class="desc">빼야 할 수를 그대로 내려 씀 <span class="mk">⇒</span> 오른쪽 끝자리에 0 붙이고 자릿수 맞추어 계산</span></div>
+</div>
+</div>
+
+<h3><span class="num">2.</span> 소수의 곱셈</h3>
+
+<h4><span class="num">1)</span> 계산 원리</h4>
+<div class="ind2">
+<div class="row"><span class="mk">⇒</span><span class="desc">분모가 10의 거듭제곱인 분수의 곱셈으로 표현하여 지도</span></div>
+<div class="ind">
+<div class="desc">e.g. 0.7 <span class="quiet">(7×1/10)</span> × 0.5 <span class="quiet">(5×1/10)</span> = 7/10 × 5/10 = (7×5)/(10×10) = 35/100 = 0.35</div>
+<div class="ind" style="margin-top:6px">
+<div class="converge">
+  <div class="stack">
+    <div data-b="s"><span class="num">①</span> <span class="desc">7×5의 1/100배가 됨</span></div>
+    <div data-b="e"><span class="num">②</span> <span class="desc">피승수·승수가 각각 1/10배 <span class="mk">⇒</span> 결과가 1/100</span></div>
+  </div>
+  <svg width="11" height="56" viewBox="0 0 11 70" fill="none" aria-hidden="true"><path d="M1 1C7 1 3 31 10 35C3 39 7 69 1 69" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+  <div class="link"><span class="mk">→</span> 이 사실 이해하도록 지도</div>
+</div>
+</div>
+</div>
+</div>
+
+<h4><span class="num">2)</span> 알고리즘</h4>
+<div class="ind2">
+<div class="row"><span class="mk">⇒</span><span class="desc">소수점 무시하고 자연수 곱셈 계산 <span class="mk">→</span> 승수·피승수 소수점 아래 자리의 수의 합만큼 곱한 결과의 소수점 왼쪽으로 옮겨 찍기</span></div>
+</div>
+
+<h3><span class="num">3.</span> 제수가 자연수인 소수의 나눗셈</h3>
+
+<h4><span class="num">1)</span> 계산 원리</h4>
+<div class="ind2">
+<div class="row"><span class="mk">⇒</span><span class="desc">분모가 10의 거듭제곱인 분수의 나눗셈으로 표현하여 지도 <span class="quiet">; 분자가 나누어떨어지지 않을 때도 분모가 10ⁿ인 동치분수로 바꾸어야 다시 소수 변환이 편리</span></span></div>
+<div class="ind">
+<div class="desc">e.g. 4.2 <span class="quiet">(42×1/10)</span> ÷ 6 = 42/10 ÷ 6 = (42÷6)/10 = 7/10 = 0.7</div>
+<div class="ind"><div class="row"><span class="num">①</span><span class="desc">피제수가 1/10배 <span class="mk">⇒</span> 몫도 1/10배</span></div></div>
+</div>
+</div>
+
+<h4><span class="num">2)</span> 알고리즘</h4>
+<div class="ind2">
+<div class="branch">
+  <div class="row"><span class="mk">⇒</span><span class="desc">자연수 나눗셈처럼 소수로 계산</span></div>
+  <div class="bracket">
+    <div><span class="desc">나누어떨어지지 X - 피제수에 0 붙여 계산</span></div>
+    <div><span class="desc">몫의 소수점 - 피제수의 자연수부 바로 뒤에서 옮겨 적음</span></div>
+    <div><span class="desc">몫의 자연수부가 비어 있음 - 일의 자리에 0 쓰기</span></div>
+  </div>
+</div>
+</div>
+
+<h4><span class="num">3)</span> (자연수) ÷ (자연수) - 수 모형</h4>
+<div class="ind2">
+<div class="desc">e.g. 3 ÷ 4 = (2.8 + 0.2) ÷ 4 = 0.7 + 0.05 = 0.75</div>
+<div class="row" style="margin-top:6px"><span class="mk">⇒</span><span class="term">지도</span> : <span class="desc">3 = 백 모형 3개 <span class="mk">→</span> 4로 나눌 수 X, 십 모형 30개<span class="quiet">(백 모형이 모두 분해 ⇒ 일의 자리가 0)</span> <span class="mk">→</span> 4로 나누면 7 … 2 <span class="mk">→</span> 낱개 모형 20개 <span class="mk">→</span> 4로 나누면 5개</span></div>
+</div>

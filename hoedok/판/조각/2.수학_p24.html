@@ -1,0 +1,122 @@
+<h2>수와 연산 — 자연수·약수와 배수·수의 범위</h2>
+
+<h3>약수와 배수</h3>
+
+<h4>배경지식</h4>
+<div class="ind2">
+<div class="stack" style="gap:12px">
+  <div class="branch">
+    <div><span class="term">약수와 배수</span></div>
+    <div class="bracket">
+      <div><span class="term">의미</span> : <span class="desc">약수: 나누어 떨어짐 / 배수: 정수배</span></div>
+      <div><span class="term">성질</span> : <span class="desc">약수 개수 홀수면 제곱수, 크기랑 약수 개수 무관</span></div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">완전수, 부족수,<br>과잉수, 친화수</span></div>
+    <div class="bracket">
+      <div>
+        <div class="desc">N<sub>m</sub> 의 약수 d1...dn 에 대해 Σ(k=1→n) d<sub>k</sub> = D<sub>m</sub> 라하면</div>
+        <div class="ind">
+          <div class="bracket">
+            <div><span class="term">N &gt; D</span> : <span class="desc">부족</span></div>
+            <div><span class="term">N = D</span> : <span class="desc">완전</span></div>
+            <div><span class="term">N &lt; D</span> : <span class="desc">과잉</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="row"><span class="desc">N1=D2, N2=D1</span> <span class="mk">→</span> <span class="desc">N1,N2가 친화수</span></div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">배수 판정법</span></div>
+    <div class="bracket">
+      <div class="branch">
+        <div><span class="term">7의 배수 판정</span></div>
+        <div class="stack">
+          <div class="desc">N=10a+b, M=a-2b → N=10M+21b</div>
+          <div class="desc">N이 7의 배수 ⇔ M이 7의 배수</div>
+          <div class="desc">(⇒) 10M+21b → 7배수</div>
+          <div class="desc">7,10 서로소 → M 7배수</div>
+          <div class="desc">(⇐) N=7배수+7배수 → N→7배수</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">최대공약수/최소공배수<br>구하는 방법</span></div>
+    <div class="bracket">
+      <div><span class="desc">소인수분해 이용</span></div>
+      <div><span class="term">연제법</span> : <span class="desc">세로셈 표준 알고리즘</span></div>
+    </div>
+  </div>
+
+  <div><span class="term">유클리드 호제법</span> : <span class="desc">a=bq+r 에 대해 gcd(a,b)=gcd(b,r)</span></div>
+</div>
+</div>
+
+<h4>핵심 각론</h4>
+<div class="ind2">
+<div class="stack" style="gap:12px">
+  <div class="branch">
+    <div><span class="term">약수와 배수</span></div>
+    <div class="bracket">
+      <div class="branch">
+        <div><span class="term">약수 지도</span></div>
+        <div class="bracket">
+          <div><span class="desc">나눗셈식</span></div>
+          <div><span class="desc">구체물 묶어세기</span></div>
+          <div class="row"><span class="desc">퀴즈네어 막대</span> <span class="mk">→</span> <span class="desc">막대 채우기</span></div>
+          <div><span class="desc">곱셈식</span></div>
+        </div>
+      </div>
+      <div class="branch">
+        <div><span class="term">배수 지도</span></div>
+        <div class="bracket">
+          <div><span class="desc">곱셈식</span></div>
+          <div><span class="desc">구체물 조작</span></div>
+          <div><span class="desc">퀴즈네어 막대</span></div>
+          <div><span class="desc">수 배열표</span></div>
+        </div>
+      </div>
+      <div class="branch">
+        <div>
+          <div><span class="term">약수와 배수의<br>관계 지도</span></div>
+          <div class="sub"><span class="desc">역연산 <span class="quiet">(가역적 사고)</span></span></div>
+        </div>
+        <div class="bracket">
+          <div><span class="desc">곱셈식과 나눗셈식</span></div>
+          <div class="row"><span class="desc">여러 수의 곱</span> <span class="mk">→</span> <span class="desc">평가 X</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="branch">
+    <div><span class="term">최대공약수와<br>최소공배수</span></div>
+    <div class="bracket">
+      <div class="branch">
+        <div><span class="term">최대공약수 지도</span></div>
+        <div class="bracket">
+          <div><span class="desc">약수의 나열</span></div>
+          <div class="row"><span class="desc">구체물 조작</span> <span class="mk">→</span> <span class="desc">퀴즈네어 막대 두개 각각 약수 파악</span></div>
+          <div><span class="desc">두 수/여러 수의 곱으로 나타낸 곱셈식</span></div>
+          <div class="row"><span class="desc">공약수로 나누기</span> <span class="mk">→</span> <span class="desc">연제법</span></div>
+        </div>
+      </div>
+      <div class="branch">
+        <div><span class="term">최소공배수 지도</span></div>
+        <div class="bracket">
+          <div><span class="desc">배수의 나열</span></div>
+          <div><span class="desc">퀴즈네어 막대</span></div>
+          <div><span class="desc">두 수/여러 수의 곱으로 나타낸 곱셈식</span></div>
+          <div class="row"><span class="desc">공약수로 나누기</span> <span class="mk">→</span> <span class="desc">연제법</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>

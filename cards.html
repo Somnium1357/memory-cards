@@ -5235,7 +5235,13 @@ function settledToday(c){         // 오늘 처리 끝난 카드 = 오늘 한 �
    있으면 그날 그대로 다시 나왔다 — 「미룸 = 오늘 큐에서 빼기」가 진입 경로마다 다르게 굴었다.
    ⚠ 큐를 **새로 짜는** 경로는 `inScope`가 이미 미룸을 뺀다(3438·inScope 첫 줄). 여기서 막는 것은
    **이미 담긴 큐**를 다시 낼 때다. 저장 큐에서 지우지는 않는다 — 되돌리기 발판은 그대로. */
-function dropSettled(list){ return list.filter(c=>!settledToday(c) && !buried(c)); }
+/* 🔴 **은퇴·끈 카드도 여기서 걸러야 한다** (동하 09-01 실기: 「세션에 남은 복습 하나도 없는데
+   남은 복습 1 뜨는 거」). 큐에는 카드 **ID**가 남는데, 그 카드가 나중에 꺼지면(QC가 spec에서 끄면)
+   ID는 그대로라 `sessCards`가 그대로 집어 온다 — 못 푸는 카드가 「낼 장수」에 세어졌다.
+   실측: 「일일 복습」이 6장을 세는데 **6장 전부 `retired`** · 3차·5차도 각 5장이 전부 그랬다.
+   이 함수를 타는 자리는 전부 **화면 큐를 짜거나 낼 장수를 세는 곳**이라 다 같이 걸러야 맞다.
+   ⚠ **저장 큐는 안 건드린다** — 되돌리기 발판이라는 원칙 그대로다(§3). 세는 것·내는 것만 바꾼다. */
+function dropSettled(list){ return list.filter(c=>!settledToday(c) && !buried(c) && !retired(c) && !offed(c)); }
 /* 저장된 큐에서 지우지는 않는다 — 되돌리기가 그 카드를 되살릴 수 있어야 하므로,
    「오늘 정리된 카드」는 세션을 시작·재개할 때(playSess)와 큐를 새로 짤 때(buildQueue) 거른다. */
 function buildQueue(p, status){

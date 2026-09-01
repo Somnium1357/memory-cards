@@ -4140,6 +4140,8 @@ async function refreshRemote(){     // 포그라운드 복귀 시 원격 상태 
       if(wk) mergeLogInto(wk, thisWeek()); else rebuildLog();
       if(sess){ mergeSessInto(sess); sessLoadOK=true; }   // 늦게라도 제대로 받으면 그때부터 올려도 된다
       replayLog();                    // 다른 기기가 올린 로그를 내 스냅샷에 반영
+      restReset();                    // due가 움직였다 — 실효 due 캐시·백로그 계획을 버린다
+                                      // (다른 기기가 밀린 것을 소화하면 계획이 낡는다 — 감사 지적 2026-09-01)
       lastRevIdx=null; firstRevIdx=null; cacheState();
       for(const sx of sessions){ if(!isFixed(sx)) sx.day=''; }   // 자동 충전 세션은 새 상태로 다시 채운다
       pruneSolvedFromQueues();

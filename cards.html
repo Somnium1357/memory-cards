@@ -6181,19 +6181,16 @@ function presetDesc(p){
 function renderToday(){ // 홈 첫 화면 = 오늘 한 일 (통계 탭까지 안 들어가도 보이게)
   const by=dailyStats(), tk=todayKey(), t=by[tk]||{n:0,nw:0,ms:0};
   const d=new Date(), wdays=['일','월','화','수','목','금','토'];
-  /* 🔴 **어디서도 못 푸는 due는 이 숫자에서 뺀다** (동하 09-01 실기: 「세션에는 오늘 몫 다
-     풀었어요가 다 떠 있는데 홈에는 due 1개가 남아 있어」).
-     병인 = 이 숫자는 **전 카드**를 세고 세션은 **자기 범위**만 낸다. 동하가 「일일 복습」에서
-     `3.영어|교육과정`을 빼 뒀는데(제외 목록) 다른 세션도 그 단위를 안 담아서, 그 카드는
-     **어느 세션에도 안 나오는데 홈에만 잡혔다.** 숫자는 맞지만 「오늘 풀 것」으로는 거짓이다.
-     ⚠ 세는 기준만 바꾼다 — 카드·로그·일정은 안 건드리고, 뺀 장수는 아래 한 줄로 알린다. */
-  let due=0, learned=0, exDue=0;
+  /* 🔴 **「남은 복습」 = 어느 세션엔가 실제로 나오는 것만 센다** (동하 09-02 지시).
+     예전에는 전 카드를 셌는데, 세션이 안 담은 카드(빼 둔 주제 등)는 **어차피 안 푼다** —
+     그걸 세면 「세션은 다 풀었다는데 홈엔 남아 있다」가 된다(동하 실기로 잡힌 1장).
+     ⚠ 세는 기준만 바꾼다 — 카드·로그·일정·저장 큐는 안 건드린다.
+     ⚠ 설명을 덧붙이지 않는다(동하: 「설명 너무 난잡해」) — 값이 맞으면 말이 필요 없다. */
+  let due=0, learned=0;
   const scopes=sessions.map(sx=>asPreset(sx).scope);
   for(const c of DATA){ const s=state.cards[c.id];
     if(s&&s.retired)continue;
-    if(isDue(c)&&!buried(c)){
-      if(scopes.some(sc=>inScope(c,sc)))due++; else exDue++;
-    }
+    if(isDue(c)&&!buried(c) && scopes.some(sc=>inScope(c,sc)))due++;
     if(!isNew(c))learned++; }
   const wk=[]; let mx=1;
   for(let i=6;i>=0;i--){ const v=(by[dayKeyOffset(-i)]||{n:0}).n; wk.push(v); if(v>mx)mx=v; }
@@ -6211,9 +6208,7 @@ function renderToday(){ // 홈 첫 화면 = 오늘 한 일 (통계 탭까지 안
       <div>내일 예상<b>~${tomorrowCount(null)}</b></div>
       <div>학습 진입<b>${learned.toLocaleString()}<span style="font-size:12px;color:var(--mute)"> / ${DATA.length.toLocaleString()}</span></b></div>
       <div style="margin-left:auto;align-self:flex-end"><button class="h-tool" style="padding:8px 12px" data-go="scrStats">통계 자세히</button></div>
-    </div>${bkNote()}${exDue?`<div class="desc" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">
-      복습일이 됐지만 <b>빼 둔 주제</b>라 어느 세션에도 안 나오는 카드가 <b>${exDue}장</b> 있어요.
-      <span style="opacity:.75">(세션 설정의 「빼기」를 풀면 나옵니다)</span></div>`:''}`;
+    </div>${bkNote()}`;
   $('todayBox').querySelector('[data-go]').onclick=()=>go('scrStats');
 }
 /* 밀린 것을 나눠 갚는 중이면 그렇게 말해 준다 — 안 그러면 「왜 밀린 게 다 안 나오지」가 된다.

@@ -7708,7 +7708,8 @@ function renderStats(){
     const last=wr[wks[wks.length-1]], lp=last.n?Math.round(last.pass/last.n*100):0;
     h+=`<div class="card-box"><h3>유지율 추이 (주별)</h3>
       <div class="cap">통합 하나로는 나아지는지 안 보여요. 이번 주 <b>${lp}%</b> (${last.n.toLocaleString()}회).
-        ⚠ 밀린 걸 몰아 푼 주는 구조적으로 낮게 나와요 — 이미 잊을 만큼 지난 뒤에 채점하니까요.</div>
+        ⚠ 밀린 걸 몰아 푼 주는 구조적으로 낮게 나와요 — 이미 잊을 만큼 지난 뒤에 채점하니까요.
+        ⚠ <b>지금 살아 있는 카드만</b> 셉니다 — 문면 재작성으로 사라진 카드의 옛 기록은 빼요(그게 섞이면 과거가 나빠 보입니다).</div>
       ${barChart(wcols)}</div>`;
   }
 

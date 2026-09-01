@@ -3406,7 +3406,7 @@ function dkAdd(k, n){                    // 'YYYY-MM-DD'에 n일 — 정오 기�
    ⚠ 옮긴 자리가 또 휴식일이면 건너뛴다. ⚠ 실효 due는 **표시 규칙**이고 로그·FSRS는 안 건드린다. */
 let rest={dow:4, days:[], at:0};         // dow: 0=일 … 4=목(기본) · null이면 매주 반복 없음
 const _effCache=new Map();
-function restReset(){ _effCache.clear(); }
+function restReset(){ _effCache.clear(); _bkPlan=null; }   // 백로그 계획도 같이 무효화 (due가 움직였다는 뜻)
 function isWeeklyRest(k){ return rest.dow!=null && new Date(k+'T12:00:00').getDay()===rest.dow; }
 function isAdhocRest(k){ return (rest.days||[]).indexOf(k)>=0; }
 function isRestDay(k){ return isWeeklyRest(k)||isAdhocRest(k); }
@@ -3415,6 +3415,39 @@ function restWalk(k, step, off){          // k에서 step 방향으로 「휴식
   let d=k, need=off, guard=0;
   while(need>0 && guard++<40){ d=dkAdd(d, step); if(!isRestDay(d)) need--; }
   return d;
+}
+/* 🔴 **밀린 카드 나눠 갚기** (2026-09-01, 동하 승인 — 감사 A3).
+   하루 쉬면 밀린 due 380 + 그날 몫 332 = **712장**이 하루에 몰린다(08-26 실측). 휴식일 분산은
+   **앞으로의** 휴식일 몫만 다루고 **이미 밀린 백로그**는 손대지 않아서, 그날은 「질려서 안 여는」
+   쪽으로 간다 — 그게 이 기능이 막는 실패다.
+   🔴 **표시 규칙이다. 로그·FSRS·due를 안 건드린다**(휴식일 분산과 같은 계층 — 감사 권고).
+      setDueDays 대량 적용은 쓰지 않는다: 마크 파일이 비대해지고 base가 남발된다.
+   🔴 **결정적이다** — 배정에 난수도 시각도 안 쓰고 카드 ID 해시(`restOff`)만 쓴다. 두 기기가
+      각자 계산해도 같은 답이 나온다(인수인계 §3 「데이터 정정은 앱 안에서」와 정합).
+   🔴 **되밀림이 없다** — 밀린 날수가 커질수록 배정 슬롯이 줄어(`-(overdue-1)`) 결국 0이 된다.
+      오래 밀린 것부터 나오고, 어떤 카드도 최대 N-1일 넘게 안 밀린다. 무한 연기가 구조적으로 불가능하다.
+   ⚠ 임계 아래(평소 하루량의 1.5배 이하)면 **아무것도 안 한다** — 30장 밀린 걸 3일에 나누면
+      「왜 밀린 게 안 나오지」가 된다. */
+const BK_MAX=3;                          // 최대 분산 일수 (restOff가 1~3이라 그 해시를 그대로 쓴다)
+let _bkPlan=null;
+function dkDiff(a,b){ return Math.round((Date.parse(a+'T12:00:00')-Date.parse(b+'T12:00:00'))/86400000); }
+function dailyNorm(){                    // 「평소 하루 몇 장인가」 — 밀린 건 빼고 앞으로 4주로 잰다(순환 방지)
+  const T=todayKey(); let n=0, work=0;
+  for(let i=1;i<=28;i++) if(!isRestDay(dkAdd(T,i))) work++;
+  for(const c of DATA){ const s=state.cards[c.id]; if(!s||!s.fsrs||s.retired) continue;
+    const k=dayKey(new Date(s.fsrs.due));
+    if(k>T && k<=dkAdd(T,28)) n++; }
+  return work ? Math.max(20, Math.round(n/work)) : 100;
+}
+function backlogPlan(){                  // {over, n} — 하루 한 번만 센다
+  const T=todayKey();
+  if(_bkPlan && _bkPlan.at===T) return _bkPlan;
+  let over=0;
+  for(const c of DATA){ const s=state.cards[c.id]; if(!s||!s.fsrs||s.retired) continue;
+    if(dayKey(new Date(s.fsrs.due)) < T) over++; }
+  const norm=dailyNorm();
+  const n = over > norm*1.5 ? Math.min(BK_MAX, Math.ceil(over/Math.max(norm,1))) : 1;
+  _bkPlan={at:T, over, n, norm}; return _bkPlan;
 }
 function effDueKey(k, id){               // 저장된 due → 화면에 쓰는 실효 due
   const T=todayKey(), off=restOff(id), ck=k+'|'+off+'|'+T;   // 🔴 오늘이 키에 들어간다 (아래 폴백이 오늘을 본다)
@@ -3430,6 +3463,18 @@ function effDueKey(k, id){               // 저장된 due → 화면에 쓰는 �
       if(d<=T) d=restWalk(k,1,off);
     } else {
       d=restWalk(k,1,off);               // 직접 추가한 날 = 뒤 3일 (과거로 못 보낸다)
+    }
+  }
+  /* 밀린 것 나눠 갚기 — 위 휴식일 처리를 **거친 뒤**의 자리가 아직 과거일 때만 손댄다.
+     🔴 슬롯은 `off`(카드 ID 해시 1~3)에서 뽑는다 — 캐시 키가 이미 `off`를 물고 있어 정합하고,
+        새 해시를 들이면 캐시가 어긋난다. 밀린 날수만큼 슬롯을 깎아 오래된 것부터 내보낸다. */
+  if(d<T){
+    const bp=backlogPlan();
+    if(bp.n>1){
+      const slot=Math.max(0, ((off-1)%bp.n) - (dkDiff(T,d)-1));
+      let t=T, need=slot, guard=0;
+      while(need>0 && guard++<20){ t=dkAdd(t,1); if(!isRestDay(t)) need--; }   // 쉬는 날엔 안 얹는다
+      d=t;
     }
   }
   _effCache.set(ck, d); return d;
@@ -6039,8 +6084,17 @@ function renderToday(){ // 홈 첫 화면 = 오늘 한 일 (통계 탭까지 안
       <div>내일 예상<b>~${tomorrowCount(null)}</b></div>
       <div>학습 진입<b>${learned.toLocaleString()}<span style="font-size:12px;color:var(--mute)"> / ${DATA.length.toLocaleString()}</span></b></div>
       <div style="margin-left:auto;align-self:flex-end"><button class="h-tool" style="padding:8px 12px" data-go="scrStats">통계 자세히</button></div>
-    </div>`;
+    </div>${bkNote()}`;
   $('todayBox').querySelector('[data-go]').onclick=()=>go('scrStats');
+}
+/* 밀린 것을 나눠 갚는 중이면 그렇게 말해 준다 — 안 그러면 「왜 밀린 게 다 안 나오지」가 된다.
+   ⚠ 나누지 않는 날(임계 아래)엔 줄 자체를 안 낸다. */
+function bkNote(){
+  const bp=backlogPlan();
+  if(!bp || bp.n<=1 || !bp.over) return '';
+  return `<div class="desc" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">
+    밀린 <b>${bp.over.toLocaleString()}장</b>을 <b>${bp.n}일</b>에 나눠 드리고 있어요 — 오래 밀린 것부터 나와요.
+    <span style="opacity:.75">(복습일·기록은 그대로예요)</span></div>`;
 }
 function howPlain(sx){          // 태그 줄(「자동 충전 · due · 셔플 …」)을 사람 말로 한 번 더
   const h=sx.how||{}, a=[];
@@ -6729,6 +6783,7 @@ function setRetention(v){
   fsrsCfg.ret=v; fsrsCfg.retAt=Date.now();
   buildEngine();
   replayLog();                   // 전량 재계산 — 로그가 정본이라 여기서 due가 다시 뽑힌다
+  restReset();                   // due가 통째로 움직였으니 실효 due 캐시·백로그 계획을 버린다
   cacheState(); markDirty('sess');
   renderRetUI(); renderHome();
   const after=dueTodayCount(), d=after-before;
@@ -6767,6 +6822,7 @@ function applyFw(w, at){
   fsrsCfg.wAt = at||new Date().toISOString();
   buildEngine();
   replayLog();                    // 파라미터가 바뀌면 S·D부터 다시 뽑힌다 — 로그가 정본이라 전량 재생
+  restReset();
   cacheState(); markDirty('sess');
   renderFwUI(); renderHome();
   const after=dueTodayCount();

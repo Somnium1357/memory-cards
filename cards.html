@@ -411,6 +411,12 @@ input:focus,select:focus{border-color:var(--accent);}
 #hdQList.on{display:block;}
 #hdQList li{font-size:12.5px;line-height:1.55;color:var(--ink2);margin:5px 0;cursor:pointer;}
 #hdQList li.cur{color:var(--accent);font-weight:700;}
+#hdQ.mini #hdQTxt{max-height:20px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#hdQTxt{cursor:pointer;}
+#hdQList .qhead{font-size:12.5px;font-weight:700;color:var(--ink2);margin:4px 0 8px;}
+#hdQList .qstart{display:block;width:100%;margin-top:10px;padding:10px;border-radius:12px;
+  background:var(--accent);color:#fff;font-size:13px;font-weight:800;}
+#hdQ .qdone{background:var(--good);color:#fff;}
 .search-row{display:flex;gap:8px;margin-bottom:10px;min-width:0;}
 /* min-width:0 — input의 암묵 최소폭 때문에 줄이 안 줄어 360px에서 정렬 select가 화면 밖으로 밀렸다 (감사 U6) */
 .search-row input{flex:1;min-width:0;}
@@ -7978,11 +7984,11 @@ function renderRead(){
     const unit=esc((e.unit.split('|')[1]||'').split('#')[0]);
     const mid=esc(e.mid||'(기타)');
     const subj=esc((e.unit.split('|')[0]||'').split('.')[1]||'');
-    const link=e.uri ? `<a class="rd-go" href="${e.uri}" data-qk="${esc(e.key)}">읽기 ↗</a>`
+    const link=e.uri ? `<a class="rd-go" href="${e.uri}" data-qk="${esc(e.key)}" data-qn="${e.cards.length}">읽기 ↗</a>`
                      : `<span class="rd-src">원문: ${subj} PDF</span>`;
     const chips=e.subList.map((sc,j)=>{
       const nm=esc(sc.sub||mid);
-      const head=sc.uri ? `<a class="rd-chip" href="${sc.uri}" data-qk="${esc(e.key)}" data-qj="${j}">${nm} <i>${sc.cards.length}</i></a>`
+      const head=sc.uri ? `<a class="rd-chip" href="${sc.uri}" data-qk="${esc(e.key)}" data-qj="${j}" data-qn="${e.cards.length}">${nm} <i>${sc.cards.length}</i></a>`
                         : `<span class="rd-chip off">${nm} <i>${sc.cards.length}</i></span>`;
       const first=sc.cards.slice(0,READ_FRONTS), more=sc.cards.length-first.length;
       /* 🔴 앞면만. 뒷면은 절대 붙이지 않는다 — 답이 보이면 본문을 찾을 이유가 사라진다. */
@@ -8160,11 +8166,20 @@ function renderHelpToc(){    // 목차 칩 — 누르면 그 절만 펼치고 �
    조판본을 **그대로** iframe에 띄운다 — 앱이 판을 다시 그리는 게 아니라(그건 정본 이원화라
    기각했던 B안이다) **같은 파일을 같은 오리진에서 보여줄 뿐**이다. 기호·도식 해석은 판 몫 그대로.
    ⚠ iframe 안에서 「카드앱 ↗」을 누르면 앱이 iframe 안에 통째로 들어간다 — load에서 잡아 닫는다. */
-let HD_QS=[], HD_QI=0;
-function openHoedok(uri, title, qs){
+let HD_QS=[], HD_QI=0, HD_KEY='', HD_N=0;
+/* 🔴 **질문이 넷 이상이면 목록을 먼저 펼쳐 보여준다** (메타 09-01 판정).
+   하나씩 돌리면 본문을 질문 수만큼 훑게 되는데, 3회차쯤부터는 의미 처리가 아니라
+   제목 패턴매칭이 된다(읽기가 아니라 검색). 질문 세트를 **먼저 심고** 본문을 한 번
+   통과하는 편이 파지가 높다(사전질문 효과). 1~3개면 표적이 선명한 현행이 낫다.
+   → 분기 하나로 두 모드가 통합된다. */
+const HD_PREVIEW_MIN=4;
+function openHoedok(uri, title, qs, readKey, readN){
   const f=$('hdFrame');
   $('hdTtl').textContent=title||'회독본';
   HD_QS=Array.isArray(qs)?qs.slice():[]; HD_QI=0;
+  HD_KEY=readKey||''; HD_N=readN||0;
+  $('hdQ').classList.remove('mini');
+  $('hdQList').classList.toggle('on', HD_QS.length>=HD_PREVIEW_MIN);
   renderHdQ();
   f.src=uri;
   $('ovlHd').classList.add('show');
@@ -8182,19 +8197,35 @@ function renderHdQ(){
   $('hdQPrev').disabled = HD_QI<=0;
   $('hdQNext').disabled = HD_QI>=HD_QS.length-1;
   $('hdQTxt').scrollTop=0;
+  /* 마지막 질문에서는 「다음」 자리가 「다 봤어요」가 된다 — 끝 동선이 읽음 체크로 이어지게(메타). */
+  const last=HD_QI>=HD_QS.length-1 && HD_KEY;
+  $('hdQNext').textContent = last?'✓':'›';
+  $('hdQNext').classList.toggle('qdone', !!last);
+  $('hdQNext').disabled = last?false:(HD_QI>=HD_QS.length-1);
+  $('hdQNext').title = last?'다 봤어요 — 2주 쉬기':'다음 질문';
   if($('hdQList').classList.contains('on')){
-    $('hdQList').innerHTML=HD_QS.map((q,i)=>`<li class="${i===HD_QI?'cur':''}" data-qi="${i}">${esc(q)}</li>`).join('');
+    const head=HD_QS.length>=HD_PREVIEW_MIN
+      ? `<div class="qhead">이 절에서 흔들린 질문 ${HD_QS.length}개예요 — <b>먼저 쭉 훑고</b> 본문을 한 번 통과하세요.</div>` : '';
+    $('hdQList').innerHTML=head
+      +HD_QS.map((q,i)=>`<li class="${i===HD_QI?'cur':''}" data-qi="${i}">${esc(q)}</li>`).join('')
+      +(HD_QS.length>=HD_PREVIEW_MIN?`<button class="qstart" id="hdQStart">읽기 시작</button>`:'');
     $('hdQList').querySelectorAll('[data-qi]').forEach(li=>li.onclick=()=>{
       HD_QI=+li.dataset.qi; $('hdQList').classList.remove('on'); renderHdQ(); });
+    const st=$('hdQStart'); if(st) st.onclick=()=>{ $('hdQList').classList.remove('on'); renderHdQ(); };
   }
 }
 $('hdQPrev').onclick=()=>{ HD_QI--; renderHdQ(); };
-$('hdQNext').onclick=()=>{ HD_QI++; renderHdQ(); };
+$('hdQNext').onclick=()=>{
+  if(HD_QI>=HD_QS.length-1 && HD_KEY){ const k=HD_KEY, n=HD_N; closeHoedok(); markRead(k,n); return; }
+  HD_QI++; renderHdQ(); };
+/* 질문이 길면 두세 줄을 먹는다 — 탭하면 한 줄로 접힌다(메타: 접기 하나면 충분) */
+$('hdQTxt').onclick=()=>{ $('hdQ').classList.toggle('mini'); };
 $('hdQBtn').onclick=()=>{ $('hdQList').classList.toggle('on'); renderHdQ(); };
 function closeHoedok(){
   $('ovlHd').classList.remove('show');
   $('hdFrame').src='about:blank';      // 두고 오면 다음에 열 때 옛 자리가 잠깐 보인다
-  $('hdQList').classList.remove('on'); HD_QS=[]; HD_QI=0;
+  $('hdQList').classList.remove('on'); $('hdQ').classList.remove('mini');
+  HD_QS=[]; HD_QI=0; HD_KEY=''; HD_N=0;
 }
 $('hdClose').onclick=closeHoedok;
 $('hdFrame').addEventListener('load', ()=>{
@@ -8236,7 +8267,7 @@ document.addEventListener('click', (e)=>{
   if(!/\/hoedok\//.test(u.pathname)) return;        // 회독본 판만 오버레이로 연다
   e.preventDefault();
   const t=a.closest('.rd-item') ? a.closest('.rd-item').querySelector('.rd-t b') : null;
-  openHoedok(u.href, t?t.textContent:'회독본', qsFor(a));
+  openHoedok(u.href, t?t.textContent:'회독본', qsFor(a), a.dataset&&a.dataset.qk, +(a.dataset&&a.dataset.qn||0));
 }, true);
 
 /* ═══════════════ 토스트 ═══════════════ */

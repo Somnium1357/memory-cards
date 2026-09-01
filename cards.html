@@ -360,6 +360,16 @@ input:focus,select:focus{border-color:var(--accent);}
 .bl-row .bar i{display:block;height:100%;background:var(--accent);border-radius:99px;}
 .bl-row .c{flex:0 0 40px;text-align:right;color:var(--mute);font-size:12px;}
 .list-note{font-size:12px;font-weight:700;color:var(--mute);padding:2px 4px 10px;}
+.rd-list{background:var(--surface);border-radius:16px;padding:4px 14px;}
+.rd-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line);}
+.rd-row:first-child{border-top:none;}
+.rd-i{flex:0 0 20px;font-size:12px;font-weight:800;color:var(--mute);text-align:right;}
+.rd-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.rd-t b{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rd-t small{font-size:11.5px;color:var(--mute);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rd-n{flex:0 0 auto;font-size:12px;font-weight:700;color:var(--mute);}
+.rd-go{flex:0 0 auto;font-size:12.5px;font-weight:700;color:var(--accent);text-decoration:none;padding:6px 8px;}
+.rd-src{flex:0 0 auto;font-size:11.5px;font-weight:600;color:var(--mute);}
 .search-row{display:flex;gap:8px;margin-bottom:10px;min-width:0;}
 /* min-width:0 — input의 암묵 최소폭 때문에 줄이 안 줄어 360px에서 정렬 select가 화면 밖으로 밀렸다 (감사 U6) */
 .search-row input{flex:1;min-width:0;}
@@ -783,6 +793,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
         </div>
         <div class="h-sec">기록</div>
         <div class="h-row">
+          <button class="h-tab" data-go="scrRead">읽을거리</button>
           <button class="h-tab" data-go="scrStats">통계</button>
           <button class="h-tab" data-go="scrWeak">약점</button>
           <button class="h-tab" data-go="scrFlags">플래그</button>
@@ -863,6 +874,12 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
     <div class="scr" id="scrStats">
       <div class="sub-head"><button class="tb-btn" data-go="scrHome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title">통계</div></div>
       <div class="sub-body"><div class="sub-inner" id="statsBody"></div></div>
+    </div>
+
+    <!-- 읽을거리 -->
+    <div class="scr" id="scrRead">
+      <div class="sub-head"><button class="tb-btn" data-go="scrHome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title">읽을거리</div></div>
+      <div class="sub-body"><div class="sub-inner" id="readBody"></div></div>
     </div>
 
     <!-- 약점 -->
@@ -6049,6 +6066,7 @@ function go(id){
   if(id==='scrList'){ picking=false; picked.clear(); listCond=null; $('qSearch').value=''; syncBulk(); renderList(true); }
   if(id==='scrStats')renderStats();
   if(id==='scrHelp')renderHelpToc();
+  if(id==='scrRead')renderRead();
   if(id==='scrWeak')renderWeak();
   if(id==='scrFlags')renderFlags();
 }
@@ -7730,6 +7748,111 @@ function renderStats(){
   h+='</div></div>';
   h+=`<div class="empty-note" style="padding:10px">리뷰 로그 ${state.log.length.toLocaleString()}건 (전량 보존 — 스케줄러 최적화 근간)</div>`;
   $('statsBody').innerHTML=h;
+}
+
+/* ═══════════════ 읽을거리 (2026-09-01 · 메타 스펙 · 동하 승인) ═══════════════ */
+/* 🔴 **목적은 「판단 비용 0」이다.** 열어서 위에서부터 읽기만 한다 — 언제 뭘 얼마나 읽을지
+   전부 앱이 정한다. 통독 게이트를 만들자던 안은 메타 판정으로 기각됐고(§5.10), 그 대신
+   나온 것이 이 화면이다: 강제하지 않고 **읽을 것을 골라 주기만** 한다.
+   🔴 **읽음 체크가 없다.** 타겟이 상태 기반이라 장부가 필요 없다 — 굳으면 저절로 목록에서
+   빠지고, 아직 흔들리면 계속 뜬다. 「안 읽은 것 이월」이 공짜로 성립한다.
+   ⚠ 회독본 읽음 체크(`state.hoedok`)와는 **다른 것**이다. 그쪽은 통독 기록용으로 그대로 둔다. */
+const READ_CUT=12;        // 하루 컷 ≈ 30분어치 (메타 실측 10~15절)
+/* 타겟 = 누적 틀림 2회+ **그리고** 안정도 7일 미만 (복습 2회+ · 은퇴 제외).
+   🔴 `isWeak`의 두 조항을 **OR → AND**로 좁힌 것이다(메타 확정).
+   OR이면 1,056장(어린 카드 홍수), AND면 323장. 로그 스캔이 필요 없고(state의 두 값)
+   양방향 자기 치유다 — 굳으면 안정도>7로 탈락, 어린 카드는 miss<2라 애초에 안 들어온다. */
+function readTargets(){
+  const out=[];
+  for(const c of DATA){ const s=state.cards[c.id];
+    if(!s||s.retired||!s.fsrs||s.fsrs.reps<2)continue;
+    if((s.miss||0)>=2 && s.fsrs.stability<7) out.push(c); }
+  return out;
+}
+/* 🔴 **묶음은 굵게, 착지는 얇게** (메타 확정).
+   목록 항목 = 2층(대주제||중주제) — 3층으로 묶으면 1장짜리 절이 53개라
+   「카드 많은 순」 정렬이 무의미해진다. 반면 점프는 그 항목에서 **가장 흔들리는 카드의
+   최소 절**로 — 착지는 얇을수록 정확하다. */
+function readGroups(){
+  const g=new Map();
+  for(const c of readTargets()){
+    const u=tagKey(c), mid=(c.tags||[])[1]||'';
+    const k=u+'||'+mid;
+    let e=g.get(k); if(!e){ e={key:k, unit:u, mid, cards:[]}; g.set(k,e); }
+    e.cards.push(c);
+  }
+  const arr=[...g.values()];
+  for(const e of arr){
+    /* 착지 = 안정도가 제일 낮은 카드(= 제일 흔들리는 자리)의 절. deep=true로 3층 앵커까지 시도한다 */
+    e.cards.sort((a,b)=>(state.cards[a.id].fsrs.stability)-(state.cards[b.id].fsrs.stability));
+    const lead=e.cards[0];
+    e.uri = hoedokURI(cardSubKey ? cardSubKey(lead) : midKey(e.unit, e.mid), true)
+         || hoedokURI(e.mid?midKey(e.unit,e.mid):e.unit, true);
+  }
+  /* 🔴 **읽을 수 있는 것을 먼저.** 실측: 카드 수만으로 정렬하면 오늘 낼 12곳 중 **6곳이 총창**
+     (회독본이 없어 링크가 안 붙는다)이라 목록 절반이 「못 읽는 항목」이 된다 —
+     「위에서부터 읽기만 하면 된다」는 이 화면의 목적이 거기서 깨진다.
+     그래서 링크 있는 것을 위로 모으고, 원문 PDF를 봐야 하는 것은 아래 따로 낸다. */
+  arr.sort((a,b)=> (a.uri?0:1)-(b.uri?0:1) || b.cards.length-a.cards.length || a.key.localeCompare(b.key));
+  return arr;
+}
+/* 「오늘 투입된 주력 대주제」 — 그날 신규 카드의 최다 대주제. 투입일 통독 안내용(메타 부가). */
+function todayMainUnit(){
+  const tk=todayKey(), n={};
+  for(const c of DATA){ const s=state.cards[c.id];
+    if(s&&s.d===tk&&s.fsrs&&s.fsrs.reps===1) n[tagKey(c)]=(n[tagKey(c)]||0)+1; }
+  let best=null, mx=0;
+  for(const k in n) if(n[k]>mx){ mx=n[k]; best=k; }
+  return best?{unit:best, n:mx}:null;
+}
+function renderRead(){
+  const body=$('readBody');
+  const all=readGroups();
+  const main=todayMainUnit();
+  let h='';
+  if(main){
+    const t=TAGMETA[main.unit];
+    h+=`<div class="op-help on" style="margin-bottom:12px">오늘 새로 나온 카드는 <b>${esc((main.unit.split('|')[1]||'').split('#')[0])}</b>가 제일 많아요 (${main.n}장).
+      ${t?'처음 보는 단원이면 회독본을 한 번 훑고 시작하는 게 빨라요.':''}</div>`;
+  }
+  if(!all.length){
+    body.innerHTML=h+'<div class="empty-note">지금은 읽을거리가 없어요<br>여러 번 틀렸는데 아직 안 굳은 카드가 생기면 여기 모입니다</div>';
+    return;
+  }
+  const linked=all.filter(e=>e.uri), noLink=all.filter(e=>!e.uri);
+  const show=linked.slice(0,READ_CUT), rest=linked.length-show.length;
+  const total=all.reduce((a,e)=>a+e.cards.length,0);
+  h+=`<div class="cap" style="margin:0 4px 10px">여러 번 틀렸는데 아직 안 굳은 카드 <b>${total}장</b>이
+    <b>${all.length}곳</b>에 걸쳐 있어요. 위에서부터 읽으시면 돼요 — <b>오늘은 ${show.length}곳</b>,
+    나머지는 내일 이어서 뜹니다. <span style="opacity:.75">따로 읽음 표시는 없어요. 굳으면 저절로 빠집니다.</span></div>`;
+  const row=(e,i)=>{
+    const unit=esc((e.unit.split('|')[1]||'').split('#')[0]);
+    const mid=esc(e.mid||'(기타)');
+    const subj=esc((e.unit.split('|')[0]||'').split('.')[1]||'');
+    const n=e.cards.length;
+    /* 🔴 회독본이 없는 과목(총창)은 링크를 만들지 않는다 — 출처만 적는다(메타 스펙).
+       카드→PDF 페이지 연결은 백로그(HTML 뷰어가 필요해 1차 제외). */
+    const link=e.uri
+      ? `<a class="rd-go" href="${e.uri}">읽기 ↗</a>`
+      : `<span class="rd-src">원문: ${subj} PDF</span>`;
+    return `<div class="rd-row">
+      <span class="rd-i">${i+1}</span>
+      <span class="rd-t"><b>${mid}</b><small>${subj} · ${unit}</small></span>
+      <span class="rd-n" title="여기 걸린 흔들리는 카드">${n}장</span>
+      ${link}</div>`;
+  };
+  h+=`<div class="rd-list">${show.map(row).join('')}</div>`;
+  if(rest>0) h+=`<div class="cap" style="margin:10px 4px 0">나머지 <b>${rest}곳</b>은 내일 이어서 나와요.</div>`;
+  /* 회독본이 없는 자리(총창) — 읽을 수 있는 것과 섞지 않고 아래 따로 접어 둔다.
+     🔴 카드→PDF 페이지 연결은 백로그다(HTML 뷰어가 필요해 1차 제외 — 메타 합의). */
+  if(noLink.length){
+    const n=noLink.reduce((a,e)=>a+e.cards.length,0);
+    h+=`<div class="card-box" style="margin-top:14px"><details>
+      <summary style="cursor:pointer;font-weight:600">원문을 따로 봐야 하는 곳 ${noLink.length}곳 · ${n}장</summary>
+      <div class="cap" style="margin:8px 0">회독본이 없는 과목이에요 — 앱에서 열 수가 없어서 원문 PDF를 보셔야 해요.</div>
+      <div class="rd-list">${noLink.map(row).join('')}</div></details></div>`;
+  }
+  body.innerHTML=h;
 }
 
 /* ═══════════════ 약점 ═══════════════ */

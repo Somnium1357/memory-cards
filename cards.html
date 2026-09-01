@@ -7536,6 +7536,43 @@ let toastT=null;
 function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show');
   clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1800); }
 
+/* ═══════════════ 세션 범위 키 복구 (2026-09-01) ═══════════════ */
+/* 🔴 spec에서 중주제 **이름이 바뀌거나**(체육 괄호 부연 제거) 대주제가 **갈리면**(미술 「평면 표현」→`#1`)
+   세션 범위(`scope.mids`)의 문자열 키가 어디에도 안 맞는 **고아**가 된다. 카드 ID는 안 갈리니
+   로그·일정은 멀쩡한데 그 중주제가 **세션에 아예 안 들어온다** — 콘솔에도 `planGaps`에도 안 뜨고
+   도달률·고아를 따로 재야만 보인다. 실측: 미술 「소묘」 15장이 09-01 계획 분할(`293358a`) 이후
+   「누적복습 5차」에서 조용히 빠져 있었고 아무도 몰랐다.
+   여기서 고치는 것은 **09-01에 확정된 3건뿐**이다 (체육 F3 2건 + 미술 분할 1건 · 카드 32장).
+   🔴 **마커를 두지 않는다 — 결정적 변환이다**(인수인계 §3의 두 길 중 ①). 매 부팅 돌려도 결과가 같고,
+   다른 기기의 낡은 사본이 합집합으로 옛 키를 되살려도 다음 부팅에서 다시 잡는다.
+   ⚠ **조건이 하나라도 안 맞으면 그 건은 건너뛴다** — 이름이 또 바뀌면 조용히 손을 뗀다.
+   ⚠ 일반화(고아를 자동 추측해 재매핑)는 **하지 않는다.** 범위가 엉뚱하게 넓어질 수 있다. */
+const SCOPE_FIX=[
+  ['7.체육|3~4학년군 스포츠||이동 움직임 (3~4학년군 스포츠)',  '7.체육|3~4학년군 스포츠||이동 움직임'],
+  ['7.체육|3~4학년군 스포츠||비이동 움직임 (3~4학년군 스포츠)','7.체육|3~4학년군 스포츠||비이동 움직임'],
+  ['9.미술|평면 표현||소묘',                                   '9.미술|평면 표현#1||소묘'],
+];
+function fixScopeKeys(){
+  const live=new Set();                       // 지금 카드가 실제로 만드는 중주제 키
+  for(const c of DATA){ const m=(c.tags||[])[1]; if(m) live.add(midKey(tagKey(c),m)); }
+  let n=0;
+  for(const sx of sessions){
+    if(!sx||!sx.scope) continue;
+    for(const [OLD,NEW] of SCOPE_FIX){
+      const mids=sx.scope.mids||[];           // 🔴 매번 다시 읽는다 — 한 세션에 두 건이 걸린다(체육)
+      if(!mids.includes(OLD)) continue;       // 이미 고쳤거나 이 세션 것이 아니다
+      if(mids.includes(NEW)) continue;        // 새 키가 이미 있으면 빼기만 하지 않는다 (사람 편집일 수 있다)
+      if(!live.has(NEW)) continue;            // 새 키에 카드가 없으면 손대지 않는다
+      sx.scope.mids=[...mids.filter(x=>x!==OLD), NEW];
+      scShrink(sx,[OLD]);                     // 옛 키는 툼스톤 — 낡은 사본과 병합돼도 안 되살아난다
+      scGrow(sx);                             // 새 키는 추가 — 이 사본이 더 새롭다
+      n++;
+    }
+  }
+  if(n) saveSessions();
+  return n;
+}
+
 /* ═══════════════ 부트 — 열면 홈 (풀이는 세션에서 시작) ═══════════════ */
 (async function(){
   applyTheme();
@@ -7548,6 +7585,8 @@ function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show');
     return;
   }
   await loadAll();
+  /* 🔴 원격 병합 **뒤에** 돈다 — 낡은 사본이 합집합으로 들여온 옛 키까지 같이 잡아야 한다 */
+  try{ fixScopeKeys(); }catch(e){ console.warn('[범위 복구] 실패 — 그냥 진행', e); }
   $('loading').style.display='none';
   if(cfg===null||!cfg.token) openSetup();
   /* 세션은 홈에서 골라 들어간다 (즉시 시작 폐지 — 동하 확정 2026-08-20).

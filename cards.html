@@ -8026,6 +8026,30 @@ function renderHelpToc(){    // 목차 칩 — 누르면 그 절만 펼치고 �
   box.dataset.built='1';
 }
 
+/* ═══════════════ 전체화면 유지 ═══════════════ */
+/* 🔴 **아이패드 전체화면(홈 화면에 추가)에서 `<a href>`를 누르면 사파리가 새로 열린다** —
+   주소창이 내려오고 앱 밖으로 나간 것처럼 보인다(동하 2026-09-01 실기: 「읽기 누르면 상단바가
+   떠서 좀 불편하고」). 이 앱은 `apple-mobile-web-app-capable`로 전체화면이 되는데, 그 방식에서는
+   앵커 이동이 브라우저로 빠지는 것이 iOS의 오래된 동작이다. **같은 오리진 이동을 `location.href`로
+   바꾸면 전체화면이 유지된다.**
+   🔴 링크를 자리마다 고치지 않고 **위임으로 한 곳에서** 잡는다 — 회독본 링크(카드 상세·풀이 화면·
+   읽을거리)가 여러 군데라 하나 빠뜨리기 쉽다.
+   ⚠ 앱 밖 스킴(`obsidian:` 등)과 새 탭(`target=_blank`)은 건드리지 않는다 — 판 색인을 못 받았을 때
+   옛 옵시디언 링크로 떨어지는 폴백이 살아 있어야 한다(§2.14 「못 받았다 ≠ 없다」).
+   ⚠ **돌아오는 길은 판 쪽 몫이다** — `hoedok/판/*.html`의 「카드앱 ↗」도 평범한 앵커라 같은 증상이
+   난다. 그 파일은 조립기 산출이라 손으로 못 고친다(§5.8) — 조판 세션에 넘길 일. */
+document.addEventListener('click', (e)=>{
+  const a = e.target && e.target.closest && e.target.closest('a[href]');
+  if(!a || a.target==='_blank') return;
+  const raw = a.getAttribute('href') || '';
+  if(!raw || raw.charAt(0)==='#') return;
+  if(/^[a-z][a-z0-9+.-]*:/i.test(raw) && !/^https?:/i.test(raw)) return;   // obsidian:·mailto: 등은 그대로
+  let u; try{ u = new URL(raw, location.href); }catch(_){ return; }
+  if(u.origin !== location.origin) return;                                  // 바깥 사이트는 그대로
+  e.preventDefault();
+  location.href = u.href;          // 전체화면을 유지한 채 이동
+}, true);
+
 /* ═══════════════ 토스트 ═══════════════ */
 let toastT=null;
 function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show');

@@ -4993,8 +4993,16 @@ function deleteSess(sx){
 
 /* ═══════════════ 큐 = 3축 합성: 범위 → 선발(위험도 R순) → 제시 순서 ═══════════════ */
 function userTags(id){ const s=state.cards[id]; return (s&&Array.isArray(s.t))?s.t:[]; }
-function inScope(c,sc){
-  if(retired(c)||offed(c)||buried(c)) return false;   // 미룸 = 오늘 큐에서만 빠짐 (due는 그대로)
+/* 🔴 **범위 판정은 두 갈래다** (2026-09-01 · 감사 #17 + 구조 관찰 ①).
+   ① `scopeMatch(c,sc)` = **이 세션의 범위에 속하나** — 영구 상태(은퇴·끄기)와 범위만 본다.
+   ② `inScope(c,sc)`    = ① **그리고** 오늘 큐에 실어도 되나 — 여기에만 「오늘 미룸」이 걸린다.
+   갈라 놓은 이유: **저장 큐를 거를 때 ②를 쓰면 미룬 카드가 영구 이탈한다.**
+   미룸은 **오늘 하루만**인데, 제외 적용·세션 편집이 `inScope`로 `sx.q`를 걸러 저장하면
+   그 카드는 내일이 와도 큐에 없다(감사 #17 — 실사용에선 「미뤘더니 사라짐」으로 보인다).
+   `settledToday`는 이미 저장 큐에 남기고 화면에서만 거르는데(되돌리기 발판), **미룸만 비대칭**이었다.
+   🔴 **저장 큐를 거르는 자리에는 `scopeMatch`를, 화면·큐 조립에는 `inScope`를 써라.** */
+function scopeMatch(c,sc){
+  if(retired(c)||offed(c)) return false;              // 영구 제거 — 저장 큐에서도 빠지는 게 맞다
   /* 🔴 제외 목록 (동하 2026-08-28) — 「일일 복습에 총창이 다음 진도로 뜬다」에서 나왔다.
      범위는 **담을 것**만 있었고 **뺄 것**이 없었다. 일일 복습은 범위가 비어 있어(=전부)
      「빼기」로 지울 대상 자체가 없다. 그래서 포함 목록과 별개의 제외 목록을 둔다.
@@ -5027,6 +5035,8 @@ function inScope(c,sc){
   if(sc.typ.length && !sc.typ.includes(c.typ)) return false;
   return true;
 }
+/* 오늘 큐에 실어도 되는가 = 범위에 속하고 + 오늘 미루지 않았고. 화면·큐 조립은 전부 이걸 쓴다. */
+function inScope(c,sc){ return scopeMatch(c,sc) && !buried(c); }
 function stArr(v){ // 상태는 배열 — 옛 단일값도 받는다
   const a=Array.isArray(v)?v.slice():[v||'due'];
   return a.includes('all')?['all']:(a.length?a:['due']);
@@ -6353,7 +6363,7 @@ function renderSession(){
       /* 자동 충전은 day를 비워 다음 렌더에서 다시 뽑고, 직접 추가는 큐에서 직접 걸러낸다 —
          안 그러면 「빼 뒀는데 오늘 그대로 나온다」가 된다. */
       if(!isFixed(sx)) sx.day='';
-      else sx.q=sx.q.filter(id=>{ const c=BYID[id]; return c && inScope(c, {units:[],mids:[],subj:[],tags:[],typ:[],ex:sx.scope.ex}); });
+      else sx.q=sx.q.filter(id=>{ const c=BYID[id]; return c && scopeMatch(c, {units:[],mids:[],subj:[],tags:[],typ:[],ex:sx.scope.ex}); });   // 🔴 scopeMatch — 미룬 카드를 저장 큐에서 빼지 않는다(감사 #17)
       if(curSess&&curSess.id===sx.id){ curPreset=asPreset(sx); queue=[...queue.slice(0,qPos), ...dropSettled(sessCards(sx))]; counts(); }
       saveSessionsFlush(); renderSession();
       toast(exCount(sx)?`${exCount(sx)}장을 이 세션에서 빼 뒀어요`:'제외를 지웠어요'); }});
@@ -7044,7 +7054,7 @@ $('nsSave').onclick=()=>{
     else if((nsTarget.scope.units||[]).length||(nsTarget.scope.mids||[]).length){
       // 범위가 지정된 직접 추가 세션: 빠진 범위 카드는 큐에서 빼고, 새 범위는 채운다
       const sc=nsTarget.scope;
-      nsTarget.q=nsTarget.q.filter(id=>{ const c=BYID[id]; return c && inScope(c, {units:sc.units, mids:sc.mids, ex:sc.ex, subj:[], tags:[], typ:[]}); });
+      nsTarget.q=nsTarget.q.filter(id=>{ const c=BYID[id]; return c && scopeMatch(c, {units:sc.units, mids:sc.mids, ex:sc.ex, subj:[], tags:[], typ:[]}); });   // 🔴 scopeMatch — 위와 같은 이유
       /* 🔴 「새로 들어온 범위」는 **편집 전 범위**와 비교해서 정한다 (동하 2026-08-22).
          예전에는 **남은 큐에 있는 단위**와 비교했다. 그래서 다 푼 세션(큐 0)은 범위 전체가
          새 것으로 보여 통째로 다시 채워졌다 — 「도형 추가했다 뺐더니 130장이 생겼다」의 정체다.

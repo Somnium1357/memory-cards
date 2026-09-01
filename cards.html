@@ -905,7 +905,10 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
           <code>is:leech</code> 누수 · <code>is:flag</code> 플래그 · <code>is:ann</code> @주석 ·
           <code>is:buried</code> 미룸 · <code>is:off</code> 끈 카드<br>
           <code>tag:"기초 문식성"</code> 태그(공백은 따옴표) · <code>typ:정의</code> 유형 · <code>subj:국어</code> 과목 ·
-          <code>rated:3</code> 최근 3일 채점 · <code>-is:new</code> 부정<br>
+          <code>rated:3</code> 최근 3일 채점 · <code>rated:3:1</code> 그중 「다시」 누른 것<br>
+          <code>due:0</code> 오늘까지 복습일 · <code>due:3</code> 사흘 안에 ·
+          <code>ivl&gt;21</code> 간격 21일 초과 · <code>ivl&lt;7</code> 7일 미만 ·
+          <code>-is:new</code> 부정<br>
           여러 조건은 띄어쓰기로 AND. 따옴표 없는 나머지 말은 앞·뒤·태그 본문 검색.
         </div>
         <div id="listHome"></div>
@@ -7409,6 +7412,12 @@ const LIST_CONDS=[
   {g:'되짚기', k:'flag',    n:'플래그',    f:c=>{const s=state.cards[c.id]; return !!(s&&s.flag!=null);}},
   {g:'되짚기', k:'ann',     n:'@주석',     f:c=>{const s=state.cards[c.id]; return !!(s&&s.ann&&s.ann.length);}},
   {g:'되짚기', k:'weak',    n:'약점',      f:c=>isWeak(c)},
+  /* 🔴 **최근 틀린 것**(감사 A10) — 약점(누적 틀림·낮은 안정도)과 **다른 축**이다.
+     약점은 「오래 무너져 온 카드」, 이건 「**요 며칠 사이에** 무너진 카드」다.
+     ⚠ 당일 재출 폐지(08-21)와 안 부딪힌다 — 당일이 아니라 최근 7일이고, 여기서 푸는 건
+     cram 성격이라 FSRS 일정을 안 건드린다(정규 채점으로 반영되는 건 같다). */
+  {g:'되짚기', k:'forgot',  n:'최근 틀린', f:c=>{ const lr=lastRevMap()[c.id];
+      return !!lr && lr[1]===1 && (Date.now()-lr[0]) < 7*86400000; }},
   {g:'오늘',   k:'today',   n:'오늘 푼',   f:null, today:true},
   {g:'오늘',   k:'due',     n:'복습 예정', f:c=>isDue(c)},
   {g:'오늘',   k:'buried',  n:'오늘 미룸', f:c=>buried(c)},
@@ -7488,8 +7497,12 @@ function parseQuery(q){ // 검색 = 연산자 AND + 나머지 낱말 본문 검�
   for(let raw of toks){
     let neg=false, t=raw.toLowerCase();
     if(t[0]==='-'){ neg=true; t=t.slice(1); }
-    const i=t.indexOf(':'), k=i>0?t.slice(0,i):'';
+    let i=t.indexOf(':'), k=i>0?t.slice(0,i):'';
     let v=i>0?t.slice(i+1):'';
+    /* 🔴 `ivl>21`처럼 **콜론 없는** 비교 연산자도 받는다 — 도움말에 그렇게 적혀 있고
+       안키도 `prop:ivl>21` 꼴이라 콜론을 강요하면 손이 한 번 더 간다.
+       (실측: 이 전처리가 없으면 `ivl>21`이 연산자로 안 잡혀 **전체 결과**가 나온다.) */
+    if(!k){ const m=t.match(/^(ivl)([<>=]\d+)$/); if(m){ k=m[1]; v=m[2]; } }
     v=v.replace(/^"|"$/g,'');                        // tag:"기초 문식성"
     let fn=null;
     if(v){
@@ -7506,8 +7519,21 @@ function parseQuery(q){ // 검색 = 연산자 AND + 나머지 낱말 본문 검�
       else if(k==='tag')fn=c=>(c.tags||[]).concat(userTags(c.id)).some(x=>x.toLowerCase().includes(v));
       else if(k==='typ')fn=c=>(c.typ||'').toLowerCase().includes(v);
       else if(k==='subj')fn=c=>(c.subj||'').toLowerCase().includes(v);
-      else if(k==='rated'){ const n=Math.max(1,+v||1);
-        fn=c=>{ const lr=LR[c.id]; return !!lr && (Date.now()-lr[0]) < n*86400000; }; }
+      /* 🔴 `rated:3` = 최근 3일 채점 · `rated:3:1` = 그중 **「다시」를 누른 것**(감사 A5·A10).
+         등급은 1 다시 · 2 어려움 · 3 알맞음 · 4 쉬움. 「최근 틀린 것만」이 이걸로 나온다. */
+      else if(k==='rated'){ const p=v.split(':'); const n=Math.max(1,+p[0]||1), gr=p[1]?+p[1]:0;
+        fn=c=>{ const lr=LR[c.id]; if(!lr || (Date.now()-lr[0])>=n*86400000) return false;
+          return gr? lr[1]===gr : true; }; }
+      /* `due:0` 오늘까지 · `due:3` 사흘 안에 (실효 due 기준 — 화면·큐 판단은 실효가 정본) */
+      else if(k==='due'){ const n=Math.max(0,+v||0), lim=dkAdd(todayKey(), n);
+        fn=c=>{ const st=state.cards[c.id]; if(!st||!st.fsrs||st.retired) return false;
+          return effDueKey(dayKey(new Date(st.fsrs.due)), c.id) <= lim; }; }
+      /* `ivl>21` `ivl<7` `ivl=1` — 복습 간격(일). 「얼마나 길게 벌어졌나」로 거른다 */
+      else if(k==='ivl'){ const m=v.match(/^([<>=]?)(\d+)$/);
+        if(m){ const op=m[1]||'=', num=+m[2];
+          fn=c=>{ const st=state.cards[c.id]; if(!st||!st.fsrs) return false;
+            const d=st.fsrs.scheduled_days||0;
+            return op==='>'?d>num : op==='<'?d<num : d===num; }; } }
     }
     if(fn) preds.push(neg?(c=>!fn(c)):fn);
     else words.push(raw.toLowerCase().replace(/^"|"$/g,''));   // 연산자가 아니면 낱말(따옴표는 구절 검색)
@@ -7737,6 +7763,36 @@ function dDay(){ return Math.round((Date.parse(EXAM_DAY+'T12:00:00+09:00')-Date.
    시험 준비의 최종 지표에 가장 가깝다 — 「몇 장 봤나」도 「몇 장이 굳었나」도 아닌 **지금 상태**다.
    ⚠ 「굳은 카드(간격 21일+)」와 짝으로 읽어라: 굳음은 **시험날까지 갈 것**, 이건 **지금 아는 것**이다.
    ▸ 성능 걱정은 실측으로 접었다 — 카드당 engine 호출인데도 **전량 16ms**라 캐시가 필요 없다. */
+/* A7 심화 통계 (동하 09-01 「넣어주면 좋겠는데, 비용 드는 작업 아니니까」).
+   안키의 Review intervals · Hourly breakdown · 응답시간 분포에 해당한다.
+   ⚠ 셋 다 **파생 표시**다 — 로그·FSRS를 안 건드리고, 없는 값은 조용히 빈 칸으로 둔다. */
+function ivlBuckets(){        // 복습 간격이 어떻게 퍼져 있나 = 「얼마나 벌어졌나」
+  const B=[['1일',1,1],['2~3일',2,3],['4~7일',4,7],['1~2주',8,14],['2~3주',15,21],
+           ['3주~1달',22,30],['1~2달',31,60],['2달+',61,1e9]];
+  const cnt=B.map(()=>0); let n=0;
+  for(const c of DATA){ const s=state.cards[c.id];
+    if(!s||s.retired||!s.fsrs||!s.fsrs.reps) continue;
+    const d=s.fsrs.scheduled_days||0; if(d<1) continue;
+    for(let i=0;i<B.length;i++) if(d>=B[i][1]&&d<=B[i][2]){ cnt[i]++; n++; break; }
+  }
+  return {labels:B.map(x=>x[0]), cnt, n};
+}
+function hourBuckets(){       // 언제 푸나 — 하루 경계(4시)를 그대로 쓴다
+  const cnt=new Array(24).fill(0); let n=0;
+  for(const e of state.log){ const d=logDate(e); if(isNaN(d)) continue;
+    cnt[d.getHours()]++; n++; }
+  return {cnt, n};
+}
+function msBuckets(){         // 응답 시간 분포 — 지금은 평균 하나뿐이라 「어디에 몰리나」가 안 보인다
+  const B=[['~3초',0,3000],['3~6초',3000,6000],['6~10초',6000,10000],
+           ['10~20초',10000,20000],['20~60초',20000,60000],['60초+',60000,1e12]];
+  const cnt=B.map(()=>0); let n=0, sum=0;
+  for(const e of state.log){ const ex=e[3];
+    if(!ex||typeof ex.ms!=='number'||ex.ms<=0) continue;
+    for(let i=0;i<B.length;i++) if(ex.ms>=B[i][1]&&ex.ms<B[i][2]){ cnt[i]++; n++; sum+=ex.ms; break; }
+  }
+  return {labels:B.map(x=>x[0]), cnt, n, avg:n?sum/n:0};
+}
 function knowledgeSum(){
   const now=new Date(); let sum=0, n=0;
   for(const c of DATA){ const s=state.cards[c.id];
@@ -7819,6 +7875,32 @@ function renderStats(){
   h+=`<div class="card-box"><details><summary style="cursor:pointer;font-weight:600">12주 달력</summary>
     <div class="cap" style="margin-top:8px">세로 한 칸 = 하루, 색이 진할수록 많이 푼 날</div>
     <div class="heat">${heat}</div></details></div>`;
+
+  /* A7 — 접어 둔다. 매일 볼 것은 아니고 「가끔 들여다보는」 층이다(동하 지시로 신설). */
+  const IV=ivlBuckets(), HR=hourBuckets(), MS=msBuckets();
+  let adv='';
+  if(IV.n){
+    const cols=IV.labels.map((L,i)=>({a:IV.cnt[i], label:L.replace('일','').replace('주','주').replace('달','달'),
+      title:`${L} · ${IV.cnt[i].toLocaleString()}장`}));
+    const mature=IV.cnt.slice(4).reduce((x,y)=>x+y,0);
+    adv+=`<h4 style="margin:14px 0 4px;font-size:13px">복습 간격 분포</h4>
+      <div class="cap">복습한 카드 ${IV.n.toLocaleString()}장이 어떤 간격에 있나 — 오른쪽이 많아질수록 굳은 거예요.
+        3주 이상이 <b>${mature.toLocaleString()}장</b>.</div>${barChart(cols)}`;
+  }
+  if(MS.n){
+    const cols=MS.labels.map((L,i)=>({a:MS.cnt[i], label:L, title:`${L} · ${MS.cnt[i].toLocaleString()}회`}));
+    adv+=`<h4 style="margin:16px 0 4px;font-size:13px">응답 시간 분포</h4>
+      <div class="cap">기록된 채점 ${MS.n.toLocaleString()}회 · 평균 ${fmtDur(Math.round(MS.avg))}.
+        <b>오래 걸린 쪽이 많으면</b> 카드가 무겁다는 뜻이에요(쪼갤 후보).</div>${barChart(cols)}`;
+  }
+  if(HR.n){
+    const cols=[]; for(let h=0;h<24;h++) cols.push({a:HR.cnt[h], label:(h%6===0)?h+'시':'',
+      title:`${h}시 · ${HR.cnt[h].toLocaleString()}회`});
+    let best=0; for(let h=0;h<24;h++) if(HR.cnt[h]>HR.cnt[best]) best=h;
+    adv+=`<h4 style="margin:16px 0 4px;font-size:13px">시간대별 풀이량</h4>
+      <div class="cap">전체 ${HR.n.toLocaleString()}회 · 제일 많이 푸는 때는 <b>${best}시</b>대예요.</div>${barChart(cols)}`;
+  }
+  if(adv) h+=`<div class="card-box"><details><summary style="cursor:pointer;font-weight:600">자세히 — 간격 · 응답 시간 · 시간대</summary>${adv}</details></div>`;
 
   /* ═══ ② 앞으로 뭐가 오나 ═══ */
   const F=forecastCarry(14);

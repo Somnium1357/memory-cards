@@ -6153,6 +6153,7 @@ function go(id){
   $('btnUndo').style.display  = railShow?'':'none';   // 홈·세션 화면에 떠 있으면 무엇을 되돌리는지 모호하다
   $('rail').style.display=railShow?'flex':'none';
   $('railFab').classList.toggle('show',railShow);
+  if(id!=='scrHome') navGuard();          // 홈이 아니면 뒤로가기용 칸을 물고 있는다
   if(id==='scrHome')renderHome();
   if(id==='scrSession')renderSession();
   if(id==='scrUnits')renderUnits();
@@ -6180,10 +6181,19 @@ function presetDesc(p){
 function renderToday(){ // 홈 첫 화면 = 오늘 한 일 (통계 탭까지 안 들어가도 보이게)
   const by=dailyStats(), tk=todayKey(), t=by[tk]||{n:0,nw:0,ms:0};
   const d=new Date(), wdays=['일','월','화','수','목','금','토'];
-  let due=0, learned=0;
+  /* 🔴 **어디서도 못 푸는 due는 이 숫자에서 뺀다** (동하 09-01 실기: 「세션에는 오늘 몫 다
+     풀었어요가 다 떠 있는데 홈에는 due 1개가 남아 있어」).
+     병인 = 이 숫자는 **전 카드**를 세고 세션은 **자기 범위**만 낸다. 동하가 「일일 복습」에서
+     `3.영어|교육과정`을 빼 뒀는데(제외 목록) 다른 세션도 그 단위를 안 담아서, 그 카드는
+     **어느 세션에도 안 나오는데 홈에만 잡혔다.** 숫자는 맞지만 「오늘 풀 것」으로는 거짓이다.
+     ⚠ 세는 기준만 바꾼다 — 카드·로그·일정은 안 건드리고, 뺀 장수는 아래 한 줄로 알린다. */
+  let due=0, learned=0, exDue=0;
+  const scopes=sessions.map(sx=>asPreset(sx).scope);
   for(const c of DATA){ const s=state.cards[c.id];
     if(s&&s.retired)continue;
-    if(isDue(c)&&!buried(c))due++;
+    if(isDue(c)&&!buried(c)){
+      if(scopes.some(sc=>inScope(c,sc)))due++; else exDue++;
+    }
     if(!isNew(c))learned++; }
   const wk=[]; let mx=1;
   for(let i=6;i>=0;i--){ const v=(by[dayKeyOffset(-i)]||{n:0}).n; wk.push(v); if(v>mx)mx=v; }
@@ -6201,7 +6211,9 @@ function renderToday(){ // 홈 첫 화면 = 오늘 한 일 (통계 탭까지 안
       <div>내일 예상<b>~${tomorrowCount(null)}</b></div>
       <div>학습 진입<b>${learned.toLocaleString()}<span style="font-size:12px;color:var(--mute)"> / ${DATA.length.toLocaleString()}</span></b></div>
       <div style="margin-left:auto;align-self:flex-end"><button class="h-tool" style="padding:8px 12px" data-go="scrStats">통계 자세히</button></div>
-    </div>${bkNote()}`;
+    </div>${bkNote()}${exDue?`<div class="desc" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">
+      복습일이 됐지만 <b>빼 둔 주제</b>라 어느 세션에도 안 나오는 카드가 <b>${exDue}장</b> 있어요.
+      <span style="opacity:.75">(세션 설정의 「빼기」를 풀면 나옵니다)</span></div>`:''}`;
   $('todayBox').querySelector('[data-go]').onclick=()=>go('scrStats');
 }
 /* 밀린 것을 나눠 갚는 중이면 그렇게 말해 준다 — 안 그러면 「왜 밀린 게 다 안 나오지」가 된다.
@@ -8305,31 +8317,74 @@ function renderHelpToc(){    // 목차 칩 — 누르면 그 절만 펼치고 �
    조판본을 **그대로** iframe에 띄운다 — 앱이 판을 다시 그리는 게 아니라(그건 정본 이원화라
    기각했던 B안이다) **같은 파일을 같은 오리진에서 보여줄 뿐**이다. 기호·도식 해석은 판 몫 그대로.
    ⚠ iframe 안에서 「카드앱 ↗」을 누르면 앱이 iframe 안에 통째로 들어간다 — load에서 잡아 닫는다. */
-let HD_QS=[], HD_QI=0, HD_KEY='', HD_N=0, HD_PUSHED=false;
+let HD_QS=[], HD_QI=0, HD_KEY='', HD_N=0;
 /* 🔴 **질문이 넷 이상이면 목록을 먼저 펼쳐 보여준다** (메타 09-01 판정).
    하나씩 돌리면 본문을 질문 수만큼 훑게 되는데, 3회차쯤부터는 의미 처리가 아니라
    제목 패턴매칭이 된다(읽기가 아니라 검색). 질문 세트를 **먼저 심고** 본문을 한 번
    통과하는 편이 파지가 높다(사전질문 효과). 1~3개면 표적이 선명한 현행이 낫다.
    → 분기 하나로 두 모드가 통합된다. */
 const HD_PREVIEW_MIN=4;
+/* 🔴 **iframe을 매번 새로 만들어 갈아 끼운다** — `src`를 바꾸면 그 이동이 **부모 히스토리에
+   쌓인다.** 그러면 뒤로가기가 화면이 아니라 **iframe 내비게이션을 되감아** 「뒤로 눌렀는데
+   화면이 그대로」가 난다(동하 09-01 실기 → 원인 규명까지 세 번 헛짚었다).
+   새로 만든 요소의 **첫 로드**는 히스토리에 안 쌓이므로 이걸로 오염이 사라진다.
+   닫을 때도 `about:blank`로 바꾸지 않고 요소를 통째로 비운다(같은 이유). */
+function hdNewFrame(src){
+  const old=$('hdFrame');
+  const f=document.createElement('iframe');
+  f.id='hdFrame'; f.title='회독본';
+  f.addEventListener('load', hdOnLoad);
+  if(src) f.src=src;
+  old.replaceWith(f);
+  return f;
+}
+function hdOnLoad(){
+  /* 판 안의 「카드앱 ↗」을 누른 경우 — iframe에 앱을 띄우지 말고 오버레이를 닫는다 */
+  try{ const p=$('hdFrame').contentWindow.location.pathname;
+    if(/cards\.html$/.test(p)){ closeHoedok(); return; } }catch(e){}
+  hdScroll(); setTimeout(hdScroll, 350);
+}
 function openHoedok(uri, title, qs, readKey, readN){
-  const f=$('hdFrame');
   $('hdTtl').textContent=title||'회독본';
   HD_QS=Array.isArray(qs)?qs.slice():[]; HD_QI=0;
   HD_KEY=readKey||''; HD_N=readN||0;
   $('hdQ').classList.remove('mini');
   $('hdQList').classList.toggle('on', HD_QS.length>=HD_PREVIEW_MIN);
   renderHdQ();
-  f.src=uri;
+  hdNewFrame(uri);
   $('ovlHd').classList.add('show');
-  /* 🔴 아이패드 전체화면에서는 **기기 자체의 가장자리 뒤로 제스처**가 히스토리를 되감는다 —
-     그대로 두면 앱 문서를 통째로 벗어난다. 오버레이를 열 때 칸을 하나 쌓아 두면 그 제스처가
-     **오버레이만 닫는다.** 앱은 그 밖에서 history를 안 쓰므로 이 칸은 오버레이 전용이다. */
-  try{ if(!HD_PUSHED){ history.pushState({hd:1},''); HD_PUSHED=true; } }catch(err){}
+  /* 🔴 기기·마우스 뒤로가기가 앱을 벗어나지 않게 **공용 가드 칸**을 물고 있는다.
+     ⚠ 오버레이 전용 칸은 두지 않는다 — 칸이 두 종류면 닫기 버튼·제스처·화면 전환이 뒤엉켜
+     「뒤로 눌렀는데 화면이 그대로」가 났다(실측). 칸은 하나, 우선순위만 나눈다. */
+  navGuard();
 }
+/* 🔴 **브라우저·마우스 뒤로가기로도 앱 안에서 뒤로 간다** (동하 09-01 실기:
+   「PC에서 뒤로가기로 세션 → 홈 화면 전환이 안 되고(마우스 뒤로가기 버튼)」).
+   앱은 화면 전환에 history를 안 써서, 마우스 4번 버튼은 **앱을 벗어나는 쪽**으로만 갔다.
+   → 홈이 아닌 화면에 있는 동안 **히스토리 칸을 하나 물고 있다가**, 뒤로가기가 오면 그 칸을
+   써서 앱 안에서 뒤로 간다(가장자리 스와이프와 **같은 목적지** — `backTo()`).
+   ⚠ **홈에서는 칸을 다시 쌓지 않는다** — 홈에서 한 번 더 뒤로 누르면 앱을 벗어나는 게 맞다.
+   ⚠ 오버레이가 열려 있으면 그게 먼저다(회독본 닫기). */
+let navPushed=false;
+function navGuard(){
+  if(navPushed) return;
+  try{ history.pushState({nav:1},''); navPushed=true; }catch(e){}
+}
+/* 뒤로가기 하나에 우선순위 둘 — ①회독본이 떠 있으면 그걸 닫는다 ②아니면 앱 안에서 뒤로.
+   홈에서는 칸을 다시 쌓지 않는다 → 홈에서 한 번 더 누르면 앱을 벗어난다(그게 맞다). */
 window.addEventListener('popstate', ()=>{
-  if($('ovlHd').classList.contains('show')) closeHoedok(true);
+  navPushed=false;
+  if($('ovlHd').classList.contains('show')){ closeHoedok(true); navGuard(); return; }
+  const s=[...document.querySelectorAll('.scr.on')].map(e=>e.id)[0];
+  if(s && s!=='scrHome') go(backToScr());                     // go가 다시 navGuard를 부른다
 });
+/* 스와이프·뒤로가기가 같은 곳으로 가야 한다 — 풀이에서는 그 세션 화면, 그 밖에는 홈 */
+function backToScr(){
+  const s=[...document.querySelectorAll('.scr.on')].map(e=>e.id)[0];
+  if(s!=='scrSolve') return 'scrHome';
+  if(!curSess) return 'scrHome';
+  viewSess=curSess; return 'scrSession';
+}
 /* 질문 띠 — 한 번에 하나씩 보여주고 ‹ › 로 넘긴다. 16개를 외워서 들어갈 수는 없다.
    목록 버튼을 누르면 전부 펼쳐 보고, 항목을 누르면 그 질문으로 간다. */
 function renderHdQ(){
@@ -8369,24 +8424,18 @@ $('hdQTxt').onclick=()=>{ $('hdQ').classList.toggle('mini'); };
 $('hdQBtn').onclick=()=>{ $('hdQList').classList.toggle('on'); renderHdQ(); };
 function closeHoedok(fromPop){
   $('ovlHd').classList.remove('show');
-  /* 🔴 뒤로 제스처로 닫혔으면 **이미 되감긴 뒤**다 — 또 부르면 앱 밖으로 나간다.
-     `history.state`로 판정하면 안 된다: back()이 비동기라 닫은 직후에도 옛 state가 남아 있어
-     다음 닫기가 한 칸 더 되감긴다(실측). 우리가 쌓았는지를 **플래그로** 들고 있는다. */
-  if(HD_PUSHED){ HD_PUSHED=false; if(!fromPop){ try{ history.back(); }catch(err){} } }
-  $('hdFrame').src='about:blank';      // 두고 오면 다음에 열 때 옛 자리가 잠깐 보인다
+  /* 🔴 **히스토리를 안 건드린다.** 닫기 버튼이 `back()`을 부르면 그 뒤로가기를 「소비만」 하려고
+     플래그가 필요한데, `back()`이 실제로 안 일어나는 경우가 있어 플래그가 남아 **다음 뒤로가기를
+     삼켰다**(실측: 「뒤로 눌렀는데 화면이 그대로」). 칸은 공용 가드 하나뿐이고, 뒤로가기가 올 때
+     오버레이가 떠 있으면 그걸 먼저 닫는 것으로 충분하다. */
+  hdNewFrame(null);                    // 요소를 비운다 — src 변경은 히스토리를 더럽힌다
   $('hdQList').classList.remove('on'); $('hdQ').classList.remove('mini');
   HD_QS=[]; HD_QI=0; HD_KEY=''; HD_N=0;
 }
 $('hdClose').onclick=closeHoedok;
-$('hdFrame').addEventListener('load', ()=>{
-  /* 판 안의 「카드앱 ↗」을 누른 경우 — iframe에 앱을 띄우지 말고 오버레이를 닫는다 */
-  try{ const p=$('hdFrame').contentWindow.location.pathname;
-    if(/cards\.html$/.test(p)){ closeHoedok(); return; } }catch(e){}
-  /* 🔴 **프래그먼트 스크롤을 직접 해 준다.** iframe은 숨은 채로 로드가 끝나는 일이 있어
-     브라우저가 `#앵커`로 안 옮겨 준다(실측: 앵커는 있는데 스크롤 0 · 그 자리는 68,959px 아래였다).
-     착지 정확도가 이 기능의 전부라 그냥 두면 안 된다. 글꼴이 늦게 붙어 자리가 밀리므로 한 번 더 맞춘다. */
-  hdScroll(); setTimeout(hdScroll, 350);
-});
+/* 🔴 **프래그먼트 스크롤을 직접 해 준다**(`hdOnLoad`). iframe은 숨은 채로 로드가 끝나는 일이 있어
+   브라우저가 `#앵커`로 안 옮겨 준다(실측: 앵커는 있는데 스크롤 0 · 그 자리는 68,959px 아래였다).
+   착지 정확도가 이 기능의 전부라 그냥 두면 안 된다. 글꼴이 늦게 붙어 자리가 밀리므로 한 번 더 맞춘다. */
 function hdScroll(){
   try{
     const w=$('hdFrame').contentWindow, d=w.document;

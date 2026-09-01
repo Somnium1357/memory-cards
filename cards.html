@@ -4282,12 +4282,6 @@ function cardRowKey(c, midSet){          // 그 카드가 어느 행에 속하�
 }
 function planRank(k){ const r=PLAN_RANK.get(rowUnit(k)); return r===undefined?9999:r; } // 계획에 없는 새 대주제는 맨 뒤
 function newSort(a,b){ return planRank(tagKey(a))-planRank(tagKey(b)) || a._i-b._i; } // 신규 = 수강일 오래된 대주제 → 문서순
-function newToday(){ // 오늘 처음 투입된 카드 수 (생애 첫 채점이 오늘)
-  const tk=todayKey(); let n=0;
-  for(const id in state.cards){ const s=state.cards[id];
-    if(s.d===tk&&s.fsrs&&s.fsrs.reps===1)n++; }
-  return n;
-}
 function hoedokPending(){ // 회독 대기 = 카드가 진입했는데 아직 읽음 체크 안 된 대주제
   if(!state.hoedok)state.hoedok={};
   const entered=new Set();
@@ -6186,7 +6180,7 @@ function scoreHtml(sc){
   const pc=v=>Math.round(v/sc.n*100), hit=Math.round((sc.n-sc.r[1])/sc.n*100);
   return `<div class="score" style="margin:0 0 14px">
     <div class="sc-top"><b>${sc.n}</b><small>회</small>
-      <span class="sc-hit">정답률 ${hit}%</span>
+      <span class="sc-hit" title="이 회차에 「다시」를 안 누른 비율 — 신규 첫 대면도 포함합니다(통계의 「복습 유지율」은 신규를 뺀 수라 숫자가 다릅니다)">회차 정답률 ${hit}%</span>
       <span class="sc-t">${fmtMin(sc.ms)}${sc.ms?` · 평균 ${fmtDur(Math.round(sc.ms/sc.n))}`:''}</span></div>
     <div class="sbar" style="margin-top:10px">
       <i style="width:${pc(sc.r[1])}%;background:var(--again)"></i><i style="width:${pc(sc.r[2])}%;background:var(--hard)"></i>
@@ -7521,6 +7515,75 @@ function barChart(cols, opt){ // cols=[{a,b,label,title,cls}] a=주(아래)·b=�
   return `<div class="chart" style="${opt&&opt.h?`height:${opt.h}px`:''}">${bars}</div><div class="xaxis">${ax}</div>`;
 }
 let statsLoaded=false;
+/* ═══════════════ 통계 계산 도우미 (2026-09-01 재편) ═══════════════ */
+/* 🔴 **유지율은 한 덩어리로 보면 신호가 숨는다**(감사 S1). 30일 통합 82% 하나로는
+   ①이번 주가 좋아졌는지 ②어느 과목이 무너졌는지를 못 본다. 실측으로 주별 80.8→94.5%,
+   과목별 총창 55%~수학 93%였다. 그래서 축을 받아 갈라 센다.
+   ⚠ **신규 첫 대면은 뺀다** — 처음 본 카드를 틀린 건 「잊음」이 아니다(안키 참 유지율과 같은 정의). */
+function retentionSplit(days, keyFn){
+  const seen=new Set(), out={};
+  const cut=days?Date.now()-days*86400000:0;
+  for(const e of state.log){
+    const first=!seen.has(e[0]); seen.add(e[0]);      // 🔴 cut 밖이어도 seen은 채운다 (첫 대면 판정의 정본)
+    if(first) continue;
+    if(logTs(e)<cut) continue;
+    const c=BYID[e[0]]; if(!c) continue;
+    const k=keyFn(e,c); if(k==null) continue;
+    const o=out[k]||(out[k]={n:0,pass:0});
+    o.n++; if(e[2]!==1)o.pass++;                       // 「다시」가 아니면 성공 회상 (FSRS 정의)
+  }
+  return out;
+}
+/* 굳은 정도 — 안키의 young/mature를 그대로 쓴다(간격 21일 경계).
+   「몇 장 봤나」보다 「몇 장이 굳었나」가 시험 관점의 질문이다. */
+function maturitySplit(){
+  const o={nw:0, young:0, mature:0, ret:0};
+  for(const c of DATA){ const s=state.cards[c.id];
+    if(s&&s.retired){o.ret++;continue;}
+    if(!s||!s.fsrs){o.nw++;continue;}
+    ((s.fsrs.scheduled_days||0)>=21 ? o.mature++ : o.young++);
+  }
+  return o;
+}
+function median(a){ if(!a.length)return 0; const b=a.slice().sort((x,y)=>x-y);
+  const m=b.length>>1; return b.length%2?b[m]:Math.round((b[m-1]+b[m])/2); }
+/* 🔴 **평균이 아니라 중앙값이다.** 밀린 것을 몰아 푼 날(W35은 하루 4,129회짜리 날이 있다)이
+   평균을 끌어올려 「하루 752장 처리」 같은 값이 나온다 — 그 값으로 예보를 그리면 이월이
+   영원히 0이 되어 **이 기능이 하는 일이 없어진다.** 중앙값은 몰아 푼 날에 안 흔들린다. */
+function dailyThroughput(){        // 실측 하루 처리량 — 「푼 날」의 중앙값
+  const by=dailyStats(), v=[];
+  for(let i=1;i<=28;i++){ const e=by[dayKeyOffset(-i)]; if(e&&e.n>0) v.push(e.n); }
+  return v.length? Math.max(20, median(v)) : 150;
+}
+/* 🔴 **예보가 이월을 알아야 한다**(감사 S3). 예전 예보는 「그날 새로 due가 되는 수」였다 —
+   오늘 못 푼 잔량이 내일로 넘어간다는 개념이 없어 **체계적으로 과소 추정**했다.
+   실측 처리량으로 매일 소화하고 남는 것을 다음 날로 넘긴다. 휴식일은 0장 처리. */
+function forecastCarry(n){
+  const tk=todayKey(), raw={}; let overdue=0;
+  for(const c of DATA){ const s=state.cards[c.id];
+    if(!s||!s.fsrs||s.retired||buried(c))continue;     // 🔴 buried 제외 — due 타일과 정의를 맞춘다(감사 S5)
+    const k=effDueKey(dayKey(new Date(s.fsrs.due)), c.id);
+    if(k<=tk)overdue++; else raw[k]=(raw[k]||0)+1; }
+  const cap=dailyThroughput(), cols=[]; let carry=0;
+  for(let i=0;i<n;i++){
+    const k=dayKeyOffset(i), rest=isRestDay(k);
+    const fresh=(i===0)?overdue:(raw[k]||0);
+    const load=carry+fresh;
+    const done=rest?0:Math.min(load,cap);
+    cols.push({k, fresh, carry, load, rest});
+    carry=load-done;
+  }
+  return {cols, cap, overdue};
+}
+function newExhaust(){             // 신규가 며칠에 바닥나나 — 「계획 대비 현위치」의 핵심 수 (감사 U2)
+  let left=0; for(const c of DATA) if(isNew(c)) left++;
+  const by=dailyStats(), v=[];
+  for(let i=1;i<=14;i++){ const e=by[dayKeyOffset(-i)]; if(e&&e.nw>0) v.push(e.nw); }
+  const rate = v.length ? median(v) : (intake.cap||130);   // 중앙값 — 위와 같은 이유(버스트 투입일이 평균을 왜곡)
+  return {left, rate, days: rate? Math.ceil(left/rate) : null};
+}
+function dDay(){ return Math.round((Date.parse(EXAM_DAY+'T12:00:00+09:00')-Date.now())/86400000); }
+
 function renderStats(){
   if(!statsLoaded){ statsLoaded=true;
     loadWeeks(weeksBack(13)).then(ok=>{ if(ok&&$('scrStats').classList.contains('on'))renderStats(); }); }
@@ -7537,33 +7600,17 @@ function renderStats(){
     if(isNew(c))nw++; else { learned++; e.done++; }
     if(isDue(c)&&!buried(c)){ due++; e.due++; }
   }
-  const tmr=tomorrowCount(null);
+  const alive=DATA.length-ret;        // 🔴 분모에서 은퇴를 뺀다 — 분자는 이미 빼고 있었다(감사 S5)
   const g=(k,v,sm)=>`<div class="stat"><div class="k">${k}</div><div class="v">${v}${sm?`<small> ${sm}</small>`:''}</div></div>`;
-  let h='<div class="stat-grid">'
+
+  /* ═══ ① 오늘·이번 주 뭘 했나 ═══ */
+  let h=`<div class="rail-grp" style="margin:4px 4px 10px">① 오늘 · 이번 주 뭘 했나</div>`;
+  h+='<div class="stat-grid">'
     +g('오늘 채점',today.n,'회')+g('오늘 신규',today.nw,'장')
     +g('오늘 학습시간',fmtMin(today.ms),'')+g('평균 응답',today.msN?fmtDur(Math.round(today.ms/today.msN)):'—','')
-    +g('due 남음',due,'장')+g('내일 예상','~'+tmr,'장')
-    +g('학습 진입',learned,`/ ${DATA.length}`)+g('끈 카드 · 미룸',`${ret} · ${bur}`,'장')
+    +g('due 남음',due,'장')+g('내일 예상','~'+tomorrowCount(null),'장')
+    +g('학습 진입',learned,`/ ${alive.toLocaleString()}`)+g('끈 카드 · 미룸',`${ret} · ${bur}`,'장')
     +'</div>';
-
-  /* due 예보 14일 */
-  /* 🔴 **실효 due로 센다**(09-01 감사 🟡5). 저장 due로 그리면 휴식일 칸이 통째로 거짓이 된다 —
-     실측 08-31: 목(09-03) 칸이 162장으로 그려지는데 실효로는 **0장**(전량 앞뒤로 분산됨).
-     「신규를 얼마나 넣을지 여기 보고 정하세요」라는 화면이라 거짓말의 대가가 크다. */
-  const fc={}; let overdue=0;
-  for(const c of DATA){ const s=state.cards[c.id];
-    if(!s||!s.fsrs||s.retired)continue;
-    const k=effDueKey(dayKey(new Date(s.fsrs.due)), c.id);
-    if(k<=tk)overdue++; else fc[k]=(fc[k]||0)+1; }
-  const fcols=[];
-  for(let i=0;i<14;i++){ const k=dayKeyOffset(i), d=new Date(Date.now()+i*86400000);
-    const v=i===0?overdue:(fc[k]||0);
-    fcols.push({a:v, cls:i===0?'today':'', label:i%2===0?`${d.getMonth()+1}/${d.getDate()}`:'',
-      title:`${k} · ${v}장${i===0?' (밀린 것 포함)':''}`}); }
-  const wk1=fcols.slice(0,7).reduce((a,c)=>a+c.a,0);
-  h+=`<div class="card-box"><h3>앞으로의 복습 부하</h3>
-    <div class="cap">14일 예보 — 오늘 칸은 밀린 것까지. 앞 7일 합계 <b>${wk1}장</b>. 신규를 얼마나 넣을지 여기 보고 정하세요.</div>
-    ${barChart(fcols)}</div>`;
 
   /* 최근 28일 풀이량 */
   const acols=[];
@@ -7573,21 +7620,11 @@ function renderStats(){
       label:(i%7===0)?`${d.getMonth()+1}/${d.getDate()}`:'', title:`${k} · 총 ${e.n}회 (신규 ${e.nw})`}); }
   const tot28=acols.reduce((a,c)=>a+c.a+c.b,0), act=acols.filter(c=>c.a+c.b>0).length;
   h+=`<div class="card-box"><h3>최근 4주 풀이량</h3>
-    <div class="cap">총 ${tot28}회 · 푼 날 ${act}일 · 하루 평균 ${act?Math.round(tot28/act):0}회</div>
+    <div class="cap">총 ${tot28.toLocaleString()}회 · 푼 날 ${act}일 · 하루 평균 ${act?Math.round(tot28/act):0}회</div>
     ${barChart(acols)}
     <div class="legend"><span><i style="background:var(--accent)"></i>복습</span><span><i style="background:var(--good)"></i>신규</span></div></div>`;
 
-  /* 12주 히트맵 */
-  let heat='';
-  const start=new Date(Date.now()-83*86400000);
-  for(let i=0;i<84;i++){ const d=new Date(start.getTime()+i*86400000), k=dayKey(d);
-    const v=(by[k]||{n:0}).n;
-    const lv=v===0?0:(v<10?1:(v<40?2:(v<100?3:4)));
-    heat+=`<i class="l${lv}" title="${k} · ${v}회"></i>`; }
-  h+=`<div class="card-box"><h3>12주 달력</h3><div class="cap">세로 한 칸 = 하루, 색이 진할수록 많이 푼 날</div>
-    <div class="heat">${heat}</div></div>`;
-
-  /* 채점 분포 · 참 유지율 (최근 30일, 복습만 — 신규 첫 대면 제외) */
+  /* 채점 분포 — 라벨을 「복습 유지율」로 못 박는다 (감사 S2: 세션 성적표의 「회차 정답률」과 정의가 다르다) */
   const seen=new Set(); const R=[0,0,0,0,0]; let msSum=0,msN=0;
   const cut=Date.now()-30*86400000;
   for(const e of state.log){
@@ -7598,27 +7635,99 @@ function renderStats(){
   }
   const rtot=R[1]+R[2]+R[3]+R[4];
   const pct=n=>rtot?Math.round(n/rtot*100):0;
-  h+=`<div class="card-box"><h3>채점 분포 · 참 유지율</h3>
-    <div class="cap">최근 30일 복습 ${rtot}회 (신규 첫 대면 제외)</div>
-    <div class="big-num"><b>${rtot?Math.round((rtot-R[1])/rtot*100):0}%</b><small>다시를 안 누른 비율 — 목표 유지율 90%</small></div>
+  h+=`<div class="card-box"><h3>복습 유지율 · 채점 분포</h3>
+    <div class="cap">최근 30일 <b>복습</b> ${rtot.toLocaleString()}회 — <b>신규 첫 대면은 뺀 수</b>예요.
+      세션 성적표의 「회차 정답률」은 신규를 포함하니 숫자가 다릅니다.</div>
+    <div class="big-num"><b>${rtot?Math.round((rtot-R[1])/rtot*100):0}%</b><small>「다시」를 안 누른 비율 — 목표 ${Math.round(fsrsCfg.ret*100)}%</small></div>
     <div class="sbar" style="margin-top:12px">
       <i style="width:${pct(R[1])}%;background:var(--again)"></i><i style="width:${pct(R[2])}%;background:var(--hard)"></i>
       <i style="width:${pct(R[3])}%;background:var(--good)"></i><i style="width:${pct(R[4])}%;background:var(--easy)"></i></div>
     <div class="legend">
       <span><i style="background:var(--again)"></i>다시 ${R[1]}</span><span><i style="background:var(--hard)"></i>어려움 ${R[2]}</span>
       <span><i style="background:var(--good)"></i>알맞음 ${R[3]}</span><span><i style="background:var(--easy)"></i>쉬움 ${R[4]}</span></div>
-    ${msN?`<div class="cap" style="margin:10px 0 0">응답 시간 평균 ${fmtDur(Math.round(msSum/msN))} · 기록된 채점 ${msN}회</div>`:
-      '<div class="cap" style="margin:10px 0 0">응답 시간은 이번 버전부터 기록돼요</div>'}</div>`;
+    ${msN?`<div class="cap" style="margin:10px 0 0">응답 시간 평균 ${fmtDur(Math.round(msSum/msN))} · 기록된 채점 ${msN.toLocaleString()}회</div>`:''}</div>`;
 
-  /* 과목별 진도 */
-  h+='<div class="card-box"><h3>과목별 진도</h3><div class="cap">막대 = 학습 진입 비율 · 오른쪽 숫자 = 오늘 due</div><div class="bar-list" style="background:none;padding:4px 0;margin:0">';
+  /* 12주 달력 — 접어 둔다 (감사 S4: 84칸 중 71칸이 공백이라 밀도 15%) */
+  let heat='';
+  const start=new Date(Date.now()-83*86400000);
+  for(let i=0;i<84;i++){ const d=new Date(start.getTime()+i*86400000), k=dayKey(d);
+    const v=(by[k]||{n:0}).n;
+    const lv=v===0?0:(v<10?1:(v<40?2:(v<100?3:4)));
+    heat+=`<i class="l${lv}" title="${k} · ${v}회"></i>`; }
+  h+=`<div class="card-box"><details><summary style="cursor:pointer;font-weight:600">12주 달력</summary>
+    <div class="cap" style="margin-top:8px">세로 한 칸 = 하루, 색이 진할수록 많이 푼 날</div>
+    <div class="heat">${heat}</div></details></div>`;
+
+  /* ═══ ② 앞으로 뭐가 오나 ═══ */
+  const F=forecastCarry(14);
+  h+=`<div class="rail-grp" style="margin:18px 4px 10px">② 앞으로 뭐가 오나</div>`;
+  const fcols=F.cols.map((c,i)=>{ const d=new Date(Date.now()+i*86400000);
+    return {a:c.load, cls:i===0?'today':(c.rest?'rest':''),
+      label:i%2===0?`${d.getMonth()+1}/${d.getDate()}`:'',
+      title:`${c.k}${c.rest?' (휴식일)':''} · 그날 부하 ${c.load}장`
+        +(c.carry?` = 이월 ${c.carry} + 새로 ${c.fresh}`:'')}; });
+  const peak=F.cols.reduce((m,c)=>Math.max(m,c.load),0);
+  const wk1=F.cols.slice(0,7).reduce((a,c)=>a+c.fresh,0);
+  h+=`<div class="card-box"><h3>복습 부하 예보 (14일)</h3>
+    <div class="cap">🔴 <b>못 푼 건 다음 날로 넘어간다</b>고 보고 그린 그림이에요 —
+      하루 처리량을 최근 실측 <b>${F.cap}장</b>으로 잡았습니다. 휴식일은 0장으로 봐요.
+      막대 = <b>그날 실제로 쌓여 있을 양</b>(이월 + 새로 due).</div>
+    ${barChart(fcols)}
+    <div class="cap" style="margin-top:8px">앞 7일에 <b>새로</b> due가 되는 건 ${wk1.toLocaleString()}장 ·
+      가장 몰리는 날 <b>${peak.toLocaleString()}장</b>${F.overdue?` · 지금 밀린 것 ${F.overdue.toLocaleString()}장`:''}</div></div>`;
+
+  /* ═══ ③ 시험까지 괜찮나 ═══ */
+  const dd=dDay(), NE=newExhaust(), M=maturitySplit();
+  h+=`<div class="rail-grp" style="margin:18px 4px 10px">③ 시험까지 괜찮나</div>`;
+  h+='<div class="stat-grid">'
+    +g('시험까지','D-'+dd,'일')
+    +g('안 나온 카드',NE.left.toLocaleString(),'장')
+    +g('신규 소진 예상',NE.days!=null?NE.days+'일':'—', NE.days!=null?`· 하루 ${NE.rate}장`:'')
+    +g('굳은 카드',M.mature.toLocaleString(),`/ ${(M.young+M.mature).toLocaleString()}`)
+    +'</div>';
+  h+=`<div class="card-box"><h3>시험까지의 셈</h3>
+    <div class="cap">지금 페이스(하루 ${NE.rate}장)면 <b>${NE.days!=null?NE.days+'일 뒤':'—'}</b>에 새 카드가 바닥나요
+      — 시험까지 <b>${dd}일</b>이니 <b>${NE.days!=null?Math.max(0,dd-NE.days):'—'}일</b>이 복습만 하는 기간이 됩니다.
+      ⚠ 페이스는 최근 실측 <b>중앙값</b>이에요(몰아 푼 날에 안 흔들리게).</div></div>`;
+  h+=`<div class="card-box"><h3>얼마나 굳었나</h3>
+    <div class="cap">안 나온 것 ${M.nw.toLocaleString()} · 아직 무른 것 ${M.young.toLocaleString()}(간격 21일 미만) ·
+      <b>굳은 것 ${M.mature.toLocaleString()}</b>(21일 이상). 굳은 카드가 시험날까지 남을 카드예요.</div>
+    <div class="sbar" style="margin-top:12px">
+      <i style="width:${alive?M.nw/alive*100:0}%;background:var(--mute)"></i>
+      <i style="width:${alive?M.young/alive*100:0}%;background:var(--hard)"></i>
+      <i style="width:${alive?M.mature/alive*100:0}%;background:var(--good)"></i></div>
+    <div class="legend"><span><i style="background:var(--mute)"></i>안 나옴</span>
+      <span><i style="background:var(--hard)"></i>무름</span><span><i style="background:var(--good)"></i>굳음</span></div></div>`;
+
+  /* 유지율 주별 추이 (감사 S1) */
+  const wr=retentionSplit(0, e=>weekKeyOf(logDate(e)));
+  const wks=Object.keys(wr).sort().slice(-8);
+  if(wks.length){
+    const wcols=wks.map((k,i)=>{ const o=wr[k], p=o.n?Math.round(o.pass/o.n*100):0;
+      return {a:p, cls:i===wks.length-1?'today':'', label:k.slice(-3), title:`${k} · ${p}% (${o.n.toLocaleString()}회)`}; });
+    const last=wr[wks[wks.length-1]], lp=last.n?Math.round(last.pass/last.n*100):0;
+    h+=`<div class="card-box"><h3>유지율 추이 (주별)</h3>
+      <div class="cap">통합 하나로는 나아지는지 안 보여요. 이번 주 <b>${lp}%</b> (${last.n.toLocaleString()}회).
+        ⚠ 밀린 걸 몰아 푼 주는 구조적으로 낮게 나와요 — 이미 잊을 만큼 지난 뒤에 채점하니까요.</div>
+      ${barChart(wcols)}</div>`;
+  }
+
+  /* 과목별 유지율 (감사 S1·A4) — 진도와 같이 본다 */
+  const sr=retentionSplit(0, (e,c)=>c.subj);
+  h+='<div class="card-box"><h3>과목별 — 진도와 유지율</h3>'
+    +'<div class="cap">막대 = 학습 진입 비율 · 가운데 = 복습 유지율(복습 30회 미만은 —) · 오른쪽 = 오늘 due.'
+    +' <b>낮은 과목이 평균을 끌어내립니다</b> — 여기서 어느 과목을 손볼지 정하세요.</div>'
+    +'<div class="bar-list" style="background:none;padding:4px 0;margin:0">';
   for(const sj of SUBJECTS){ const e=bySubj[sj]||{tot:0,done:0,due:0};
     const r=e.tot?Math.round(e.done/e.tot*100):0;
+    const o=sr[sj], p=(o&&o.n>=30)?Math.round(o.pass/o.n*100):null;
+    const cls=p==null?'':(p<70?'warn':'');
     h+=`<div class="bl-row"><span class="n" style="min-width:52px">${esc(sj.split('.')[1]||sj)}</span>
       <span class="bar" title="${e.done}/${e.tot}장"><i style="width:${r}%"></i></span>
+      <span class="m ${cls}" style="min-width:44px;text-align:right" title="${o?o.n+'회 복습':'복습 없음'}">${p==null?'—':p+'%'}</span>
       <span class="c">${e.due?e.due:'·'}</span></div>`; }
   h+='</div></div>';
-  h+=`<div class="empty-note" style="padding:10px">리뷰 로그 ${state.log.length}건 (전량 보존 — 스케줄러 최적화 근간)</div>`;
+  h+=`<div class="empty-note" style="padding:10px">리뷰 로그 ${state.log.length.toLocaleString()}건 (전량 보존 — 스케줄러 최적화 근간)</div>`;
   $('statsBody').innerHTML=h;
 }
 

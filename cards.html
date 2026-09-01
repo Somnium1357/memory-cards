@@ -7811,7 +7811,12 @@ function knowledgeSum(){
 
 function renderStats(){
   if(!statsLoaded){ statsLoaded=true;
-    loadWeeks(weeksBack(13)).then(ok=>{ if(ok&&$('scrStats').classList.contains('on'))renderStats(); }); }
+    /* 🔴 없는 주를 긁지 않는다 (09-02) — `weeksBack(13)`은 오늘부터 13주를 **무조건** 만들어서
+       로그 시작(`LOG_FIRST_MON`) 이전 주까지 요청했다. 통계에 들어갈 때마다 404가 10건(W24~W33).
+       「있을 수 있는 주」와 교집합만 받는다. ⚠ 상한은 `logWeeksRange()`가 아니라 **여전히 13주**다 —
+       기록이 13주를 넘기면 교집합이 최근 13주로 좁혀진다(통계가 쓰는 범위 그대로). */
+    const HAVE=new Set(logWeeksRange());
+    loadWeeks(weeksBack(13).filter(k=>HAVE.has(k))).then(ok=>{ if(ok&&$('scrStats').classList.contains('on'))renderStats(); }); }
   const tk=todayKey(), by=dailyStats();
   const today=by[tk]||{n:0,nw:0,ms:0,msN:0,r:[0,0,0,0,0]};
   let due=0,nw=0,ret=0,bur=0,learned=0;

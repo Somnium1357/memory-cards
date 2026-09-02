@@ -183,6 +183,12 @@ h4{font-family:var(--fb);font-weight:700;font-size:1rem;margin:16px 0 5px var(--
 .chain .arrow{color:var(--mk);}
 .par{display:flex;flex-direction:column;gap:2px;}
 
+/* ── 산문 — 문서 조각(별책 원문절 · 가공본)용 (2026-09-02 신설 · render_doc.py 가 쓴다).
+   노트 조각엔 산문이 없어 부품이 없었다. 단락은 <p>, 폭은 트리 밖 줄글 상한과 같은 46em. ── */
+.prose{max-width:46em;color:var(--ink);}
+.prose>p{margin:0 0 .6em;text-align:left;}
+.prose>p:last-child{margin-bottom:0;}
+
 /* ── 세로 사슬 — 단계가 ↓ 로 아래로 이어지고, 단계 오른쪽에 주석이 붙는다 (2026-08-30 신설).
    노트 원형: 단계명 밑에 ↓, 단계명 오른쪽에 ⇒ 주석. ↓ 를 .row 줄머리에 앉히면 의미가 죽는다.
    마크업 정본:

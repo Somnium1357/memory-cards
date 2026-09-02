@@ -5360,9 +5360,31 @@ function chainIsolate(list, seed){
 }
 /* 저장된 큐에서 지우지는 않는다 — 되돌리기가 그 카드를 되살릴 수 있어야 하므로,
    「오늘 정리된 카드」는 세션을 시작·재개할 때(playSess)와 큐를 새로 짤 때(buildQueue) 거른다. */
+/* ═══════════════ 🔴 큐의 두 문 — 모든 조립이 여기를 지난다 (동하 09-02 승인) ═══════════════
+   **발단** = 큐 조립이 세 곳에 따로 구현돼 있었다(`buildQueue` · `playSess` · `extendWithNew`).
+   규칙을 하나 더할 때마다 한 곳이 빠졌고, 빠지는 쪽은 거의 언제나 **「＋ 다음 진도」**였다 —
+   같은 종류 사고가 되풀이됐다: 큐 잔량 소실(08-21) · 셔플이 이 경로만 안 먹음(08-26) ·
+   이웃 격리 누락(09-02). 동하: 「다음 진도 관련된 이슈만 오백만개거든? 근본적인 솔루션이 필요해」.
+
+   **문은 둘이다.** 경로마다 다른 것은 **가운데 「선발」뿐**이고(자동 충전 / 이어가기 / 신규 한 바퀴),
+   앞뒤 규칙은 전부 같아야 한다.
+     `gateIn`  — **무엇이 오늘 나갈 수 있나** (오늘 정리분 제외 · 이웃 낱장 격리)
+     `gateOut` — **어떤 순서로 나가나** (제시 순서 · 누설 순서 교정)
+   🔴 **새 규칙은 반드시 이 둘 중 하나에 넣어라.** 경로에 직접 넣으면 다른 둘이 또 빠진다.
+   ⚠ `gateIn`의 `raw`는 **지목 세션(`pick`)** 전용이다 — 담은 것만 푸는 세션이라 오늘 정리분도 낸다.
+   ⚠ `gateOut`의 `reorder=false`는 **이어가기** 전용이다 — 저장된 큐 순서를 지켜야 한다. */
+function gateIn(cards, seed, raw){
+  return chainIsolate(raw ? cards.slice() : dropSettled(cards), seed);
+}
+function gateOut(list, order, reorder){
+  const l=list.slice();
+  if(reorder){ if(order==='doc') l.sort((a,b)=>a._i-b._i); else shuffle(l); }
+  return unleak(l, order!=='doc');
+}
+
 function buildQueue(p, status, seed){
   /* 🔴 격리는 **선발 전**이다 — 뒤에 걸면 상한(`limit`)을 뺀 카드가 차지해 그날 분량이 준다. */
-  let pool=chainIsolate(dropSettled(scopePool(p.scope, status)), seed);   // 오늘 정리분 · 이웃 낱장 격리 뒤에 짠다
+  let pool=gateIn(scopePool(p.scope, status), seed);   // 🔴 문 ①
   if(p.bury) pool=pool.filter(c=>!isNew(c)||!isRev(c)||revReady(c)); // 방향 분산은 신규분에만
   // 선발: 문서순 세션=앞에서 N(통독 의도) / 그 외=위험도 R순, 가중=쿼터 배분 후 쿼터 내 R순
   let sel;
@@ -5382,9 +5404,7 @@ function buildQueue(p, status, seed){
   else sel=riskSort(pool);
   if(p.limit) sel=sel.slice(0,p.limit);
   // 제시 순서 (선발된 집합에 적용)
-  if(p.order!=='doc') shuffle(sel);
-  else sel.sort((a,b)=>a._i-b._i);
-  return unleak(sel, p.order!=='doc');
+  return gateOut(sel, p.order, true);   // 🔴 문 ② — 제시 순서와 누설 교정은 여기 하나뿐
 }
 /* 답을 담은 카드는 그 답을 묻는 카드보다 **뒤에** (동하 승인 2026-08-23)
    ┌ 15:43:27 [기준] 극화 학습을 「역할놀이 학습과 모의 학습」으로 가르는 것은 무엇의 유무인가?
@@ -5464,7 +5484,7 @@ function playSess(sx){          // 세션 화면의 [이어가기] — 남은 �
   refillSess(sx);
   const all=sessCards(sx);
   // 다른 세션에서 오늘 푼 것은 빼고 이어간다 — 단 지목 세션(pick)은 그대로 푼다
-  queue=unleak(chainIsolate(sx.pick?all:dropSettled(all)), sx.how.order!=='doc'); qPos=0;
+  queue=gateOut(gateIn(all, null, sx.pick), sx.how.order, false); qPos=0;   // 🔴 두 문 · 저장 순서는 지킨다
   // 🔴 저장된 큐를 이어 풀 때도 한 번 더 건다 — 큐는 조립 뒤에도 「내용 추가」로 뒤에 붙는다
   phase = stOnly(sx.how.status,'new') ? 'new' : 'review';
   sessionDone=0; doneCredited=0; newServed=0; undoSnap=null; undoRun++; updateUndo(); sessReset();
@@ -5532,9 +5552,8 @@ function extendWithNew(){ // 신규 = 대주제 한 개씩 — 끝나면 체크�
      씨앗은 **남은 큐(`rest`)** — 아직 안 풀었어도 오늘 낼 자리는 이미 잡은 것이다.
      ⚠ 뺀 신규는 만기가 없어 사라지지 않는다 — `nextTopic()`이 「안 푼 카드가 남은 첫 대주제」를
      다시 고르므로 **다음 날 같은 주제로 돌아온다.** */
-  const picked = (curPreset&&curPreset.order!=='doc') ? shuffle(nt.cards.slice()) : nt.cards;
-  const fresh = chainIsolate(picked, rest);
-  queue=[...unleak(fresh, curPreset&&curPreset.order!=='doc'), ...rest]; qPos=0;
+  const ord = curPreset&&curPreset.order;
+  queue=[...gateOut(gateIn(nt.cards, rest), ord, true), ...rest]; qPos=0;   // 🔴 두 문 — 이 경로가 딴 살림을 차리던 자리다
   undoSnap=null; undoRun++; updateUndo();   // 큐가 새로 짜였다는 표시 — 스택은 그대로 산다
   syncSessQueue();
   /* 🔴 풀이 화면으로 데려간다. 큐가 빈 세션에서 이 버튼을 누르면 playSess가 finishSess로

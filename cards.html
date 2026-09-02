@@ -3393,6 +3393,25 @@ const LOG_FIRST_MON='2026-08-17';   // 로그가 시작된 주의 월요일 (첫
                                     // — 전량 재계산이 훑을 범위의 시작. 앞당기면 없는 주를 매번 404로 받는다.
 const LEGACY_STATE='cards-state.json';
 function logPath(wk){ return `cards-log-${wk}.json`; }
+
+/* ═══ Pages 빌드 스로틀 A안 1단계 (2026-09-02 동하 승인 · 계획서 `card\Pages_스로틀_계획서.md`) ═══
+   앱이 자주 쓰는 파일을 **`data` 브랜치로** 옮긴다. Pages 소스는 `main`/root(실측 확인)이므로
+   그쪽 커밋은 **빌드를 안 만든다.** 실측(최근 7일 1,963커밋) — 시간당 최다 **128 → 26**.
+   🔴 **되돌리기는 설정 한 줄** — `cfg.dataBranch=''`이면 전부 예전(main)으로 돌아간다.
+
+   🔴 **`cards-feedback.json`은 옮기지 않는다.** 야간 루틴 3.8이 **`main` 작업 트리에서 읽고 지운다**
+   (`SKILL.md` L287 「대상 = `repos\memory-cards\cards-feedback.json` · `git pull` 후 처리」).
+   옮기면 루틴이 새 피드백을 **영영 못 본다** — 계획서 §3.1의 「앱만 고치면 된다」가 이 파일에서 깨진다.
+   그 대가는 최다 19 대신 26이다(실측). 옮기려면 **루틴이 먼저 `data`를 읽도록 바뀌어야 한다.**
+
+   ⚠ Pages 상대경로로 읽는 것(`cards-data.json`·`cards-plan.json`·`hoedok/`)은 **그대로 main**이다. */
+const DATA_BRANCH_DEF='data';
+function dataBr(){ const b=(cfg&&cfg.dataBranch!==undefined)?cfg.dataBranch:DATA_BRANCH_DEF; return b||''; }
+function onData(path){ return path===MARKS_PATH || path===SESS_PATH || /^cards-log-/.test(path); }
+function refFor(path){ return onData(path) ? dataBr() : ''; }   // '' = 기본 브랜치(main)
+/* 🔴 1단계 = **양쪽 읽기 · 한쪽 쓰기.** 옛 앱을 물고 있는 기기가 `main`에 쓴 것을 여기서 건진다.
+   이 플래그를 끄는 것이 2단계다 — **모든 기기가 새 앱을 문 것을 확인한 뒤에만.** */
+let MAIN_FALLBACK=true;
 const K_REST='cards_rest_v1', K_CFG='cards_cfg_v1', K_STATE='cards_state_cache_v1', K_DIRTY='cards_dirty_v1',
       K_THEME='cards_theme_v1', K_PRESETS='cards_presets_v1', K_LASTP='cards_last_preset_v1',
       K_DATA='cards_data_cache_v1', K_SWIPE='cards_swipe_v1', K_INTAKE='cards_intake_v1',
@@ -3916,28 +3935,34 @@ function dropLogEntry(e){            // undo — 그 항목 하나만 지목해 
 function utf8ToB64(str){const b=new TextEncoder().encode(str);let s='';b.forEach(x=>s+=String.fromCharCode(x));return btoa(s);}
 function b64ToUtf8(b64){const bin=atob(b64);const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new TextDecoder().decode(a);}
 function ghHeaders(){return {'Authorization':'Bearer '+cfg.token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};}
-function ghUrl(p){return `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${encodeURIComponent(p)}`;}
-async function ghGet(path){          // {json, sha} · 없으면 null
-  const r=await fetch(ghUrl(path),{headers:ghHeaders(),cache:'no-store'});
-  if(r.status===404){ sha[path]=null; return null; }
+function ghUrl(p, ref){return `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${encodeURIComponent(p)}`+(ref?`?ref=${encodeURIComponent(ref)}`:'');}
+/* o = {ref, noSha}. 기본 ref는 그 파일이 사는 브랜치(`refFor`).
+   🔴 `noSha`는 **폴백 읽기 전용**이다 — `main` 사본을 읽으면서 `sha[path]`를 덮으면
+   다음 `ghPut`이 남의 브랜치 sha로 써서 매번 409가 난다(그 뒤 재시도가 먹긴 하지만 왕복이 두 배). */
+async function ghGet(path, o){          // {json, sha} · 없으면 null
+  const ref = (o && o.ref!==undefined) ? o.ref : refFor(path);
+  const noSha = !!(o && o.noSha);
+  const r=await fetch(ghUrl(path, ref),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404){ if(!noSha) sha[path]=null; return null; }
   if(r.status===401)throw{code:'auth'};
   if(r.status===403)throw{code:'perm'};
   if(!r.ok)throw{code:'http',status:r.status};
-  const j=await r.json(); sha[path]=j.sha;
+  const j=await r.json(); if(!noSha) sha[path]=j.sha;
   let txt;
   if(j.content){ txt=b64ToUtf8(j.content.replace(/\s/g,'')); }
   else { const r2=await fetch(j.download_url,{cache:'no-store'}); txt=await r2.text(); }
   return txt.trim()?JSON.parse(txt):null;
 }
 async function ghPut(path, buildBody, onConflict){   // 충돌(409·422)이면 원격을 다시 받아 합치고 재시도
+  const br=refFor(path);                       // '' = 기본 브랜치. 값이 있으면 그 브랜치에 쓴다
   const opts=()=>{
     const body=JSON.stringify({message:`${path} ${new Date().toISOString()}`,
-      content:utf8ToB64(JSON.stringify(buildBody())), ...(sha[path]?{sha:sha[path]}:{})});
+      content:utf8ToB64(JSON.stringify(buildBody())), ...(br?{branch:br}:{}), ...(sha[path]?{sha:sha[path]}:{})});
     const o={method:'PUT',headers:{...ghHeaders(),'Content-Type':'application/json'},body};
     if(document.visibilityState==='hidden' && body.length<55000) o.keepalive=true;
     return o;
   };
-  let r=await fetch(ghUrl(path),opts());
+  let r=await fetch(ghUrl(path),opts());       // PUT은 쿼리 ref를 안 받는다 — 브랜치는 본문으로만
   if(r.status===409||r.status===422){
     const remote=await ghGet(path);
     if(onConflict) onConflict(remote);
@@ -4668,8 +4693,14 @@ async function loadPlan(){        // 투입 계획·단위 분할 = 루틴 소�
   PLAN_DATE=new Map(INTAKE_PLAN);
 }
 function cachedFile(key){ const c=lsGet(key); if(!c)return null; try{ return JSON.parse(c); }catch(e){ return null; } }
-async function rawGet(path){   // 토큰 없이도 읽기는 된다 (공개 레포 · Pages 동일 출처)
-  try{ const r=await fetch(path+'?t='+Date.now(),{cache:'no-store'});
+/* 토큰 없이도 읽기는 된다 (공개 레포 · Pages 동일 출처).
+   🔴 `data` 브랜치 파일은 Pages에 없으므로 `raw.githubusercontent.com`으로 간다.
+   owner/repo를 모르면(설정 전) 예전대로 동일 출처 = main을 읽는다 — 읽기 전용이라 안전하다. */
+async function rawGet(path, ref){
+  const url = (ref && cfg && cfg.owner && cfg.repo)
+    ? `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${encodeURIComponent(ref)}/${path}`
+    : path;
+  try{ const r=await fetch(url+'?t='+Date.now(),{cache:'no-store'});
     if(!r.ok)return null; const t=await r.text(); return t.trim()?JSON.parse(t):null;
   }catch(e){ return null; }
 }
@@ -4690,7 +4721,7 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
     }
   } else {                        // 토큰 전: 읽기 전용으로라도 최신 상태를 보여준다
     [sc, fb, sess, lg] = await Promise.all([
-      rawGet(MARKS_PATH), rawGet(FB_PATH), rawGet(SESS_PATH), rawGet(logPath(wk))]);
+      rawGet(MARKS_PATH,refFor(MARKS_PATH)), rawGet(FB_PATH), rawGet(SESS_PATH,refFor(SESS_PATH)), rawGet(logPath(wk),refFor(logPath(wk)))]);
     if(!sc){ sc = await rawGet(SCHED_PATH); if(sc) migrated=true; }
     if(!sc && !fb) legacy = await rawGet(LEGACY_STATE);
   }
@@ -4722,7 +4753,7 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
       if(owk===wk) continue;
       const c=cachedFile(K_LOGP+owk); if(!c||!Array.isArray(c.log)||!c.log.length) continue;
       try{
-        const rm=await (cfg&&cfg.token ? ghGet(logPath(owk)) : rawGet(logPath(owk)));
+        const rm=await (cfg&&cfg.token ? ghGet(logPath(owk)) : rawGet(logPath(owk),refFor(logPath(owk))));
         logWeeks[owk]=[]; if(rm) mergeLogInto(rm, owk);
       }catch(e){ logWeeks[owk]=logWeeks[owk]||[]; }   // 토큰 문제로 부팅이 깨지지 않게
       mergeLogInto(c, owk); markDirty('log', owk);
@@ -4746,6 +4777,31 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
       if(both) mergeSessInto(sess);
     }
     normalizeSessions();
+    /* 🔴 **A안 1단계 — `main`에 남은 사본도 읽어 합친다** (2026-09-02).
+       옛 `cards.html`을 물고 있는 기기는 계속 `main`에 쓴다. 그 기기가 새 앱을 물기 전까지의
+       채점·마크·세션이 여기서 들어온다 — 이게 split-brain을 막는 장치다.
+       ⚠ **이 블록을 지우는 것이 2단계다.** 모든 기기가 새 앱을 문 것을 확인하기 전에는 지우지 마라.
+       ⚠ 합치는 방향은 **원격을 메모리에 병합** — 부팅에서 이미 검증된 세 함수를 그대로 쓴다.
+          `mergeMarksInto`에 `fbBase()`를 넘겨 **원격에 없는 옛 엔트리는 되살리지 않는다.**
+       ⚠ `markDirty`는 **로그가 실제로 늘었을 때만** 건다 — 무조건 걸면 부팅마다 헛 push가 난다.
+          마크·세션은 오늘 채점이 일어나면 어차피 같이 올라간다. */
+    /* 🔴 **1차 읽기가 실제로 `data`에서 온 경우에만** 돈다. 설정 전(owner/repo·토큰 없음)에는
+       `rawGet`이 동일 출처=main으로 떨어지므로, 그때 이 블록을 돌리면 **같은 파일을 자기 자신에
+       병합**하는 꼴이 된다(09-01 감사 🔴① 자기병합과 같은 결). 그 경우는 건널 것이 없다. */
+    const readFromData = dataBr() && cfg && (cfg.token || (cfg.owner && cfg.repo));
+    if(MAIN_FALLBACK && readFromData){
+      try{
+        const g=(pth)=> (cfg&&cfg.token) ? ghGet(pth,{ref:'main',noSha:true}) : rawGet(pth,'main');
+        const [mSc,mSess,mLg]=await Promise.all([g(MARKS_PATH), g(SESS_PATH), g(logPath(wk))]);
+        const n0=(logWeeks[wk]||[]).length;
+        if(mSc)   mergeMarksInto(mSc, fbBase());
+        if(mLg)   mergeLogInto(mLg, wk);
+        if(mSess) mergeSessInto(mSess);
+        const grew=(logWeeks[wk]||[]).length-n0;
+        if(grew>0){ markDirty('log', wk); console.log('[main 폴백] 로그', grew, '건 건져 옴'); }
+        normalizeSessions();
+      }catch(e){ console.warn('[main 폴백] 건너뜀 — data 사본으로 진행', e); }
+    }
   }
   rebuildLog();
   if(!state.cards)state.cards={}; if(!state.hoedok)state.hoedok={};
@@ -4799,14 +4855,14 @@ async function loadWeeks(keys){
   await Promise.all([                                      // 병렬 — 주가 늘어도 부팅이 안 느려진다
     ...rest.map(async k=>{
       let j=null;
-      try{ j = (cfg&&cfg.token) ? await ghGet(logPath(k)) : await rawGet(logPath(k)); }catch(e){}
+      try{ j = (cfg&&cfg.token) ? await ghGet(logPath(k)) : await rawGet(logPath(k),refFor(logPath(k))); }catch(e){}
       logWeeks[k]=(j&&j.log)||[];
       // 🔴 빈 주는 캐시하지 않는다 — 다른 기기가 그 주에 뒤늦게 올린 것을 영영 못 보게 된다
       if(logWeeks[k].length) lsSet(K_LOGP+k, JSON.stringify({v:2,week:k,log:logWeeks[k]}));
     }),
     ...reget.map(async k=>{
       let j=null;
-      try{ j = (cfg&&cfg.token) ? await ghGet(logPath(k)) : await rawGet(logPath(k)); }catch(e){}
+      try{ j = (cfg&&cfg.token) ? await ghGet(logPath(k)) : await rawGet(logPath(k),refFor(logPath(k))); }catch(e){}
       /* 아무것도 못 받았으면 실패로 친다. reget에 든 주는 로컬 캐시가 비어 있지 않은 주 =
          원격에도 있어야 정상이므로, null은 「없다」보다 「못 받았다」로 읽는 편이 안전하다.
          (rawGet은 네트워크 실패도 null로 삼켜서 어차피 구분이 안 된다.) */

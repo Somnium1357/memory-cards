@@ -447,6 +447,18 @@ input:focus,select:focus{border-color:var(--accent);}
 #summary .actions button{padding:13px 22px;border-radius:16px;font-size:15px;font-weight:700;}
 .btn-primary{background:var(--accent);color:var(--accent-ink);}
 .btn-ghost{border:1.5px solid var(--line);color:var(--ink2);}
+/* 🔴 설정 시트의 **낱개** 버튼 (2026-09-02 동하 「적용하기 버튼 ui가 좀 어색하다」).
+   `.btn-ghost`는 테두리·색만 정하고, 크기·여백은 늘 **컨테이너**가 줬다
+   (`.sheet .btn-row button` · `#summary .actions button` · `#themeSeg button`).
+   그 컨테이너 밖에 홀로 놓인 버튼은 아무도 안 줘서 **테두리만 있는 맨 글자**로 떨어졌다 —
+   실측 `padding:0 · border-radius:0 · font-size:16px · font-weight:400`.
+   「적용하기」만이 아니라 휴식일 「추가」·「오늘」도 같은 상태였다. 셋 다 같이 맞춘다.
+   값은 같은 시트의 `#themeSeg button`(9px · 8px · 13px · 700) 결에 맞췄다.
+   ⚠ `#ovlSettings .field button`으로 뭉뚱그리면 `.seg`·`#themeSeg`를 특이도로 덮어써서
+      멀쩡한 세그먼트까지 바뀐다. **홀로 놓인 것만 지목한다.** */
+#fwBox button, #restAdd, #restToday{padding:9px 13px;border-radius:10px;font-size:13px;font-weight:700;}
+#fwBox{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+#fwBox p{width:100%;margin:0 0 2px;}
 
 /* ══ 오버레이 시트 ══ */
 .ovl{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);display:none;
@@ -7030,7 +7042,7 @@ function renderFwUI(){
   }else{
     h+=`<p class="desc" style="margin:0 0 8px">표준값을 쓰고 있어요.</p>`;
   }
-  if(applied) h+=` <button class="btn-ghost" id="fwReset">표준값으로</button>`;
+  if(applied) h+=`<button class="btn-ghost" id="fwReset">표준값으로</button>`;   // 간격은 #fwBox의 gap이 준다
   box.innerHTML=h;
   const ap=$('fwApply'); if(ap) ap.onclick=()=>applyFw(FSRSP.w, FSRSP.at);
   const rs=$('fwReset'); if(rs) rs.onclick=()=>applyFw(null, new Date().toISOString());

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 190" width="360" height="190">
+  <style>
+    @media (prefers-color-scheme: dark) {
+      line { stroke: #dcdcdc !important; }
+      text { fill: #dcdcdc !important; }
+    }
+  </style>
+
+  <!-- V도(Vee diagram). 노트 p36 크롭 그대로:
+       왼쪽 어깨 `이론` · 꼭짓점 위 `초점 질문` · 오른쪽 어깨 `방법론`,
+       오른쪽 빗변 안쪽에 `지식 주장`, V 꼭짓점 아래에 `사건`.
+       화살촉이 없는 도식이라 path 화살촉은 쓰지 않았다(노트에도 없다). -->
+  <g stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="60"  y1="44" x2="150" y2="44"/>
+    <line x1="150" y1="44" x2="180" y2="140"/>
+    <line x1="180" y1="140" x2="210" y2="44"/>
+    <line x1="210" y1="44" x2="300" y2="44"/>
+  </g>
+
+  <g fill="#1a1a1a" font-family="Malgun Gothic, Apple SD Gothic Neo, Noto Sans KR, sans-serif" font-size="15">
+    <text x="80"  y="34" text-anchor="middle">이론</text>
+    <text x="180" y="26" text-anchor="middle">초점 질문</text>
+    <text x="280" y="34" text-anchor="middle">방법론</text>
+    <text x="222" y="104" text-anchor="start">지식 주장</text>
+    <text x="180" y="163" text-anchor="middle">사건</text>
+  </g>
+</svg>

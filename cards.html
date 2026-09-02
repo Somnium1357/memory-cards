@@ -5067,7 +5067,7 @@ function refillSess(sx){ // 전체 범위 세션은 날이 바뀌면 스스로 �
    ⚠ 그래서 되돌리기로 되살아날 카드는 이 숫자에 안 잡힌다. 「지금 풀 것」을 세는 값이므로 그게 맞다. */
 function sessRemain(sx){ return (curSess&&curSess.id===sx.id)
   ? queue.slice(qPos).filter(c=>!settledToday(c)&&!buried(c)).length
-  : dropSettled(sessCards(sx)).length; }
+  : chainIsolate(dropSettled(sessCards(sx))).length; }   // 🔴 격리분을 빼고 센다 — 숫자와 실제가 어긋나면 안 된다
 function addScopeToSess(sx, sel){ // 내용 추가 — sel={units:[],mids:[]}
   const have=new Set(sx.q);
   const p=asPreset(sx);
@@ -5327,10 +5327,38 @@ function settledToday(c){         // 오늘 처리 끝난 카드 = 오늘 한 �
    이 함수를 타는 자리는 전부 **화면 큐를 짜거나 낼 장수를 세는 곳**이라 다 같이 걸러야 맞다.
    ⚠ **저장 큐는 안 건드린다** — 되돌리기 발판이라는 원칙 그대로다(§3). 세는 것·내는 것만 바꾼다. */
 function dropSettled(list){ return list.filter(c=>!settledToday(c) && !buried(c) && !retired(c) && !offed(c)); }
+/* 🔴 **이웃 낱장 상호 누설 격리** (문법 v1.15 보강 2 · 동하 승인 2026-09-02 · 생성기 v2.29)
+   `[이웃]` 낱장은 앞면에 **i-1·i+1 단계명이 보인다.** 그래서 번호 차가 1인 두 장은
+   **서로의 답을 보여 준다**(2번 앞면에 1·3 / 3번 앞면에 2·4). **양방향이라 `unleak`의
+   「뒤로 보내기」로는 못 막는다** — 순서를 어떻게 놔도 한쪽이 샌다. 그래서 **같은 날 함께 안 낸다.**
+   · 카드에 생성기가 `g`(사슬 키 = 단계 변 앵커)·`n`(사슬 안 번호)을 실어 준다. 229장 · 48사슬.
+   · ⚠ **`n`은 억제된 낱장 자리를 비워 건너뛴다**(48 중 4사슬 · 예 `0,1,3`). **참 위치이므로 그대로 쓴다** —
+     「배열 안 순번」으로 다시 매기면 격리가 어긋난다.
+   · ⚠ **번호 차 2는 누설이 아니다** — 가운데 단계명이 두 앞면에 같이 보일 뿐 답이 아니다.
+   🔴 **단위는 「날짜」다, 세션이 아니다.** 세션은 이어 풀리므로 큐 단위로 막으면 같은 날
+   두 번째 이어가기에서 도로 붙는다. 그래서 **오늘 아무 세션에서나 푼 것**부터 자리를 심는다.
+   🔴 **뺀 카드는 만기를 그대로 둔다 — 미룸 표시를 달지 않는다.** 다음 날 저절로 큐에 들어온다.
+   결과적으로 한 사슬은 **홀짝 이틀**에 걸쳐 나온다(하루 한 장이 아니다). */
+function chainIsolate(list){
+  const taken=new Map();                    // g → Set(n) · 오늘 이미 잡힌 자리
+  const put=(g,n)=>{ if(!taken.has(g)) taken.set(g,new Set()); taken.get(g).add(n); };
+  const rated=todayRatings();               // ① 오늘 푼 것부터 심는다 (세션 가리지 않는다)
+  for(const c of DATA){ if(c.g==null||c.n==null) continue;
+    if(rated[c.id]!==undefined) put(c.g, c.n); }
+  const out=[];
+  for(const c of list){                     // ② 그 다음 이 큐에 담기는 순서대로
+    if(c.g==null||c.n==null){ out.push(c); continue; }
+    const s=taken.get(c.g);
+    if(s && (s.has(c.n-1) || s.has(c.n+1))) continue;   // 이웃이 오늘 자리를 잡았다 → 내일로
+    out.push(c); put(c.g, c.n);
+  }
+  return out;
+}
 /* 저장된 큐에서 지우지는 않는다 — 되돌리기가 그 카드를 되살릴 수 있어야 하므로,
    「오늘 정리된 카드」는 세션을 시작·재개할 때(playSess)와 큐를 새로 짤 때(buildQueue) 거른다. */
 function buildQueue(p, status){
-  let pool=dropSettled(scopePool(p.scope, status));   // 오늘 이미 정리된 카드는 빼고 짠다
+  /* 🔴 격리는 **선발 전**이다 — 뒤에 걸면 상한(`limit`)을 뺀 카드가 차지해 그날 분량이 준다. */
+  let pool=chainIsolate(dropSettled(scopePool(p.scope, status)));   // 오늘 정리분 · 이웃 낱장 격리 뒤에 짠다
   if(p.bury) pool=pool.filter(c=>!isNew(c)||!isRev(c)||revReady(c)); // 방향 분산은 신규분에만
   // 선발: 문서순 세션=앞에서 N(통독 의도) / 그 외=위험도 R순, 가중=쿼터 배분 후 쿼터 내 R순
   let sel;
@@ -5378,11 +5406,18 @@ function unleak(list, spread){
   /* 🔴 경계는 **분할 전 대주제**(tags[0])다. tagKey를 쓰면 분할 그룹이 갈라져 3쌍을 놓친다 —
      한 세션에 같은 대주제의 여러 분할 그룹이 같이 담기면 그대로 샌다.
      id로 미리 재 둔다(splice가 배열을 흔들어도 Map은 안 흔들린다. tagKey를 매번 부르면 4배 느리다). */
-  const uk=new Map(), items=new Map();
+  const uk=new Map(), items=new Map(), chain=new Map();
   for(const c of out){
     uk.set(c.id, c.subj+'|'+((c.tags||[])[0]||''));
+    if(c.g!=null) chain.set(c.id, c.g);
     const t=(c.items||[]).filter(x=>x&&x.length>=2);
-    if(t.length>=2) items.set(c.id, t);          // 열거 카드만 대상 (5,784장 중 극히 일부)
+    if(t.length>=2){ items.set(c.id, t); continue; }   // 열거 카드 (5,784장 중 극히 일부)
+    /* 🔴 **단계 낱장 확장** (09-02) — 낱장은 `items`가 없고 답이 `back` 한 줄(단계명)이다.
+       역방(단계 나열 → 모형명)은 그 답을 **앞면에 전부** 담으므로, 낱장이 뒤에 오면 답을 먼저 본다.
+       한 방향이라 순서로 막힌다 — 그래서 `unleak`이 맡는다(양방향인 낱장끼리는 `chainIsolate`).
+       ⚠ 한 낱말 대조라 원래는 오탐이 쏟아지는 규칙이다(「하나라도 담음」 4,167쌍). **단계명은
+       고유해서** 예외로 두고 대상을 `typ==='단계'`로 좁혔다. 넓히려면 쌍 수부터 재라. */
+    else if(c.typ==='단계'){ const b=String(c.back||'').trim(); if(b.length>=2) items.set(c.id,[b]); }
   }
   if(!items.size) return out;
   const LAST=3;
@@ -5396,6 +5431,19 @@ function unleak(list, spread){
       for(let ai=0; ai<bi; ai++){
         const a=out[ai];
         if(uk.get(a.id)!==u) continue;           // 누설은 같은 대주제 안에서 난다
+        /* 🔴 **같은 사슬끼리는 여기서 다루지 않는다** — 이웃 낱장은 **양방향**이라 순서로 못 막고
+           `chainIsolate`가 「같은 날 안 냄」으로 이미 처리한다. 안 빼면 이 자리가 **못 풀 제약**을
+           떠안아 패스를 헛돌고, 쌍만 1,329 → 1,628로 300쌍 는다(09-02 실측). */
+        if(chain.has(b.id) && chain.get(a.id)===chain.get(b.id)) continue;
+        /* 🔴 **낱장의 앞면은 「샌 것」으로 세지 않는다** (09-02 실측으로 되돌아온 자리).
+           낱장 앞면은 **반드시 모형명과 이웃 단계명을 담는다** — 안 담으면 물음이 안 선다
+           (문법의 「그 [기준] 카드는 둘을 대야 물음이 선다」와 같은 결). 그런데 모형명은 나열 카드의
+           **답**이라, 이걸 위반으로 세면 「낱장이 나열보다 앞」과 **정반대 제약**이 동시에 걸린다.
+           🔴 **순환이라 어떤 순서로도 못 푼다** — 실측에서 패스를 6번 돌려도 위반이 115에서 안 줄었고,
+           정작 막으려던 「낱장이 나열보다 뒤」가 74건 남았다. 한쪽을 놓아 줘야 나머지가 풀린다.
+           **놓아 주는 쪽 = 모형명 하나**(낱장 앞면). 막는 쪽 = 단계명 여럿(나열 앞면). 손실이 작다.
+           ⚠ 낱장 앞면의 이웃 단계명은 같은 사슬이라 위에서 이미 걸러졌다. */
+        if(chain.has(a.id)) continue;
         const f=a.front||'';
         if(!its.every(x=>f.includes(x))) continue;
         const at = rnd ? Math.floor(Math.random()*(ai+1)) : ai;   // a보다 앞이기만 하면 된다
@@ -5412,7 +5460,7 @@ function playSess(sx){          // 세션 화면의 [이어가기] — 남은 �
   refillSess(sx);
   const all=sessCards(sx);
   // 다른 세션에서 오늘 푼 것은 빼고 이어간다 — 단 지목 세션(pick)은 그대로 푼다
-  queue=unleak(sx.pick?all:dropSettled(all), sx.how.order!=='doc'); qPos=0;
+  queue=unleak(chainIsolate(sx.pick?all:dropSettled(all)), sx.how.order!=='doc'); qPos=0;
   // 🔴 저장된 큐를 이어 풀 때도 한 번 더 건다 — 큐는 조립 뒤에도 「내용 추가」로 뒤에 붙는다
   phase = stOnly(sx.how.status,'new') ? 'new' : 'review';
   sessionDone=0; doneCredited=0; newServed=0; undoSnap=null; undoRun++; updateUndo(); sessReset();

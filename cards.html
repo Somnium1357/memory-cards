@@ -1121,10 +1121,15 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
           <div class="hpb">
             <p>풀이 화면 오른쪽 사이드바(좁은 화면에선 <b>☰</b>)에 있어요.</p>
             <table class="hp-t">
-              <tr><th>⚑플래그</th><td>「이 카드가 이상하다」 신고. 카드는 그대로 나와요.
-                메모를 달면 저녁 루틴이 읽고 <b>문구를 고쳐요</b></td></tr>
-              <tr><th>지도·사례<br>정의·이름</th><td>「이 성분을 교재에서 끌어와 채워달라」는 신청이에요. 카드는 그대로 나와요.
-                지도=수업 적용, 사례=예시, 정의=내용, 이름=개념어. 저녁 루틴이 교재에서 찾아 <b>카드에 더해요</b></td></tr>
+              <tr><th>⚑플래그</th><td>「이 카드가 이상하다 — <b>고쳐 달라</b>」 신고. 카드는 그대로 나와요.
+                사유 칩 넷 중 골라 주세요(칩만 눌러도 플래그가 켜져요) —
+                <b>단서 과다</b>=앞면이 너무 많이 알려줘요 · <b>단서 추가</b>=<b>사례를 단서로 주세요</b>(앞면에 예를 보이고 이름을 묻게) ·
+                <b>문면 분리</b>=한 장에 묶인 걸 낱장으로 · <b>문장 어색</b>=말이 이상해요.
+                그 밖의 이유는 <b>메모</b>에 적어 주세요 — 저녁 루틴이 읽고 고쳐요</td></tr>
+              <tr><th>지도·사례<br>정의·이름</th><td>「이 성분을 교재에서 끌어와 <b>채워 달라</b>」는 신청이에요. 카드는 그대로 나와요.
+                지도=수업 적용, 사례=예시, 정의=내용, 이름=개념어. 저녁 루틴이 교재에서 찾아 <b>줄을 더해요</b> → <b>카드가 늘어요</b>.
+                ⚠ <b>「사례」는 예시를 하나 더 만드는 것</b>이에요. 지금 카드가 <b>사례로 물어보게</b> 바꾸고 싶으면
+                이쪽이 아니라 플래그의 <b>단서 추가</b>예요</td></tr>
               <tr><th>끄기</th><td><b>이 카드 그만.</b> 두 가지가 같이 일어나요 —
                 ① 지금 바로 큐에서 빠져요(카드 목록에서 다시 켤 수 있어요)
                 ② 저녁 루틴이 <b>spec에도 반영</b>해서 카드를 다시 만들어도 안 생겨요</td></tr>
@@ -3700,7 +3705,13 @@ function setFlag(c,v){ const s=st(c.id); s.flag=v; if(v==null)s.ft=[]; touchFb(s
    🔴 문구는 **동하 어휘 그대로**다 — 루틴 3.8이 이 표현으로 처리 방향을 잡는다. 다듬지 마라.
    칩 한 번 = 플래그 + 사유 기록(타이핑 제로). 자유 메모는 그대로 살아 있고 병기된다.
    파일에는 `type:[…]`로 나간다 — 기존 `flag` 문자열은 뜻도 자리도 그대로라 하위호환이다. */
-const FLAG_TYPES=['단서 과다','문면 분리','문장 어색','답면 오류'];
+/* 🔴 사유 칩 (2026-09-02 동하 개정) — **네 글자가 표준이다.**
+   `단서 추가` 신설 = 「이 카드는 **사례를 단서로** 줘야 한다」. 동하 육성: 「내가 사례 누르는
+   대부분은 이 뜻인데 그게 없어」. 🔴 그동안 그 뜻으로 **`ann:["사례"]`를 눌렀는데, 그건 루틴
+   규칙상 「교재에서 사례를 찾아 **변을 하나 더 추가**」다 — **카드가 느는 것과 단서가 바뀌는
+   것은 다른 결과**라 요청이 계속 다른 일로 소비됐다. 「단서 과다」와 짝을 이룬다(많다 ↔ 더 달라).
+   `답면 오류` 제거 = 동하 「어차피 답면 오류면 내가 설명을 붙여야 한다」 → 메모 칸이 그 자리다. */
+const FLAG_TYPES=['단서 과다','문면 분리','문장 어색','단서 추가'];
 function flagTypes(s){ return (s&&Array.isArray(s.ft))?s.ft:[]; }
 function toggleFlagType(c,name){
   const s=st(c.id);
@@ -5960,14 +5971,22 @@ function syncRail(){
   $('rOff').classList.toggle('on', !!(s&&s.ann&&s.ann.includes('끄기')));
   $('flagMemoRow').classList.toggle('on', !!(s&&s.flag!=null));
   $('flagMemo').value = (s&&s.flag)||'';
-  const on=flagTypes(s);
-  document.querySelectorAll('#flagTypes .ft-chip').forEach(b=>b.classList.toggle('on', on.includes(b.dataset.ft)));
+  renderFlagChips(s);
 }
-/* 칩은 **플래그 전에도 보인다** — 안 그러면 「플래그 → 칩」 두 번이 된다 */
-$('flagTypes').innerHTML=FLAG_TYPES.map(t=>`<button class="ft-chip" data-ft="${t}">${t}</button>`).join('');
-document.querySelectorAll('#flagTypes .ft-chip').forEach(b=>{
-  b.onclick=()=>{ const c=cur(); if(!c)return; toggleFlagType(c,b.dataset.ft); syncRail(); };
-});
+/* 칩은 **플래그 전에도 보인다** — 안 그러면 「플래그 → 칩」 두 번이 된다.
+   🔴 **카드마다 다시 그린다** — `FLAG_TYPES`에서 뺀 옛 사유(09-02의 `답면 오류`)를 이미 달아 둔
+   카드가 있으면 **그 카드에서만** 칩을 되살려 보여 준다. 목록에서 빼기만 하면 값은 `ft`에 남아
+   push까지 되는데 화면엔 없어서 **끌 방법이 사라진다.** 사유를 갈아 끼울 때마다 걸릴 자리다. */
+function renderFlagChips(s){
+  const on=flagTypes(s);
+  const list=[...FLAG_TYPES, ...on.filter(t=>!FLAG_TYPES.includes(t))];   // 옛 사유는 뒤에 붙인다
+  $('flagTypes').innerHTML=list.map(t=>
+    `<button class="ft-chip${on.includes(t)?' on':''}" data-ft="${t}">${t}</button>`).join('');
+  document.querySelectorAll('#flagTypes .ft-chip').forEach(b=>{
+    b.onclick=()=>{ const c=cur(); if(!c)return; toggleFlagType(c,b.dataset.ft); syncRail(); };
+  });
+}
+renderFlagChips(null);            // 첫 그리기 — 카드가 열리면 syncRail이 다시 그린다
 function toggleAnn(name){
   const c=cur(); if(!c)return;
   const s=st(c.id);

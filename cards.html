@@ -5527,33 +5527,47 @@ function finishSess(){         // 큐 소진 = 세션 화면으로 복귀 (성�
 }
 let ssOpen=new Set();   // 세션 화면에서 펼쳐 둔 대주제 (중주제 낱개로 빼기용)
 let curTopic=null; // 방금 투입한 대주제 키
-function nextTopic(){ // 다음 투입 = 계획 최우선 대주제의 오늘 한 바퀴(개념당 1장) — 바퀴는 중간에 안 자른다
+function nextTopic(skip){ // 다음 투입 = 계획 최우선 대주제의 오늘 한 바퀴(개념당 1장) — 바퀴는 중간에 안 자른다
   let pool=scopePool(curPreset.scope,'new').sort(newSort);
   if(curPreset.bury) pool=dirFilter(pool);   // 전방은 당일 전부, 역방향은 전방 도입 +2~3일 뒤
-  if(!pool.length) return null;
-  const k=tagKey(pool[0]);
-  return {key:k, cards:pool.filter(c=>tagKey(c)===k), date:PLAN_DATE.get(k)||'', label:hoedokLabel(k)};
+  /* 🔴 `skip` = **이번에 건너뛸 대주제 키**(09-02). 이웃 격리로 한 장도 못 내는 주제가 나오면
+     부르는 쪽이 그 키를 넣고 다시 부른다 — 안 그러면 「＋ 다음 진도」가 그날 내내 먹통이 된다. */
+  for(const c of pool){ const k=tagKey(c);
+    if(skip && skip.has(k)) continue;
+    return {key:k, cards:pool.filter(x=>tagKey(x)===k), date:PLAN_DATE.get(k)||'', label:hoedokLabel(k)};
+  }
+  return null;
 }
 function extendWithNew(){ // 신규 = 대주제 한 개씩 — 끝나면 체크포인트에서 다음 주제·장수 보고 선택
-  const nt=nextTopic();
   phase='new';
-  if(!nt){ finishSess(); return; }
+  /* 🔴 **이웃 격리로 한 장도 못 내는 주제는 건너뛴다** (동하 09-02 「다음 진도 버튼이 그냥 고장났는디」).
+     실측 — 「사회과 교수·학습 모형」 39장이 **전부 사슬 카드**였고, 동하가 오늘 그 사슬의 반대쪽
+     42장을 이미 풀어 둔 상태였다(사슬 `[0,2,4,6]` 남음 / `[1,3,5,7]` 오늘 푼 것). 그래서
+     `gateIn`이 **39장 전부**를 막았고 버튼이 아무 일도 안 하는 것처럼 보였다.
+     🔴 격리 자체는 규격대로 동작한 것이다 — 잘못은 **막혔을 때 아무 말도 없이 멈춘 것**이다.
+     고침 = 못 내는 주제는 건너뛰고 **다음 주제를 낸다.** 건너뛴 주제는 내일 `nextTopic()`이
+     다시 첫머리로 고르므로 순서가 밀릴 뿐 빠지지 않는다. 그리고 **무슨 일이 있었는지 말해 준다.** */
+  const tried=new Set(); let nt=null, fresh=null, rest=null, held=0, skipped=0;
+  while((nt=nextTopic(tried))){
+    rest=queue.slice(qPos).filter(c=>!nt.cards.includes(c));
+    fresh=gateIn(nt.cards, rest);
+    if(fresh.length){ held=nt.cards.length-fresh.length; break; }
+    tried.add(nt.key); skipped++;
+  }
+  if(!nt){
+    /* 낼 주제가 아예 없다 = 신규 소진이거나, 남은 주제가 전부 이웃 격리에 걸렸다. 갈라 말한다. */
+    if(skipped) toast('다음 주제 '+skipped+'개는 오늘 푼 카드의 이웃이라 내일 들어와요');
+    finishSess(); return;
+  }
   curTopic=nt.key;
   // 🔴 남은 큐를 버리지 마라. 예전에는 queue를 통째로 갈아끼워서, 복습이 남은 상태에서 누르면
   //    그 잔량이 화면 큐에서도 저장 큐에서도 사라졌다(직접 추가 세션은 자동 충전이 없어 영영).
-  //    누른 의도대로 신규를 앞에 놓되, 남은 것은 뒤에 그대로 붙인다.
-  const rest=queue.slice(qPos).filter(c=>!nt.cards.includes(c));
-  /* 🔴 신규 투입분에도 세션의 제시 순서를 적용한다 (동하 2026-08-26 「셔플로 해놔도 신규가 안 섞인다」).
-     nextTopic()은 문서순으로 뽑는데 예전엔 그대로 붙여서, 세션이 셔플이어도 **이 경로만** 문서순이었다.
-     설정이 거짓말을 하고 있던 셈. 문서순 세션(통독)은 그대로 둔다.
-     ⚠ 섞은 **뒤에** unleak을 건다 — 누설 쌍은 최종 순서에서 잡아야 한다. */
-  /* 🔴 **신규 투입도 이웃 격리를 탄다** (09-02 결함 보고). 다음 대주제가 사슬을 품으면
-     (사회 교수·학습 모형처럼 모형마다 `[이웃]` 사슬) **한 사슬의 n이 통째로 같은 큐에 들어온다.**
-     씨앗은 **남은 큐(`rest`)** — 아직 안 풀었어도 오늘 낼 자리는 이미 잡은 것이다.
-     ⚠ 뺀 신규는 만기가 없어 사라지지 않는다 — `nextTopic()`이 「안 푼 카드가 남은 첫 대주제」를
-     다시 고르므로 **다음 날 같은 주제로 돌아온다.** */
   const ord = curPreset&&curPreset.order;
-  queue=[...gateOut(gateIn(nt.cards, rest), ord, true), ...rest]; qPos=0;   // 🔴 두 문 — 이 경로가 딴 살림을 차리던 자리다
+  queue=[...gateOut(fresh, ord, true), ...rest]; qPos=0;   // 🔴 두 문 — 이 경로가 딴 살림을 차리던 자리다
+  /* 🔴 **말없이 넘어가지 않는다** — 이 버튼이 「고장난 것처럼」 보인 것이 바로 침묵 때문이었다. */
+  const msg=[skipped?'앞 주제 '+skipped+'개는 오늘 푼 카드의 이웃이라 내일로':'',
+             held?held+'장은 이웃 격리로 내일':''].filter(Boolean).join(' · ');
+  if(msg) toast(msg);
   undoSnap=null; undoRun++; updateUndo();   // 큐가 새로 짜였다는 표시 — 스택은 그대로 산다
   syncSessQueue();
   /* 🔴 풀이 화면으로 데려간다. 큐가 빈 세션에서 이 버튼을 누르면 playSess가 finishSess로

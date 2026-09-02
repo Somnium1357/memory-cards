@@ -5538,6 +5538,23 @@ function nextTopic(skip){ // 다음 투입 = 계획 최우선 대주제의 오�
   }
   return null;
 }
+/* 🔴 **낼 수 있는 다음 주제** — 화면과 버튼이 반드시 같은 답을 봐야 한다.
+   동하 09-02: 「이제 다음 카드 나오긴한데 추가하기에 사회 39장이 계속떠있우」.
+   체크포인트는 `nextTopic()`을 그냥 불러 **이웃 격리로 막힌 주제**를 보여 주고, 버튼은 그걸
+   건너뛰고 다른 주제를 냈다 — **화면이 거짓말을 했다.**
+   🔴 조립을 두 문으로 모아 놓고 **「무엇을 고를까」를 또 두 곳에 두면 같은 병이 난다.**
+   그래서 고르는 자리도 여기 하나로 모은다. **표시도 이걸 부르고, 투입도 이걸 부른다.**
+   ⚠ `qRest`(그때의 남은 큐)를 받는다 — 씨앗이자, 그 주제 카드가 이미 큐에 있으면 빼는 기준이다. */
+function usableTopic(qRest){
+  const tried=new Set(); let nt;
+  while((nt=nextTopic(tried))){
+    const rest=(qRest||[]).filter(c=>!nt.cards.includes(c));
+    const fresh=gateIn(nt.cards, rest);
+    if(fresh.length) return {nt:nt, fresh:fresh, rest:rest, held:nt.cards.length-fresh.length, skipped:tried.size};
+    tried.add(nt.key);
+  }
+  return {nt:null, fresh:[], rest:(qRest||[]), held:0, skipped:tried.size};
+}
 function extendWithNew(){ // 신규 = 대주제 한 개씩 — 끝나면 체크포인트에서 다음 주제·장수 보고 선택
   phase='new';
   /* 🔴 **이웃 격리로 한 장도 못 내는 주제는 건너뛴다** (동하 09-02 「다음 진도 버튼이 그냥 고장났는디」).
@@ -5547,13 +5564,8 @@ function extendWithNew(){ // 신규 = 대주제 한 개씩 — 끝나면 체크�
      🔴 격리 자체는 규격대로 동작한 것이다 — 잘못은 **막혔을 때 아무 말도 없이 멈춘 것**이다.
      고침 = 못 내는 주제는 건너뛰고 **다음 주제를 낸다.** 건너뛴 주제는 내일 `nextTopic()`이
      다시 첫머리로 고르므로 순서가 밀릴 뿐 빠지지 않는다. 그리고 **무슨 일이 있었는지 말해 준다.** */
-  const tried=new Set(); let nt=null, fresh=null, rest=null, held=0, skipped=0;
-  while((nt=nextTopic(tried))){
-    rest=queue.slice(qPos).filter(c=>!nt.cards.includes(c));
-    fresh=gateIn(nt.cards, rest);
-    if(fresh.length){ held=nt.cards.length-fresh.length; break; }
-    tried.add(nt.key); skipped++;
-  }
+  const u=usableTopic(queue.slice(qPos));
+  const nt=u.nt, fresh=u.fresh, rest=u.rest, held=u.held, skipped=u.skipped;
   if(!nt){
     /* 낼 주제가 아예 없다 = 신규 소진이거나, 남은 주제가 전부 이웃 격리에 걸렸다. 갈라 말한다. */
     if(skipped) toast('다음 주제 '+skipped+'개는 오늘 푼 카드의 이웃이라 내일 들어와요');
@@ -6584,8 +6596,9 @@ function renderSession(){
      「큐 비우기」로 비웠더니 그날 다시 풀 방법이 없었다). 범위가 빈 직접 추가 세션은
      inScope의 fixed 가드로 buildQueue가 0을 내 버튼이 안 뜬다 — 그대로 맞다. */
   const refillQ = !remain ? buildQueue(asPreset(sx), sx.how.status).map(c=>c.id) : null;
-  const nt=(sx.how.newAfter||stHas(sx.how.status,'new'))?(()=>{ const keep=curPreset; curPreset=asPreset(sx);
-      const t=nextTopic(); curPreset=keep; return t; })():null;
+  const ntU=(sx.how.newAfter||stHas(sx.how.status,'new'))?(()=>{ const keep=curPreset; curPreset=asPreset(sx);
+      const t=usableTopic(live?queue.slice(qPos):dropSettled(sessCards(sx))); curPreset=keep; return t; })():null;
+  const nt=ntU&&ntU.nt;   // 🔴 표시와 투입이 같은 답을 본다
   // 직접 추가 세션인데 범위가 비었다 = 「다 풀었다」가 아니라 「담은 게 없다」
   const noScope = isFixed(sx) && !((sx.scope.units||[]).length||(sx.scope.mids||[]).length);
   let h=`<button class="ss-go" id="ssGo"${remain?'':' disabled'}>${remain?`이어가기 · ${remain}장`
@@ -6609,8 +6622,8 @@ function renderSession(){
   if(sx.lastScore) h+=`<div class="h-sec" style="margin-top:4px">마지막 성적</div>`+scoreHtml(sx.lastScore)+trendHtml(sx);
   h+=`<div class="ss-line"><span>누적 <b>${sx.done||0}</b>회</span>
       <span>${sx.lastAt?'마지막 '+fmtAgo(sx.lastAt):'아직 안 품'}</span></div>`;
-  if(nt) h+=`<button class="more-btn" id="ssNew">＋ 다음 진도: ${esc(nt.label)} (${nt.cards.length}장)</button>
-    <div class="why">수강한 순서상 <b>다음 차례인 대주제</b>를 통째로 시작해요. 고르는 건 계획이 합니다${nt.date?` · ${esc(nt.date)} 수강`:''}</div>`;
+  if(nt) h+=`<button class="more-btn" id="ssNew">＋ 다음 진도: ${esc(nt.label)} (${ntU.fresh.length}장)</button>
+    <div class="why">수강한 순서상 <b>다음 차례인 대주제</b>를 통째로 시작해요. 고르는 건 계획이 합니다${nt.date?` · ${esc(nt.date)} 수강`:''}${ntU.held?` · <b>${ntU.held}장</b>은 오늘 푼 카드의 이웃이라 내일`:''}${ntU.skipped?` · 앞 주제 <b>${ntU.skipped}개</b>는 오늘 푼 카드의 이웃이라 내일`:''}</div>`;
   const exU=(sx.scope.ex&&sx.scope.ex.units)||[], exM=(sx.scope.ex&&sx.scope.ex.mids)||[];
   const exN=exU.length+exM.length, exCards=exCount(sx);
   const exNames=[...exU.map(k=>{ try{return hoedokLabel(k);}catch(e){return k;} }),

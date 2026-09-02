@@ -8096,6 +8096,63 @@ function renderStats(){
     <div class="legend"><span><i style="background:var(--mute)"></i>안 나옴</span>
       <span><i style="background:var(--hard)"></i>무름</span><span><i style="background:var(--good)"></i>굳음</span></div></div>`;
 
+  /* ═══ 문풀 준비된 대주제 (동하 2026-09-02) ═══
+     「이 대주제는 이제 문제를 풀어도 되나」를 한 눈에. 정의 = **그 대주제의 카드 전부**가
+     지금 기억 확률(R) **기준값 이상**. 🔴 **기준값은 복습 강도 슬라이더 그 값**이다
+     (`fsrsCfg.ret` · 동하 09-02 「기준값은 앱 슬라이더 그거 말하는거」) — 새 설정을 만들지 않는다.
+     슬라이더를 옮기면 이 목록도 같이 움직인다. 뜻도 맞는다: 「내가 정한 만큼 안 잊었나」.
+     ⚠ **안 나온 새 카드가 하나라도 있으면 미달**이다(R이 없다 = 아직 모른다).
+     ⚠ 은퇴·끈 카드는 셈에서 뺀다.
+     ⚠ 순서 = 과목 번호 → 과목 안에서는 `cards-data.json` 첫 등장 순(= spec 문서 순). */
+  {
+    const th=fsrsCfg.ret, nowR=new Date(), G=new Map();
+    DATA.forEach((c,i)=>{
+      const s0=state.cards[c.id];
+      if(s0&&(s0.retired||(s0.ann&&s0.ann.includes('끄기')))) return;
+      const top=(c.tags||[])[0]||''; if(!top) return;
+      const k=c.subj+'|'+top;
+      let e=G.get(k); if(!e){ e={subj:c.subj, top:top, n:0, nw:0, low:0, min:1, i:i}; G.set(k,e); }
+      e.n++;
+      if(!s0||!s0.fsrs){ e.nw++; e.low++; e.min=0; return; }
+      let r=0; try{ r=engine.get_retrievability(fsrsRevive(s0.fsrs), nowR, false); }catch(err){}
+      if(r<e.min) e.min=r;
+      if(r<th) e.low++;
+    });
+    const rows=[...G.values()].sort((a,b)=>SUBJECTS.indexOf(a.subj)-SUBJECTS.indexOf(b.subj) || a.i-b.i);
+    const ready=rows.filter(e=>e.low===0);
+    const near=rows.filter(e=>e.low>0 && e.nw===0).sort((a,b)=>b.min-a.min).slice(0,5);
+    const rpct=Math.round(th*100);
+    h+='<div class="card-box"><h3>문풀 준비된 대주제</h3>'
+      +'<div class="cap">그 대주제의 <b>카드 전부</b>가 지금 기억 확률 <b>'+rpct+'% 이상</b>이면 준비된 거예요 — '
+      +'기준은 설정의 <b>복습 강도</b> 값이라, 슬라이더를 옮기면 이 목록도 같이 움직여요. '
+      +'<b>안 나온 새 카드가 하나라도 있으면 아직</b>이에요.</div>';
+    if(!ready.length){
+      h+='<div class="empty-note" style="padding:8px 0">아직 없어요 — 아래 「거의 된 것」을 먼저 메우세요</div>';
+    } else {
+      h+='<div class="bar-list" style="background:none;padding:4px 0;margin:0">';
+      for(const sj of SUBJECTS){
+        const mine=ready.filter(e=>e.subj===sj); if(!mine.length) continue;
+        const total=rows.filter(e=>e.subj===sj).length;
+        h+='<div class="bl-row" style="font-weight:800"><span class="n" style="min-width:74px">'+esc(sj)+'</span>'
+          +'<span class="m" style="text-align:left;flex:1">'+(mine.length===total?'✅ 과목 전체 준비됨':mine.length+' / '+total+' 대주제')+'</span></div>';
+        for(const e of mine) h+='<div class="bl-row"><span class="n" style="min-width:12px"></span>'
+          +'<span class="m" style="text-align:left;flex:1">'+esc(e.top)+'</span><span class="c">'+e.n+'장</span></div>';
+      }
+      h+='</div>';
+    }
+    if(near.length){
+      h+='<div class="cap" style="margin-top:10px"><b>거의 된 것</b> — 최저 기억 확률과 모자란 장수예요. '
+        +'<b>그 장수만 다시 꺼내면</b> 준비됨으로 넘어가요.</div>'
+        +'<div class="bar-list" style="background:none;padding:4px 0;margin:0">';
+      for(const e of near) h+='<div class="bl-row"><span class="n" style="min-width:74px">'+esc(e.subj)+'</span>'
+        +'<span class="m" style="text-align:left;flex:1">'+esc(e.top)+'</span>'
+        +'<span class="m" style="min-width:44px;text-align:right">'+Math.round(e.min*100)+'%</span>'
+        +'<span class="c">'+e.low+'장</span></div>';
+      h+='</div>';
+    }
+    h+='</div>';
+  }
+
   /* 유지율 주별 추이 (감사 S1) */
   const wr=retentionSplit(0, e=>weekKeyOf(logDate(e)));
   const wks=Object.keys(wr).sort().slice(-8);

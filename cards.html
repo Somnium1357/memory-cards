@@ -3731,6 +3731,42 @@ function addTag(c,t){ const s=st(c.id); s.t=s.t||[]; if(!s.t.includes(t))s.t.pus
 function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } }
 function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+/* ═══ 카드 캐시는 IndexedDB에 담는다 (2026-09-03 동하 승인) ═══
+   🔴 **발단** — `localStorage`가 **5.35MB**까지 찼고 그중 **카드 캐시가 4.27MB**였다
+   (인수인계 기준선은 2.3MB · 카드가 하루에 8,354 → 9,160으로 늘었다).
+   **사파리는 오리진당 5MB**라 아이패드에서 먼저 터진다. 그리고 `lsSet`은 실패를 `false`로
+   삼키므로 **소리 없이 캐시가 죽는다** — 채점 정본은 GitHub 로그라 안전하지만,
+   **오프라인 캐시와 「못 올린 채점」의 안전망이 먼저 무너진다.**
+   🔴 **옮기는 것은 카드 캐시 하나뿐이다.** 로그·마크·세션·설정은 `localStorage` 그대로 —
+   그쪽은 작고(합쳐 1MB 남짓) **동기 접근이 필요한 자리**가 많다. 큰 놈 하나만 빼면 압력이 사라진다.
+   ⚠ IDB는 비동기다. 카드 캐시를 읽는 자리는 `loadData()` 하나뿐이고 이미 `async`라 그대로 맞물린다.
+   ⚠ 실패는 전부 삼키고 `undefined`/`false`를 낸다 — **캐시는 없어도 되는 물건**이다(원격이 정본).
+      사파리 프라이빗 모드처럼 IDB가 막힌 데서도 앱이 죽으면 안 된다. */
+const IDB_NAME='cards_cache_v1', IDB_STORE='kv';
+function idbOpen(){
+  return new Promise((res,rej)=>{
+    let r; try{ r=indexedDB.open(IDB_NAME,1); }catch(e){ return rej(e); }
+    r.onupgradeneeded=()=>{ try{ r.result.createObjectStore(IDB_STORE); }catch(e){} };
+    r.onsuccess=()=>res(r.result);
+    r.onerror=()=>rej(r.error);
+    r.onblocked=()=>rej(new Error('blocked'));
+  });
+}
+async function idbGet(k){
+  try{ const db=await idbOpen();
+    return await new Promise((res,rej)=>{
+      const q=db.transaction(IDB_STORE,'readonly').objectStore(IDB_STORE).get(k);
+      q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); });
+  }catch(e){ return undefined; }
+}
+async function idbSet(k,v){
+  try{ const db=await idbOpen();
+    await new Promise((res,rej)=>{
+      const q=db.transaction(IDB_STORE,'readwrite').objectStore(IDB_STORE).put(v,k);
+      q.onsuccess=()=>res(); q.onerror=()=>rej(q.error); });
+    return true;
+  }catch(e){ return false; }
+}
 let cacheWarned=false;
 /* ═══════════════ 로컬 캐시 (파일별) ═══════════════ */
 let cacheTimer=null;
@@ -4642,10 +4678,13 @@ async function loadData(){
     DATA=j.cards||[];
     dataFresh=true;                 // 원격 = 최신 카드 ID 전량을 안다
     dataAt=Date.now(); dataDay=todayKey();
-    lsSet(K_DATA, JSON.stringify(j));
+    /* 🔴 IDB에 담고, **성공했을 때만** 옛 `localStorage` 사본을 지운다 — 그것이 이 이사의 실익이다
+       (4.27MB가 한 번에 빈다). IDB가 막힌 기기에서는 예전대로 `localStorage`에 담는다. */
+    const raw=JSON.stringify(j);
+    if(await idbSet(K_DATA, raw)) lsDel(K_DATA); else lsSet(K_DATA, raw);
   }catch(e){
     dataFresh=false;                // 캐시 폴백 = 밤새 재생성된 새 ID를 모른다
-    const c=lsGet(K_DATA);
+    const c=(await idbGet(K_DATA)) || lsGet(K_DATA);   // IDB 먼저 · 아직 안 옮긴 기기는 옛 사본
     if(c){ try{ DATA=(JSON.parse(c).cards)||[]; toast('오프라인 — 캐시 카드로 진행'); }catch(e2){} }
   }
   BYID={}; const tags=new Set(), typs=new Set();

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 150" width="620" height="150">
+  <style>
+    @media (prefers-color-scheme: dark) {
+      .ln { stroke: #dcdcdc !important; }
+      .ah { fill: #dcdcdc !important; }
+      .tx { fill: #dcdcdc !important; }
+      .qt { fill: #a8a8a8 !important; }
+    }
+  </style>
+  <g class="ln" stroke="#1a1a1a" stroke-width="1.4" fill="none">
+    <line x1="72" y1="75" x2="120" y2="75"/>
+    <line x1="152" y1="75" x2="196" y2="75"/>
+    <line x1="316" y1="75" x2="386" y2="40"/>
+    <line x1="316" y1="75" x2="386" y2="110"/>
+    <line x1="438" y1="40" x2="512" y2="70"/>
+    <line x1="438" y1="110" x2="512" y2="80"/>
+  </g>
+  <g class="ah" fill="#1a1a1a">
+    <path d="M196 75 L188 71.2 L188 78.8 Z"/>
+    <path d="M386 40 L377.6 38.4 L381.2 45.2 Z"/>
+    <path d="M386 110 L381.2 104.8 L377.6 111.6 Z"/>
+    <path d="M512 70 L503.6 68.4 L507.2 75.2 Z"/>
+    <path d="M512 80 L507.2 74.8 L503.6 81.6 Z"/>
+  </g>
+  <g class="tx" fill="#1a1a1a" font-family="Malgun Gothic, Apple SD Gothic Neo, Noto Sans KR, sans-serif" font-size="14">
+    <text x="36" y="80" text-anchor="middle">평형 상태</text>
+    <text x="136" y="66" text-anchor="middle">자극</text>
+    <text x="256" y="80" text-anchor="middle">불평형 상태</text>
+    <text x="412" y="34" text-anchor="middle">동화</text>
+    <text x="412" y="122" text-anchor="middle">조절</text>
+    <text x="556" y="80" text-anchor="middle">평형 상태</text>
+  </g>
+  <g class="qt" fill="#6b6b6b" font-family="Malgun Gothic, Apple SD Gothic Neo, Noto Sans KR, sans-serif" font-size="12">
+    <text x="256" y="98" text-anchor="middle">(= 인지적 갈등)</text>
+  </g>
+</svg>

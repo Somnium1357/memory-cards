@@ -706,6 +706,8 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .sess .cnt{flex:0 0 auto;text-align:right;}
 .sess .cnt b{display:block;font-size:18px;font-weight:800;color:var(--accent);letter-spacing:-.4px;}
 .sess .cnt small{font-size:10.5px;color:var(--faint);font-weight:700;}
+/* 남은 게 없는 세션은 조용히 — 강조색 「0」이 정보 없는 숫자로 제일 먼저 눈에 들어왔다(동하 09-05 비평) */
+.sess .cnt.zero small{font-size:12px;font-weight:600;color:var(--faint);}
 .ss-go{width:100%;padding:17px;border-radius:18px;background:var(--accent);color:var(--accent-ink);
   font-size:16px;font-weight:800;letter-spacing:-.2px;box-shadow:var(--shadow-sm);margin:4px 0 14px;}
 .ss-go:active{filter:brightness(.94);}
@@ -6596,7 +6598,8 @@ function renderHome(){
     el.innerHTML=`<div class="b"><div class="nm">${esc(sx.name)}${live?' <span style="font-size:11px;color:var(--good)">● 진행 중</span>':''}${sx.temp?' <span style="font-size:10.5px;color:var(--faint)">임시 · 오늘까지</span>':''}</div>
       <div class="ds">${esc(sessDesc(sx))}</div>
       <div class="ds">누적 <b>${sx.done||0}</b>회${sx.lastAt?` · 마지막 ${esc(fmtAgo(sx.lastAt))}`:' · 아직 안 품'}</div></div>
-      <div class="cnt"><b>${remain}</b><small>장 남음</small></div>`;
+      ${remain?`<div class="cnt"><b>${remain}</b><small>장 남음</small></div>`
+              :`<div class="cnt zero"><small>${isFixed(sx)&&!((sx.scope.units||[]).length||(sx.scope.mids||[]).length)?'담은 것 없음':'오늘 끝'}</small></div>`}`;
     el.onclick=()=>{ viewSess=sx; go('scrSession'); };
     box.appendChild(el);
   }

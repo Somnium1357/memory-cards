@@ -3913,9 +3913,16 @@ function cacheStateNow(){ // 파일 단위로 나눠 담는다 — 쿼터가 모
 }
 function setDirty(v){ dirty=v; v?lsSet(K_DIRTY,'1'):lsDel(K_DIRTY); updateSaveUI(); }
 
+/* 🔴 PUT이 비행 중일 때 들어온 변경을 잃지 않기 위한 세대 번호 (전층 감사 F0-1 · 2026-09-06).
+   pushAll이 PUT을 시작하기 전 세대를 적어 두고, 끝난 뒤 세대가 그대로일 때만 dirty를 지운다.
+   그 사이 채점·마크가 들어왔으면 dirty가 남아 다음 push가 올린다 — 그날 마지막 채점이 메모리·캐시·원격 어디에도
+   안 남던 구멍(콜드 부팅이 wasDirty=false라 캐시를 안 얹었다)을 막는다. */
+const dirtyGen={};
+function dirtyKey(kind, wk){ return kind==='log' ? 'log:'+(wk||thisWeek()) : kind; }
 function markDirty(kind, wk){        // kind: sched|fb|sess|log
   if(kind==='log'){ dirtyLogs.add(wk||thisWeek()); saveDirtyLogs(); }
   else dirtyFiles.add(kind);
+  const k=dirtyKey(kind, wk); dirtyGen[k]=(dirtyGen[k]||0)+1;
   setDirty(true);
 }
 function saveDirtyLogs(){ const v=[...dirtyLogs]; v.length?lsSet(K_DLOGS,v.join('|')):lsDel(K_DLOGS); }
@@ -4345,21 +4352,28 @@ function mergeSessInto(remote){
     ivShow.v=!!remote.ivShow.v; ivShow.at=remote.ivShowAt; lsSet(K_IVSHOW, JSON.stringify(ivShow)); applyIv(); }
 }
 async function pushAll(force){        // 바뀐 파일만 올린다 (로그 우선 — 스케줄은 파생 스냅샷)
+  const gen=k=>dirtyGen[k]||0;   // 비행 전 세대 — 끝난 뒤 같을 때만 지운다(F0-1)
   for(const wk of [...dirtyLogs]){
+    const g=gen('log:'+wk);
     await ghPut(logPath(wk), ()=>({v:2, week:wk, log:logWeeks[wk]||[]}), (rm)=>mergeLogInto(rm, wk));
-    dirtyLogs.delete(wk); saveDirtyLogs();
+    if(gen('log:'+wk)===g){ dirtyLogs.delete(wk); saveDirtyLogs(); }
   }
   if(dirtyFiles.has('marks')){
+    const g=gen('marks');
     await ghPut(MARKS_PATH, ()=>splitState().marks, mergeMarksInto);
-    dirtyFiles.delete('marks');
+    if(gen('marks')===g) dirtyFiles.delete('marks');
   }
-  if(dirtyFiles.has('fb'))    await ghPut(FB_PATH,    ()=>splitState().fb,    mergeFbInto);
-  dirtyFiles.delete('fb');
+  if(dirtyFiles.has('fb')){
+    const g=gen('fb');
+    await ghPut(FB_PATH, ()=>splitState().fb, mergeFbInto);
+    if(gen('fb')===g) dirtyFiles.delete('fb');
+  }
   /* 🔴 세션 목록을 못 읽은 부팅에서는 **올리지 않는다.** 올리면 남의 기기 세션을 지운다.
      dirty 표시는 지우지 않는다 — 다음에 제대로 읽으면 그때 올라간다. */
   if(dirtyFiles.has('sess') && sessLoadOK){
+    const g=gen('sess');
     await ghPut(SESS_PATH, sessFile, mergeSessInto);
-    dirtyFiles.delete('sess');
+    if(gen('sess')===g) dirtyFiles.delete('sess');
   }
 }
 function hasPending(){ return dirty || dirtyFiles.size>0 || dirtyLogs.size>0; }
@@ -4382,7 +4396,9 @@ async function push(force){ // 배치 push — 옵티미스틱: 실패해도 로
   const pushStartedAt=new Date().toISOString();
   try{
     await pushAll(force);
-    setDirty(false); ratedSincePush=0; lastPushAt=Date.now(); hideBanner();
+    const left = dirtyFiles.size>0 || dirtyLogs.size>0;   // 비행 중 들어온 변경이 남았으면 dirty를 유지하고 곧 다시 올린다(F0-1)
+    setDirty(left); ratedSincePush=0; lastPushAt=Date.now(); hideBanner();
+    if(left) setTimeout(()=>push(), 1500);
     /* 여기까지 왔으면 로컬 피드백은 전부 원격에 있다. 이 시각이 「소진 판정」의 기준선이다 —
        이보다 오래된 u를 가진 키가 나중에 원격에서 사라지면 그건 루틴이 소비한 것이다. */
     lsSet(K_FBSYNC, pushStartedAt);

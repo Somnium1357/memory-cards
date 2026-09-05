@@ -3492,18 +3492,24 @@ const TERM_TYPES=new Set(['동치','표기','전거','예시','대응','연쇄',
    항목(items·빈칸 ①②③)은 항목마다 따로 연다 — 한꺼번에 열면 어느 항목을 못 꺼냈는지가 뭉개진다. */
 const HINT_TYPES=new Set([...TERM_TYPES, '빈칸','원소']);
 function hintInScope(c){ return c.subj==='13.총창' || c.subj==='11.통합교과' || (((c.tags||[])[0])||'').includes('교육과정'); }
-function hintUnits(c){                  // 초성을 낼 답 조각들 [{lab, ans}] — 비면 힌트 없음
+/* 🔴 용어인지는 **조각마다** 잰다 — 빈칸 답은 「성취기준」도 있고 「교과 내 또는 교과 간 연계 지도 방법」도 있다
+   (동하 09-05 「얘는 서술인데도 붙었네」). 실측(범위 빈칸 조각 720): 공백 뺀 8자 이하가 87%, 9자부터는 구절이 대부분.
+   TERM_TYPES(대응·구성·단계…)는 유형이 곧 용어 답이라 길이를 안 잰다. */
+const HINT_MAX=8, HINT_MAX_TERM=12;     // 용어 유형(대응·구성·단계…)은 「실천 경험 중심 교과」처럼 조금 긴 이름도 있어 12자까지
+const termLike=(s,lim)=>s.replace(/\s/g,'').length<=lim;
+function hintUnits(c){                  // 초성을 낼 답 조각들 [{idx, lab, ans}] — 비면 힌트 없음. idx = 로그 `h`에 남는 항목 번호
   if(!hintInScope(c) || c.table || c.typ==='도식') return [];
+  const lim=TERM_TYPES.has(c.typ)?HINT_MAX_TERM:HINT_MAX;
   if(Array.isArray(c.items) && c.items.length>=2){
     if(!HINT_TYPES.has(c.typ)) return [];                          // 문장 항목(특징·지도…)은 제외
-    return c.items.map((it,i)=>({lab:String(i+1), ans:it}));
+    return c.items.map((it,i)=>({idx:i, lab:String(i+1), ans:it})).filter(u=>termLike(u.ans,lim));
   }
   const back=(c.back||'').trim(); if(!back) return [];
   const segs=back.split(/(?=[①②③④⑤⑥⑦⑧⑨⑩])/).map(s=>s.trim()).filter(Boolean);
   if(segs.length>=2 || (segs.length===1 && /^[①②③④⑤⑥⑦⑧⑨⑩]/.test(segs[0])))
-    return segs.map(s=>({lab:s[0], ans:s.slice(1).trim()}));      // 빈칸 ①②③ — 번호마다 따로
-  const term = HINT_TYPES.has(c.typ) || (back.length<=14 && !back.includes('·'));
-  return term ? [{lab:'', ans:back}] : [];
+    return segs.map((s,i)=>({idx:i, lab:s[0], ans:s.slice(1).trim()})).filter(u=>termLike(u.ans,lim));   // 빈칸 ①②③ — 번호마다
+  const term = termLike(back,lim) && (HINT_TYPES.has(c.typ) || !back.includes('·'));
+  return term ? [{idx:0, lab:'', ans:back}] : [];
 }
 function choseong(s){                   // 한글 음절 → 초성 · 영문 단어 → 첫 글자만 · 그 밖은 그대로
   const CHO='ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
@@ -3520,7 +3526,7 @@ function renderHintBox(c){
   const box=$('hintBox'); const units=hintUnits(c);
   box.innerHTML=''; box.classList.toggle('on', units.length>0);
   if(!units.length) return;
-  units.forEach((u,i)=>{
+  units.forEach(u=>{ const i=u.idx;   // 항목 번호는 원래 자리(걸러진 항목이 있어도 로그 번호가 어긋나지 않게)
     const b=document.createElement('button'); b.className='hint-chip'; b.dataset.lab=u.lab?u.lab+' ':'';
     const open=()=>{ b.classList.add('on'); b.textContent=choseong(u.ans); hintUsed.add(i); syncGradeButtons(); };
     if(hintUsed.has(i)) open(); else b.textContent=(u.lab?u.lab+' ':'')+'초성';

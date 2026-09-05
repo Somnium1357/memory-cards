@@ -131,8 +131,10 @@ input:focus,select:focus{border-color:var(--accent);}
 /* ══ 풀이 화면 ══ */
 .scr{display:none;flex:1;min-height:0;flex-direction:column;}
 .scr.on{display:flex;}
-#cardZone{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:6px 18px 10px;position:relative;}
-#card{width:100%;max-width:660px;max-height:100%;display:flex;flex-direction:column;
+/* 카드는 위에 앉힌다(동하 09-05 비평 1) — 세로 가운데면 카드 길이마다 시작점이 오르내리고(표 카드는 이미 위였다),
+   힌트가 바닥에 떨어져 시선이 셋으로 흩어졌다. 세로 방향 flex: 카드 → 바로 아래 힌트. 채점 바는 그대로 바닥(엄지 자리) */
+#cardZone{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:10px 18px 10px;position:relative;}
+#card{width:100%;max-width:660px;max-height:calc(100% - 30px);flex:0 1 auto;display:flex;flex-direction:column;
   background:var(--surface);border-radius:22px;box-shadow:var(--shadow);
   padding:26px 28px;overflow:hidden;cursor:pointer;position:relative;
   touch-action:pan-y;                       /* 세로 스크롤만 브라우저에 주고 가로는 우리가 쓴다 */
@@ -276,8 +278,7 @@ input:focus,select:focus{border-color:var(--accent);}
 #gHard{background:var(--hard-dim);color:var(--hard);}
 #gGood{background:var(--good-dim);color:var(--good);}
 #gEasy{background:var(--easy-dim);color:var(--easy);}
-#revealHint{position:absolute;left:0;right:0;bottom:calc(26px + env(safe-area-inset-bottom));
-  text-align:center;font-size:12px;color:var(--faint);pointer-events:none;font-weight:500;}
+#revealHint{flex:0 0 auto;margin-top:12px;text-align:center;font-size:12px;color:var(--faint);pointer-events:none;font-weight:500;}  /* 카드 바로 아래 — 바닥에서 올렸다 */
 
 /* ══ 사이드바 ══ */
 .rail-grp{font-size:12px;font-weight:800;letter-spacing:.12em;color:var(--faint);margin:16px 4px 8px;}
@@ -846,8 +847,8 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
             </div>
           </div>
         </div>
+        <div id="revealHint">카드를 탭하면 정답</div>
       </div>
-      <div id="revealHint">카드를 탭하면 정답</div>
       <div id="gradeBar">
         <button class="gbtn" id="gAgain"><span class="gl">다시</span><span class="gi" id="giAgain"></span></button>
         <button class="gbtn" id="gHard"><span class="gl">어려움</span><span class="gi" id="giHard"></span></button>
@@ -6030,7 +6031,9 @@ function reveal(){
   // 긴 앞면이면 방금 펼친 답면이 화면 밖이라 공개된 줄도 모른다 — 뷰포트 아래쪽(80% 밑)에
   // 있을 때만 살짝 끌어올린다. 짧은 카드는 nearest라 아무 일도 없다 (감사 U4). 스크롤 컨테이너=#cardScroll.
   const bw=$('cBackWrap'), scr=$('cardScroll').getBoundingClientRect();
-  if(bw.getBoundingClientRect().top > scr.top + scr.height*0.8)
+  /* 🔴 표 카드는 끌어올리지 않는다 — 답이 표 자체(renderTable(c,true))인데 그 아래 회독본 줄로 스크롤하면
+     표 머리글(조음 위치·입술·잇몸)이 잘린 채 시작한다(09-05 헤드리스 캡처로 확인). */
+  if($('cTable').childElementCount===0 && bw.getBoundingClientRect().top > scr.top + scr.height*0.8)
     bw.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 function unreveal(){   // 뒷면 → 앞면. 항목 체크(itemMarks)와 응답 시간(shownAt)은 건드리지 않는다 —

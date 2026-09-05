@@ -116,6 +116,10 @@ input:focus,select:focus{border-color:var(--accent);}
 #tbCounts{flex:1;text-align:center;font-size:13px;font-weight:600;color:var(--mute);letter-spacing:.1px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 #tbCounts b{color:var(--ink2);font-weight:700;}
+/* 왼쪽은 버튼 하나(홈), 오른쪽은 둘(일시정지·되돌리기)이라 flex 가운데가 화면 가운데보다 25px 왼쪽에 잡힌다 —
+   그 아래 phaseLine·카드는 화면 가운데라 윗줄만 어긋나 보였다(동하 2026-09-05). 오른쪽과 같은 폭(44+6)을
+   왼쪽에 더해 화면 가운데로. 좁은 폰에서는 글줄 폭이 모자라 말줄임이 생기므로 넓은 화면에서만 */
+@media (min-width:600px){ #tbCounts{margin-left:50px;} }
 #saveBadge{width:7px;height:7px;border-radius:50%;background:var(--hard);display:none;flex:0 0 auto;}
 #saveBadge.show{display:block;}
 #banner{display:none;background:var(--again-dim);color:var(--again);font-size:13px;font-weight:600;

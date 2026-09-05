@@ -3476,8 +3476,10 @@ function dataBr(){ const b=(cfg&&cfg.dataBranch!==undefined)?cfg.dataBranch:DATA
 function onData(path){ return path===MARKS_PATH || path===SESS_PATH || /^cards-log-/.test(path); }
 function refFor(path){ return onData(path) ? dataBr() : ''; }   // '' = 기본 브랜치(main)
 /* 🔴 1단계 = **양쪽 읽기 · 한쪽 쓰기.** 옛 앱을 물고 있는 기기가 `main`에 쓴 것을 여기서 건진다.
-   이 플래그를 끄는 것이 2단계다 — **모든 기기가 새 앱을 문 것을 확인한 뒤에만.** */
-let MAIN_FALLBACK=true;
+   🔴 **2단계(2026-09-05 동하 확인 · 「다 보여」)** — 09-02 이후 `main`에 앱 커밋 0 · 아이패드·PC 모두 새 앱으로 `data`에 저장하는 것을
+   커밋 기록으로 확인한 뒤 플래그를 끈다. `main`의 낡은 사본 다섯(marks·sessions·log W34~36)은 같은 커밋에서 추적을 뺀다(.gitignore).
+   되돌리기 = 이 한 줄 true. 블록 본문은 남겨 둔다 — 지우는 것은 다음 정리 때. */
+let MAIN_FALLBACK=false;
 const K_REST='cards_rest_v1', K_CFG='cards_cfg_v1', K_STATE='cards_state_cache_v1', K_DIRTY='cards_dirty_v1',
       K_THEME='cards_theme_v1', K_PRESETS='cards_presets_v1', K_LASTP='cards_last_preset_v1',
       K_DATA='cards_data_cache_v1', K_SWIPE='cards_swipe_v1', K_INTAKE='cards_intake_v1',

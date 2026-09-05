@@ -1,2 +1,6 @@
 hoedok/판/_조각보기.html
 hoedok/판/_미리보기.html
+# 앱 소유 파일은 data 브랜치에 산다(스로틀 2단계 · 09-05) — main엔 안 올린다. 로컬 사본은 refresh_data_copies.sh
+cards-marks.json
+cards-sessions.json
+cards-log-*.json

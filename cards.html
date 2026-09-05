@@ -5544,16 +5544,25 @@ function prFacts(){    // 로그·데이터 전수라 한 번 만들어 쓴다 (
   return (_prMemo={n:n, day:day, cards:DATA.length, passed:passed, hasDef:hasDef});
 }
 const PR_GATED_TYPS=['사례','단계서술'];
+/* 🔴 짝 키가 없는 역방 721장(대응 384 · 원소 333 …) — 생성기 v2.34가 pr을 「이름 답 역방 · 같은 노드」로만 찍어
+   열거 변 위의 원소·대응 쌍은 빠졌다(메타 실측 09-05 · 실사고 = 답 「잉크판」 카드 둘이 같은 날). 앱 쪽 임시 대안:
+   짧은 답(≤14자) 역방은 **정규화한 답면 문자열**도 열쇠로 쓴다. pr 카드도 그 열쇠를 같이 잡아 pr↔무pr 사이(83장)도 막는다.
+   생성기가 pr을 채우면 이 열쇠는 그냥 겹칠 뿐이라 걷어낼 필요가 없다. 검증(데이터 09-05): 무pr 역방 중 같은 답 48개·109장. */
+function normAns(s){ return String(s||'').toLowerCase().replace(/[\s·,.()\[\]「」『』〔〕]/g,''); }
+function prKeys(c){ const k=[]; if(c.pr) k.push(c.pr);
+  if(isRev(c)){ const b=(c.back||'').trim(); if(b && b.length<=14 && !b.includes('·')) k.push('b:'+normAns(b)); }
+  return k; }
 function prIsolate(list, seed){
   const F=prFacts(), taken=new Set(), rated=todayRatings();
-  for(const c of DATA){ if(c.pr && rated[c.id]!==undefined) taken.add(c.pr); }   // 오늘 푼 것
-  for(const c of (seed||[])){ if(c && c.pr) taken.add(c.pr); }                   // 오늘 큐에 든 것
+  for(const id in rated){ const c=BYID[id]; if(c) prKeys(c).forEach(k=>taken.add(k)); }   // 오늘 푼 것
+  for(const c of (seed||[])){ if(c) prKeys(c).forEach(k=>taken.add(k)); }                  // 오늘 큐에 든 것
   const out=[];
   for(const c of list){
     if(c.pr && PR_GATED_TYPS.includes(c.typ) && F.hasDef.has(c.pr) && !F.passed.has(c.pr)) continue;  // ②
-    if(!c.pr){ out.push(c); continue; }
-    if(taken.has(c.pr)) continue;                                                                     // ①
-    out.push(c); taken.add(c.pr);
+    const ks=prKeys(c);
+    if(!ks.length){ out.push(c); continue; }
+    if(ks.some(k=>taken.has(k))) continue;                                                            // ①
+    out.push(c); ks.forEach(k=>taken.add(k));
   }
   return out;
 }

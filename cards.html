@@ -131,9 +131,10 @@ input:focus,select:focus{border-color:var(--accent);}
 /* ══ 풀이 화면 ══ */
 .scr{display:none;flex:1;min-height:0;flex-direction:column;}
 .scr.on{display:flex;}
-/* 카드는 위에 앉힌다(동하 09-05 비평 1) — 세로 가운데면 카드 길이마다 시작점이 오르내리고(표 카드는 이미 위였다),
-   힌트가 바닥에 떨어져 시선이 셋으로 흩어졌다. 세로 방향 flex: 카드 → 바로 아래 힌트. 채점 바는 그대로 바닥(엄지 자리) */
-#cardZone{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:10px 18px 10px;position:relative;}
+/* 🔴 카드는 세로 가운데다 — 09-05에 위로 올렸다가 동하가 바로 되돌렸다(「저게 말이 되나」). 다시 올리지 마라.
+   세로 방향 flex라 「카드를 탭하면 정답」 힌트는 카드 바로 아래에 붙어 같이 가운데로 온다(바닥 절대 위치는 토스트에 가렸다).
+   넓은 표 카드는 .tblleft로 왼쪽부터(가로). 채점 바는 바닥(엄지 자리). */
+#cardZone{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 18px 10px;position:relative;}
 #card{width:100%;max-width:660px;max-height:calc(100% - 30px);flex:0 1 auto;display:flex;flex-direction:column;
   background:var(--surface);border-radius:22px;box-shadow:var(--shadow);
   padding:26px 28px;overflow:hidden;cursor:pointer;position:relative;
@@ -215,7 +216,7 @@ input:focus,select:focus{border-color:var(--accent);}
    renderTable이 `margin-left`를 인라인으로 박아 **마당 왼쪽 ~ 사이드바 왼쪽 띠 안에서 가운데**로 놓는다.
    띠보다 표가 넓으면 여백이 0이 되어 저절로 왼끝 정렬로 돌아간다(넓은 표가 우선). */
 #card.tblwide{max-width:none;}
-#cardZone.tblleft{justify-content:flex-start;}
+#cardZone.tblleft{align-items:flex-start;}   /* 넓은 표 카드는 왼쪽부터(가로) — #cardZone이 세로 flex라 가로 정렬은 align-items다 */
 #cBackWrap.on{display:block;}
 #cBack{font-size:19px;font-weight:600;line-height:1.55;color:var(--ink2);}
 #cItems{display:none;flex-direction:column;gap:7px;margin-top:4px;}

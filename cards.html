@@ -407,6 +407,10 @@ input:focus,select:focus{border-color:var(--accent);}
 .rd-chk.on{background:var(--good);border-color:var(--good);}
 .rd-n.warn{color:var(--again);} .rd-n.mid{color:var(--hard);}
 .rd-again{margin-left:6px;font-weight:700;color:var(--mute);} .rd-again.warn{color:var(--again);}
+details.rd-sec>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:6px;margin:14px 4px 8px;padding:6px 0;}
+details.rd-sec>summary::-webkit-details-marker{display:none;}
+details.rd-sec>summary::before{content:'▸';font-size:12px;transition:transform .15s;}
+details.rd-sec[open]>summary::before{transform:rotate(90deg);}
 .rd-qs{margin:0;padding-left:18px;font-size:13px;line-height:1.55;} .rd-qs li{margin:3px 0;} .rd-qs li.more{color:var(--accent);cursor:pointer;list-style:none;margin-left:-18px;font-weight:700;}
 .rd-qs{margin:7px 0 0;padding-left:18px;}
 .rd-qs li{font-size:12.5px;line-height:1.55;color:var(--ink2);margin-bottom:4px;}
@@ -8564,10 +8568,11 @@ function renderRead(){
   };
   let h='';
   if(!R.length && !P.length && !cool.length){ body.innerHTML='<div class="empty-note">읽을 것이 없어요<br>자주 틀리는 절이나 아직 안 들어온 단원이 생기면 여기 모입니다</div>'; return; }
-  h+=`<div class="h-sec" style="margin-top:4px">수리 · ${R.length}곳</div>`;
-  h+= R.length ? `<div class="rd-list">${R.map(item).join('')}</div>` : '<div class="empty-note" style="padding:8px 0">지금은 없어요</div>';
-  h+=`<div class="h-sec">준비 · ${P.length}곳</div>`;
-  h+= P.length ? `<div class="rd-list">${P.map(item).join('')}</div>` : '<div class="empty-note" style="padding:8px 0">지금은 없어요</div>';
+  /* 수리·준비는 각각 접는다(동하 09-05 「수리 36개 뒤에 준비가 뜸」). 펼침 상태는 이 기기에 기억 — 기본 수리 펼침·준비 접힘 */
+  let open={repair:true, prep:false}; try{ open=Object.assign(open, JSON.parse(lsGet('cards_read_open_v1')||'{}')); }catch(e){}
+  const sec=(id,title,arr)=>`<details class="rd-sec" data-sec="${id}"${open[id]?' open':''}><summary class="h-sec">${title} · ${arr.length}곳</summary>
+    ${arr.length ? `<div class="rd-list">${arr.map(item).join('')}</div>` : '<div class="empty-note" style="padding:8px 0">지금은 없어요</div>'}</details>`;
+  h+=sec('repair','수리',R)+sec('prep','준비',P);
   if(cool.length){
     h+=`<div class="card-box" style="margin-top:14px"><details>
       <summary style="cursor:pointer;font-weight:600">읽음 · 쉬는 중 ${cool.length}곳</summary>
@@ -8575,6 +8580,8 @@ function renderRead(){
       <div class="rd-list">${cool.map(item).join('')}</div></details></div>`;
   }
   body.innerHTML=h;
+  body.querySelectorAll('details.rd-sec').forEach(d=>d.ontoggle=()=>{
+    const o={}; body.querySelectorAll('details.rd-sec').forEach(x=>{ o[x.dataset.sec]=x.open; }); try{ lsSet('cards_read_open_v1', JSON.stringify(o)); }catch(e){} });
   body.querySelectorAll('[data-done]').forEach(b=>b.onclick=(ev)=>{ ev.preventDefault(); ev.stopPropagation();
     const k=b.dataset.done; readCooling(k) ? unmarkRead(k) : markRead(k); });
   /* 🔴 키를 구분자로 쪼개지 마라 — 절 키 자체가 `과목|대주제||중주제` 꼴이라 `|`가 들어 있다. 속성 하나로 통째로 넘긴다 */

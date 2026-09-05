@@ -6632,12 +6632,19 @@ function renderToday(){ // 홈 첫 화면 = 오늘 한 일 (통계 탭까지 안
      그걸 세면 「세션은 다 풀었다는데 홈엔 남아 있다」가 된다(동하 실기로 잡힌 1장).
      ⚠ 세는 기준만 바꾼다 — 카드·로그·일정·저장 큐는 안 건드린다.
      ⚠ 설명을 덧붙이지 않는다(동하: 「설명 너무 난잡해」) — 값이 맞으면 말이 필요 없다. */
-  let due=0, learned=0;
+  let learned=0; const pool=[];
   const scopes=sessions.map(sx=>asPreset(sx).scope);
   for(const c of DATA){ const s=state.cards[c.id];
     if(s&&s.retired)continue;
-    if(isDue(c)&&!buried(c) && scopes.some(sc=>inScope(c,sc)))due++;
+    if(isDue(c)&&!buried(c) && scopes.some(sc=>inScope(c,sc))) pool.push(c);
     if(!isNew(c))learned++; }
+  /* 🔴 그중에서도 **오늘 실제로 나올 수 있는 것만** (동하 09-05 「세션 복습 남은 게 없는데 홈에 남은 복습 38」).
+     due이지만 오늘 안 나오는 카드가 둘 있다 — ① 오늘 채점한 카드(「다시」는 FSRS due가 그날 안에 남지만 당일 재출이
+     없다 · dropSettled) ② 격리(사슬·짝 키·방향)로 내일 미뤄진 카드(gateIn). 세션 큐와 **같은 두 문**을 지나게 해서
+     같은 답이 나오게 한다. 큐에 이미 든 카드는 그대로 세고, 나머지는 큐를 씨앗으로 문을 지난다. */
+  const qIds=new Set(); for(const sx of sessions){ for(const id of ((sx&&sx.q)||[])) qIds.add(id); }
+  const inQ=pool.filter(c=>qIds.has(c.id)), restDue=pool.filter(c=>!qIds.has(c.id));
+  const due = dropSettled(inQ).length + gateIn(restDue, inQ).length;
   const wk=[]; let mx=1;
   for(let i=6;i>=0;i--){ const v=(by[dayKeyOffset(-i)]||{n:0}).n; wk.push(v); if(v>mx)mx=v; }
   const bars=wk.map((v,i)=>`<i class="${i===6?'on':''}" style="height:${Math.max(2,Math.round(v/mx*100))}%" title="${v}회"></i>`).join('');

@@ -442,6 +442,18 @@ input:focus,select:focus{border-color:var(--accent);}
 .more-btn{width:100%;padding:12px;border-radius:12px;border:1.5px dashed var(--line);
   color:var(--mute);font-weight:700;font-size:13px;margin:4px 0 10px;}
 .more-btn.dim{border-style:solid;border-color:transparent;color:var(--faint);font-size:12.5px;}
+/* 세션 화면 할 일 묶음 — 점선(.more-btn)은 자리 표시자로 읽혔다(동하 09-05 비평 2). 실선·채움·왼쪽 정렬 */
+.ss-acts{display:flex;flex-direction:column;gap:8px;margin:6px 0 12px;}
+.act-btn{width:100%;min-height:50px;padding:10px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);
+  color:var(--ink);font-weight:700;font-size:14px;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.act-btn small{font-size:12px;font-weight:600;color:var(--mute);white-space:nowrap;}
+.act-btn:active{background:var(--surface2);}
+details.ss-score{background:var(--surface);border-radius:14px;padding:0 14px;margin:0 0 12px;}
+details.ss-score>summary{list-style:none;cursor:pointer;padding:13px 0;font-size:13px;font-weight:600;color:var(--mute);display:flex;align-items:center;gap:8px;}
+details.ss-score>summary::before{content:'▸';font-size:12px;color:var(--faint);transition:transform .15s;}
+details.ss-score[open]>summary::before{transform:rotate(90deg);}
+details.ss-score>summary b{color:var(--ink);font-size:15px;}
+details.ss-score[open]>summary{border-bottom:1px solid var(--line);margin-bottom:12px;}
 .empty-note{text-align:center;color:var(--faint);font-size:13px;padding:36px 12px;line-height:1.6;}
 
 /* ══ 세션 요약 ══ */
@@ -6740,12 +6752,9 @@ function renderSession(){
   const nt=ntU&&ntU.nt;   // 🔴 표시와 투입이 같은 답을 본다
   // 직접 추가 세션인데 범위가 비었다 = 「다 풀었다」가 아니라 「담은 게 없다」
   const noScope = isFixed(sx) && !((sx.scope.units||[]).length||(sx.scope.mids||[]).length);
-  let h=`<button class="ss-go" id="ssGo"${remain?'':' disabled'}>${remain?`이어가기 · ${remain}장`
-      :noScope?'담은 카드가 없어요':'오늘 몫 다 풀었어요'}</button>
-    ${remain?'':`<div class="why">${!isFixed(sx)?'오늘 몫은 끝났어요. 날이 바뀌면 그날 복습분으로 스스로 채워집니다.'
-      :noScope?'<b>담아 둔 범위가 없어요.</b> 아래 「＋ 범위 넓히기」로 넣으세요 — 직접 추가 세션은 담은 것만 풉니다.'
-      :'담아 둔 범위를 다 풀었어요. 아래에서 범위를 넓히거나 다음 진도를 시작하세요.'}</div>`}
-    ${(refillQ&&refillQ.length)?`<button class="more-btn" id="ssRefill">＋ 이어서 채우기 (${refillQ.length}장${(()=>{
+  /* 화면 재배치(동하 09-05 비평 2): 할 일(이어서 채우기·다음 진도·범위 넓히기)을 실선 버튼으로 맨 위에 모으고,
+     성적은 한 줄 요약으로 접는다. 이 화면에 오는 목적은 대개 「풀기 시작」이다. */
+  const comp=(refillQ&&refillQ.length)?(()=>{
         /* 구성 한 줄 — 세션 설정에 있는 상태만 센다(동하 2026-09-01 「듀 몇 장, 신규 몇 장 …
            세션 설정에 맞춰서」). 'all'이면 실측 기준 due·신규로 가른다. 약점은 due·신규와 겹치는
            딱지라(별개 집합이 아니다) 설정에 있을 때만 겹쳐서 보여준다. */
@@ -6754,24 +6763,27 @@ function renderSession(){
         if(has('due')){ const n2=cs.filter(c=>isDue(c)).length; if(n2)p.push(`복습 ${n2}`); }
         if(has('new')){ const n2=cs.filter(c=>isNew(c)).length; if(n2)p.push(`신규 ${n2}`); }
         if(st.includes('weak')){ const n2=cs.filter(c=>isWeak(c)).length; if(n2)p.push(`약점 ${n2}`); }
-        return p.length?` · ${p.join(' · ')}`:'';})()})</button>`:''}
-    <div class="ss-line"><span>${esc(sessDesc(sx))}</span></div>`;
-  /* 설명 다이어트(동하 09-05): 「이 세션의 범위에 아직 남은 카드를…」·howPlain 한 줄(「내가 담은 범위만 풀고…역방향은 2~3일 뒤」)은
-     뺐다 — 버튼 이름과 구성 숫자가 이미 말한다. 규칙은 도움말 「세션」·「방향 분산」 절에 있다 */
-  if(sx.lastScore) h+=`<div class="h-sec" style="margin-top:4px">마지막 성적</div>`+scoreHtml(sx.lastScore)+trendHtml(sx);
-  h+=`<div class="ss-line"><span>누적 <b>${sx.done||0}</b>회</span>
-      <span>${sx.lastAt?'마지막 '+fmtAgo(sx.lastAt):'아직 안 품'}</span></div>`;
-  if(nt) h+=`<button class="more-btn" id="ssNew">＋ 다음 진도: ${esc(nt.label)} (${ntU.fresh.length}장)</button>
-    ${(nt.date||ntU.held||ntU.skipped)?`<div class="why">${nt.date?`${esc(nt.date)} 수강`:''}${ntU.held?`${nt.date?' · ':''}<b>${ntU.held}장</b>은 오늘 푼 카드의 이웃이라 내일`:''}${ntU.skipped?` · 앞 주제 <b>${ntU.skipped}개</b>는 오늘 푼 카드의 이웃이라 내일`:''}</div>`:''}`;
-  // 「수강한 순서상 다음 차례인 대주제를 통째로 시작해요. 고르는 건 계획이 합니다」는 뺐다 — 버튼 이름이 말한다(동하 09-05). 수강일·격리로 미뤄진 장수만 남긴다
+        return p.length?` · ${p.join(' · ')}`:'';})():'';
+  let h=`<button class="ss-go" id="ssGo"${remain?'':' disabled'}>${remain?`이어가기 · ${remain}장`
+      :noScope?'담은 카드가 없어요':'오늘 몫 다 풀었어요'}</button>
+    ${remain?'':`<div class="why">${!isFixed(sx)?'날이 바뀌면 그날 복습분으로 다시 채워져요.'
+      :noScope?'직접 담은 세션은 담은 것만 풀어요 — 아래 「범위 넓히기」로 넣으세요.'
+      :''}</div>`}
+    <div class="ss-acts">
+      ${(refillQ&&refillQ.length)?`<button class="act-btn" id="ssRefill"><span>＋ 이어서 채우기</span><small>${refillQ.length}장${comp}</small></button>`:''}
+      ${nt?`<button class="act-btn" id="ssNew"><span>＋ 다음 진도 · ${esc(nt.label)}</span><small>${ntU.fresh.length}장${nt.date?` · ${esc(nt.date)} 수강`:''}</small></button>`:''}
+      <button class="act-btn" id="ssAdd"><span>＋ 범위 넓히기</span><small>${isFixed(sx)?'내가 고른 단위':'오늘 큐에만'}</small></button>
+    </div>
+    ${(ntU&&(ntU.held||ntU.skipped))?`<div class="why">${ntU.held?`<b>${ntU.held}장</b>은 오늘 푼 카드의 이웃이라 내일`:''}${ntU.skipped?`${ntU.held?' · ':''}앞 주제 <b>${ntU.skipped}개</b>는 오늘 푼 카드의 이웃이라 내일`:''}</div>`:''}
+    <div class="ss-line"><span>${esc(sessDesc(sx))}</span><span>누적 <b>${sx.done||0}</b>회</span><span>${sx.lastAt?'마지막 '+fmtAgo(sx.lastAt):'아직 안 품'}</span></div>`;
+  if(sx.lastScore&&sx.lastScore.n){ const sc=sx.lastScore, hit=Math.round((sc.n-sc.r[1])/sc.n*100);
+    h+=`<details class="ss-score"><summary>마지막 성적 <b>${hit}%</b> · ${sc.n}회 · ${fmtMin(sc.ms)}</summary>${scoreHtml(sc)}${trendHtml(sx)}</details>`; }
   const exU=(sx.scope.ex&&sx.scope.ex.units)||[], exM=(sx.scope.ex&&sx.scope.ex.mids)||[];
   const exN=exU.length+exM.length, exCards=exCount(sx);
   const exNames=[...exU.map(k=>{ try{return hoedokLabel(k);}catch(e){return k;} }),
                  ...exM.map(k=>k.split('||').slice(1).join(' · '))];
   h+=`<div class="h-sec">이 세션의 단위</div>
       <div id="ssUnits"></div>
-      <button class="more-btn" id="ssAdd">＋ 범위 넓히기</button>
-      ${isFixed(sx)?'':'<div class="why">자동 세션이라 오늘 큐에만 들어가요</div>'}
       <button class="more-btn" id="ssEx">－ 주제 빼 두기${exN?` (${exN}개 · ${exCards.toLocaleString()}장)`:''}</button>
       <div class="why">${exN
         ? `제외 중 — <b>${esc(exNames.slice(0,2).join(' / '))}</b>${exN>2?` 외 ${exN-2}`:''}. 신규·복습 <b>둘 다</b> 이 세션엔 안 나와요 (다른 세션엔 그대로)`

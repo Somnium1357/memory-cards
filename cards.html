@@ -1097,6 +1097,8 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
             진도 문제라서요. 역방향이 안 보이면 대개 이 경우예요. (짝이 되는 전방이 아예 없는 카드는
             그 역방향이 곧 도입이라 바로 나옵니다.)</p>
             <p>범위를 넓힐 때 「142장 추가 · 79장은 나중에」라고 뜨는 게 이것 때문이에요.</p>
+            <p>도입이 끝난 뒤에도 <b>같은 개념의 전방과 역방향은 하루에 한 방향만</b> 나와요.
+            먼저 큐에 담긴 쪽이 남고 반대 방향은 내일로 밀려요 — 복습이어도 같아요(기록·간격은 안 변해요).</p>
           </div>
         </details>
 
@@ -5464,8 +5466,35 @@ function prIsolate(list, seed){
   return out;
 }
 
+/* 🔴 같은 노드 전방·역방 하루 한 방향 (동하 2026-09-05 — 「창칼 주고 사용법」과 「사용법 주고 창칼」이
+   같은 날 나왔다. 실측 09-05: 7노드 · 저장 큐 185장 안에 20노드).
+   짝 키 격리는 「같은 답」끼리만 막고, 전방 5,574장에는 pr이 없어 전방 정의 ↔ 역방 정의가 안 걸렸다.
+   · 열쇠 = 전방은 자기 노드, 역방은 **전방이 실제로 사는 노드**(fwdSiblings — 부모가 나열하고 자식이
+     하나를 묻는 345장이 부모 노드로 모인다 · §2.4와 같은 병이라 같은 열쇠로 묶는다).
+   · 신규·복습 안 가른다 — 짝 키 격리와 같다. 미뤄도 로그·간격은 안 변한다(로그가 정본).
+   · 오늘 푼 것 → 오늘 큐에 든 것(seed) → 이 큐에 담기는 순서. 먼저 잡은 방향이 이기고 반대는 내일로. */
+function dirKey(c){ if(!isRev(c)) return c.node; const f=fwdSiblings(c.node); return f.length ? f[0].node : c.node; }
+function dirIsolate(list, seed){
+  const taken=new Map();                                  // dirKey → 오늘 잡힌 방향
+  const put=c=>{ const k=dirKey(c); if(!taken.has(k)) taken.set(k, isRev(c)?'r':'f'); };
+  const rated=todayRatings();
+  for(const id in rated){ const c=BYID[id]; if(c) put(c); }
+  for(const c of (seed||[])){ if(c) put(c); }
+  /* 🔴 두 패스 — 「아직 못 들어오는 역방 신규」(전방 도입 2~3일 전 · 방향 분산이 뒤에서 뺀다)는 열쇠를
+     **나중에** 잡는다. 문서순 풀에서 그 역방이 전방보다 앞서는 노드가 27개라, 한 패스로 돌리면
+     역방이 열쇠만 잡고 뒤에서 빠져 **전방까지 오늘 못 나오는** 헛손실이 난다(실측 09-05). */
+  const late=c=>isRev(c)&&isNew(c)&&!revReady(c);
+  const ok=new Set();
+  for(const pass of [0,1]) for(const c of list){
+    if(late(c)!==!!pass) continue;
+    const t=taken.get(dirKey(c));
+    if(t!==undefined && t!==(isRev(c)?'r':'f')) continue;   // 반대 방향이 오늘 자리를 잡았다 → 내일로
+    ok.add(c.id); put(c);
+  }
+  return list.filter(c=>ok.has(c.id));                     // 담기는 순서는 그대로
+}
 function gateIn(cards, seed, raw){
-  return prIsolate(chainIsolate(raw ? cards.slice() : dropSettled(cards), seed), seed);
+  return dirIsolate(prIsolate(chainIsolate(raw ? cards.slice() : dropSettled(cards), seed), seed), seed);
 }
 function gateOut(list, order, reorder){
   const l=list.slice();

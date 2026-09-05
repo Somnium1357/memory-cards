@@ -120,6 +120,7 @@ input:focus,select:focus{border-color:var(--accent);}
    그 아래 phaseLine·카드는 화면 가운데라 윗줄만 어긋나 보였다(동하 2026-09-05). 오른쪽과 같은 폭(44+6)을
    왼쪽에 더해 화면 가운데로. 좁은 폰에서는 글줄 폭이 모자라 말줄임이 생기므로 넓은 화면에서만 */
 @media (min-width:600px){ #tbCounts{margin-left:50px;} }
+#tbCounts.off{visibility:hidden;}   /* 자리는 지킨다 — 홈 버튼 높이가 흔들리지 않게 */
 #saveBadge{width:7px;height:7px;border-radius:50%;background:var(--hard);display:none;flex:0 0 auto;}
 #saveBadge.show{display:block;}
 #banner{display:none;background:var(--again-dim);color:var(--again);font-size:13px;font-weight:600;
@@ -342,6 +343,12 @@ input:focus,select:focus{border-color:var(--accent);}
 
 /* ══ 서브 화면 공통 ══ */
 .sub-head{display:flex;align-items:center;gap:8px;padding:8px 14px 4px;}
+/* 넓은 화면에서는 제목의 왼쪽 선을 본문(.sub-inner 660px)에 맞춘다 — 홈의 「오늘」은 본문 선인데
+   하위 화면 제목만 화면 왼쪽 끝에 붙어 있었다(동하 09-05 비평 4). 뒤로 버튼은 본문 선 바깥 왼쪽에 */
+@media (min-width:760px){
+  .sub-head{max-width:660px;margin:0 auto;width:100%;padding:8px 0 4px;position:relative;}
+  .sub-head>.tb-btn:first-child{position:absolute;left:-52px;top:2px;}
+}
 .sub-title{font-size:17px;font-weight:800;font-family:var(--head-font);flex:1;}
 .sub-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 18px calc(24px + env(safe-area-inset-bottom));}
 .sub-inner{max-width:660px;margin:0 auto;}
@@ -618,7 +625,8 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .why b{color:var(--mute);font-weight:700;}
 .op-help code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--accent);
   background:var(--accent-dim);padding:1px 5px;border-radius:5px;}
-.lh-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(98px,1fr));gap:8px;margin-bottom:14px;}
+.lh-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:14px;}
+/* auto-fit → auto-fill: 줄마다 타일 수가 달라도(5·3·1) 폭이 같아진다 — 「끈 카드」 하나가 화면 폭을 다 차지했다(동하 09-05 비평 8) */
 .lh-tile{display:flex;flex-direction:column;align-items:flex-start;gap:1px;background:var(--surface);
   border-radius:14px;padding:12px 14px;box-shadow:var(--shadow-sm);}
 .lh-tile .n{font-size:21px;font-weight:800;color:var(--ink);line-height:1.15;}
@@ -4277,7 +4285,8 @@ async function push(force){ // 배치 push — 옵티미스틱: 실패해도 로
   }catch(e){
     const msg = e&&e.code==='auth' ? '토큰이 만료됐어요 — GitHub 연결에서 갱신'
       : e&&e.code==='perm' ? '토큰에 이 레포 쓰기 권한이 없어요 — github.com 토큰 설정에서 memory-cards 접근 + Contents 쓰기 추가 후 재시도'
-      : '저장 실패 — 네트워크 확인';
+      : e&&e.code==='http' ? `저장 실패 (GitHub ${e.status}) — 다음 채점 때 다시 시도해요`   // 원인이 보여야 「네트워크」로 오진하지 않는다(09-05 실기)
+      : '저장 실패 — 네트워크 확인 · 다음 채점 때 다시 시도해요';
     showBanner(msg, e&&e.code==='auth');
   }finally{ pushing=false; updateSaveUI(); }
 }
@@ -6468,6 +6477,7 @@ function go(id){
   $('rail').classList.remove('open'); $('railScrim').classList.remove('show');
   const railShow = id==='scrSolve';
   $('main').classList.toggle('railed', railShow);
+  $('tbCounts').classList.toggle('off', !railShow);  // 숫자줄은 풀이 전용 — 통계·읽을거리 위에 떠 있으면 내비가 2단이 된다(동하 09-05 비평 4)
   $('btnPause').style.display = railShow?'':'none';   // 풀이 중에만 의미 있는 버튼
   $('btnUndo').style.display  = railShow?'':'none';   // 홈·세션 화면에 떠 있으면 무엇을 되돌리는지 모호하다
   $('rail').style.display=railShow?'flex':'none';

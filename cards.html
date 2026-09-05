@@ -3690,17 +3690,21 @@ function backlogPlan(){                  // {over, n} — 하루 한 번만 센�
   _bkPlan={at:T, over, n, norm}; return _bkPlan;
 }
 function effDueKey(k, id){               // 저장된 due → 화면에 쓰는 실효 due
-  const T=todayKey(), off=restOff(id), ck=k+'|'+off+'|'+T;   // 🔴 오늘이 키에 들어간다 (아래 폴백이 오늘을 본다)
+  const T=todayKey(), off=restOff(id);
+  const sTd=state.cards[id]; const ratedToday=!!(sTd && sTd.d===T);   // 그날 첫 채점 표시 — 되돌이 가드에 쓴다
+  const ck=k+'|'+off+'|'+T+(ratedToday?'|r':'');   // 🔴 오늘이 키에 들어간다 (아래 폴백이 오늘을 본다) · 오늘 채점 여부도
   const hit=_effCache.get(ck); if(hit!==undefined) return hit;
   let d=k;
   if(isRestDay(k)){
     if(isWeeklyRest(k)){
       d=restWalk(k,-1,off);
       /* 🔴 **과거로는 당길 수 없다.** 당긴 자리가 오늘 이전이면 그 카드는 「이미 지났으니 지금 due」가
-         되어 쉬는 날인데 큐에 남는다. 더 나쁜 것은 **같은 주 되돌이**다 — 수요일에 풀어 due가 목요일이
-         되면 월·화·수로 당겨지고, 수요일은 오늘이라 **즉시 다시 due**가 된다(무한 반복).
-         앞자리가 없으면 뒤로 미는 쪽으로 넘어간다 — 그게 유일하게 남은 방향이다. */
-      if(d<=T) d=restWalk(k,1,off);
+         되어 쉬는 날인데 큐에 남는다. 「같은 주 되돌이」(수요일에 풀어 due가 목요일 → 수요일로 당겨져 즉시 다시 due)는
+         **오늘 채점한 카드**만 뒤로 보내서 막는다.
+         🔴 예전 가드 `d<=T`는 「당긴 자리 = 오늘」까지 거부해 **앞당김이 한 번도 작동한 적이 없었다**(전층 감사 F1-1 · 09-06):
+         월·화에 「수요일 due」로 보이던 카드가 수요일이 되면 d===T라 금요일로 밀렸다. 목요일 due 전부가 금·토·일로 갔고,
+         시험 주엔 11-05 due의 1/3이 시험 뒤(11-08)로 갔다. 이제 d<T(진짜 과거)이거나 오늘 채점한 카드만 뒤로. */
+      if(d<T || (d===T && ratedToday)) d=restWalk(k,1,off);
     } else {
       d=restWalk(k,1,off);               // 직접 추가한 날 = 뒤 3일 (과거로 못 보낸다)
     }
@@ -3717,6 +3721,8 @@ function effDueKey(k, id){               // 저장된 due → 화면에 쓰는 �
       d=t;
     }
   }
+  /* 시험일 상한 — 휴식일 뒤로 밀기·백로그 슬롯이 시험 뒤로 보내지 않게(F1-1 곁가지). 클램프 창(D-7~D-1)은 동하 결정 뒤 F1-2에서 */
+  const EK=dayKey(EXAM_END); if(d>EK) d=EK;
   _effCache.set(ck, d); return d;
 }
 function weekKeyOf(d){            // ISO 주 (월요일 시작) — 하루 경계 4시를 먼저 적용한 날짜 기준

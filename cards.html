@@ -5560,7 +5560,12 @@ function addScopeToSess(sx, sel){ // 내용 추가 — sel={units:[],mids:[]}
      은퇴·끄기·오늘 미룸·오늘 정리분·방향 분산은 그대로 걸러진다(buildQueue 안). */
   const st=stArr(sx.how.status);
   p.scope=Object.assign({},p.scope,{status:st}); p.limit=0;
-  const add=buildQueue(p, st, sx.q.map(id=>BYID[id]).filter(Boolean)).map(c=>c.id).filter(id=>!have.has(id));
+  /* 🔴 씨앗은 **오늘 실제로 나올 것**만 (전층 감사 L3 목록 밖 · 2026-09-06).
+     예전엔 저장 큐를 통째로 씨앗에 넣어, **오늘 이미 푼 것·미룬 것·은퇴한 카드의 격리 열쇠**까지
+     새로 담을 카드를 막았다(짝 키·같은 노드·사슬). 오늘 안 나올 카드가 자리를 잡는 것은 뜻이 없다.
+     실측으로 오늘 걸린 건 0건이지만, 열쇠는 조용히 막는 종류라 열어 둘 이유가 없다. */
+  const seed=dropSettled(sx.q.map(id=>BYID[id]).filter(Boolean));
+  const add=buildQueue(p, st, seed).map(c=>c.id).filter(id=>!have.has(id));
    // 🔴 지금 큐를 씨앗으로 — have는 중복만 막지 이웃은 못 막는다
   // 고른 수와 들어간 수가 다를 수 있다 — 상태 조건·방향 분산·은퇴·끄기·오늘 정리분.
   // 그 차이를 말해주지 않으면 「111장 골랐는데 왜 80장?」이 된다. 두 이유를 갈라서 센다.

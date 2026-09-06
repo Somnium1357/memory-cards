@@ -6902,6 +6902,13 @@ function gEnd(x,y){
 function go(id){
   if(id!=='scrSolve'){ resumeSession(); syncSessQueue();
     if(pendingRefresh){ pendingRefresh=false; setTimeout(refreshRemote,0); } }
+  /* 🔴 **홈으로 나가면 복귀 지점을 버린다** (전층 감사 F4-8 · 2026-09-06).
+     복귀(`tryResume`)는 「회독본 갔다 같은 탭으로 돌아옴」을 위한 장치인데 조건에 그 사실이 없어서,
+     **같은 날 어떤 재시작이든**(iOS가 PWA를 죽였다 살릴 때마다) 풀이 화면으로 끌고 갔다 —
+     그것도 **답면을 펼친 채로**(`rev:true`). 「세션은 홈에서 골라 들어간다」(08-20 확정)와 정면으로 어긋난다.
+     사람이 홈으로 나온 것은 「여기서 그만」이라는 뜻이므로 그 자리에서 지운다.
+     ⚠ 회독본은 **같은 탭에서 열리고 홈을 거치지 않으므로** 이 규칙에 안 걸린다 — 복귀는 그대로 산다. */
+  if(id==='scrHome') clearResume();
   document.querySelectorAll('.scr').forEach(s=>s.classList.toggle('on',s.id===id));
   $('rail').classList.remove('open'); $('railScrim').classList.remove('show');
   const railShow = id==='scrSolve';

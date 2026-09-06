@@ -5434,7 +5434,18 @@ function refillSess(sx){ // 전체 범위 세션은 날이 바뀌면 스스로 �
      (실측: 추가분 생존 0/5). 「자동 충전 세션은 오늘 큐에만 들어가요」라고 안내해 놓고
      그 오늘 안에 지운 셈이다. 사람이 넣은 것은 사람이 뺀다.
      ⚠ 순서는 **기존 큐가 앞** — 넣어 둔 것을 먼저 만나야 넣은 보람이 있다. 오늘 정리분은 뺀다. */
-  const keep=(sx.q||[]).filter(id=>{ const c=BYID[id]; return c && !settledToday(c) && !buried(c); });
+  /* 🔴 **범위 밖이 된 것은 남기지 않는다** (전층 감사 F4-4 · 2026-09-06).
+     위 09-01 규칙이 지키려던 것은 **상태 조건**(due만/신규만) 밖의 카드다 — 「내용 추가」·「범위 넓히기」로
+     사람이 얹은 신규가 day 리셋에 날아가던 자리. **범위·제외 편집은 사람이 「빼라」고 말한 것**이라 뜻이 반대다.
+     그런데 둘을 같이 남기는 바람에, 자동 세션에서 단위를 「빼 두기」 하거나 과목을 좁혀도
+     **오늘 큐가 그대로**였다(실측: 「1.국어|문학」 빼기 뒤에도 34장 전부 잔존 · 과목=국어로 좁힌 뒤 다른 과목 243장 잔존).
+     ⚠ 상태 조건은 여전히 안 본다 — 얹어 둔 신규는 그대로 산다.
+     ⚠ **맞바꾼 것 하나**: 범위를 좁혀 둔 자동 세션에 「내용 추가」로 얹은 **범위 밖** 카드는 이제 다음 day 리셋에 빠진다.
+        그 버튼이 자동 세션에 대고 「오늘 큐에만 얹습니다 (범위는 그대로)」라고 안내하므로 어긋나지는 않는다.
+        지금 자동 세션은 「일일 복습」 하나이고 그 범위는 **비어 있다**(= 전 범위 · `ex` 목록만 있다) —
+        그래서 실사용에서는 이 필터가 곧 「사람이 빼라고 한 것만 뺀다」와 같다. 좁힌 자동 세션이 생기면 다시 보라. */
+  const sc0=asPreset(sx).scope;
+  const keep=(sx.q||[]).filter(id=>{ const c=BYID[id]; return c && !settledToday(c) && !buried(c) && scopeMatch(c, sc0); });
   /* 오늘 사람이 뺀 것(「빼기」·「큐 비우기」 qDel 툼스톤)은 다시 채우지 않는다(전층 감사 F4-3) — refreshRemote의 day 리셋 뒤 도로 채워졌다 */
   const delToday=id=>{ const t=sx.qDel&&sx.qDel[id]; return !!t && dayKey(new Date(t))===todayKey(); };
   const fresh=buildQueue(asPreset(sx), sx.how.status, keep.map(id=>BYID[id]).filter(Boolean)).map(c=>c.id).filter(id=>!delToday(id));

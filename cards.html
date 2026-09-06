@@ -6260,8 +6260,7 @@ function todayRated(){ let n=0; const tk=todayKey();
   for(let i=state.log.length-1;i>=0;i--){ if(dayKey(logDate(state.log[i]))===tk)n++; else if(n)break; }
   return n;
 }
-function counts(){ // 상단 바 = 현재 세션 범위 기준 (스펙)
-  const sc=curPreset?curPreset.scope:null;
+function counts(){ // 상단 바 — 남은 수는 현재 세션 큐 · 「내일」은 전 범위(아래 U3 참고)
   /* 🔴 **라벨과 수를 큐 내용에서 뽑는다** (전층 감사 F3-11 · 2026-09-06).
      예전 라벨은 `phase`(첫 카드가 신규였나)라, due+신규 세션에서 첫 장이 신규면 복습 39장까지
      **「신규 59」**로 뭉뚱그렸다(실제 신규 20·복습 39). 「일일 복습」에 「＋ 다음 진도」 2장을 얹으면
@@ -6272,7 +6271,13 @@ function counts(){ // 상단 바 = 현재 세션 범위 기준 (스펙)
   const rest=dropSettled(queue.slice(qPos));
   let nw=0; for(const c of rest) if(isNew(c)) nw++;
   const label = nw===rest.length ? '신규' : (nw===0 ? '복습' : '남음');
-  const tmr=tomorrowCount(sc);
+  /* 🔴 **「내일」은 세 곳이 같은 수를 말한다** (09-01 감사 U3 · 2026-09-06 마감).
+     예전엔 홈·통계가 전 범위(`null`)인데 **상단 바만 세션 범위**여서, 라벨은 똑같은 「내일 ~N」인데
+     수가 달랐다(감사 실측 홈 ~611 vs 상단 ~524). 숫자는 둘 다 맞았지만 **어느 범위인지 단서가 없었다.**
+     🔴 전 범위로 통일한다 — 「내일 예상」은 **계획하는 숫자**고, 내일은 어느 세션을 열지 정해져 있지 않다.
+     같은 줄의 「남음」이 세션 큐인 것과 결이 다르다(그건 지금 눈앞의 큐, 이건 내일의 부하).
+     ▸ U3의 나머지 절반(「남은 복습」이 화면마다 달랐던 것)은 F5-1·F3-5로 이미 닫혔다. */
+  const tmr=tomorrowCount(null);
   $('tbCounts').innerHTML = curPreset
     ? `${label} <b>${rest.length}</b> · 오늘 ${todayRated()} · 내일 ~<b>${tmr}</b>`
     : `내일 ~<b>${tmr}</b>`;

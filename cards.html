@@ -3891,16 +3891,71 @@ async function idbSet(k,v){
     return true;
   }catch(e){ return false; }
 }
+async function idbDel(k){
+  try{ const db=await idbOpen();
+    await new Promise((res,rej)=>{
+      const q=db.transaction(IDB_STORE,'readwrite').objectStore(IDB_STORE).delete(k);
+      q.onsuccess=()=>res(); q.onerror=()=>rej(q.error); });
+    return true;
+  }catch(e){ return false; }
+}
+async function idbKeys(){
+  try{ const db=await idbOpen();
+    return await new Promise((res,rej)=>{
+      const q=db.transaction(IDB_STORE,'readonly').objectStore(IDB_STORE).getAllKeys();
+      q.onsuccess=()=>res(q.result||[]); q.onerror=()=>rej(q.error); });
+  }catch(e){ return []; }
+}
 let cacheWarned=false;
-/* ═══════════════ 로컬 캐시 (파일별) ═══════════════ */
-let cacheTimer=null;
-function cacheState(){ if(cacheTimer)return; cacheTimer=setTimeout(()=>{ cacheTimer=null; cacheStateNow(); },200); }
-function cachedLogWeeks(){        // 로컬 캐시에 남아 있는 주 로그 목록 (밀린 주를 찾으려고)
+/* ═══ 지난 주 로그 캐시는 IndexedDB에 담는다 (2026-09-06 · 전층 감사 F0-5 후속) ═══
+   🔴 **발단** — 카드 캐시를 IDB로 뺀 뒤 `localStorage`에 남은 큰 놈이 **주별 로그**다.
+   주 로그는 지워지지 않고 쌓이기만 한다(실측 W34 82K자 · W35 327K자 · W36 161K자 · 주당 ≈250K자).
+   비로그 캐시 ≈150K자를 더하면 지금 ≈0.74M자인데, **사파리 오리진당 5MB ≈ 2.62M자**라
+   주당 0.25M자로 늘면 **10월 중순~시험 주(W41~W45)에 넘긴다** — 앞 회차 예측과 같은 그림이다.
+   `lsSet`은 실패를 `false`로 삼키므로 넘기는 순간 **소리 없이 캐시가 죽는다**.
+   🔴 **옮기는 것은 「지난 주」뿐이다. 이번 주 로그는 `localStorage` 그대로 둔다** —
+   이번 주 사본은 **못 올린 채점의 유일 사본**이라, 쿼터가 모자랄 때 다른 캐시를 버려서라도
+   끝까지 지키는 동기 폴백(`cacheStateNow` 아래쪽)이 그 값에 걸려 있다. 그 안전망을 비동기로 바꾸지 마라.
+   지난 주만 빼도 **늘어나는 몫이 전부 빠진다**(이번 주 한 주치 ≤0.35M자가 상한이 된다).
+   ⚠ 읽기는 **IDB 먼저, 없으면 옛 `localStorage` 사본**(카드 캐시가 쓰는 것과 같은 꼴) —
+      아직 안 옮긴 기기·IDB가 막힌 기기(사파리 프라이빗)에서도 그대로 돈다.
+   ⚠ IDB 쓰기가 실패하면 `localStorage`로 되돌아간다 — **종전 동작**이 폴백이다. */
+function isPastWeek(wk){ return wk!==thisWeek(); }
+async function logCacheGet(wk){                    // 주 로그 캐시 한 주 읽기 (읽는 김에 이관한다)
+  if(!isPastWeek(wk)) return cachedFile(K_LOGP+wk);
+  const v=await idbGet(K_LOGP+wk);
+  if(v&&Array.isArray(v.log)) return v;
+  const c=cachedFile(K_LOGP+wk);                   // 아직 안 옮긴 사본
+  if(c&&Array.isArray(c.log)&&c.log.length&&await idbSet(K_LOGP+wk,c)) lsDel(K_LOGP+wk);
+  return c;
+}
+async function logCacheSet(wk,obj){                // 주 로그 캐시 한 주 쓰기
+  if(!isPastWeek(wk)) return lsSet(K_LOGP+wk, JSON.stringify(obj));
+  if(await idbSet(K_LOGP+wk, obj)){ lsDel(K_LOGP+wk); return true; }
+  return lsSet(K_LOGP+wk, JSON.stringify(obj));    // IDB가 막힌 기기 — 종전대로
+}
+async function logCacheSweep(){                    // 부팅 한 번 — `localStorage`에 남은 지난 주를 마저 옮긴다
+  let moved=0;
+  for(const wk of lsLogWeeks()){ if(!isPastWeek(wk)) continue;
+    const c=cachedFile(K_LOGP+wk);
+    if(!c||!Array.isArray(c.log)||!c.log.length){ lsDel(K_LOGP+wk); continue; }
+    if(await idbSet(K_LOGP+wk,c)){ lsDel(K_LOGP+wk); moved++; } }
+  if(moved) console.log('[로그 캐시] 지난 주', moved, '주치를 IndexedDB로 옮김');
+}
+function lsLogWeeks(){            // `localStorage`에만 있는 주 (이관 대상 찾기)
   const out=[];
   try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i);
     if(k && k.startsWith(K_LOGP)) out.push(k.slice(K_LOGP.length)); } }catch(e){}
   return out;
 }
+async function cachedLogWeeks(){  // 로컬 캐시에 남아 있는 주 로그 목록 (밀린 주를 찾으려고) — 두 저장소 합집합
+  const out=new Set(lsLogWeeks());
+  for(const k of await idbKeys()) if(typeof k==='string' && k.startsWith(K_LOGP)) out.add(k.slice(K_LOGP.length));
+  return [...out];
+}
+/* ═══════════════ 로컬 캐시 (파일별) ═══════════════ */
+let cacheTimer=null;
+function cacheState(){ if(cacheTimer)return; cacheTimer=setTimeout(()=>{ cacheTimer=null; cacheStateNow(); },200); }
 function cacheFlush(){ if(cacheTimer){ clearTimeout(cacheTimer); cacheTimer=null; } cacheStateNow(); }
 function cacheStateNow(){ // 파일 단위로 나눠 담는다 — 쿼터가 모자라면 데이터 캐시를 먼저 버린다
   const parts=splitState();
@@ -3913,10 +3968,14 @@ function cacheStateNow(){ // 파일 단위로 나눠 담는다 — 쿼터가 모
     if(!parts.fb.cards[id]) parts.fb.cards[id]={flag:null, ann:[], u:c.u}; }
   let ok = lsSet(K_MARKS, JSON.stringify(parts.marks)) && lsSet(K_FB, JSON.stringify(parts.fb));
   /* 로그 캐시는 **바뀐 주만** 쓴다(전층 감사 F0-5 일부) — 예전엔 채점마다 전 주차를 통째로 다시 썼다(플러시당 ≈62만 자).
-     이번 주 + dirty인 주만. 지난 주 사본은 이미 있는 것을 그대로 둔다(퇴거·IDB 이관은 장부 F0-5 후속 — W41 전). */
+     이번 주 + dirty인 주만. 🔴 **이번 주만 `ok`에 곱한다** — 지난 주는 IDB행(비동기)이라 동기 쿼터 판정에 못 넣는다.
+     아래 쿼터 폴백이 지키는 것도 이번 주 사본이다(못 올린 채점의 유일 사본). 지난 주는 실패해도 `logCacheSet`이
+     `localStorage`로 되돌아가므로 종전보다 나빠지지 않는다. */
   const nowWk=thisWeek();
   for(const wk in logWeeks){ if(wk!==nowWk && !dirtyLogs.has(wk)) continue;
-    ok = lsSet(K_LOGP+wk, JSON.stringify({v:2, week:wk, log:logWeeks[wk]})) && ok; }
+    const body={v:2, week:wk, log:logWeeks[wk]};
+    if(wk===nowWk) ok = lsSet(K_LOGP+wk, JSON.stringify(body)) && ok;
+    else logCacheSet(wk, body); }
   ok = lsSet(K_SESS, JSON.stringify(sessFile())) && ok;
   if(ok) return;
   lsDel(K_DATA);                       // 데이터 캐시는 언제든 다시 받을 수 있다
@@ -5001,9 +5060,9 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
     if(wasDirty && cLg){ mergeLogInto(cLg, wk);                   markDirty('log', wk); }
     // K_DLOGS가 정본, 없는 기기(이 기능 이전)는 캐시 전수로 폴백
     const pend=(lsGet(K_DLOGS)||'').split('|').filter(Boolean);
-    if(wasDirty) for(const owk of (pend.length?pend:cachedLogWeeks())){
+    if(wasDirty) for(const owk of (pend.length?pend:await cachedLogWeeks())){
       if(owk===wk) continue;
-      const c=cachedFile(K_LOGP+owk); if(!c||!Array.isArray(c.log)||!c.log.length) continue;
+      const c=await logCacheGet(owk); if(!c||!Array.isArray(c.log)||!c.log.length) continue;
       try{
         const rm=await (cfg&&cfg.token ? ghGet(logPath(owk)) : rawGet(logPath(owk),refFor(logPath(owk))));
         logWeeks[owk]=[]; if(rm) mergeLogInto(rm, owk);
@@ -5060,6 +5119,7 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
   if(!state.cards)state.cards={}; if(!state.hoedok)state.hoedok={};
   {                                  // 로그가 정본 — 전 주차를 모아 처음부터 다시 계산한다
     await loadWeeks(logWeeksRange());
+    logCacheSweep();                 // 남은 지난 주 사본을 IDB로 (보통 무일 — loadWeeks가 읽는 김에 옮긴다)
     const t0=performance.now();
     const n=replayLog();
     console.log('로그 재계산', n, '건 ·', Math.round(performance.now()-t0), 'ms');
@@ -5096,7 +5156,7 @@ async function loadWeeks(keys){
   const resync = lsGet(K_WKSYNC)!==tw;   // 이번 주 들어 아직 지난 주 재수신을 안 했다
   const rest=[], reget=[];
   for(const k of want){
-    const c=cachedFile(K_LOGP+k);
+    const c=await logCacheGet(k);
     if(c&&Array.isArray(c.log)&&c.log.length){
       logWeeks[k]=c.log;                 // 캐시를 일단 쓴다 — 재수신이 실패해도 이게 남는다
       if(resync && k!==tw) reget.push(k);
@@ -5111,7 +5171,7 @@ async function loadWeeks(keys){
       try{ j = (cfg&&cfg.token) ? await ghGet(logPath(k)) : await rawGet(logPath(k),refFor(logPath(k))); }catch(e){}
       logWeeks[k]=(j&&j.log)||[];
       // 🔴 빈 주는 캐시하지 않는다 — 다른 기기가 그 주에 뒤늦게 올린 것을 영영 못 보게 된다
-      if(logWeeks[k].length) lsSet(K_LOGP+k, JSON.stringify({v:2,week:k,log:logWeeks[k]}));
+      if(logWeeks[k].length) await logCacheSet(k, {v:2,week:k,log:logWeeks[k]});
     }),
     ...reget.map(async k=>{
       let j=null;
@@ -5123,7 +5183,7 @@ async function loadWeeks(keys){
       /* 🔴 통째 교체 금지 — 아직 push 못 한 로컬 채점이 날아간다. 로그는 정본이다.
          (카드|시각) 합집합으로 얹는다. */
       mergeLogInto(j, k);
-      if(logWeeks[k].length) lsSet(K_LOGP+k, JSON.stringify({v:2,week:k,log:logWeeks[k]}));
+      if(logWeeks[k].length) await logCacheSet(k, {v:2,week:k,log:logWeeks[k]});
     })
   ]);
   // 실패하면 기준선을 올리지 않는다 — 다음 부팅에 다시 시도해야 한다

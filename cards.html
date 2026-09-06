@@ -1417,6 +1417,13 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
     <p class="desc" style="margin-top:6px">오른쪽일수록 덜 잊지만 <b>하루 분량이 늘어요</b>. 바꾸면 모든 카드의 복습일이 다시 잡혀요(기록은 그대로).</p>
     <div class="tgl-row" style="margin-top:8px"><span>채점 버튼 밑에 다음 간격(14일·22일…) 보이기</span><div class="tgl" id="cfgIv"></div></div>
   </div>
+  <div class="field"><label>시험날 목표 — 시험 당일에 얼마나 남아 있게 할까</label>
+    <div class="rng-row"><span class="rng-v" id="xretVal">95%</span><span class="desc" id="xretLoad"></span></div>
+    <input class="rng" id="xretRange" type="range" min="88" max="99" step="1" value="95">
+    <div class="rng-ends"><span>느슨히 (88%)</span><span>빡빡히 (99%)</span></div>
+    <p class="desc" style="margin-top:6px">복습일이 <b>시험 뒤로</b> 잡힌 카드에만 걸려요. 시험날 기억 확률이 이 값보다 낮으면 시험 전으로 당겨 옵니다.
+      낮추면 마지막 주가 가벼워지고, 올리면 더 촘촘히 당겨와요.</p>
+  </div>
   <div class="field" id="fwField" style="display:none"><label>내 기억 패턴 맞추기</label>
     <div id="fwBox"></div>
   </div>
@@ -3591,7 +3598,8 @@ const RET_DEF=0.90;
    루틴이 로그로 최적화해 `cards-fsrs.json`에 내놓으면 동하가 **눌러서** 적용한다(자동 적용 금지 —
    적용 순간 전 카드 due가 한 번에 옮겨진다). `wAt` = 적용한 파라미터 묶음의 시각 = 두 기기가
    같은 값을 쓰는지 가리는 열쇠. */
-let fsrsCfg={ret:RET_DEF, retAt:0, w:null, wAt:''};
+const XRET_DEF=0.95;                      // 시험날 목표 기억률 (동하 결정 09-06 · 「시험날 목표율」 클램프)
+let fsrsCfg={ret:RET_DEF, retAt:0, w:null, wAt:'', xret:XRET_DEF, xretAt:0};
 let engine=null;
 function buildEngine(){
   const p={
@@ -3626,7 +3634,44 @@ const EXAM_END = new Date(EXAM_DAY+'T12:00:00+09:00');
    자리는 카드 ID 해시로 결정적 — 로그가 정본이라 어느 기기가 재계산해도 같다. 로그·등급은 무변, 파생 due만 바뀐다. */
 const EXAM_SPREAD=7;
 function examClampKey(id){ let h=0; const s=String(id||''); for(let i=0;i<s.length;i++) h=(h*33+s.charCodeAt(i))>>>0; return dkAdd(EXAM_DAY, -(1+h%EXAM_SPREAD)); }
-function clampDue(due, id){ const d=(due instanceof Date)?due:new Date(due); return d>EXAM_END ? new Date(examClampKey(id)+'T12:00:00+09:00') : d; }
+function examRet(){ return fsrsCfg.xret||XRET_DEF; }
+/* 🔴 **시험날 목표율 클램프** (동하 결정 2026-09-06 「이게 제일 깔끔하네. 이 안으로」 · 메타 시뮬 발주).
+   옛 규칙은 「due가 시험 뒤면 무조건 D-7~D-1로 당긴다」였다. 조건이 **날짜 하나뿐**이라,
+   개인 파라미터로 간격이 길어지는 10월 말에는 **덱 거의 전부(9,849/9,866)가 마지막 주로 몰렸다** —
+   10월 중순은 하루 234장으로 놀고, 마지막 주는 매일 836을 꽉 채워도 대기 9,846장.
+   그렇게 몰아 놓고도 **시험날 R<0.9인 카드가 1,557장**이고 K는 클램프를 아예 안 한 것과 같았다(9,333 vs 9,331).
+   👉 새 규칙은 **날짜가 아니라 「시험날 기억 확률」**로 판정한다:
+     ① 평소 목표(0.90)로 잡힌 due가 시험 **전**이면 그대로 둔다.
+     ② 시험 뒤로 잡혔으면 그 카드의 **시험날 R**을 본다.
+     ③ R ≥ R*(시험날 목표 · 기본 0.95 · 설정 하나)면 **안 당긴다** — 시험날까지 살아 있을 카드를 미리 볼 이유가 없다.
+     ④ R < R*면 **R이 R*에 닿는 날**로 당긴다(ts-fsrs 곡선을 그대로 물어본다 · 대략 0.41·S).
+     ⑤ 그 날이 D-7 창 안이면 종전 해시 흩뿌림 그대로.
+   🔴 「언제부터 당기나」는 규칙이 아니라 **카드별 S가 정한다** — 코드에 날짜가 없다.
+   🔴 과부하 레버는 R*다(0.95 → 0.93). 복습 강도(0.90)와는 다른 손잡이다.
+   ⚠ 저장되는 due는 이 함수를 거친 값이다. 이미 D-7로 잡혀 있는 옛 카드는 **다음 채점 때 자연히 새 규칙으로 다시 잡힌다** —
+     일괄 이동은 하지 않는다(로그가 정본이므로 재생하면 어차피 새 규칙으로 파생된다). */
+function daysToR(card, target){        // R이 target에 닿는 날까지의 일수 — 엔진에 물어 이분 탐색(곡선을 베끼지 않는다)
+  const base = card.last_review ? new Date(card.last_review) : new Date();
+  const R = t => { try{ return engine.get_retrievability(card, new Date(base.getTime()+t*86400000), false); }catch(e){ return 0; } };
+  if(!(R(0) >= target)) return 0;
+  let lo=0, hi=Math.max(2, Math.ceil((card.stability||1)*3));
+  if(R(hi) >= target) return hi;       // 아주 굳은 카드 — 더 볼 것 없다
+  while(hi-lo>1){ const mid=(lo+hi)>>1; if(R(mid)>=target) lo=mid; else hi=mid; }
+  return lo;
+}
+function clampDue(due, id, card){
+  const d=(due instanceof Date)?due:new Date(due);
+  if(d<=EXAM_END) return d;                                   // ① 시험 전이면 그대로
+  if(card){
+    let R=0; try{ R=engine.get_retrievability(card, EXAM_END, false); }catch(e){}
+    if(R>=examRet()) return d;                                // ③ 시험날에도 충분히 남는다 → 안 당긴다
+    const t=daysToR(card, examRet());                         // ④ R*에 닿는 날
+    const base=card.last_review?dayKey(new Date(card.last_review)):todayKey();
+    const day=dkAdd(base, t), D7=dkAdd(EXAM_DAY, -EXAM_SPREAD);
+    if(day>todayKey() && day<D7) return new Date(day+'T12:00:00+09:00');
+  }
+  return new Date(examClampKey(id)+'T12:00:00+09:00');         // ⑤ D-7 창 흩뿌림
+}
 const RATING = {1:FSRS.Rating.Again, 2:FSRS.Rating.Hard, 3:FSRS.Rating.Good, 4:FSRS.Rating.Easy};
 
 function fsrsSerialize(c){
@@ -3751,8 +3796,10 @@ function effDueKey(k, id){               // 저장된 due → 화면에 쓰는 �
       d=t;
     }
   }
-  /* 시험일 상한 — 휴식일 뒤로 밀기·백로그 슬롯이 시험 뒤로 보내지 않게(F1-1 곁가지). 클램프 창(D-7~D-1)은 동하 결정 뒤 F1-2에서 */
-  if(d>dayKey(EXAM_END)) d=examClampKey(id);   // 시험 뒤로 못 간다 — 클램프 창(D-7~D-1)의 그 카드 자리로
+  /* 시험일 상한 — 휴식일 뒤로 밀기·백로그 슬롯이 **시험 뒤로 넘겨 버린** 경우만 되돌린다.
+     🔴 저장된 due 자체가 시험 뒤인 카드는 **그대로 둔다** — 「시험날에도 충분히 남는다」고 판정돼 안 당긴 카드다
+     (동하 결정 09-06 · 목표율 클램프). 예전처럼 여기서 다시 당기면 그 판정이 무효가 된다. */
+  if(d>dayKey(EXAM_END) && k<=dayKey(EXAM_END)) d=examClampKey(id);
   _effCache.set(ck, d); return d;
 }
 function weekKeyOf(d){            // ISO 주 (월요일 시작) — 하루 경계 4시를 먼저 적용한 날짜 기준
@@ -4132,6 +4179,7 @@ function sessFile(){ return {v:1, sessions:[...sessions, ...sessTomb], hoedok:st
   fc:state.fc||{},                        // 주간 예측 스냅숏 — 「지난주 예측 vs 실제」의 밑천(메타가 읽는다)
   cap:intake.cap, capAt:intake.capAt||0,
   ret:fsrsCfg.ret, retAt:fsrsCfg.retAt||0,
+  xret:fsrsCfg.xret, xretAt:fsrsCfg.xretAt||0,      // 시험날 목표율 — ret과 같은 「더 새것이 이긴다」 규칙
   fw:fsrsCfg.w||null, fwAt:fsrsCfg.wAt||'',
   rest:{dow:rest.dow, days:rest.days}, restAt:rest.at||0,
   ivShow:{v:ivShow.v}, ivShowAt:ivShow.at||0}; }
@@ -4141,7 +4189,7 @@ function applyLogEntry(sx, e){        // rate()와 같은 규칙으로 한 건 �
     const fc = sx.fsrs?fsrsRevive(sx.fsrs):FSRS.createEmptyCard(new Date(ts));
     const r=engine.next(fc, new Date(ts), RATING[num]);
     const nc=r.card;
-    nc.due=clampDue(nc.due, e[0]);           // 시험일 클램프(D-7~D-1 창)
+    nc.due=clampDue(nc.due, e[0], nc);       // 시험날 목표율 클램프
     sx.fsrs=fsrsSerialize(nc); sx.d=day;
   }
   if(num===1) sx.miss=(sx.miss||0)+1;
@@ -4506,6 +4554,9 @@ function mergeSessInto(remote){
      — 안 하면 엔진만 새것이고 일정은 옛것이다(전층 감사 F1-5). `mergedSched`로 알린다. */
   if(remote && remote.ret!==undefined && (remote.retAt||0) > (fsrsCfg.retAt||0)){
     fsrsCfg.ret=remote.ret; fsrsCfg.retAt=remote.retAt; buildEngine(); mergedSched=true; }
+  /* 시험날 목표율도 같은 규칙 — 바뀌면 **due가 움직이므로** 재계산 플래그를 세운다(F1-5와 같은 자리) */
+  if(remote && remote.xret!==undefined && (remote.xretAt||0) > (fsrsCfg.xretAt||0)){
+    fsrsCfg.xret=remote.xret; fsrsCfg.xretAt=remote.xretAt; mergedSched=true; }
   /* 개인 맞춤 파라미터도 같은 규칙 — `wAt`(파라미터 묶음 시각)이 더 새것이 이긴다 */
   if(remote && remote.fwAt!==undefined && (remote.fwAt||'') > (fsrsCfg.wAt||'')){
     fsrsCfg.w=remote.fw||null; fsrsCfg.wAt=remote.fwAt||''; buildEngine(); mergedSched=true; }
@@ -5246,6 +5297,7 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
       state.fc=sf.fc||{};
       if(sf.cap!==undefined){ intake.cap=sf.cap; intake.capAt=sf.capAt||0; }
       if(sf.ret!==undefined && (sf.retAt||0) > (fsrsCfg.retAt||0)){ fsrsCfg.ret=sf.ret; fsrsCfg.retAt=sf.retAt; buildEngine(); }
+      if(sf.xret!==undefined && (sf.xretAt||0) > (fsrsCfg.xretAt||0)){ fsrsCfg.xret=sf.xret; fsrsCfg.xretAt=sf.xretAt; }
       if(sf.fwAt!==undefined && (sf.fwAt||'') > (fsrsCfg.wAt||'')){ fsrsCfg.w=sf.fw||null; fsrsCfg.wAt=sf.fwAt||''; buildEngine(); }
       if(sf.rest && (sf.restAt||0) > (rest.at||0)){ rest.dow=sf.rest.dow; rest.days=sf.rest.days||[]; rest.at=sf.restAt; restReset(); }
       if(sf.ivShow && (sf.ivShowAt||0) > (ivShow.at||0)){ ivShow.v=!!sf.ivShow.v; ivShow.at=sf.ivShowAt; lsSet(K_IVSHOW, JSON.stringify(ivShow)); applyIv(); }
@@ -6645,7 +6697,7 @@ function rate(num){
     const fc = s.fsrs?fsrsRevive(s.fsrs):FSRS.createEmptyCard(now);
     const r=engine.next(fc, now, RATING[num]);
     const nc=r.card;
-    nc.due=clampDue(nc.due, c.id);          // 시험일 클램프(D-7~D-1 창)
+    nc.due=clampDue(nc.due, c.id, nc);      // 시험날 목표율 클램프
     s.fsrs=fsrsSerialize(nc); s.d=tk;
   }                                        // 재출 채점은 로그만 (이중 반영 방지)
   const extra = {};
@@ -7853,6 +7905,35 @@ function renderRetUI(){
   const r=$('retRange'); if(r) r.value=pct;
   const v=$('retVal'); if(v) v.textContent=pct+'%';
   const l=$('retLoad'); if(l) l.textContent='오늘 풀 것 '+dueTodayCount().toLocaleString()+'장';
+  const xp=Math.round(examRet()*100);
+  const xr=$('xretRange'); if(xr) xr.value=xp;
+  const xv=$('xretVal'); if(xv) xv.textContent=xp+'%';
+  const xl=$('xretLoad'); if(xl) xl.textContent='시험 전으로 당겨올 것 '+examPullCount().toLocaleString()+'장';
+}
+/* 지금 규칙으로 「시험 전에 당겨올」 카드 수 — 설정 화면에서만 부른다(전수 스캔) */
+function examPullCount(){
+  let n=0;
+  for(const c of DATA){ const s0=state.cards[c.id];
+    if(!s0||!s0.fsrs||s0.retired) continue;
+    if(new Date(s0.fsrs.due)<=EXAM_END) continue;              // 시험 전 due는 대상 아님
+    let R=0; try{ R=engine.get_retrievability(fsrsRevive(s0.fsrs), EXAM_END, false); }catch(e){}
+    if(R<examRet()) n++; }
+  return n;
+}
+/* 🔴 시험날 목표율을 바꾸면 **due가 통째로 다시 잡힌다** — 복습 강도와 같은 삼종 세트로 돌린다. */
+function setExamRet(v){
+  if(!(v>0&&v<1)){ toast('값이 이상해요'); return; }
+  if(Math.abs(v-examRet())<1e-9) return;
+  const before=dueTodayCount();
+  fsrsCfg.xret=v; fsrsCfg.xretAt=Date.now();
+  replayLog(); restReset(); lastRevIdx=null; firstRevIdx=null;
+  cacheState(); markDirty('sess');
+  const q=resyncQueues();
+  TRAJ=null; TRAJ_KEY='';                    // 예측선도 이 규칙으로 다시 그린다
+  renderRetUI(); renderHome();
+  const after=dueTodayCount();
+  toast(`시험날 목표 ${Math.round(v*100)}% — 오늘 풀 것 ${before} → ${after}장`
+    + (q.add||q.del ? ` · 오늘 목록 ${q.add?`+${q.add}`:''}${q.add&&q.del?' ':''}${q.del?`−${q.del}`:''}` : ''));
 }
 /* 🔴 **강도를 바꾸면 오늘 큐도 지금 기준에 맞춘다** (동하 09-01 실기:
    「이미 큐에 들어간 거에 적용이 안 돼 — 비웠다 다시 채워야 함」).
@@ -7902,6 +7983,8 @@ function setRetention(v){
     + (q.add||q.del ? ` · 오늘 목록 ${q.add?`+${q.add}`:''}${q.add&&q.del?' ':''}${q.del?`−${q.del}`:''}` : ''));
 }
 /* 끌 때마다 재계산하면 무겁다(전량 replayLog) — 숫자만 따라가고 **손을 뗄 때** 한 번 적용한다 */
+$('xretRange').addEventListener('input', ()=>{ $('xretVal').textContent=$('xretRange').value+'%'; });
+$('xretRange').addEventListener('change', ()=>{ setExamRet(+$('xretRange').value/100); });
 $('retRange').addEventListener('input', ()=>{ $('retVal').textContent=$('retRange').value+'%'; });
 $('retRange').addEventListener('change', ()=>{ setRetention(+$('retRange').value/100); });
 
@@ -8831,7 +8914,7 @@ function simOnce(inp, newPerDay, seed){
     else unseen++; }
   const grade=()=>{ const r=rnd(); return r<inp.mix[0]?RATING[2]:(r<inp.mix[0]+inp.mix[1]?RATING[3]:RATING[4]); };
   const step=(c,now,p)=>{ const rating = rnd()<p ? grade() : RATING[1];
-    const nc=eng.next(c.f, now, rating).card; nc.due=clampDue(nc.due, c.id); c.f=nc; };
+    const nc=eng.next(c.f, now, rating).card; nc.due=clampDue(nc.due, c.id, nc); c.f=nc; };
   const out=[]; let doneKey=null;
   for(let k=dkAdd(todayKey(),1); k<=EXAM_DAY; k=dkAdd(k,1)){
     if(!isRestDay(k)){

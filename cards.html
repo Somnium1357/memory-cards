@@ -6196,11 +6196,19 @@ function todayRated(){ let n=0; const tk=todayKey();
 }
 function counts(){ // 상단 바 = 현재 세션 범위 기준 (스펙)
   const sc=curPreset?curPreset.scope:null;
-  const remain=queue.length-qPos;
+  /* 🔴 **라벨과 수를 큐 내용에서 뽑는다** (전층 감사 F3-11 · 2026-09-06).
+     예전 라벨은 `phase`(첫 카드가 신규였나)라, due+신규 세션에서 첫 장이 신규면 복습 39장까지
+     **「신규 59」**로 뭉뚱그렸다(실제 신규 20·복습 39). 「일일 복습」에 「＋ 다음 진도」 2장을 얹으면
+     **「신규 281」**(신규 2·복습 279)이 됐다.
+     남은 수도 `queue.length-qPos`라 **미룸·은퇴·오늘 정리분까지 셌다**(실측 19 vs 실제 18) —
+     화면이 건너뛰는 카드를 세면 그 수는 영영 0이 안 된다. 세는 술어를 화면과 맞춘다.
+     ⚠ 칸을 늘리지 않는다(좁은 폰에서 숫자줄이 2단이 된다) — 섞였으면 「남음」이라고 말한다. */
+  const rest=dropSettled(queue.slice(qPos));
+  let nw=0; for(const c of rest) if(isNew(c)) nw++;
+  const label = nw===rest.length ? '신규' : (nw===0 ? '복습' : '남음');
   const tmr=tomorrowCount(sc);
-  const label = phase==='new'?'신규':'복습';
   $('tbCounts').innerHTML = curPreset
-    ? `${label} <b>${remain}</b> · 오늘 ${todayRated()} · 내일 ~<b>${tmr}</b>`
+    ? `${label} <b>${rest.length}</b> · 오늘 ${todayRated()} · 내일 ~<b>${tmr}</b>`
     : `내일 ~<b>${tmr}</b>`;
 }
 /* ═══ 표 카드 (동하 2026-08-29 · QC `table` 규약) ═══════════════════════════════

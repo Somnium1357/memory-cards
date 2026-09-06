@@ -5863,6 +5863,27 @@ function gateIn(cards, seed, raw){
   if(raw) return cards.slice();
   return dirIsolate(prIsolate(chainIsolate(dropSettled(cards), seed), seed), seed);
 }
+/* 🔴 문 ①이 **무엇 때문에** 몇 장을 못 냈나 — 문구용 (전층 감사 F3-6 · 2026-09-06).
+   예전엔 `usableTopic`이 사유 없이 수만 돌려줘서, 화면은 짝 키·방향·선행 게이트 보류까지
+   전부 **「오늘 푼 카드의 이웃이라 내일」**로 말했다. 실측(09-05 23:50) 앱 전체 보류 386장의 내역은
+   이웃 152 · 짝 키 92 · 방향 129 · **선행 게이트 13**이었다 — 이웃은 절반도 안 된다.
+   🔴 선행 게이트는 **내일이 아니다**(같은 짝의 「정의」를 어려움 이상으로 넘긴 뒤에 나온다) —
+   그것을 「내일」이라고 말하면 거짓말이 된다. 그래서 갈라 말한다.
+   ⚠ 순서는 `gateIn`과 똑같이 유지한다(같은 카드가 두 사유에 겹쳐 세어지지 않게). */
+function preGated(c){ const F=prFacts(); return !!(c.pr && PR_GATED_TYPS.includes(c.typ) && F.hasDef.has(c.pr) && !F.passed.has(c.pr)); }
+function holdReasons(cards, seed){
+  const a=dropSettled(cards), preA=a.filter(preGated).length;
+  const b=chainIsolate(a, seed), preB=b.filter(preGated).length;
+  const c=prIsolate(b, seed), d=dirIsolate(c, seed);
+  return {settled:cards.length-a.length, chain:a.length-b.length,
+          pre:preB, pr:(b.length-c.length)-preB, dir:c.length-d.length, out:d};
+}
+function holdNote(h){                 // 사유를 뭉개지 않는 한 줄 (짧게 — 홈·토스트에 들어간다)
+  const t=(h.chain||0)+(h.pr||0)+(h.dir||0), out=[];
+  if(t) out.push(t+'장은 오늘 푼 카드와 겹쳐 내일');
+  if(h.pre) out.push(h.pre+'장은 정의를 넘긴 뒤');
+  return out.join(' · ');
+}
 function gateOut(list, order, reorder){
   const l=list.slice();
   if(reorder){ if(order==='doc') l.sort((a,b)=>a._i-b._i); else shuffle(l); }
@@ -5978,7 +5999,13 @@ function playSess(sx){          // 세션 화면의 [이어가기] — 남은 �
   go('scrSolve');
   /* 🔴 큐가 비었는데 세션에 카드는 있었다 = 전부 오늘 이미 푼 것이다. 말없이 돌려보내면
      「눌렀는데 아무 일도 안 일어난다」가 된다(동하 2026-08-30). 이유를 말한다. */
-  if(!queue.length){ if(all.length) toast('오늘 이미 푼 카드뿐이에요'); finishSess(); } else showCard();
+  if(!queue.length){
+    /* 🔴 「오늘 이미 푼 것뿐」과 「격리로 오늘 못 냄」은 다른 말이다 (전층 감사 F3-3 잔여 · F3-6).
+       전부 짝 키·방향 보류인 세션에서 「오늘 이미 푼 카드뿐이에요」는 사실이 아니었다. */
+    if(all.length){ const note=holdNote(holdReasons(all, null));
+      toast(note || '오늘 이미 푼 카드뿐이에요'); }
+    finishSess();
+  } else showCard();
 }
 function finishSess(){         // 큐 소진 = 세션 화면으로 복귀 (성적표는 거기서)
   clearResume();               // 다 푼 자리로 되돌아갈 일은 없다
@@ -6041,7 +6068,8 @@ function usableTopic(qRest){
   while((nt=nextTopic(tried, pool0))){
     const rest=(qRest||[]).filter(c=>!nt.cards.includes(c));
     const fresh=gateIn(nt.cards, rest);
-    if(fresh.length) return {nt:nt, fresh:fresh, rest:rest, held:nt.cards.length-fresh.length, skipped:tried.size};
+    if(fresh.length) return {nt:nt, fresh:fresh, rest:rest, held:nt.cards.length-fresh.length,
+                             why:holdReasons(nt.cards, rest), skipped:tried.size};   // why = 사유별 내역 (F3-6)
     tried.add(nt.key);
   }
   return {nt:null, fresh:[], rest:(qRest||[]), held:0, skipped:tried.size};
@@ -6059,7 +6087,7 @@ function extendWithNew(){ // 신규 = 대주제 한 개씩 — 끝나면 체크�
   const nt=u.nt, fresh=u.fresh, rest=u.rest, held=u.held, skipped=u.skipped;
   if(!nt){
     /* 낼 주제가 아예 없다 = 신규 소진이거나, 남은 주제가 전부 이웃 격리에 걸렸다. 갈라 말한다. */
-    if(skipped) toast('다음 주제 '+skipped+'개는 오늘 푼 카드의 이웃이라 내일 들어와요');
+    if(skipped) toast('다음 주제 '+skipped+'개는 오늘 푼 카드와 겹쳐 내일 들어와요');
     finishSess(); return;
   }
   curTopic=nt.key;
@@ -6068,8 +6096,8 @@ function extendWithNew(){ // 신규 = 대주제 한 개씩 — 끝나면 체크�
   const ord = curPreset&&curPreset.order;
   queue=[...gateOut(fresh, ord, true), ...rest]; qPos=0;   // 🔴 두 문 — 이 경로가 딴 살림을 차리던 자리다
   /* 🔴 **말없이 넘어가지 않는다** — 이 버튼이 「고장난 것처럼」 보인 것이 바로 침묵 때문이었다. */
-  const msg=[skipped?'앞 주제 '+skipped+'개는 오늘 푼 카드의 이웃이라 내일로':'',
-             held?held+'장은 이웃 격리로 내일':''].filter(Boolean).join(' · ');
+  const msg=[skipped?'앞 주제 '+skipped+'개는 오늘 푼 카드와 겹쳐 내일로':'',
+             held?holdNote(u.why):''].filter(Boolean).join(' · ');   // 사유를 갈라 말한다 (F3-6)
   if(msg) toast(msg);
   undoSnap=null; undoRun++; updateUndo();   // 큐가 새로 짜였다는 표시 — 스택은 그대로 산다
   syncSessQueue();
@@ -7150,7 +7178,7 @@ function renderSession(){
       ${nt?`<button class="act-btn" id="ssNew"><span>＋ 다음 진도 · ${esc(nt.label)}</span><small>${ntU.fresh.length}장${nt.date?` · ${esc(nt.date)} 수강`:''}</small></button>`:''}
       <button class="act-btn" id="ssAdd"><span>＋ 범위 넓히기</span><small>${isFixed(sx)?'내가 고른 단위':'오늘 큐에만'}</small></button>
     </div>
-    ${(ntU&&(ntU.held||ntU.skipped))?`<div class="why">${ntU.held?`<b>${ntU.held}장</b>은 오늘 푼 카드의 이웃이라 내일`:''}${ntU.skipped?`${ntU.held?' · ':''}앞 주제 <b>${ntU.skipped}개</b>는 오늘 푼 카드의 이웃이라 내일`:''}</div>`:''}
+    ${(ntU&&(ntU.held||ntU.skipped))?`<div class="why">${ntU.held?esc(holdNote(ntU.why)):''}${ntU.skipped?`${ntU.held?' · ':''}앞 주제 <b>${ntU.skipped}개</b>는 오늘 푼 카드와 겹쳐 내일`:''}</div>`:''}
     <div class="ss-line"><span>${esc(sessDesc(sx))}</span><span>누적 <b>${sx.done||0}</b>회</span><span>${sx.lastAt?'마지막 '+fmtAgo(sx.lastAt):'아직 안 품'}</span></div>`;
   if(sx.lastScore&&sx.lastScore.n){ const sc=sx.lastScore, hit=Math.round((sc.n-sc.r[1])/sc.n*100);
     h+=`<details class="ss-score"><summary>마지막 성적 <b>${hit}%</b> · ${sc.n}회 · ${fmtMin(sc.ms)}</summary>${scoreHtml(sc)}${trendHtml(sx)}</details>`; }

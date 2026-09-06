@@ -3902,8 +3902,19 @@ function cachedLogWeeks(){        // 로컬 캐시에 남아 있는 주 로그 �
 function cacheFlush(){ if(cacheTimer){ clearTimeout(cacheTimer); cacheTimer=null; } cacheStateNow(); }
 function cacheStateNow(){ // 파일 단위로 나눠 담는다 — 쿼터가 모자라면 데이터 캐시를 먼저 버린다
   const parts=splitState();
+  /* 🔴 해제 툼스톤(전층 감사 F0-2) — 은퇴 해제·미룸 취소·플래그 제거는 **파일**엔 「엔트리 없음」으로 실리지만(설계), **캐시**엔
+     `{u}`만 있는 엔트리를 남긴다. push가 한 번도 성공하지 못한 채 다시 부팅하면(오프라인·5xx·토큰 만료) 원격 밑판 위에 캐시를 얹는데,
+     엔트리가 없으면 해제가 전파되지 않아 원격 값(은퇴·미룸·플래그)으로 되돌아갔다. mergeMarksInto는 u가 더 새로우면 「없는 키 = 해제」로
+     읽으므로 툼스톤이 그대로 해제로 반영된다. 파일에 실리는 splitState()는 그대로다(툼스톤은 캐시 사본에만). */
+  for(const id in state.cards){ const c=state.cards[id]; if(!c||!c.u) continue;
+    if(!parts.marks.cards[id]) parts.marks.cards[id]={u:c.u};
+    if(!parts.fb.cards[id]) parts.fb.cards[id]={flag:null, ann:[], u:c.u}; }
   let ok = lsSet(K_MARKS, JSON.stringify(parts.marks)) && lsSet(K_FB, JSON.stringify(parts.fb));
-  for(const wk in logWeeks) ok = lsSet(K_LOGP+wk, JSON.stringify({v:2, week:wk, log:logWeeks[wk]})) && ok;
+  /* 로그 캐시는 **바뀐 주만** 쓴다(전층 감사 F0-5 일부) — 예전엔 채점마다 전 주차를 통째로 다시 썼다(플러시당 ≈62만 자).
+     이번 주 + dirty인 주만. 지난 주 사본은 이미 있는 것을 그대로 둔다(퇴거·IDB 이관은 장부 F0-5 후속 — W41 전). */
+  const nowWk=thisWeek();
+  for(const wk in logWeeks){ if(wk!==nowWk && !dirtyLogs.has(wk)) continue;
+    ok = lsSet(K_LOGP+wk, JSON.stringify({v:2, week:wk, log:logWeeks[wk]})) && ok; }
   ok = lsSet(K_SESS, JSON.stringify(sessFile())) && ok;
   if(ok) return;
   lsDel(K_DATA);                       // 데이터 캐시는 언제든 다시 받을 수 있다

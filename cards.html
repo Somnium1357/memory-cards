@@ -4948,7 +4948,19 @@ async function loadPan(){
   try{ const r=await fetch(PAN_DIR+'anchors.json?t='+Date.now(),{cache:'no-store'});
     if(!r.ok) return false; const j=await r.json();
     const m={}; for(const k in j) m[k]=new Set(j[k]||[]);
-    if(Object.keys(m).length){ PAN=m; return true; }
+    if(Object.keys(m).length){ PAN=m;
+      /* 🔴 **판의 이름 중복을 콘솔에 남긴다** (전층 감사 F6-2 앱 몫 · 2026-09-06).
+         조판기가 같은 과목에서 제목이 겹치면 둘째부터 `이름__2`로 만든다. 카드는 맨이름으로 가므로
+         **겹치는 순간 항상 첫 등장이 이긴다** — 링크는 멀쩡하고 앵커도 있어서 절 도달·폴백·앵커 없음
+         **어느 지표도 안 울린다.** 살아 있는 자리는 지금 둘뿐이고(수학 「입체도형」은 무해 · 과학
+         「과학의 본성」 81장은 부모 헤딩이 없어 조판 쪽에서만 풀린다), 나머지 53건은 아무도 안 쓴다.
+         🔴 앱이 할 수 있는 것은 **보이게 하는 것**이다 — 조판 세션이 이 줄을 보고 판단한다. */
+      const dup={};
+      for(const sj in m){ const set=m[sj], names=[];
+        for(const a of set){ const b=a.replace(/__\d+$/,''); if(b!==a && set.has(b)) names.push(b); }
+        if(names.length) dup[sj]=[...new Set(names)]; }
+      if(Object.keys(dup).length) console.warn('[판 앵커] 같은 과목에 이름이 겹치는 절 — 카드는 언제나 첫 등장으로 갑니다(조판 몫)', dup);
+      return true; }
   }catch(e){}
   return false;
 }

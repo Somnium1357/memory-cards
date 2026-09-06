@@ -4224,8 +4224,15 @@ function mergeShrinkMaps(a, b, key){        // 툼스톤은 합집합·같은 id
 function mergeSessions(remote, local, log){
   // 세션 병합: id별 합집합 · 같은 id면 큐는 「양쪽 합집합 − 오늘 이미 푼 것」, 나머지 필드는 u 최신 우선
   const tk=todayKey(), solved=new Set();
+  /* 🔴 「이미 푼 것 제외」를 **오늘 로그만** 보던 것(전층 감사 F4-1) — 하루 이상 낡은 사본(더러운 채 닫힌 기기 · 오프라인 뒤 409 ·
+     04시 경계)이 그 사이 푼 카드(최대 777장)를 큐로 되살려 「미리 보는 중」으로 조기 복습시켰다.
+     → 양쪽 사본 중 **가장 오래된 큐 시각(qAt) 이후** 채점 전부를 「푼 것」으로 본다. qAt이 없는 세션은 판단에 안 쓴다(최소한 오늘치는 본다). */
+  let since=Infinity;
+  for(const list of [remote||[], local||[]]) for(const sx of list){ if(!sx||sx.del) continue; const t=Date.parse(sx.qAt||'')||0; if(t && t<since) since=t; }
+  const dayStart=new Date(tk+'T04:00:00+09:00').getTime();
+  const solvedCut=Math.min(isFinite(since)?since:dayStart, dayStart);
   for(let i=(log||[]).length-1;i>=0;i--){ const e=log[i];
-    if(dayKey(logDate(e))!==tk)break; solved.add(e[0]); }
+    if(logTs(e)<solvedCut)break; solved.add(e[0]); }
   const byId={}, tomb={};
   for(const list of [remote||[], local||[]]){
     for(const sx of list){

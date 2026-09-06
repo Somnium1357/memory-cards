@@ -4354,6 +4354,15 @@ function mergeSessions(remote, local, log){
       merged.qAt=[newer.qAt||'', older.qAt||''].sort().pop()||undefined;
       merged.scDel=mergeShrinkMaps(newer, older, 'scDel');
       merged.scAt=[newer.scAt||'', older.scAt||''].sort().pop()||undefined;
+      /* 🔴 **성적 이력은 합집합이다** (전층 감사 L0 목록 밖 · 2026-09-06).
+         예전엔 `newer`를 통째로 복사해 **진 쪽 항목이 사라졌다** — 실사례 09-03 14:59:57:
+         진 사본의 `{n:30, at:14:55}`가 이긴 사본(최신이 13:03)에 밀려 소실됐다.
+         표시뿐이고 로그·FSRS와는 무관하지만, 기록은 기록이다. 시각으로 합치고 최신순 30개로 자른다. */
+      { const all=[...(newer.scores||[]), ...(older.scores||[])].sort((x,y)=>(y.at||0)-(x.at||0));
+        const seen=new Set(), out=[];
+        for(const x of all){ const k=(x.at||0)+':'+(x.n||0); if(seen.has(k)) continue; seen.add(k); out.push(x); }
+        if(out.length>30) out.length=30;
+        merged.scores=out; if(out.length) merged.lastScore=out[0]; }
       /* 🔴 일회성 정정(doneFix)이 한쪽에만 있으면 max를 쓰지 않는다 — max면 **정정 전 큰 값이 이겨**
          정정이 되돌아간다. 마커 있는 쪽을 따르고 마커를 물려준다. 둘 다 있으면 평소대로 max. */
       const nf=newer.doneFix, of=older.doneFix;

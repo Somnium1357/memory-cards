@@ -3652,7 +3652,9 @@ function saveIv(v){ ivShow.v=!!v; ivShow.at=Date.now(); lsSet(K_IVSHOW, JSON.str
 function applyIv(){ const g=document.getElementById('gradeBar'); if(g) g.classList.toggle('noiv', !ivShow.v);
   const t=document.getElementById('cfgIv'); if(t) t.classList.toggle('on', !!ivShow.v); }
 const _effCache=new Map();
-function restReset(){ _effCache.clear(); _bkPlan=null; }   // 백로그 계획도 같이 무효화 (due가 움직였다는 뜻)
+function restReset(){ _effCache.clear(); if(_bkPlan && _bkPlan.at!==todayKey()) _bkPlan=null; }
+/* 🔴 백로그 3일 분산 계획은 **하루 고정**이다(전층 감사 F1-4) — 예전엔 restReset마다 지워서 포그라운드 복귀(refreshRemote)마다
+   다시 세웠고, 오늘 몫을 풀고 나면 over가 줄어 n이 3→1로 바뀌며 숨겨 둔 내일·모레 몫 81장이 그날 도로 due가 됐다. 날이 바뀔 때만 다시 센다. */
 function isWeeklyRest(k){ return rest.dow!=null && new Date(k+'T12:00:00').getDay()===rest.dow; }
 function isAdhocRest(k){ return (rest.days||[]).indexOf(k)>=0; }
 function isRestDay(k){ return isWeeklyRest(k)||isAdhocRest(k); }
@@ -4441,7 +4443,12 @@ function afterRate(){ // 채점 후 배치 훅
 }
 /* dirty가 아니라 hasPending()을 본다 — pushAll은 5분 게이트에 막힌 sched를 dirtyFiles에 남겨두는데,
    push()가 dirty를 꺼버리므로 예전 조건에서는 다음 채점 전까지 그 스냅샷이 영영 안 올라갔다. */
-setInterval(()=>{ if(hasPending() && Date.now()-lastPushAt>PUSH_EVERY_MS) push(); updateSaveUI(); }, 30*1000);
+setInterval(()=>{ if(hasPending() && Date.now()-lastPushAt>PUSH_EVERY_MS) push(); updateSaveUI();
+  /* 🔴 배경 전환 없이 켜 두면 카드 데이터가 다시 안 받아졌다(전층 감사 F2-2 — 루틴이 지운 카드를 14.5h 뒤까지 채점 7건).
+     30분마다, 보이는 상태이고 풀이 화면이 아닐 때 refreshRemote(안에서 1시간·날짜 변경 게이트가 재로드를 정한다). */
+  if(document.visibilityState==='visible' && !$('scrSolve').classList.contains('on') && Date.now()-lastRefreshAt>30*60*1000) refreshRemote();
+}, 30*1000);
+let lastRefreshAt=Date.now();
 let hiddenAt=0;
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){
@@ -4458,6 +4465,7 @@ document.addEventListener('visibilitychange',()=>{
 let refreshing=false, pendingRefresh=false;
 async function refreshRemote(){     // 포그라운드 복귀 시 원격 상태 당겨오기 (새로고침 없이 기기 전환)
   if(refreshing||!cfg||!cfg.token) return;
+  lastRefreshAt=Date.now();
   if($('scrSolve').classList.contains('on') && cur()){ pendingRefresh=true; return; } // 풀이 중엔 미룬다
   refreshing=true;
   try{
@@ -4865,6 +4873,9 @@ async function loadData(){
   for(const c of DATA){ const k=tagKey(c);
     if(!TAGMETA[k])TAGMETA[k]={subj:c.subj, tag:unitTagName(c), i0:c._i, n:0};
     TAGMETA[k].n++; }
+  /* 🔴 데이터를 다시 받았으면 파생 캐시도 비운다(전층 감사 F2-3/F3-9) — TREE(피커)·NODE_FWD(역방 도입 판정)·prFacts가
+     한 번 만들어지면 새로고침 전까지 안 갈려, 재로드로 받은 새 노드의 역방이 「전방 없음 = 도입」으로 통과하고 사라진 단위가 유령으로 남았다. */
+  TREE=null; for(const k in NODE_FWD) delete NODE_FWD[k]; for(const k in NODE_FWD_UP) delete NODE_FWD_UP[k]; _prMemo=null;
 }
 let SPLITS = {};   // cards-plan.json에서 로드
 function tagKey(c){ // 투입·회독 단위 키 — 분할 대주제는 그룹까지 (subj|대주제#g)
@@ -5276,11 +5287,18 @@ function refillSess(sx){ // 전체 범위 세션은 날이 바뀌면 스스로 �
      그 오늘 안에 지운 셈이다. 사람이 넣은 것은 사람이 뺀다.
      ⚠ 순서는 **기존 큐가 앞** — 넣어 둔 것을 먼저 만나야 넣은 보람이 있다. 오늘 정리분은 뺀다. */
   const keep=(sx.q||[]).filter(id=>{ const c=BYID[id]; return c && !settledToday(c) && !buried(c); });
-  const fresh=buildQueue(asPreset(sx), sx.how.status, keep.map(id=>BYID[id]).filter(Boolean)).map(c=>c.id);
+  /* 오늘 사람이 뺀 것(「빼기」·「큐 비우기」 qDel 툼스톤)은 다시 채우지 않는다(전층 감사 F4-3) — refreshRemote의 day 리셋 뒤 도로 채워졌다 */
+  const delToday=id=>{ const t=sx.qDel&&sx.qDel[id]; return !!t && dayKey(new Date(t))===todayKey(); };
+  const fresh=buildQueue(asPreset(sx), sx.how.status, keep.map(id=>BYID[id]).filter(Boolean)).map(c=>c.id).filter(id=>!delToday(id));
    // 🔴 남긴 큐를 씨앗으로
   const have=new Set(keep);
   sx.q=[...keep, ...fresh.filter(id=>!have.has(id))];
   sx.day=todayKey(); saveSessionsSoon();
+  /* 🔴 진행 중인 세션이면 화면 큐에도 붙인다(전층 감사 F4-2) — 풀이 중 04:00을 넘기면 새 날 분량이 저장 큐에만 들어가고
+     다음 syncSessQueue가 저장 큐를 화면 잔량으로 되덮어 279장이 사라지며 「오늘 몫 다 풀었어요」가 거짓이 됐다. */
+  if(curSess&&curSess.id===sx.id){ const inQ=new Set(queue.map(c=>c.id));
+    const add=sx.q.filter(id=>!inQ.has(id)).map(id=>BYID[id]).filter(Boolean);
+    if(add.length){ queue.push(...add); counts(); } }
 }
 /* 🔴 **「몇 장」은 실제로 낼 장수다** (동하 2026-09-01: 「카드 장수 보여주는 건 학습량 어림하는
    용도인데, 그건 실제 카드량에 붙는 거니까」). 예전에는 **저장 큐 길이**를 그대로 셌다 —
@@ -5290,7 +5308,7 @@ function refillSess(sx){ // 전체 범위 세션은 날이 바뀌면 스스로 �
    ⚠ **저장 큐는 그대로 둔다** — 지우면 되돌리기가 카드를 되살릴 자리를 잃는다. 세는 것만 바꾼다.
    ⚠ 그래서 되돌리기로 되살아날 카드는 이 숫자에 안 잡힌다. 「지금 풀 것」을 세는 값이므로 그게 맞다. */
 function sessRemain(sx){ return (curSess&&curSess.id===sx.id)
-  ? queue.slice(qPos).filter(c=>!settledToday(c)&&!buried(c)).length
+  ? queue.slice(qPos).filter(c=>!settledToday(c)&&!buried(c)&&!retired(c)&&!offed(c)).length   // 끈 카드 제외(F3-8)
   : gateIn(sessCards(sx), null).length; }   // 🔴 격리분(사슬·짝 키·방향) 전부 빼고 센다 — 숫자와 실제가 어긋나면 안 된다(F3-3: 사슬만 세던 것)
 function addScopeToSess(sx, sel){ // 내용 추가 — sel={units:[],mids:[]}
   const have=new Set(sx.q);
@@ -5683,7 +5701,10 @@ function dirIsolate(list, seed){
   return list.filter(c=>ok.has(c.id));                     // 담기는 순서는 그대로
 }
 function gateIn(cards, seed, raw){
-  return dirIsolate(prIsolate(chainIsolate(raw ? cards.slice() : dropSettled(cards), seed), seed), seed);
+  /* raw = 사람이 카드를 집어 만든 세션(pick · 「바로 풀기」). 당일 재출 금지도 격리 셋도 **앱이 스스로 내미는 것**을 막는 규칙이라
+     지목한 카드에는 안 건다(전층 감사 F3-4: 오늘 채점된 카드의 32%가 말없이 거부됐다 · 08-30 「아무 말 없이 홈으로 튕김」과 같은 결). */
+  if(raw) return cards.slice();
+  return dirIsolate(prIsolate(chainIsolate(dropSettled(cards), seed), seed), seed);
 }
 function gateOut(list, order, reorder){
   const l=list.slice();
@@ -6142,7 +6163,7 @@ function showCard(){
   let skipped=0;
   const picked = !!(curSess && curSess.pick);
   // 오늘 푼 것 + 오늘 미룬 것을 건너뛴다 (미룸은 09-01 감사 🟡6 — dropSettled의 같은 처방)
-  while(!picked && queue[qPos] && (settledToday(queue[qPos])||buried(queue[qPos]))){ qPos++; skipped++; }
+  while(!picked && queue[qPos] && (settledToday(queue[qPos])||buried(queue[qPos])||retired(queue[qPos])||offed(queue[qPos]))){ qPos++; skipped++; }   // 끈 카드도(F3-8 — dropSettled와 같은 술어)
   if(skipped) syncSessQueue();
   const c=cur();
   if(!c){ showSummaryOrNew(); return; }
@@ -6305,7 +6326,7 @@ function rate(num){
   sessionDone++; if(phase==='new')newServed++;
   qPos++; updateUndo(); showCard(); syncSessQueue();
 }
-function mdY(v){ const d=new Date(v); return `${d.getMonth()+1}/${d.getDate()}`; }
+function mdY(v){ const k=dayKey(new Date(v)); return `${+k.slice(5,7)}/${+k.slice(8,10)}`; }   // 하루 경계 4시 반영(F5-2)
 function whyNow(c){
   /* 규칙이 보이지 않게 작동하면 「왜 이게 나왔지」가 안 읽힌다.
      한 줄이라도 이유를 대면 앱의 속셈이 드러난다 (동하 2026-08-21). */
@@ -6381,7 +6402,8 @@ function doUndo(){
   }
   const card = sn.card || BYID[sn.id];
   if(card) reviveAt(card);         // 3) 그 카드를 지금 카드로
-  todayRateIdx=null; cacheState(); setDirty(true); updateUndo();
+  todayRateIdx=null; lastRevIdx=null; firstRevIdx=null; _prMemo=null;   // 되돌리기는 제자리 splice — 증분 캐시 셋을 전부 비운다(전층 감사 F1-3)
+  cacheState(); setDirty(true); updateUndo();
   if(!$('scrSolve').classList.contains('on')) go('scrSolve');  // 세션·홈에서 눌러도 그 카드로 돌아간다
   showCard();
   syncSessQueue();                 // 되돌린 카드가 저장된 세션 큐에도 돌아오게
@@ -6694,27 +6716,32 @@ function presetDesc(p){
   if(p.bury)parts.push('방향 분산');
   return parts.join(' · ');
 }
+/* 🔴 「오늘 실제로 나올 수 있는 복습」 — 홈 「남은 복습」·「세션 · due N」 줄·통계 「due 남음」 타일이 **같은 수**를 말한다
+   (전층 감사 F5-1: 같은 화면에서 0 vs 39가 동거했다). 정의 = 어느 세션 범위에든 드는 due 중, 큐에 든 것은 dropSettled 뒤 그대로,
+   나머지는 큐를 씨앗으로 gateIn(오늘 채점한 것 · 격리로 내일 미뤄진 것 제외). 세션 큐와 같은 두 문. */
+function dueTodayCount(){
+  const scopes=sessions.map(sx=>asPreset(sx).scope); const pool=[];
+  for(const c of DATA){ const s=state.cards[c.id]; if(s&&s.retired)continue;
+    if(isDue(c)&&!buried(c) && scopes.some(sc=>inScope(c,sc))) pool.push(c); }
+  const qIds=new Set(); for(const sx of sessions){ for(const id of ((sx&&sx.q)||[])) qIds.add(id); }
+  const inQ=pool.filter(c=>qIds.has(c.id)), restDue=pool.filter(c=>!qIds.has(c.id));
+  return dropSettled(inQ).length + gateIn(restDue, inQ).length;
+}
 function renderToday(){ // 홈 첫 화면 = 오늘 한 일 (통계 탭까지 안 들어가도 보이게)
   const by=dailyStats(), tk=todayKey(), t=by[tk]||{n:0,nw:0,ms:0};
-  const d=new Date(), wdays=['일','월','화','수','목','금','토'];
+  const d=new Date(todayKey()+'T12:00:00'), wdays=['일','월','화','수','목','금','토'];   // 논리적 오늘(4시 경계) — 00~03시에 하루 앞서 보였다(F5-2)
   /* 🔴 **「남은 복습」 = 어느 세션엔가 실제로 나오는 것만 센다** (동하 09-02 지시).
      예전에는 전 카드를 셌는데, 세션이 안 담은 카드(빼 둔 주제 등)는 **어차피 안 푼다** —
      그걸 세면 「세션은 다 풀었다는데 홈엔 남아 있다」가 된다(동하 실기로 잡힌 1장).
      ⚠ 세는 기준만 바꾼다 — 카드·로그·일정·저장 큐는 안 건드린다.
      ⚠ 설명을 덧붙이지 않는다(동하: 「설명 너무 난잡해」) — 값이 맞으면 말이 필요 없다. */
-  let learned=0; const pool=[];
-  const scopes=sessions.map(sx=>asPreset(sx).scope);
-  for(const c of DATA){ const s=state.cards[c.id];
-    if(s&&s.retired)continue;
-    if(isDue(c)&&!buried(c) && scopes.some(sc=>inScope(c,sc))) pool.push(c);
-    if(!isNew(c))learned++; }
+  let learned=0;
+  for(const c of DATA){ const s=state.cards[c.id]; if(s&&s.retired)continue; if(!isNew(c))learned++; }
+  const due=dueTodayCount();
   /* 🔴 그중에서도 **오늘 실제로 나올 수 있는 것만** (동하 09-05 「세션 복습 남은 게 없는데 홈에 남은 복습 38」).
      due이지만 오늘 안 나오는 카드가 둘 있다 — ① 오늘 채점한 카드(「다시」는 FSRS due가 그날 안에 남지만 당일 재출이
      없다 · dropSettled) ② 격리(사슬·짝 키·방향)로 내일 미뤄진 카드(gateIn). 세션 큐와 **같은 두 문**을 지나게 해서
      같은 답이 나오게 한다. 큐에 이미 든 카드는 그대로 세고, 나머지는 큐를 씨앗으로 문을 지난다. */
-  const qIds=new Set(); for(const sx of sessions){ for(const id of ((sx&&sx.q)||[])) qIds.add(id); }
-  const inQ=pool.filter(c=>qIds.has(c.id)), restDue=pool.filter(c=>!qIds.has(c.id));
-  const due = dropSettled(inQ).length + gateIn(restDue, inQ).length;
   const wk=[]; let mx=1;
   for(let i=6;i>=0;i--){ const v=(by[dayKeyOffset(-i)]||{n:0}).n; wk.push(v); if(v>mx)mx=v; }
   const bars=wk.map((v,i)=>`<i class="${i===6?'on':''}" style="height:${Math.max(2,Math.round(v/mx*100))}%" title="${v}회"></i>`).join('');
@@ -6781,8 +6808,9 @@ function renderPlanWarn(){
   box.classList.add('on');
 }
 function renderHome(){
-  let due=0,nw=0;
-  for(const c of DATA){ if(isDue(c)&&!buried(c))due++; else if(isNew(c))nw++; }   // 미룸은 오늘 안 한다는 뜻 — renderToday와 같은 숫자로
+  let nw=0;
+  for(const c of DATA){ if(isNew(c)&&!buried(c))nw++; }
+  const due=dueTodayCount();   // 바로 위 카드의 「남은 복습」과 같은 정의(F5-1 — 두 수가 0 vs 39로 동거했다)
   const restToday=isRestDay(todayKey());
   $('hSub').innerHTML = restToday
     ? `<b style="color:var(--good)">오늘은 쉬는 날</b> · ${isWeeklyRest(todayKey())?'매주 '+RDOW[rest.dow]+'요일':'직접 추가한 날'}`
@@ -8361,16 +8389,16 @@ function renderStats(){
   h+='<div class="stat-grid">'
     +g('오늘 채점',today.n,'회')+g('오늘 신규',today.nw,'장')
     +g('오늘 학습시간',fmtMin(today.ms),'')+g('평균 응답',today.msN?fmtDur(Math.round(today.ms/today.msN)):'—','')
-    +g('due 남음',due,'장')+g('내일 예상','~'+tomorrowCount(null),'장')
+    +g('오늘 복습',dueTodayCount(),'장')+g('내일 예상','~'+tomorrowCount(null),'장')   // 홈과 같은 정의(F5-1)
     +g('학습 진입',learned,`/ ${alive.toLocaleString()}`)+g('끈 카드 · 미룸',`${ret} · ${bur}`,'장')
     +'</div>';
 
   /* 최근 28일 풀이량 */
   const acols=[];
-  for(let i=27;i>=0;i--){ const k=dayKeyOffset(-i), d=new Date(Date.now()-i*86400000);
+  for(let i=27;i>=0;i--){ const k=dayKeyOffset(-i);
     const e=by[k]||{n:0,nw:0};
     acols.push({a:e.n-e.nw, b:e.nw, cls:i===0?'today':'',
-      label:(i%7===0)?`${d.getMonth()+1}/${d.getDate()}`:'', title:`${k} · 총 ${e.n}회 (신규 ${e.nw})`}); }
+      label:(i%7===0)?`${+k.slice(5,7)}/${+k.slice(8,10)}`:'', title:`${k} · 총 ${e.n}회 (신규 ${e.nw})`}); }   // 라벨도 논리적 날짜에서(F5-2)
   const tot28=acols.reduce((a,c)=>a+c.a+c.b,0), act=acols.filter(c=>c.a+c.b>0).length;
   h+=`<div class="card-box"><h3>최근 4주 풀이량</h3>
     <div class="cap">총 ${tot28.toLocaleString()}회 · 푼 날 ${act}일 · 하루 평균 ${act?Math.round(tot28/act):0}회</div>
@@ -8439,9 +8467,9 @@ function renderStats(){
   /* ═══ ② 앞으로 뭐가 오나 ═══ */
   const F=forecastCarry(14);
   h+=`<div class="rail-grp" style="margin:18px 4px 10px">② 앞으로 뭐가 오나</div>`;
-  const fcols=F.cols.map((c,i)=>{ const d=new Date(Date.now()+i*86400000);
+  const fcols=F.cols.map((c,i)=>{ const k=dayKeyOffset(i);   // 논리적 날짜 라벨(F5-2)
     return {a:c.load, cls:i===0?'today':(c.rest?'rest':''),
-      label:i%2===0?`${d.getMonth()+1}/${d.getDate()}`:'',
+      label:i%2===0?`${+k.slice(5,7)}/${+k.slice(8,10)}`:'',
       title:`${c.k}${c.rest?' (휴식일)':''} · 그날 부하 ${c.load}장`
         +(c.carry?` = 이월 ${c.carry} + 새로 ${c.fresh}`:'')}; });
   const peak=F.cols.reduce((m,c)=>Math.max(m,c.load),0);

@@ -429,6 +429,12 @@ details.rd-sec[open]>summary::before{transform:rotate(90deg);}
   border-bottom:1px solid var(--line);background:var(--surface);}
 #ovlHd .hd-ttl{flex:1;min-width:0;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 #ovlHd iframe{flex:1;width:100%;border:none;background:var(--bg);}
+/* 🔴 왼쪽 가장자리 뒤로가기 띠 (전층 감사 F6-5 · 2026-09-06).
+   뒤로가기 스와이프는 `document`에서 듣는데 **iframe 안 터치는 거기까지 안 온다** — 그래서 오버레이가 뜨면
+   상단 바(32×46px) 구석에서만 먹혔다(닫기 버튼·뒤로가기는 정상이라 조용한 결함이었다).
+   iframe 위에 **투명한 띠**를 얹어 그 폭만큼은 문서가 터치를 받게 한다.
+   ⚠ 폭은 `NAV_EDGE`(32px)와 맞춘다 — 그보다 넓으면 뒤로가기로도 안 쳐 주면서 본문만 가린다. */
+#ovlHd .hd-edge{position:absolute;left:0;top:46px;bottom:0;width:32px;z-index:5;background:transparent;}
 /* 🔴 **질문을 들고 들어간다** (동하 09-01 실기: 「감상곡 약점이 16개인데 이걸 기억해서
    회독본을 볼 수가 없어서」). 본문을 보는 내내 「지금 뭘 찾는 중인가」가 화면에 있어야 한다. */
 #hdQ{flex:0 0 auto;display:none;align-items:center;gap:8px;padding:8px 10px;
@@ -1002,6 +1008,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 
     <!-- 회독본 오버레이 — 앱 안에서 연다 (전체화면 유지 · 미저장분 방지) -->
     <div id="ovlHd">
+      <div class="hd-edge"></div>
       <div class="hd-bar">
         <button class="tb-btn" id="hdClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
         <div class="hd-ttl" id="hdTtl">회독본</div>

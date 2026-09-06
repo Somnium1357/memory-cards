@@ -3484,7 +3484,8 @@ function refFor(path){ return onData(path) ? dataBr() : ''; }   // '' = 기본 �
    커밋 기록으로 확인한 뒤 플래그를 끈다. `main`의 낡은 사본 다섯(marks·sessions·log W34~36)은 같은 커밋에서 추적을 뺀다(.gitignore).
    되돌리기 = 이 한 줄 true. 블록 본문은 남겨 둔다 — 지우는 것은 다음 정리 때. */
 let MAIN_FALLBACK=false;
-const K_REST='cards_rest_v1', K_CFG='cards_cfg_v1', K_DIRTY='cards_dirty_v1',
+const ORPH_DAYS=3;                        // 카드가 사라져 보여도 이 날수만큼은 마크·되짚기를 지우지 않는다 (재생성 일시 부재 대비)
+const K_REST='cards_rest_v1', K_CFG='cards_cfg_v1', K_DIRTY='cards_dirty_v1', K_ORPH='cards_orph_v1',
       K_THEME='cards_theme_v1', K_PRESETS='cards_presets_v1',
       K_DATA='cards_data_cache_v1', K_SWIPE='cards_swipe_v1', K_INTAKE='cards_intake_v1',
       K_RESUME='cards_resume_v1',        // 회독본 갔다 돌아올 자리 (세션·카드·답면 · 오늘 것만)
@@ -4046,15 +4047,26 @@ function pruneOrphans(){
      지우고 push하면 남의 끄기가 풀려 껐던 카드가 되살아나고 신고가 증발한다.
      「없어졌다」와 「내가 못 받았다」는 다르다 — 못 받았을 때는 판정 자체를 미룬다. */
   if(!dataFresh) return 0;
-  const gone=[];
+  /* 🔴 **바로 지우지 않고 며칠 기다린다** (전층 감사 L0 목록 밖 · 2026-09-06).
+     생성기의 「일시 부재」가 실제로 있었다 — `c301348572802ec6`(9.미술 볼록 판화)는
+     09-02 은퇴 → 09-03 재생성이 그 ID를 빼감 → 09-05 앱이 고아로 **정리·push** → 09-05 재생성이 다시 넣음.
+     정리 자체는 설계대로였지만 **push 즉시 정본이 되어 되돌릴 근거가 사라졌다**(지금 그 카드는 은퇴가 아니다).
+     그래서 **처음 사라진 날을 이 기기에만 적어 두고**(동기화 안 함) 유예가 지나야 지운다 —
+     그 사이에 돌아오면 아무 일도 없던 것이 된다. 위 `dataFresh` 가드와는 다른 층의 안전망이다. */
+  const seen=(()=>{ try{ return JSON.parse(lsGet(K_ORPH)||'{}'); }catch(e){ return {}; } })();
+  const T=todayKey(), next={}, gone=[]; let held=0;
   for(const id in state.cards){
     if(BYID[id]) continue;                      // 살아 있는 카드
+    const first=seen[id]||T;
+    if(dkDiff(T, first) < ORPH_DAYS){ next[id]=first; held++; continue; }   // 아직 유예 중 — 손대지 않는다
     const s=state.cards[id]||{};
     const hasFb   = s.flag!=null || (s.ann&&s.ann.length);
     const hasMark = s.retired || s.by || (Array.isArray(s.t)&&s.t.length) || s.base;
     delete state.cards[id];
     if(hasFb||hasMark) gone.push({id, memo:(typeof s.flag==='string'&&s.flag)?s.flag:''});
   }
+  lsSet(K_ORPH, JSON.stringify(next));
+  if(held) console.log('없어진 카드', held, '건 — ' + ORPH_DAYS + '일 유예 중(돌아오면 그대로 산다)');
   if(!gone.length) return 0;
   markDirty('marks'); markDirty('fb');
   console.log('없어진 카드 정리', gone.length, '건', gone.map(x=>x.id));

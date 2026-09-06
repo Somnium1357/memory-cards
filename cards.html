@@ -1056,7 +1056,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
           <div class="hpb">
             <p>새 카드는 아무 때나 안 나와요. <b>투입 계획</b>이 순서를 정해 둡니다.</p>
             <table class="hp-t">
-              <tr><td>계획</td><td>대주제 83개를 <b>수강일이 오래된 순</b>으로 줄 세운 목록. 루틴이 관리하고 앱은 읽기만 해요</td></tr>
+              <tr><td>계획</td><td>대주제 <span class="hp-n-units">…</span>개를 <b>수강일이 오래된 순</b>으로 줄 세운 목록. 루틴이 관리하고 앱은 읽기만 해요</td></tr>
               <tr><td><b>다음 진도</b></td><td>그 줄에서 <b>아직 안 푼 카드가 남은 첫 대주제</b>를 통째로 시작. 세션 화면의 「＋ 다음 진도」 버튼</td></tr>
               <tr><td><b>범위 넓히기</b></td><td>계획을 무시하고 <b>내가 고른</b> 대주제·중주제를 얹기. 「＋ 범위 넓히기」 버튼</td></tr>
               <tr><td><b>주제 빼 두기</b></td><td>반대쪽. 고른 주제를 <b>이 세션에서만 계속</b> 빼요 — 신규·복습 둘 다.
@@ -1234,7 +1234,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
             <table class="hp-t">
               <tr><th>홈</th><td>오늘 요약 · 세션 목록 · 라이브러리(단위·카드 목록) · 기록(통계·약점·플래그) · ⚙설정</td></tr>
               <tr><th>세션</th><td>허브. 이어가기 · 마지막 성적 · 이 세션의 단위 · 다음 진도 · 범위 넓히기</td></tr>
-              <tr><th>단위</th><td>대주제 84개를 과목별로 접어 둔 목록. 회독 읽음 체크 · 골라서 세션 만들기</td></tr>
+              <tr><th>단위</th><td>대주제 <span class="hp-n-units">…</span>개를 과목별로 접어 둔 목록. 회독 읽음 체크 · 골라서 세션 만들기</td></tr>
               <tr><th>카드 목록</th><td><b>조건을 고르면</b> 결과가 나오는 화면. <span class="hp-n-cards">5,000여</span>장을 그냥 깔지 않아요.
                 누수·플래그·약점·오늘 푼·끈 카드 같은 타일이나 검색으로 들어가요</td></tr>
               <tr><th>풀이</th><td>맨 위 한 줄 = 이 카드가 나온 이유 · 카드 탭 = 답 공개(다시 탭하면 앞면) · 사이드바 = 되짚기</td></tr>
@@ -1284,7 +1284,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
             <table class="hp-t">
               <tr><td>신규</td><td>한 번도 채점된 적 없는 카드</td></tr>
               <tr><td>due · 복습 예정</td><td>FSRS가 잡은 복습일이 오늘이거나 지난 카드</td></tr>
-              <tr><td>단위 · 대주제</td><td>회독·투입·인출의 공통 덩어리. 84개</td></tr>
+              <tr><td>단위 · 대주제</td><td>회독·투입·인출의 공통 덩어리. <span class="hp-n-units">…</span>개</td></tr>
               <tr><td>중주제</td><td>대주제 안의 묶음. 단위 행의 <b>▸</b>로 펼쳐 볼 수 있어요</td></tr>
               <tr><td>전방 / 역방향</td><td>개념명→내용 / 내용→개념명</td></tr>
               <tr><td>약점</td><td>2회 이상 복습했는데 안정도가 7일 미만이거나, 누적 2회 이상 틀린 카드</td></tr>
@@ -8925,6 +8925,9 @@ $('btnConnect').onclick=async()=>{
 function renderHelpToc(){    // 목차 칩 — 누르면 그 절만 펼치고 그리로 간다
   // 도움말 속 카드 장수는 열 때마다 실제 데이터로 채운다 — 박아 둔 숫자는 반드시 낡는다 (감사 U8)
   document.querySelectorAll('.hp-n-cards').forEach(el=>{ el.textContent=DATA.length.toLocaleString(); });
+  /* 🔴 대주제 개수도 같다 (전층 감사 F5-3 · 2026-09-06) — 세 자리에 **83·84·84**가 박혀 있었고
+     자기들끼리도 어긋났으며 실제는 111이었다. 정본은 `TAGMETA`(과목|대주제 키). */
+  document.querySelectorAll('.hp-n-units').forEach(el=>{ el.textContent=Object.keys(TAGMETA).length.toLocaleString(); });
   const box=$('hpToc'); if(box.dataset.built) return;
   const secs=[...document.querySelectorAll('#scrHelp details.hp')];
   box.innerHTML='';

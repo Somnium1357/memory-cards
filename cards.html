@@ -6038,6 +6038,7 @@ function unleak(list, spread){
   return out;
 }
 function playSess(sx){          // 세션 화면의 [이어가기] — 남은 큐를 그대로 이어 푼다
+  creditDone();                 // 🔴 옮기기 전에 **떠나는 세션**의 누적을 맞춘다 (F4-6 ②)
   curSess=sx; viewSess=sx; curPreset=asPreset(sx);
   lastPlaySid=sx.id;   // curSess가 끊겨도 이 id로 큐의 주인을 되찾는다 (syncSessQueue 참고)
   refillSess(sx);
@@ -6057,6 +6058,17 @@ function playSess(sx){          // 세션 화면의 [이어가기] — 남은 �
       toast(note || '오늘 이미 푼 카드뿐이에요'); }
     finishSess();
   } else showCard();
+}
+/* 🔴 이 런에서 **아직 누적에 안 실은 채점**을 지금 싣는다 (전층 감사 F4-6 · 2026-09-06).
+   반영은 `finishSess` 한 곳에서만 했는데, 런이 **끝나지 않고 갈리는 길이 둘** 있었다 —
+   ① 「＋ 다음 진도」(`extendWithNew`)가 `undoRun++`로 런 번호만 올린다. 그 뒤 되돌리기는
+      「다른 런」 가지로 가서 **반영도 안 된 채점을 `done--`** 한다(홈으로 나가면 1 적은 채로 굳는다).
+   ② 풀던 중 다른 세션으로 옮기면(`playSess`) `sessionDone`·`doneCredited`가 0으로 리셋돼
+      그 런의 채점이 **누적에 영영 미반영**된다.
+   08-26에 5.7배 부풀림을 정정한 자리라 이번엔 방향이 반대(누락)로 남아 있었다. */
+function creditDone(){
+  const add=sessionDone-doneCredited;
+  if(add>0 && curSess){ curSess.done=(curSess.done||0)+add; doneCredited=sessionDone; saveSessionsSoon(); }
 }
 function finishSess(){         // 큐 소진 = 세션 화면으로 복귀 (성적표는 거기서)
   clearResume();               // 다 푼 자리로 되돌아갈 일은 없다
@@ -6078,8 +6090,7 @@ function finishSess(){         // 큐 소진 = 세션 화면으로 복귀 (성�
        또는 다음 주제가 없어 extendWithNew가 곧바로 finishSess). 실측 2026-08-26: 실제 채점 약 2,700회인데
        「일일 복습」 누적이 **15,268회**(약 5.7배). sessionDone은 되돌리기가 되살리므로 0으로 리셋하지
        않고, 「어디까지 반영했나」를 doneCredited로 따로 들고 간다. */
-    const addDone = sessionDone - doneCredited;
-    if(addDone>0){ curSess.done=(curSess.done||0)+addDone; doneCredited=sessionDone; }
+    creditDone();
     curSess.lastAt=Date.now(); curSess.day=todayKey();
     if(curSess.temp && !curSess.q.length){        // 목록에서 만든 임시 세션은 다 풀면 정리
       const done=curSess; viewSess=null; deleteSess(done);
@@ -6151,6 +6162,7 @@ function extendWithNew(){ // 신규 = 대주제 한 개씩 — 끝나면 체크�
   const msg=[skipped?'앞 주제 '+skipped+'개는 오늘 푼 카드와 겹쳐 내일로':'',
              held?holdNote(u.why):''].filter(Boolean).join(' · ');   // 사유를 갈라 말한다 (F3-6)
   if(msg) toast(msg);
+  creditDone();                            // 런 번호가 갈리기 전에 누적을 맞춘다 (F4-6 ①)
   undoSnap=null; undoRun++; updateUndo();   // 큐가 새로 짜였다는 표시 — 스택은 그대로 산다
   syncSessQueue();
   /* 🔴 풀이 화면으로 데려간다. 큐가 빈 세션에서 이 버튼을 누르면 playSess가 finishSess로

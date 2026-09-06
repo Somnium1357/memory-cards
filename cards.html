@@ -245,7 +245,8 @@ input:focus,select:focus{border-color:var(--accent);}
    클래스 토글이 아니라 구조로 보장된다 — 인출 연습이 깨질 길이 없다. */
 #cHoedok{display:none;margin-top:12px;}
 #cHoedok.on{display:block;}
-#cHoedok a{font-size:12px;font-weight:700;color:var(--accent);text-decoration:none;white-space:nowrap;}
+#cHoedok a{font-size:12px;font-weight:700;color:var(--accent);text-decoration:none;white-space:nowrap;
+  display:inline-block;padding:10px 12px;margin:-10px -12px;}   /* 표적 키우기 (F5-5) — 뒷면 아래라 이웃이 없어 넉넉히 준다 */
 #cMeta{display:none;margin-top:14px;align-items:center;gap:8px;}
 #cMeta.on{display:flex;}
 .typ-tag{font-size:12px;font-weight:700;color:var(--mute);background:var(--surface2);
@@ -792,8 +793,12 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .u-sub{padding-left:10px;margin-bottom:10px;}
 .u-row .t.tap{cursor:pointer;}
 .u-row .mt .inq{color:var(--accent);}
+/* 🔴 표적을 키운다 (전층 감사 F5-5 · 2026-09-06) — 「회독본 ↗」류가 16~18px 높이라 44px 권장에 한참 못 미쳤다.
+   `display:inline-block` + 세로 패딩으로 표적을 키우고, **음수 마진으로 줄 높이를 되돌려** 배치는 그대로 둔다.
+   ⚠ 44px까지 올리지 않았다 — 이 링크들은 조밀한 목록 행 안에 있어서, 44px 히트 영역은
+   **위아래 이웃(「읽음」·「빼기」·행 자체)을 덮는다.** 겹침 없이 갈 수 있는 최대가 이 값이다(헤드리스 rect로 확인). */
 .u-row .mt a.hd{color:var(--accent);background:var(--accent-dim);text-decoration:none;
-  padding:1px 8px;border-radius:999px;font-weight:800;}
+  display:inline-block;padding:7px 10px;margin:-6px 0;border-radius:999px;font-weight:800;}
 .fold{border-top:1px solid var(--line);margin-top:14px;padding-top:10px;}
 .fold summary{font-size:12.5px;font-weight:800;color:var(--mute);cursor:pointer;list-style:none;
   padding:6px 2px;}

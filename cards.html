@@ -4269,8 +4269,20 @@ function stampShrink(sx, key, atKey, ids){
   for(const id of ids) d[id]=now;
   sx[atKey]=now;
   const ks=Object.keys(d);
-  if(ks.length>QDEL_CAP){ ks.sort((a,b)=>(d[a]||'').localeCompare(d[b]||''));
-    for(const k of ks.slice(0, ks.length-QDEL_CAP)) delete d[k]; }
+  if(ks.length>QDEL_CAP){
+    /* 🔴 넘치면 **되살아날 수 없는 죽은 ID부터 버린다** (전층 감사 F2-7 · 2026-09-06).
+       예전엔 시간순 FIFO뿐이라, 「일일 복습」 800건 중 **93건(11.6%)**이 이미 사라진 카드의 툼스톤이었는데도
+       자리를 차지해 **살아 있는 툼스톤의 보존 기간을 깎았다**(잘린 툼스톤은 낡은 사본과 병합되면 되살아난다).
+       죽은 것을 먼저 버리면 같은 상한으로 살아 있는 것을 그만큼 더 오래 지킨다.
+       ⚠ `scDel`(범위 키)에는 안 건다 — 그 열쇠는 카드 id가 아니다. */
+    const over=ks.length-QDEL_CAP, drop=new Set();
+    if(key==='qDel') for(const k of ks){ if(drop.size>=over) break; if(!BYID[k]) drop.add(k); }
+    if(drop.size<over){
+      const rest=ks.filter(k=>!drop.has(k)).sort((a,b)=>(d[a]||'').localeCompare(d[b]||''));
+      for(const k of rest){ if(drop.size>=over) break; drop.add(k); }
+    }
+    for(const k of drop) delete d[k];
+  }
 }
 function qShrink(sx, removed){ stampShrink(sx,'qDel','qAt',removed); }        // 큐에서 뺀 카드
 function scShrink(sx, removed){ stampShrink(sx,'scDel','scAt',removed); }     // 범위에서 뺀 단위·중주제

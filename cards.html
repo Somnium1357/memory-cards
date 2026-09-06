@@ -8786,7 +8786,7 @@ function statInputs(){
   const cut=Date.now()-30*86400000, seen=new Set();
   let fN=0,fOK=0,rN=0,rOK=0; const mix=[0,0,0,0,0];
   for(const e of state.log){ const first=!seen.has(e[0]); seen.add(e[0]);
-    if(logTs(e)*1000<cut) continue;
+    if(logTs(e)<cut) continue;                 // 🔴 logTs는 이미 ms다 — `*1000`을 곱하면 30일 창이 통째로 무력화된다
     if(first){ fN++; if(e[2]>1) fOK++; } else { rN++; if(e[2]>1) rOK++; }
     if(e[2]>1) mix[e[2]]++; }
   const mixTot=mix[2]+mix[3]+mix[4]||1;
@@ -9114,7 +9114,7 @@ function renderStats(){
   const seen=new Set(); const R=[0,0,0,0,0]; let msSum=0,msN=0;
   const cut=Date.now()-30*86400000;
   for(const e of state.log){ const isFirst=!seen.has(e[0]); seen.add(e[0]);
-    if(logTs(e)*1000<cut||isFirst) continue;
+    if(logTs(e)<cut||isFirst) continue;        // 🔴 logTs는 이미 ms (위와 같은 함정)
     R[e[2]]=(R[e[2]]||0)+1;
     const ex=e[3]; if(ex&&typeof ex.ms==='number'){ msSum+=ex.ms; msN++; } }
   const rtot=R[1]+R[2]+R[3]+R[4], pct=n=>rtot?Math.round(n/rtot*100):0;

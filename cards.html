@@ -4932,13 +4932,19 @@ function cachedFile(key){ const c=lsGet(key); if(!c)return null; try{ return JSO
 /* 토큰 없이도 읽기는 된다 (공개 레포 · Pages 동일 출처).
    🔴 `data` 브랜치 파일은 Pages에 없으므로 `raw.githubusercontent.com`으로 간다.
    owner/repo를 모르면(설정 전) 예전대로 동일 출처 = main을 읽는다 — 읽기 전용이라 안전하다. */
+/* 🔴 「못 받았다 ≠ 없다」 — rawGet도 갈라야 한다(전층 감사 F0-4/FX-1). 404는 「없다」(null), 그 밖의 실패(네트워크·5xx·JSON 깨짐)는
+   rawNetFail을 켠다. 토큰 없는 부팅이 이 플래그를 netFail로 받아 sessLoadOK를 판정한다 — 안 그러면 raw 도메인이 막힌 망(학교·공공 와이파이)
+   에서 「전부 없음」으로 읽혀 기본 세션을 새로 만들고 「연결」 즉시 push하는 08-24 「누복 둘」 경로가 다시 열린다. */
+let rawNetFail=false;
 async function rawGet(path, ref){
   const url = (ref && cfg && cfg.owner && cfg.repo)
     ? `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${encodeURIComponent(ref)}/${path}`
     : path;
   try{ const r=await fetch(url+'?t='+Date.now(),{cache:'no-store'});
-    if(!r.ok)return null; const t=await r.text(); return t.trim()?JSON.parse(t):null;
-  }catch(e){ return null; }
+    if(r.status===404) return null;
+    if(!r.ok){ rawNetFail=true; return null; }
+    const t=await r.text(); return t.trim()?JSON.parse(t):null;
+  }catch(e){ rawNetFail=true; return null; }
 }
 async function loadAll(){         // 스케줄·피드백·세션·이번 주 로그를 병렬로
   const wk=thisWeek();
@@ -4947,8 +4953,8 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
     try{
       [sc, fb, sess, lg] = await Promise.all([
         ghGet(MARKS_PATH), ghGet(FB_PATH), ghGet(SESS_PATH), ghGet(logPath(wk))]);
-      if(!sc){ sc = await ghGet(SCHED_PATH); if(sc) migrated=true; }   // 이관 1회 — 옛 스냅샷에서 은퇴·미룸·태그만 건져 온다
-      if(!sc && !fb){ legacy = await ghGet(LEGACY_STATE); }   // 아직 안 옮긴 기기·첫 배포
+      /* 🔴 옛 스냅샷(`cards-sched.json` 08-21) · 옛 단일 파일(`cards-state.json`) 폴백은 뗐다(전층 감사 F0-4 · 이관은 끝났다).
+         남아 있으면 marks를 「못 받은」 부팅이 08-21 스냅샷을 마크로 읽어 해제된 은퇴 1장을 되살리고 기본 세션을 새로 만들었다. */
     }catch(e){
       netFail=true;               // 🔴 「못 받았다」와 「없다」를 갈라야 한다 — 아래 sessLoadOK 참고
       showBanner(e&&e.code==='auth'?'토큰이 만료됐어요 — GitHub 연결에서 갱신'
@@ -4958,8 +4964,7 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
   } else {                        // 토큰 전: 읽기 전용으로라도 최신 상태를 보여준다
     [sc, fb, sess, lg] = await Promise.all([
       rawGet(MARKS_PATH,refFor(MARKS_PATH)), rawGet(FB_PATH), rawGet(SESS_PATH,refFor(SESS_PATH)), rawGet(logPath(wk),refFor(logPath(wk)))]);
-    if(!sc){ sc = await rawGet(SCHED_PATH); if(sc) migrated=true; }
-    if(!sc && !fb) legacy = await rawGet(LEGACY_STATE);
+    if(rawNetFail){ netFail=true; showBanner('상태 불러오기 실패 — 로컬 캐시로 진행', false); }   // 「못 받았다」를 「없다」로 읽지 않는다(F0-4)
   }
   const wasDirty=!!lsGet(K_DIRTY);
   const cSc=cachedFile(K_MARKS)||cachedFile(K_SCHED), cFb=cachedFile(K_FB), cSess=cachedFile(K_SESS), cLg=cachedFile(K_LOGP+wk);

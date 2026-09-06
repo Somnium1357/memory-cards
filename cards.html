@@ -5006,6 +5006,10 @@ function cachedFile(key){ const c=lsGet(key); if(!c)return null; try{ return JSO
    rawNetFail을 켠다. 토큰 없는 부팅이 이 플래그를 netFail로 받아 sessLoadOK를 판정한다 — 안 그러면 raw 도메인이 막힌 망(학교·공공 와이파이)
    에서 「전부 없음」으로 읽혀 기본 세션을 새로 만들고 「연결」 즉시 push하는 08-24 「누복 둘」 경로가 다시 열린다. */
 let rawNetFail=false;
+/* 🔴 이 부팅의 로그가 온전하지 않다 (전층 감사 F1-6) — 주 로그 파일을 **못 받은** 주가 있다.
+   그 부팅 동안 재계산은 부분 이력이므로 익힌 카드가 신규로 보인다. 배너로 알리고
+   **자동 충전을 보류한다**(사람이 누르는 「＋ 이어서 채우기」는 막지 않는다). 다음 부팅에 저절로 풀린다. */
+let logIncomplete=false;
 async function rawGet(path, ref){
   const url = (ref && cfg && cfg.owner && cfg.repo)
     ? `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${encodeURIComponent(ref)}/${path}`
@@ -5126,6 +5130,8 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
   {                                  // 로그가 정본 — 전 주차를 모아 처음부터 다시 계산한다
     await loadWeeks(logWeeksRange());
     logCacheSweep();                 // 남은 지난 주 사본을 IDB로 (보통 무일 — loadWeeks가 읽는 김에 옮긴다)
+    // 🔴 부분 이력으로 조용히 재계산하지 않는다 (F1-6) — 자동 충전 보류는 refillSess가 건다
+    if(logIncomplete) showBanner('지난 기록을 다 못 받았어요 — 새로고침하세요 (오늘 몫이 실제와 다를 수 있어요)', false);
     const t0=performance.now();
     const n=replayLog();
     console.log('로그 재계산', n, '건 ·', Math.round(performance.now()-t0), 'ms');
@@ -5173,8 +5179,17 @@ async function loadWeeks(keys){
   let regetOK=true;
   await Promise.all([                                      // 병렬 — 주가 늘어도 부팅이 안 느려진다
     ...rest.map(async k=>{
-      let j=null;
-      try{ j = (cfg&&cfg.token) ? await ghGet(logPath(k)) : await rawGet(logPath(k),refFor(logPath(k))); }catch(e){}
+      /* 🔴 「못 받았다」와 「없다」를 가른다 (전층 감사 F1-6 = FX-2 · 2026-09-06).
+         예전엔 `catch(e){}`로 삼키고 빈 주로 뒀다 — 캐시 없는 기기(새 설치·저장소 비움·시크릿)에서
+         한 주 파일만 튀면 **경고 없이 부분 이력으로 재계산**한다. 실측(W34 실패): 로그 11,555→9,899 ·
+         이력 있는 카드 4,986→4,912(**74장이 신규로 둔갑**) · 배너 없음. 로그는 원격에 그대로라
+         다음 부팅에 저절로 복구되지만, **그 부팅 동안 익힌 카드가 신규로 다시 투입된다.**
+         ⚠ 404는 실패가 아니다 — 그 주에 채점이 없었던 것뿐이다(`ghGet`은 404만 null, 나머지는 throw). */
+      let j=null, failed=false; const nf0=rawNetFail;
+      try{ j = (cfg&&cfg.token) ? await ghGet(logPath(k)) : await rawGet(logPath(k),refFor(logPath(k))); }
+      catch(e){ failed=true; }
+      if(!failed && !j && !(cfg&&cfg.token) && rawNetFail!==nf0) failed=true;   // raw는 실패도 null로 삼킨다
+      if(failed){ logIncomplete=true; logWeeks[k]=[]; return; }                 // 빈 주로 두되 캐시하지 않는다
       logWeeks[k]=(j&&j.log)||[];
       // 🔴 빈 주는 캐시하지 않는다 — 다른 기기가 그 주에 뒤늦게 올린 것을 영영 못 보게 된다
       if(logWeeks[k].length) await logCacheSet(k, {v:2,week:k,log:logWeeks[k]});
@@ -5332,6 +5347,10 @@ function applyOrder(sx){          // 남은 큐를 세션의 제시 순서에 �
 }
 function refillSess(sx){ // 전체 범위 세션은 날이 바뀌면 스스로 다시 채운다
   if(isFixed(sx)) return;
+  /* 🔴 로그를 다 못 받은 부팅에서는 **스스로 채우지 않는다**(전층 감사 F1-6). 부분 이력이라
+     익힌 카드가 신규로 보여, 자동 충전이 그것을 오늘 큐에 넣어 버린다. 배너로 알리고
+     사람이 누르는 「＋ 이어서 채우기」는 그대로 둔다(그 버튼은 이 함수를 안 거친다). */
+  if(logIncomplete) return;
   /* 🔴 같은 날에는 스스로 채우지 않는다 (동하 2026-08-22).
      예전 가드는 `day===오늘 && q.length`라, **큐가 비면 같은 날에도** 범위 전체로 다시 채웠다.
      홈은 `day!==오늘`일 때만 채우는데 세션 화면은 이 함수를 그냥 불러서, 같은 세션이

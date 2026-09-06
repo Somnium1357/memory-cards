@@ -5086,7 +5086,13 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
       if(sf.fwAt!==undefined && (sf.fwAt||'') > (fsrsCfg.wAt||'')){ fsrsCfg.w=sf.fw||null; fsrsCfg.wAt=sf.fwAt||''; buildEngine(); }
       if(sf.rest && (sf.restAt||0) > (rest.at||0)){ rest.dow=sf.rest.dow; rest.days=sf.rest.days||[]; rest.at=sf.restAt; restReset(); }
       if(sf.ivShow && (sf.ivShowAt||0) > (ivShow.at||0)){ ivShow.v=!!sf.ivShow.v; ivShow.at=sf.ivShowAt; lsSet(K_IVSHOW, JSON.stringify(ivShow)); applyIv(); }
-      if(both) mergeSessInto(sess);
+      /* 🔴 캐시를 밑판으로 깔았으면 **올릴 것으로 표시한다**(전층 감사 F0-6 · 2026-09-06).
+         marks·fb·log는 캐시를 병합한 뒤 `markDirty(...)`를 거는데 **세션만 빠져 있었다.**
+         재현: 캐시의 「일일 복습」 done +1000·`hoedok` 한 칸을 심고 `cards_dirty_v1='1'`로 부팅 ⇒
+         메모리엔 다 있는데 **PUT 0건 · dirty:false · K_DIRTY:null** — 그대로 닫히고 앱 내림 PUT까지 끊기면
+         (iOS 강제 종료·PC에서 통계만 보고 닫음) 다음 부팅이 원격으로 덮어 **통째로 소멸**한다.
+         잃는 것: 직접 추가 세션 잔량(이미 푼 카드 재등장) · 삭제 세션 부활 · 회독 읽음 해제 · done/성적. */
+      if(both){ mergeSessInto(sess); markDirty('sess'); }
     }
     normalizeSessions();
     /* 🔴 **A안 1단계 — `main`에 남은 사본도 읽어 합친다** (2026-09-02).

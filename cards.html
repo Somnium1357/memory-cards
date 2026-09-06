@@ -7029,16 +7029,44 @@ function sessDesc(sx){
   if(sx.how.limit)parts.push(sx.how.limit+'장');
   return parts.join(' · ');
 }
+/* 🔴 **세션이 붙잡고 있는데 지금 카드가 0장인 범위 키** (전층 감사 F2-1 · 2026-09-06).
+   중주제 개명·대주제 분할이 나면 세션 `scope.mids/units`가 **조용히 죽는다** — 도달 장수만 줄고
+   `planGaps`도 `fixScopeKeys`도 0, 배너도 없었다(감사 재현: 「누적복습 3차」 도달 1,272 → 1,241 · 34장 증발).
+   `SCOPE_FIX`는 3건 하드코딩이라 일반 경로를 막지 못한다.
+   🔴 **자동 재매핑은 하지 않는다**(동하 보류 결정 그대로) — **알리기만 한다.** */
+function deadScopeKeys(){
+  const live=new Set();
+  for(const c of DATA){ const k=tagKey(c); live.add(k);
+    const m=(c.tags||[])[1]; if(m){ const mk=midKey(k,m); live.add(mk); for(const sb of subsOfMid(mk)) live.add(sb); } }
+  const out=new Map();
+  for(const sx of sessions){ if(!sx||!sx.scope) continue;
+    for(const kk of [...(sx.scope.units||[]), ...(sx.scope.mids||[])]){
+      if(live.has(kk)) continue;
+      if(!out.has(kk)) out.set(kk, new Set());
+      out.get(kk).add(sx.name||'이름 없음'); } }
+  return [...out].map(([k,names])=>({k, names:[...names]}));
+}
 function renderPlanWarn(){
   const box=$('planWarn'); if(!box) return;
-  const g=planGaps();
-  if(!g.total){ box.classList.remove('on'); box.innerHTML=''; return; }
-  const list=[...g.noPlan.map(x=>`· ${esc(hoedokLabel(x.k)||x.k)} — ${x.n}장 (수강일 미등록)`),
-              ...g.badMid.map(x=>`· ${esc(x.base.split('|')[1])} › ${esc(x.mid||'(이름 없음)')} — ${x.n}장 (분할 미등록)`)];
-  box.innerHTML=`<b>투입 계획이 카드를 못 따라왔어요</b>
-    <div class="pw-b">${esc(planGapText())}</div>
-    <div class="pw-l">${list.join('<br>')}</div>
-    <div class="pw-f">다음 저녁 루틴이 제자리를 찾아요. 그때까지는 <b>「＋ 범위 넓히기」로 직접 담아</b> 푸세요.</div>`;
+  const g=planGaps(), dead=deadScopeKeys();
+  if(!g.total && !dead.length){ box.classList.remove('on'); box.innerHTML=''; return; }
+  const blocks=[];
+  if(g.total){
+    const list=[...g.noPlan.map(x=>`· ${esc(hoedokLabel(x.k)||x.k)} — ${x.n}장 (수강일 미등록)`),
+                ...g.badMid.map(x=>`· ${esc(x.base.split('|')[1])} › ${esc(x.mid||'(이름 없음)')} — ${x.n}장 (분할 미등록)`)];
+    blocks.push(`<b>투입 계획이 카드를 못 따라왔어요</b>
+      <div class="pw-b">${esc(planGapText())}</div>
+      <div class="pw-l">${list.join('<br>')}</div>
+      <div class="pw-f">다음 저녁 루틴이 제자리를 찾아요. 그때까지는 <b>「＋ 범위 넓히기」로 직접 담아</b> 푸세요.</div>`);
+  }
+  if(dead.length){
+    const list=dead.map(x=>`· ${esc(x.k.split('|').filter(Boolean).slice(1).join(' › '))} — ${esc(x.names.join('·'))}`);
+    blocks.push(`<b>세션이 없어진 범위를 붙잡고 있어요</b>
+      <div class="pw-b">이름이 바뀌었거나 나뉜 자리예요. 그 범위의 카드는 지금 이 세션에 안 들어옵니다.</div>
+      <div class="pw-l">${list.join('<br>')}</div>
+      <div class="pw-f"><b>「＋ 범위 넓히기」로 새 이름을 담고</b> 옛 항목은 「빼기」로 지우세요.</div>`);
+  }
+  box.innerHTML=blocks.join('<div style="height:10px"></div>');
   box.classList.add('on');
 }
 function renderHome(){

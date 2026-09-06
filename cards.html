@@ -7150,9 +7150,16 @@ function sessDesc(sx){
    `SCOPE_FIX`는 3건 하드코딩이라 일반 경로를 막지 못한다.
    🔴 **자동 재매핑은 하지 않는다**(동하 보류 결정 그대로) — **알리기만 한다.** */
 function deadScopeKeys(){
-  const live=new Set();
+  /* 🔴 **한 번만 훑는다** (09-06 저녁 회귀 수정). 처음 판에서는 카드마다 `subsOfMid(mk)`를 불렀는데,
+     그 함수가 **DATA 전수를 다시 훑는다** — 9,600 × 9,600 ≈ 9천만 회가 되어 홈이 통째로 멈췄다
+     (동하 실기: 「홈 버튼 무반응 → 홈으로 간 뒤 터치 안 먹음 → 뻗음」).
+     3층 키 집합은 같은 한 바퀴에서 만들 수 있다 — `subsOfMid`의 「쪼갤 게 없으면 빈 배열」 규칙(1개짜리는 제외)까지 그대로. */
+  const live=new Set(), byMid={};
   for(const c of DATA){ const k=tagKey(c); live.add(k);
-    const m=(c.tags||[])[1]; if(m){ const mk=midKey(k,m); live.add(mk); for(const sb of subsOfMid(mk)) live.add(sb); } }
+    const m=(c.tags||[])[1]; if(!m) continue;
+    const mk=midKey(k,m); live.add(mk);
+    (byMid[mk]||(byMid[mk]=new Set())).add(cardSubKey(c)); }
+  for(const mk in byMid){ const set=byMid[mk]; if(set.size>1) for(const sk of set) live.add(sk); }
   const out=new Map();
   for(const sx of sessions){ if(!sx||!sx.scope) continue;
     for(const kk of [...(sx.scope.units||[]), ...(sx.scope.mids||[])]){

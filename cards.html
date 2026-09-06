@@ -8317,7 +8317,7 @@ function renderListHome(){       // 조건 없을 때 — 숫자 붙은 진입�
     h+=`<div class="h-sec">${g}</div><div class="lh-grid">`;
     for(const x of LIST_CONDS.filter(y=>y.g===g)){
       const n=cnt[x.k]||0;
-      h+=`<button class="lh-tile${n?'':' zero'}" data-k="${x.k}"${n?'':' disabled'}>`
+      h+=`<button class="lh-tile${n?'':' zero'}" data-k="${esc(x.k)}"${n?'':' disabled'}>`
        + `<span class="n">${n}</span><span class="l">${esc(x.n)}</span></button>`;
     }
     h+='</div>';
@@ -8364,7 +8364,7 @@ function cardRow(c, extraMeta){
     ${isLeech(c)?'<span class="m warn">⚠ 누수</span>':''}
     ${buried(c)?'<span class="m">오늘 미룸</span>':''}
     ${s&&s.flag!=null?`<span class="m warn">⚑${s.flag?' '+esc(s.flag):''}</span>`:''}
-    ${(s&&s.ann&&s.ann.length)?`<span class="m">@${s.ann.join('·')}</span>`:''}
+    ${(s&&s.ann&&s.ann.length)?`<span class="m">@${esc(s.ann.join('·'))}</span>`:''}
     ${extraMeta||''}</div>`;
   return el;
 }

@@ -4365,12 +4365,14 @@ async function pushAll(force){        // 바뀐 파일만 올린다 (로그 우�
   }
   if(dirtyFiles.has('marks')){
     const g=gen('marks');
-    await ghPut(MARKS_PATH, ()=>splitState().marks, mergeMarksInto);
+    /* 🔴 충돌 재시도 병합은 merge+reap 짝이다(전층 감사 F0-3) — refreshRemote와 같은 규칙. reap이 없으면 다른 기기의 해제·루틴의
+       피드백 소진이 내 재PUT에 되살아난다(§2.10 「무한 왕복」의 한 경로). */
+    await ghPut(MARKS_PATH, ()=>splitState().marks, (rm)=>{ mergeMarksInto(rm); reapMarks(rm); });
     if(gen('marks')===g) dirtyFiles.delete('marks');
   }
   if(dirtyFiles.has('fb')){
     const g=gen('fb');
-    await ghPut(FB_PATH, ()=>splitState().fb, mergeFbInto);
+    await ghPut(FB_PATH, ()=>splitState().fb, (rm)=>{ mergeFbInto(rm); reapFb(rm); });
     if(gen('fb')===g) dirtyFiles.delete('fb');
   }
   /* 🔴 세션 목록을 못 읽은 부팅에서는 **올리지 않는다.** 올리면 남의 기기 세션을 지운다.

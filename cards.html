@@ -4797,7 +4797,8 @@ async function loadHoedok(){
     }
     a[sj] = al;
   }
-  if (f.length) { HOEDOK = { f, h, a }; lsSet(K_HOEDOK, JSON.stringify(HOEDOK)); }
+  if (f.length) { HOEDOK = { f, h, a }; lsSet(K_HOEDOK, JSON.stringify(HOEDOK)); return true; }
+  return false;   // 한 과목도 못 받았다 — 부르는 쪽이 재시도한다 (F6-1)
 }
 function hoedokURI(k, deep){   // deep=true면 3층 제목부터 찾는다 (지금은 아래 DEEP_CARD 한 장만 쓴다)
   const m=rowMeta(k); if(!m) return null;
@@ -4877,10 +4878,40 @@ function anch(s){ return String(s||'').trim().replace(/\s+/g,'_'); }
 let PAN=null;
 async function loadPan(){
   try{ const r=await fetch(PAN_DIR+'anchors.json?t='+Date.now(),{cache:'no-store'});
-    if(!r.ok) return; const j=await r.json();
+    if(!r.ok) return false; const j=await r.json();
     const m={}; for(const k in j) m[k]=new Set(j[k]||[]);
-    if(Object.keys(m).length) PAN=m;
+    if(Object.keys(m).length){ PAN=m; return true; }
   }catch(e){}
+  return false;
+}
+/* 🔴 색인을 못 받으면 **재시도한다** (전층 감사 F6-1 = FX-5 · 2026-09-06).
+   예전엔 부팅에서 한 번 부르고 실패하면 그만이라, 그 세션 내내 9,605장·111단위의 「회독본 ↗」가
+   전부 09-01에 없앤 옛 `obsidian://` 스킴으로 **조용히 강등**됐다(재현: `/hoedok/` fetch 전부 실패 →
+   1.5초 뒤에도 `PAN` null · 링크가 `obsidian://open?vault=…`).
+   🔴 복귀(`tryResume`) 경로는 **결정론적으로** 걸렸다 — 부팅에서 `tryResume()`이 이 로드보다 앞줄에서
+   동기로 끝나므로 복귀로 뜬 카드의 첫 렌더 때 `PAN`은 100% null이다. 그래서 재렌더 목록에
+   **풀이 화면(현재 카드 링크)**을 넣는다. 복귀는 회독본 왕복 전용이 아니다 — iOS가 PWA를 죽였다 살릴 때마다다.
+   ⚠ 무한 재시도는 안 한다(다섯 번 · 1.5초부터 배로). 못 받으면 옛 링크가 그대로 폴백이다. */
+async function loadIndexes(){
+  /* ⚠ 캐시로 이미 `HOEDOK`이 서 있어도 **첫 판은 반드시 받는다** — 이 로드가 색인 갱신을 겸한다.
+     성공한 쪽은 다시 부르지 않고, 실패한 쪽만 물러섰다 다시 친다. */
+  let panOK=false, hoeOK=false;
+  for(let i=0; ; i++){
+    const [p,h]=await Promise.all([ panOK?true:loadPan(), hoeOK?true:loadHoedok() ]);
+    panOK=panOK||!!p; hoeOK=hoeOK||!!h;
+    redrawHoedokLinks();
+    if(panOK&&hoeOK) return true;
+    if(i>=4){ console.warn('[회독본 색인] 못 받았어요 — 이번 세션은 옛 링크로 갑니다', {pan:panOK, hoedok:hoeOK}); return false; }
+    await new Promise(r=>setTimeout(r, 1500*Math.pow(2,i)));
+  }
+}
+function redrawHoedokLinks(){        // 색인이 늦게 와도 보고 있는 화면의 링크를 고쳐 준다
+  const scr=[...document.querySelectorAll('.scr.on')].map(x=>x.id)[0];
+  if(scr==='scrSession')renderSession();
+  else if(scr==='scrUnits')renderUnits();
+  else if(scr==='scrSolve'){         // 🔴 복귀로 뜬 카드가 여기 걸린다 — 카드를 넘겼다 와야 고쳐지던 자리
+    try{ const c=(typeof cur==='function')?cur():null; if(c){ showHoedokLink(c); showDiag(c, !!revealed); } }catch(e){}
+  }
 }
 
 /* ── 회독본 갔다 돌아올 자리 (동하 2026-09-01) ─────────────────────────────
@@ -9175,10 +9206,7 @@ function fixScopeKeys(){
   go('scrHome');
   try{ tryResume(); }catch(e){ console.warn('[복귀] 실패 — 홈으로', e); }
   loadFsrsParams();          // 맞춤값 파일은 있으면 읽고 없으면 조용히 넘어간다 (설정에서만 쓴다)
-  Promise.all([loadPan(), loadHoedok()]).then(()=>{    // 회독본·판 색인 갱신은 뒤에서 — 끝나면 보고 있던 화면만 다시 그린다
-    const scr=[...document.querySelectorAll('.scr.on')].map(x=>x.id)[0];
-    if(scr==='scrSession')renderSession(); else if(scr==='scrUnits')renderUnits();
-  });
+  loadIndexes();    // 회독본·판 색인 갱신은 뒤에서 — 실패하면 재시도하고, 올 때마다 보고 있던 화면을 고친다(F6-1)
 })();
 </script>
 </body>

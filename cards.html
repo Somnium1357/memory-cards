@@ -6029,7 +6029,8 @@ function finishSess(){         // 큐 소진 = 세션 화면으로 복귀 (성�
   if(curSess){
     const n=sess.r[1]+sess.r[2]+sess.r[3]+sess.r[4];
     if(n){
-      const sc={r:sess.r.slice(), ms:sess.ms, best:sess.best, n, at:Date.now()};
+      /* `run` = 이 런의 표식 — 되돌리기가 **자기 런의 성적표만** 거둬들이게 한다(전층 감사 F4-5). */
+      const sc={r:sess.r.slice(), ms:sess.ms, best:sess.best, n, at:Date.now(), run:undoRun};
       curSess.lastScore=sc;               // 기존 화면·병합이 쓰는 필드 — 이름도 뜻도 그대로 둔다
       /* 추이 이력. 최신이 앞(scores[0] === lastScore). 🔴 30개에서 자른다 — 이 파일은 기기 간
          동기화 대상(SESS_PATH)이라 세션마다 무한히 쌓이면 저장 용량·PUT 크기에 걸린다.
@@ -6598,6 +6599,14 @@ function doUndo(){
       if(doneCredited>sessionDone){ const back=doneCredited-sessionDone;
         if(curSess) curSess.done=Math.max(0,(curSess.done||0)-back);
         doneCredited=sessionDone; saveSessionsSoon(); }
+      /* 🔴 **성적표도 되감는다** (전층 감사 F4-5 · 2026-09-06). 예전엔 `done`만 되돌려서,
+         세션이 끝난 뒤 되돌리면 `lastScore`·`scores[0]`이 그대로 남고 다시 풀어 끝내면
+         **같은 런이 두 항목**으로 쌓였다(감사 실측: scores 14→15→되돌리기→15→16).
+         `sess`(런 누계)는 바로 위에서 통째로 복원되므로, 이 런이 남긴 성적표는 **통째로 거둬들이는 것이 맞다** —
+         다시 끝내면 그때 온전한 값으로 새로 쓰인다(부분 차감은 두 항목을 만든다). */
+      const arr=curSess&&curSess.scores;
+      if(arr&&arr.length&&arr[0]&&arr[0].run===undoRun){
+        arr.shift(); curSess.lastScore=arr[0]||null; saveSessionsSoon(); }
       if(sn.sess) sess=sn.sess;
     }else{                         // 이전 런의 채점 — 지금 런의 성적표는 남의 것이라 손대지 않는다
       const sx=sn.sid?sessions.find(x=>x.id===sn.sid):null;

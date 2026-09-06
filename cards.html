@@ -3759,6 +3759,12 @@ let dataAt=0, dataDay='';
 let state={cards:{},log:[],hoedok:{}}, sha={}, cfg=null;
 let logWeeks={};                       // 주 키 → 로그 배열 (이번 주 + 통계가 불러온 과거 주)
 const dirtyFiles=new Set(), dirtyLogs=new Set();
+/* 🔴 병합이 **일정의 밑판**을 바꿨다 (전층 감사 F1-5 · F1-7 · 2026-09-06).
+   `mergeSessInto`가 목표 기억률(`ret`)·개인 파라미터(`fw`)를, `mergeMarksInto`가 카드 `base`를 바꾸면
+   엔진은 새것이 되는데 **due는 옛것 그대로**다. `refreshRemote`·`loadAll`·`setRetention`·`applyFw`는
+   뒤이어 재계산을 하지만 **push의 409 충돌 병합만 안 했다** — 그 세션 내내 큐·홈·통계가 옛 일정이고
+   채점만 새 엔진이었다(`rate()` ≠ `replayLog()`). 이 플래그를 `push`가 보고 재계산한다. */
+let mergedSched=false;
 let PLAN={intake:[], splits:{}};
 let dirty=false, pushing=false, ratedSincePush=0, lastPushAt=Date.now();
 let hintUsed=new Set();   // 이 카드에서 초성 힌트를 연 항목 번호 — showCard가 비운다
@@ -4349,9 +4355,14 @@ function mergeMarksInto(remote, base){ // 마크: 카드별 엔트리 통째 u �
     /* 원격이 최신이면 마크 키를 통째로 교체한다 — splitState가 해제된 마크(retired:false 등)를
        파일에 싣지 않으므로, 원격 엔트리에 「없는 키」는 해제된 것이다. 키별 덮어쓰기(!==undefined일 때만)로는
        해제가 전파되지 않아 옛 마크가 되살아났다. fsrs·flag 등 마크 아닌 필드는 건드리지 않는다. */
-    if((rc[id].u||'')>(mine.u||'')) for(const k of MARK_KEYS){
-      if(rc[id][k]!==undefined) mine[k]=rc[id][k];
-      else delete mine[k];
+    if((rc[id].u||'')>(mine.u||'')){
+      const b0=JSON.stringify(mine.base||null);
+      for(const k of MARK_KEYS){
+        if(rc[id][k]!==undefined) mine[k]=rc[id][k];
+        else delete mine[k];
+      }
+      // 🔴 `base`가 바뀌면 그 카드의 일정이 파생된 밑판이 달라진다 — 재계산이 필요하다(F1-7 · F1-5와 같은 처방)
+      if(JSON.stringify(mine.base||null)!==b0) mergedSched=true;
     }
   }
 }
@@ -4423,12 +4434,13 @@ function mergeSessInto(remote){
   state.hoedok={...((remote&&remote.hoedok)||{}), ...(state.hoedok||{})};
   state.read={...((remote&&remote.read)||{}), ...(state.read||{})};      // 읽음 표시도 같은 규칙(로컬 승·null 툼스톤)
   if(remote && (remote.capAt||0) > (intake.capAt||0)){ intake.cap=remote.cap; intake.capAt=remote.capAt; }
-  /* 목표 기억률도 cap과 같은 규칙(더 새것이 이긴다). 🔴 값이 바뀌면 부르는 쪽이 재계산해야 한다 */
+  /* 목표 기억률도 cap과 같은 규칙(더 새것이 이긴다). 🔴 값이 바뀌면 부르는 쪽이 재계산해야 한다
+     — 안 하면 엔진만 새것이고 일정은 옛것이다(전층 감사 F1-5). `mergedSched`로 알린다. */
   if(remote && remote.ret!==undefined && (remote.retAt||0) > (fsrsCfg.retAt||0)){
-    fsrsCfg.ret=remote.ret; fsrsCfg.retAt=remote.retAt; buildEngine(); }
+    fsrsCfg.ret=remote.ret; fsrsCfg.retAt=remote.retAt; buildEngine(); mergedSched=true; }
   /* 개인 맞춤 파라미터도 같은 규칙 — `wAt`(파라미터 묶음 시각)이 더 새것이 이긴다 */
   if(remote && remote.fwAt!==undefined && (remote.fwAt||'') > (fsrsCfg.wAt||'')){
-    fsrsCfg.w=remote.fw||null; fsrsCfg.wAt=remote.fwAt||''; buildEngine(); }
+    fsrsCfg.w=remote.fw||null; fsrsCfg.wAt=remote.fwAt||''; buildEngine(); mergedSched=true; }
   /* 휴식일도 「더 새것이 이긴다」 — cap과 같은 규칙. 🔴 목록을 합집합으로 합치면 **지운 날이 되살아난다.** */
   if(remote && remote.rest && (remote.restAt||0) > (rest.at||0)){
     rest.dow=remote.rest.dow; rest.days=remote.rest.days||[]; rest.at=remote.restAt; restReset(); }
@@ -4481,7 +4493,18 @@ async function push(force){ // 배치 push — 옵티미스틱: 실패해도 로
      ⚠ 미재현 의심 건이었다 — 창이 좁아 재현이 어렵지만 처방이 한 줄이고 손해가 없어 먼저 막는다. */
   const pushStartedAt=new Date().toISOString();
   try{
+    mergedSched=false;                 // 이 push의 충돌 병합만 센다 (F1-5)
     await pushAll(force);
+    /* 🔴 충돌 병합이 기억률·파라미터·base를 바꿨으면 **여기서 재계산한다.** 다른 경로와 같은 삼종 세트다.
+       (`refreshRemote` 꼬리와 같은 순서 — 재계산 → 실효 due 캐시 버리기 → 오늘 큐 맞추기 → 보던 화면 다시 그리기) */
+    if(mergedSched){ mergedSched=false;
+      replayLog(); restReset(); lastRevIdx=null; firstRevIdx=null;
+      resyncQueues(); cacheState();
+      const scr=[...document.querySelectorAll('.scr.on')].map(x=>x.id)[0];
+      if(scr==='scrHome')renderHome(); else if(scr==='scrSession')renderSession();
+      else if(scr==='scrUnits')renderUnits(); else if(scr==='scrStats')renderStats();
+      else if(scr==='scrList')refreshList();
+    }
     const left = dirtyFiles.size>0 || dirtyLogs.size>0;   // 비행 중 들어온 변경이 남았으면 dirty를 유지하고 곧 다시 올린다(F0-1)
     setDirty(left); ratedSincePush=0; lastPushAt=Date.now(); hideBanner();
     if(left) setTimeout(()=>push(), 1500);

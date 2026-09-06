@@ -4449,6 +4449,12 @@ function mergeSessInto(remote){
     rest.dow=remote.rest.dow; rest.days=remote.rest.days||[]; rest.at=remote.restAt; restReset(); }
   if(remote && remote.ivShow && (remote.ivShowAt||0) > (ivShow.at||0)){
     ivShow.v=!!remote.ivShow.v; ivShow.at=remote.ivShowAt; lsSet(K_IVSHOW, JSON.stringify(ivShow)); applyIv(); }
+  /* 🔴 `sessions` 배열을 통째로 갈았다 — **지금 보고 있는·풀고 있는 세션을 id로 다시 묶는다**
+     (전층 감사 F4-7 · 2026-09-06). 안 묶으면 그 객체는 목록 밖 고아가 되고,
+     세션 화면의 「빼기」·「큐 비우기」·「범위 넓히기」가 **토스트만 뜨고 아무 데도 저장되지 않았다**
+     (실측: 화면 6→2인데 살아 있는 세션도 파일도 6). */
+  if(curSess) curSess=sessions.find(x=>x.id===curSess.id)||curSess;
+  if(viewSess) viewSess=sessions.find(x=>x.id===viewSess.id)||viewSess;
 }
 async function pushAll(force){        // 바뀐 파일만 올린다 (로그 우선 — 스케줄은 파생 스냅샷)
   const gen=k=>dirtyGen[k]||0;   // 비행 전 세대 — 끝난 뒤 같을 때만 지운다(F0-1)
@@ -6509,7 +6515,12 @@ function rate(num){
   if(num===1) s.miss=(s.miss||0)+1;        // 당일 재출 없음 (동하 확정 2026-08-21) — 다음 복습일에 만난다
   touchRate(s); afterRate();
   sessionDone++; if(phase==='new')newServed++;
-  qPos++; updateUndo(); showCard(); syncSessQueue();
+  qPos++; updateUndo();
+  /* 🔴 **저장이 먼저다** (전층 감사 F4-7 · 2026-09-06). `showCard()`는 큐가 소진되면 `finishSess()`를 부르는데,
+     `curSess`가 고아(병합으로 `sessions` 배열이 통째로 갈린 뒤)면 그 기록이 **허공으로 간다**
+     (실측: 고아 done 5,727 · 살아 있는 세션 done 5,725). `syncSessQueue`는 첫 줄에서 id로 산 객체를
+     다시 묶으므로, 그것을 먼저 돌리면 뒤따르는 `finishSess`가 제대로 된 세션에 쓴다. */
+  syncSessQueue(); showCard();
 }
 function mdY(v){ const k=dayKey(new Date(v)); return `${+k.slice(5,7)}/${+k.slice(8,10)}`; }   // 하루 경계 4시 반영(F5-2)
 function whyNow(c){

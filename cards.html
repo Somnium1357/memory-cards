@@ -4122,6 +4122,7 @@ function applyFiles(marksFile, fbFile){   // 파일 두 벌 → 메모리 state.
   state.cards=cards;
 }
 function sessFile(){ return {v:1, sessions:[...sessions, ...sessTomb], hoedok:state.hoedok||{}, read:state.read||{},
+  fc:state.fc||{},                        // 주간 예측 스냅숏 — 「지난주 예측 vs 실제」의 밑천(메타가 읽는다)
   cap:intake.cap, capAt:intake.capAt||0,
   ret:fsrsCfg.ret, retAt:fsrsCfg.retAt||0,
   fw:fsrsCfg.w||null, fwAt:fsrsCfg.wAt||'',
@@ -4492,6 +4493,7 @@ function mergeSessInto(remote){
   normalizeSessions();
   state.hoedok={...((remote&&remote.hoedok)||{}), ...(state.hoedok||{})};
   state.read={...((remote&&remote.read)||{}), ...(state.read||{})};      // 읽음 표시도 같은 규칙(로컬 승·null 툼스톤)
+  state.fc={...((remote&&remote.fc)||{}), ...(state.fc||{})};            // 주간 예측 스냅숏 — 주 키가 달라 충돌이 없다
   if(remote && (remote.capAt||0) > (intake.capAt||0)){ intake.cap=remote.cap; intake.capAt=remote.capAt; }
   /* 목표 기억률도 cap과 같은 규칙(더 새것이 이긴다). 🔴 값이 바뀌면 부르는 쪽이 재계산해야 한다
      — 안 하면 엔진만 새것이고 일정은 옛것이다(전층 감사 F1-5). `mergedSched`로 알린다. */
@@ -5234,6 +5236,7 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
       sessions=(sf.sessions||[]).filter(x=>!x.del); sessTomb=(sf.sessions||[]).filter(x=>x.del);
       state.hoedok=sf.hoedok||{};
       state.read=sf.read||{};
+      state.fc=sf.fc||{};
       if(sf.cap!==undefined){ intake.cap=sf.cap; intake.capAt=sf.capAt||0; }
       if(sf.ret!==undefined && (sf.retAt||0) > (fsrsCfg.retAt||0)){ fsrsCfg.ret=sf.ret; fsrsCfg.retAt=sf.retAt; buildEngine(); }
       if(sf.fwAt!==undefined && (sf.fwAt||'') > (fsrsCfg.wAt||'')){ fsrsCfg.w=sf.fw||null; fsrsCfg.wAt=sf.fwAt||''; buildEngine(); }
@@ -8916,6 +8919,36 @@ function trajectory(){
     }, 30); }
   return null;
 }
+/* 🔴 **주간 예측 스냅숏** (메타 제안 · 09-06). 매주 한 번, 그 시점 예측과 입력을 세션 파일 `fc`에 남긴다.
+   다음 주에 「7일 전 예측 vs 실제」를 화면이 스스로 보고하게 하는 밑천이고, 메타가 같은 값을 읽어 대조한다.
+   🔴 파라미터·복습 강도를 바꾼 주는 `basisChanged`로 표시한다 — 기준이 바뀐 주의 오차는 예측의 잘못이 아니다. */
+const FC_KEEP=12;
+function recordForecast(T){
+  if(!T||!T.pred.length) return;
+  const wk=thisWeek(), f=state.fc||(state.fc={});
+  if(f[wk]) return;                                   // 주 1회
+  const keys=Object.keys(f).sort(), prev=keys.length?f[keys[keys.length-1]]:null;
+  const d7=T.pred.find(d=>d.k===dkAdd(todayKey(),7));
+  f[wk]={ at:new Date().toISOString(),
+          hard7:d7?d7.hard:null, hardExam:T.pred[T.pred.length-1].hard, K:T.K,
+          cap:T.inp.cap, newPerDay:T.inp.newPerDay,
+          pFirst:+T.inp.pFirst.toFixed(4), pRev:+T.inp.pRev.toFixed(4),
+          ret:fsrsCfg.ret, w_at:fsrsCfg.wAt||'',
+          basisChanged: prev ? (prev.ret!==fsrsCfg.ret || prev.w_at!==(fsrsCfg.wAt||'')) : false };
+  for(const k of Object.keys(f).sort().slice(0,-FC_KEEP)) delete f[k];
+  markDirty('sess'); saveSessionsSoon();
+}
+function forecastCheck(){                             // 「지난주 예측 오차」 한 줄 — 없으면 null
+  const f=state.fc||{}, keys=Object.keys(f).sort().filter(k=>k<thisWeek());
+  if(!keys.length) return null;
+  const e=f[keys[keys.length-1]];
+  if(!e||e.hard7==null) return null;
+  const days=Math.round((Date.now()-Date.parse(e.at))/86400000);
+  if(days<5||days>12) return null;                    // 7일 전후만 견준다
+  const actual=maturitySplit().mature;
+  const err=Math.round((e.hard7-actual)/Math.max(1,actual)*1000)/10;
+  return {err, actual, pred:e.hard7, basisChanged:e.basisChanged, wk:keys[keys.length-1]};
+}
 /* 오늘 한 줄에 쓰는 값 — 새로 굳은 / 거머리 탈출 */
 function todayGains(hist){
   const tk=todayKey(), a=hist[hist.length-1], b=hist[hist.length-2];
@@ -9007,7 +9040,13 @@ function renderStats(){
       +'점선 = 예측 · 옅은 점선 = 오늘부터 신규를 안 넣으면('+((T.zeroEnd&&T.zeroEnd.hard)||0).toLocaleString()+'장)</div>'
       +'<div class="cap" style="margin-top:4px;opacity:.75">최근 7일 기준 — 신규 '+T.inp.newPerDay+'/일 · 처리 '+T.inp.cap+'/일'
       +' · 유지율 '+Math.round(T.inp.pFirst*100)+'/'+Math.round(T.inp.pRev*100)+'%'
-      +(T.doneKey?' · 신규 소진 '+T.doneKey.slice(5).replace('-','/'):'')+'</div></div>';
+      +(T.doneKey?' · 신규 소진 '+T.doneKey.slice(5).replace('-','/'):'')+'</div>';
+    recordForecast(T);
+    const FC=forecastCheck();
+    if(FC) h+='<div class="cap" style="margin-top:4px;opacity:.75">지난주 예측 오차 '
+      +(FC.err>=0?'+':'')+FC.err+'% (예측 '+FC.pred.toLocaleString()+' · 실제 '+FC.actual.toLocaleString()+')'
+      +(FC.basisChanged?' · ⚠ 기준 바뀜(파라미터·강도 변경)':'')+'</div>';
+    h+='</div>';
   }
 
   /* ═══ B. 오늘 ═══ */

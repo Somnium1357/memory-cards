@@ -4745,7 +4745,11 @@ function markHoedok(k){ if(!state.hoedok)state.hoedok={};
   state.hoedok[k]=todayKey(); cacheState(); markDirty('sess'); }
 function unmarkHoedok(k){ if(!state.hoedok)state.hoedok={};
   state.hoedok[k]=null; cacheState(); markDirty('sess'); } // null 툼스톤 — 합집합 병합에서도 취소가 이긴다
-function hoedokLabel(k){ const m=TAGMETA[k]; return `${m.subj.split('.')[1]} · ${m.tag}`; }
+function hoedokLabel(k){ const m=TAGMETA[k];
+  /* 🔴 없는 키에 무방어였다 (전층 감사 F2-6·F2-5) — 재생성으로 사라진 단위를 고른 채 화면이 다시 그려지면
+     여기서 예외가 나 「새 세션 만들기」가 통째로 먹통이 됐다. 못 찾으면 키를 그대로 보여 준다(사라진 자리를 감추지 않는다). */
+  if(!m||!m.subj) return k;
+  return `${m.subj.split('.')[1]} · ${m.tag}`; }
 /* 회독본 열기 — 옵시디언 URI. 볼트 루트에 `회독_<과목>.md`가 평평하게 있고, 단위(대주제) 이름이
    그 안의 제목과 정확히 일치한다(60단위 전수 확인, 중복 0 · 2026-08-21).
    🔴 file에 확장자를 붙이면 제목 앵커가 통째로 무시된다 — `회독_3.영어%23제목` 형태라야 이동한다.
@@ -7417,6 +7421,10 @@ let uPicked=new Set();
 let uOpen=new Set((lsGet(K_UOPEN)||'').split('|').filter(Boolean));
 function saveUOpen(){ lsSet(K_UOPEN, [...uOpen].join('|')); }
 function renderUnits(){
+  /* 🔴 **고른 단위가 재생성으로 사라졌으면 선택 집합에서 턴다** (전층 감사 F2-6 · 2026-09-06).
+     예전엔 체크된 행이 하나도 없는데 하단 바만 「1단위」로 남았고, 그 상태로 「새 세션 만들기」를 누르면
+     `hoedokLabel`에서 예외가 나 **조용히 먹통**이었다(`refreshRemote` 성공 경로가 이 함수를 다시 부른다). */
+  if(uPicked&&uPicked.size){ for(const k of [...uPicked]) if(!TAGMETA[k]) uPicked.delete(k); }
   const box=$('unitList'); box.innerHTML='';
   const q=$('uSearch').value.trim().toLowerCase(), sort=$('uSort').value;
   const stats=unitStatsAll();

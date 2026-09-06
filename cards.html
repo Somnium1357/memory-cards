@@ -5194,6 +5194,13 @@ function asPreset(sx){   // 큐 조립기·카운터가 쓰는 형태로 변환 
            fixed:isFixed(sx)}};   // 빈 범위의 뜻이 세션 종류에 따라 뒤집힌다 — inScope 참고
 }
 function sessCards(sx){ return (sx.q||[]).map(id=>BYID[id]).filter(Boolean); }  // 사라진 카드는 조용히 탈락
+/* 🔴 진행 중 큐 재조립은 **여기 한 곳**으로(전층 감사 F3-1 · 2026-09-06). 설정·순서·제외·강도 변경 여섯 자리가 각자
+   `dropSettled(sessCards(sx))`로 다시 짜서, 문 ①(사슬·짝 키·방향 격리)이 오늘 뺀 카드가 도로 나왔다 — 격리가 막으려던 누설 그 자체.
+   playSess와 같은 두 문을 지난다. 저장 순서는 지킨다(reorder=false). */
+function requeueLive(sx){
+  queue=[...queue.slice(0,qPos), ...gateOut(gateIn(sessCards(sx), null), sx.how.order, false)];
+  counts();
+}
 /* 상태 설정을 바꾸면 큐가 **그 자리에서** 따라온다 (동하 2026-09-01 「설정 변경에 큐가 바로 반응하게」).
    자동 충전 세션은 `day=''`로 통째 재조립하면 되지만, **직접 추가 세션은 「담은 것만 푼다」가 원칙**이라
    통째로 다시 뽑으면 안 된다 — 좁힘과 넓힘을 따로 다룬다.
@@ -5209,7 +5216,7 @@ function applyStatus(sx){
   sx.q=(sx.q||[]).filter(id=>{ const c=BYID[id]; return c && (settledToday(c) || matchStatus(c, st)); });
   const off=before-sx.q.length;                     // 조건 밖이라 빠진 것
   qShrink(sx, beforeQ.filter(id=>!sx.q.includes(id)));   // 설정을 바꿔 뺀 것도 사람의 축소다 (감사 🔴2)
-  if(curSess&&curSess.id===sx.id){ queue=[...queue.slice(0,qPos), ...dropSettled(sessCards(sx))]; counts(); }
+  if(curSess&&curSess.id===sx.id){ requeueLive(sx); counts(); }
   saveSessionsSoon();
   return {off, add:0};
 }
@@ -5261,7 +5268,7 @@ function refillSess(sx){ // 전체 범위 세션은 날이 바뀌면 스스로 �
    ⚠ 그래서 되돌리기로 되살아날 카드는 이 숫자에 안 잡힌다. 「지금 풀 것」을 세는 값이므로 그게 맞다. */
 function sessRemain(sx){ return (curSess&&curSess.id===sx.id)
   ? queue.slice(qPos).filter(c=>!settledToday(c)&&!buried(c)).length
-  : chainIsolate(dropSettled(sessCards(sx))).length; }   // 🔴 격리분을 빼고 센다 — 숫자와 실제가 어긋나면 안 된다
+  : gateIn(sessCards(sx), null).length; }   // 🔴 격리분(사슬·짝 키·방향) 전부 빼고 센다 — 숫자와 실제가 어긋나면 안 된다(F3-3: 사슬만 세던 것)
 function addScopeToSess(sx, sel){ // 내용 추가 — sel={units:[],mids:[]}
   const have=new Set(sx.q);
   const p=asPreset(sx);
@@ -6970,7 +6977,7 @@ function renderSession(){
          안 그러면 「빼 뒀는데 오늘 그대로 나온다」가 된다. */
       if(!isFixed(sx)) sx.day='';
       else sx.q=sx.q.filter(id=>{ const c=BYID[id]; return c && scopeMatch(c, {units:[],mids:[],subj:[],tags:[],typ:[],ex:sx.scope.ex}); });   // 🔴 scopeMatch — 미룬 카드를 저장 큐에서 빼지 않는다(감사 #17)
-      if(curSess&&curSess.id===sx.id){ curPreset=asPreset(sx); queue=[...queue.slice(0,qPos), ...dropSettled(sessCards(sx))]; counts(); }
+      if(curSess&&curSess.id===sx.id){ curPreset=asPreset(sx); requeueLive(sx); counts(); }
       saveSessionsFlush(); renderSession();
       toast(exCount(sx)?`${exCount(sx)}장을 이 세션에서 빼 뒀어요`:'제외를 지웠어요'); }});
   $('ssAdd').onclick=()=>openUnitPick({title:'내용 추가',
@@ -7422,7 +7429,7 @@ function resyncQueues(){
     const fresh=buildQueue(asPreset(sx), sx.how.status).map(c=>c.id).filter(id=>!have.has(id));
     if(fresh.length){ sx.q=[...sx.q, ...fresh]; add+=fresh.length; }
     if(curSess&&curSess.id===sx.id){          // 풀던 중이면 화면 큐도 맞춘다 (푼 자리 앞은 건드리지 않는다)
-      queue=[...queue.slice(0,qPos), ...dropSettled(sessCards(sx))]; counts();
+      requeueLive(sx); counts();
     }
   }
   if(add||del) saveSessionsFlush();
@@ -7711,7 +7718,7 @@ $('nsSave').onclick=()=>{
       const freshU=(sc.units||[]).filter(k=>!prevU.has(k));
       const freshM=(sc.mids||[]).filter(k=>!prevM.has(k));
       if(freshU.length||freshM.length) addScopeToSess(nsTarget, {units:freshU, mids:freshM});
-      if(curSess&&curSess.id===nsTarget.id){ queue=[...queue.slice(0,qPos), ...dropSettled(sessCards(nsTarget))]; }
+      if(curSess&&curSess.id===nsTarget.id){ requeueLive(nsTarget); }
     }
     // 범위 없이 직접 추가로 바꾼 경우(자동 충전에서 전환 등)는 들고 있던 큐를 그대로 이월
     if(curSess&&curSess.id===nsTarget.id) curPreset=asPreset(nsTarget);
@@ -7736,7 +7743,7 @@ $('nsSave').onclick=()=>{
       stMoved=applyStatus(nsTarget);                           // ① 거르기 (양쪽 공통)
       if(!isFixed(nsTarget)){                                  // ② 채우기 (자동 충전만)
         nsTarget.day=''; refillSess(nsTarget);
-        if(live){ queue=[...queue.slice(0,qPos), ...dropSettled(sessCards(nsTarget))]; counts(); }
+        if(live){ requeueLive(nsTarget); counts(); }
       }
     }
     else if(orderChanged) applyOrder(nsTarget);                // 순서만 바뀌면 남은 큐를 재정렬
@@ -7744,7 +7751,7 @@ $('nsSave').onclick=()=>{
        (위에서 day는 이미 비웠다. 상태까지 바뀐 경우는 방금 처리했으므로 건너뛴다.) */
     if(exChanged && !isFixed(nsTarget) && !statusChanged){
       refillSess(nsTarget);
-      if(live){ queue=[...queue.slice(0,qPos), ...dropSettled(sessCards(nsTarget))]; counts(); }
+      if(live){ requeueLive(nsTarget); counts(); }
     }
     if(live) curPreset=asPreset(nsTarget);
     if(stMoved && stMoved.off)

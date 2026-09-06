@@ -359,7 +359,14 @@ input:focus,select:focus{border-color:var(--accent);}
    하위 화면 제목만 화면 왼쪽 끝에 붙어 있었다(동하 09-05 비평 4). 뒤로 버튼은 본문 선 바깥 왼쪽에 */
 @media (min-width:760px){
   .sub-head{max-width:660px;margin:0 auto;width:100%;padding:8px 0 4px;position:relative;}
-  .sub-head>.tb-btn:first-child{position:absolute;left:-52px;top:2px;}
+  /* 🔴 세로 가운데는 **눈으로 찍지 말고 계산으로** (동하 09-06 실기 「뒤로가기랑 글씨랑 높이가 안맞아」).
+     `top:2px`는 44px 버튼과 25px 제목의 관계를 손으로 어림한 값이라 **6px 어긋나 있었다**(좁은 화면은 flex라 0).
+     이 규칙은 하위 화면 전부(세션·통계·단위·목록·읽기·플래그·약점·도움말)가 같이 쓴다. */
+  /* 🔴 **흐름에서 빼지 않는다** — 음수 마진으로 왼쪽 바깥에 세우면 flex의 `align-items:center`가
+     세로를 알아서 맞춘다. 절대배치 + `top` 값은 44px 버튼과 25px 제목의 관계를 손으로 어림한 것이라
+     **6px 어긋나 있었다**(`top:2px` · 좁은 화면은 flex라 0이었다 · 동하 09-06 실기).
+     `-52px` = 버튼 44 + gap 8 → 오른쪽 끝이 본문 선 0에 닿고 제목이 그 자리에서 시작한다. */
+  .sub-head>.tb-btn:first-child{margin-left:-52px;}
 }
 .sub-title{font-size:17px;font-weight:800;font-family:var(--head-font);flex:1;}
 .sub-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 18px calc(24px + env(safe-area-inset-bottom));}

@@ -1253,7 +1253,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
           <div class="hpb">
             <p>모든 기록은 GitHub 레포에 JSON으로 올라가요. <b>그게 동기화이자 백업</b>이에요.</p>
             <table class="hp-t">
-              <tr><td>언제 올라가나</td><td>20장 채점마다 · 5분마다 · 화면 나갈 때 · 세션 끝 · 앱 내릴 때</td></tr>
+              <tr><td>언제 올라가나</td><td>20장 채점마다 · 5분마다 · 화면 나갈 때 · 세션 끝<br><small>앱을 내릴 때도 시도하지만 주 기록이 커지면(월요일 오전쯤부터) 끝까지 못 갑니다 — 그때는 이 기기에 저장해 뒀다가 다음에 열 때 올려요</small></td></tr>
               <tr><td>무엇이 정본인가</td><td><b>채점 일지</b>. 복습일·난이도·틀림 횟수는 앱을 켤 때마다 그 일지로 <b>다시 계산</b>해요</td></tr>
               <tr><td>저장 배지(작은 점)</td><td>마지막 저장이 <b>10분</b> 넘게 지났을 때만 떠요. 정상이면 뜰 일이 없어요</td></tr>
               <tr><td>배지가 안 꺼지면</td><td>그 기기에 <b>GitHub 토큰이 없을</b> 가능성이 커요. ⚙설정 → GitHub 연결 확인</td></tr>
@@ -3457,12 +3457,11 @@ const DATA_PATH='cards-data.json';
    cards-feedback.json 앱이 쓰고 루틴이 소비·클리어 (플래그·@주석)
    cards-log-YYYY-Www  앱 소유, append-only. 지난 주 파일은 다시 안 건드린다
    cards-sessions.json 앱 소유, 기기 간 병합 (세션·회독 읽음·권장량) */
-const PLAN_PATH='cards-plan.json', SCHED_PATH='cards-sched.json',
+const PLAN_PATH='cards-plan.json',
       MARKS_PATH='cards-marks.json',
       FB_PATH='cards-feedback.json', SESS_PATH='cards-sessions.json';
 const LOG_FIRST_MON='2026-08-17';   // 로그가 시작된 주의 월요일 (첫 채점 2026-08-19)
                                     // — 전량 재계산이 훑을 범위의 시작. 앞당기면 없는 주를 매번 404로 받는다.
-const LEGACY_STATE='cards-state.json';
 function logPath(wk){ return `cards-log-${wk}.json`; }
 
 /* ═══ Pages 빌드 스로틀 A안 1단계 (2026-09-02 동하 승인 · 계획서 `card\Pages_스로틀_계획서.md`) ═══
@@ -3485,8 +3484,8 @@ function refFor(path){ return onData(path) ? dataBr() : ''; }   // '' = 기본 �
    커밋 기록으로 확인한 뒤 플래그를 끈다. `main`의 낡은 사본 다섯(marks·sessions·log W34~36)은 같은 커밋에서 추적을 뺀다(.gitignore).
    되돌리기 = 이 한 줄 true. 블록 본문은 남겨 둔다 — 지우는 것은 다음 정리 때. */
 let MAIN_FALLBACK=false;
-const K_REST='cards_rest_v1', K_CFG='cards_cfg_v1', K_STATE='cards_state_cache_v1', K_DIRTY='cards_dirty_v1',
-      K_THEME='cards_theme_v1', K_PRESETS='cards_presets_v1', K_LASTP='cards_last_preset_v1',
+const K_REST='cards_rest_v1', K_CFG='cards_cfg_v1', K_DIRTY='cards_dirty_v1',
+      K_THEME='cards_theme_v1', K_PRESETS='cards_presets_v1',
       K_DATA='cards_data_cache_v1', K_SWIPE='cards_swipe_v1', K_INTAKE='cards_intake_v1',
       K_RESUME='cards_resume_v1',        // 회독본 갔다 돌아올 자리 (세션·카드·답면 · 오늘 것만)
       K_KBD='cards_kbd_v1', K_SESS='cards_sessions_v1',
@@ -3795,7 +3794,6 @@ function st(id){ // 카드 상태 엔트리 (없으면 생성)
   return s;
 }
 function touch(s){ s.u=new Date().toISOString(); markDirty('marks'); }   // 로그로 복원 안 되는 조작 = 바로 올린다
-function touchRate(s){ }   // 채점은 로그가 정본이라 카드 상태로 올릴 것이 없다
 function touchFb(s){ s.u=new Date().toISOString(); markDirty('fb'); }
 function isDue(c){ const s=state.cards[c.id];
   if(!(s && s.fsrs && !s.retired)) return false;
@@ -5540,7 +5538,6 @@ function addScopeToSess(sx, sel){ // 내용 추가 — sel={units:[],mids:[]}
   sx.day=todayKey(); saveSessionsFlush();
   return add.length;
 }
-function addUnitsToSess(sx, units){ return addScopeToSess(sx,{units:units,mids:[]}); }
 let lastAddHeld=0, lastAddOff=0;   // 직전 추가에서 안 들어간 장수 — 나중에 올 것 / 세션이 안 받는 것
 function stWord(v){                // 상태 설정을 사람 말로 (안내 문구용)
   const m={due:'복습일 된 것', new:'신규', weak:'약점', all:'전부'};
@@ -6407,7 +6404,7 @@ function showDiag(c, back){
    도식 카드에서는 비워 둔다: #cDiag가 이미 안내 문구와 함께 같은 링크를 달고 있어 두 번 나온다. */
 function showHoedokLink(c){
   const el=$('cHoedok');
-  const uri = (c && c.typ!=='도식') ? cardHoedokURI(c) : null;   // null = 회독본 없는 과목(13.총창)
+  const uri = (c && c.typ!=='도식') ? cardHoedokURI(c) : null;   // null = 회독본이 없는 과목 (⚠ 13.총창은 09-02에 생겼다 — 지금은 283장 전부 링크)
   el.classList.toggle('on', !!uri);
   el.innerHTML = uri ? `<a href="${uri.replace(/&/g,'&amp;')}">회독본 ↗</a>` : '';
   const a=el.querySelector('a'); if(a)a.onclick=(e)=>e.stopPropagation();   // 탭이 카드 되접기로 먹지 않게
@@ -6588,7 +6585,7 @@ function rate(num){
   sess.r[num]++; sess.ms+=extra.ms||0;
   if(num===1) sess.streak=0; else { sess.streak++; if(sess.streak>sess.best)sess.best=sess.streak; }
   if(num===1) s.miss=(s.miss||0)+1;        // 당일 재출 없음 (동하 확정 2026-08-21) — 다음 복습일에 만난다
-  touchRate(s); afterRate();
+  afterRate();   // 채점은 로그가 정본이라 카드 상태로 따로 올릴 것이 없다(옛 `touchRate`는 빈 함수였다 · FX-9)
   sessionDone++; if(phase==='new')newServed++;
   qPos++; updateUndo();
   /* 🔴 **저장이 먼저다** (전층 감사 F4-7 · 2026-09-06). `showCard()`는 큐가 소진되면 `finishSess()`를 부르는데,
@@ -6991,17 +6988,6 @@ function go(id){
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
 
 /* ═══════════════ 홈 ═══════════════ */
-function presetDesc(p){
-  const sc=p.scope, parts=[];
-  parts.push(sc.subj.length?sc.subj.map(s=>s.split('.')[1]).join('·'):'전과목');
-  if(sc.tags.length)parts.push('#'+sc.tags.slice(0,2).join(' #')+(sc.tags.length>2?'…':''));
-  if(sc.typ.length)parts.push(sc.typ.join('·'));
-  parts.push({due:'due만',new:'신규만',all:'전부',weak:'약점만'}[sc.status]);
-  parts.push({shuffle:'셔플',doc:'문서순',weighted:'가중'}[p.order]);
-  parts.push(p.limit?p.limit+'장':'전량');
-  if(p.bury)parts.push('방향 분산');
-  return parts.join(' · ');
-}
 /* 🔴 「오늘 실제로 나올 수 있는 복습」 — 홈 「남은 복습」·「세션 · due N」 줄·통계 「due 남음」 타일·
    복습 강도 슬라이더의 「오늘 풀 것 N장」이 **같은 수**를 말한다
    ⚠ **정의는 이 하나뿐이다.** 09-06 새벽에 이 함수를 세우면서 옛 정의(「지금 밀린 것 — 강도 변경 전후 비교용」)를
@@ -7068,17 +7054,6 @@ function bkNote(){
   /* 홈에서는 말하지 않는다(동하 09-05 「백엔드 처리자나」). 밀린 카드는 풀이 화면 phaseLine(「복습일 9/2 — 3일 지남」)·
      통계 ② 「지금 밀린 것」·도움말 「복습일」 절에 이미 드러난다. 함수는 남긴다 — 되살릴 자리가 이 한 줄이라서. */
   return '';
-}
-function howPlain(sx){          // 태그 줄(「자동 충전 · due · 셔플 …」)을 사람 말로 한 번 더
-  const h=sx.how||{}, a=[];
-  a.push(isFixed(sx) ? '내가 담은 범위만 풀고, 못 푼 건 다음날로 넘어가요'
-                     : '날이 바뀌면 오늘 몫을 스스로 다시 채워요');
-  const st=stArr(h.status);
-  if(st.includes('due')&&st.length===1) a.push('복습일이 된 카드만 나와요');
-  else if(st.includes('new')&&st.length===1) a.push('아직 안 푼 카드만 나와요');
-  if(h.bury) a.push('역방향은 2~3일 뒤에 들어와요');
-  if(h.newAfter) a.push('복습을 다 풀면 새 진도로 이어갈 수 있어요');
-  return a.join(' · ');
 }
 function sessDesc(sx){
   const parts=[];
@@ -8212,7 +8187,7 @@ function renderCardSheet(){
     ${(()=>{ /* 도식 카드는 답면이 「(도식 — 회독본 그림과 대조해…)」 한 줄뿐이라, 여기서도
                 회독본으로 갈 길이 있어야 한다. 풀이 화면 뒷면(showDiag)에는 이미 있었는데
                 상세 시트에는 없어서 카드 목록에서 열면 갈 데가 없었다 (동하 2026-08-23). */
-      const u=cardHoedokURI(c);      // null = 회독본 없는 과목(13.총창) — 그때는 링크를 안 만든다
+      const u=cardHoedokURI(c);      // null = 회독본이 없는 과목 — 그때는 링크를 안 만든다 (⚠ 13.총창은 이제 있다)
       if(c.typ==='도식')
         return `<div class="cs-diag"><b>스스로 채점</b>회독본 그림과 대조해 직접 매기세요.`
           + (u?` <a href="${u.replace(/&/g,'&amp;')}" onclick="event.stopPropagation()">회독본 ↗</a>`:'') + `</div>`;
@@ -9303,7 +9278,7 @@ function renderHdQ(){
 }
 $('hdQPrev').onclick=()=>{ HD_QI--; renderHdQ(); };
 $('hdQNext').onclick=()=>{
-  if(HD_QI>=HD_QS.length-1 && HD_KEY){ const k=HD_KEY, n=HD_N; closeHoedok(); markRead(k,n); return; }
+  if(HD_QI>=HD_QS.length-1 && HD_KEY){ const k=HD_KEY; closeHoedok(); markRead(k); return; }
   HD_QI++; renderHdQ(); };
 /* 질문이 길면 두세 줄을 먹는다 — 탭하면 한 줄로 접힌다(메타: 접기 하나면 충분) */
 $('hdQTxt').onclick=()=>{ $('hdQ').classList.toggle('mini'); };
@@ -9337,9 +9312,7 @@ function hdScroll(){
 function qsFor(a){
   const k=a.dataset && a.dataset.qk; if(!k) return [];
   const g=readGroups().find(x=>x.key===k); if(!g) return [];
-  const j=a.dataset.qj;
-  const cards = (j!==undefined && g.subList[+j]) ? g.subList[+j].cards : g.cards;
-  return cards.map(qShort);
+  return g.cards.map(qShort);   // 옛 `data-qj`/`g.subList` 갈래는 죽은 배선이었다(붙이는 곳 0 · 있었으면 TypeError · FX-9)
 }
 document.addEventListener('click', (e)=>{
   const a = e.target && e.target.closest && e.target.closest('a[href]');

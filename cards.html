@@ -5584,6 +5584,14 @@ function deleteSess(sx){
   sessTomb=[...sessTomb.filter(t=>t.id!==sx.id), {id:sx.id, del:Date.now()}];  // 다른 기기에서 부활하지 않게
   sessions=sessions.filter(x=>x.id!==sx.id);
   if(curSess&&curSess.id===sx.id){ curSess=null; curPreset=null; queue=[]; qPos=0; }
+  /* 🔴 **없어진 세션의 되돌리기 발판도 같이 버린다** (전층 감사 F4-9 · 2026-09-06).
+     남겨 두면 되돌리기가 **주인 없는 카드를 풀이 화면에 세운다**(`curSess=null`) — 그 상태로 채점하면
+     로그에는 남지만 콘솔에 「저장할 세션을 못 찾았습니다」가 찍히고, 뒤이은 `finishSess`가
+     `viewSess||curSess||sessions[0]`로 떨어져 **엉뚱한 세션 화면**(일일 복습)으로 데려갔다.
+     임시 세션 자동 삭제(하루살이) 직후에 잘 났다. 되돌릴 채점 자체는 로그가 정본이라 안 잃는다. */
+  const before=undoStack.length;
+  undoStack=undoStack.filter(sn=>sn && sn.sid!==sx.id);
+  if(undoStack.length!==before){ undoSnap=null; updateUndo(); }
   saveSessionsFlush(); }
 
 /* ═══════════════ 큐 = 3축 합성: 범위 → 선발(위험도 R순) → 제시 순서 ═══════════════ */

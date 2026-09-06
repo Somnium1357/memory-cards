@@ -8755,230 +8755,353 @@ function knowledgeSum(){
   return {sum:Math.round(sum), n};
 }
 
+/* ═══════════════ 시험까지의 궤적 (메타 발주 2026-09-06 · 재구성안 A·A-1) ═══════════════
+   실측 구간 = 로그를 **시간순**으로 재생하며 하루 경계마다 굳음/무름/안 나옴을 찍는다.
+   예측 구간 = 앱이 이미 가진 FSRS로 **하루씩 앞으로 돌리는 시뮬레이션**(직선 외삽이 아니다 —
+   신규가 곧 소진되고, 굳는 데 시차가 있고, 굳은 카드도 되돌아오기 때문에 직선은 반드시 틀린다).
+   🔴 **굳음 술어는 `scheduled_days >= 21`** — `maturitySplit`과 같다. 안정도(stability)로 세면
+   지금 덱에서 82장이 갈리고, 메타 백테스트의 대조값도 이쪽이다. 두 술어를 섞지 마라.
+   🔴 유지율·처리량·신규/일은 **하드코딩하지 않고 매번 실측**한다(스펙에 적힌 80/86은 이미 낡았다).
+   ▸ 메타 백테스트(09-02→09-06) 굳음 예측 −1.5% · 실제 채점량 주입 시 −0.4%. 규칙 정본 = `skills\card\통계화면_재구성안_2026-09-06.md` A-1. */
+const MATURE_IVL=21;                       // 굳음 문턱(일) — 안키 young/mature 경계
+const SIM_SEEDS=[1,2,3];                   // 고정 시드 — 시드 간 폭이 ±5장이라 셋 평균이면 충분(메타 실측)
+let SIM_ENGINE=null;
+function simEngine(){                      // 시뮬 전용 엔진 — **fuzz를 끈다**(예측선이 흔들리면 안 된다)
+  if(SIM_ENGINE) return SIM_ENGINE;
+  const p={request_retention:fsrsCfg.ret, enable_fuzz:false, enable_short_term:false};
+  if(Array.isArray(fsrsCfg.w)&&fsrsCfg.w.length) p.w=fsrsCfg.w;
+  SIM_ENGINE=FSRS.fsrs(FSRS.generatorParameters(p));
+  return SIM_ENGINE;
+}
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+/* 시뮬 입력 — 전부 실측. 시뮬 시작 때 한 번 계산하고 도중에는 고정한다. */
+function statInputs(){
+  const by=dailyStats();
+  const nw=[]; for(let i=1;i<=40 && nw.length<7;i++){ const k=dayKeyOffset(-i);
+    if(isRestDay(k)) continue; const e=by[k]; if(e&&e.n>0) nw.push(e.nw); }
+  const cut=Date.now()-30*86400000, seen=new Set();
+  let fN=0,fOK=0,rN=0,rOK=0; const mix=[0,0,0,0,0];
+  for(const e of state.log){ const first=!seen.has(e[0]); seen.add(e[0]);
+    if(logTs(e)*1000<cut) continue;
+    if(first){ fN++; if(e[2]>1) fOK++; } else { rN++; if(e[2]>1) rOK++; }
+    if(e[2]>1) mix[e[2]]++; }
+  const mixTot=mix[2]+mix[3]+mix[4]||1;
+  return { cap:dailyThroughput(), newPerDay:median(nw),
+           pFirst:fN?fOK/fN:0.8, pRev:rN?rOK/rN:0.86,
+           mix:[mix[2]/mixTot, mix[3]/mixTot, mix[4]/mixTot],   // 성공했을 때 어려움/알맞음/쉬움 비율
+           nSample:{first:fN, rev:rN} };
+}
+/* 실측 구간 — 로그를 시간순으로 재생하며 하루 경계마다 스냅숏.
+   ⚠ `replayLog`은 카드별로 도는 구조라 날짜별 중간값을 못 준다. 그래서 여기서만 따로 한 바퀴 돈다.
+   ⚠ 사람 조작(`base`)은 안 본다 — 그래서 마지막 날 값이 `maturitySplit()`과 조금 다를 수 있다(퇴역·묻힘 몫). */
+function maturityHistory(){
+  const cards={}, seen=new Set(), out=[]; let cur=null;
+  const alive=DATA.filter(c=>{ const s=state.cards[c.id]; return !(s&&s.retired); }).length;
+  const snap=k=>{ let hard=0; for(const id in cards){ const f=cards[id].fsrs; if(f&&(f.scheduled_days||0)>=MATURE_IVL) hard++; }
+    out.push({k, hard, soft:seen.size-hard, unseen:Math.max(0, alive-seen.size)}); };
+  for(const e of state.log){
+    const k=dayKey(logDate(e));
+    if(cur!==null && k!==cur){ snap(cur); /* 빈 날은 앞 값을 그대로 잇는다 */
+      for(let g=dkAdd(cur,1); g<k; g=dkAdd(g,1)){ const p=out[out.length-1]; out.push({k:g, hard:p.hard, soft:p.soft, unseen:p.unseen}); } }
+    cur=k;
+    if(!BYID[e[0]]) continue;
+    const sx=cards[e[0]]||(cards[e[0]]={fsrs:null,miss:0,d:''});
+    seen.add(e[0]); applyLogEntry(sx,e);
+  }
+  if(cur!==null) snap(cur);
+  return out;
+}
+/* 예측 구간 — 하루 진행 한 번. 반환 = 날짜별 {hard,soft,unseen} + 시험일 K + 신규 소진일 */
+function simOnce(inp, newPerDay, seed){
+  const eng=simEngine(), rnd=mulberry32(seed), cards=[]; let unseen=0, simId=0;
+  for(const c of DATA){ const s=state.cards[c.id];
+    if(s&&s.retired) continue;
+    if(s&&s.fsrs) cards.push({id:c.id, f:fsrsRevive(s.fsrs)});
+    else unseen++; }
+  const grade=()=>{ const r=rnd(); return r<inp.mix[0]?RATING[2]:(r<inp.mix[0]+inp.mix[1]?RATING[3]:RATING[4]); };
+  const step=(c,now,p)=>{ const rating = rnd()<p ? grade() : RATING[1];
+    const nc=eng.next(c.f, now, rating).card; nc.due=clampDue(nc.due, c.id); c.f=nc; };
+  const out=[]; let doneKey=null;
+  for(let k=dkAdd(todayKey(),1); k<=EXAM_DAY; k=dkAdd(k,1)){
+    if(!isRestDay(k)){
+      const now=new Date(k+'T12:00:00+09:00');
+      const due=[]; for(const c of cards){ if(dayKey(c.f.due)<=k) due.push(c); }
+      due.sort((a,b)=>a.f.due-b.f.due);
+      const todo=due.length>inp.cap?due.slice(0,inp.cap):due;      // 남는 것은 그대로 다음 날 due로 남는다(= 이월)
+      for(const c of todo) step(c, now, inp.pRev);
+      let room=inp.cap-todo.length, n=Math.min(unseen, newPerDay, Math.max(0,room));
+      for(let i=0;i<n;i++){ const c={id:'sim'+(simId++), f:FSRS.createEmptyCard(now)};
+        step(c, now, inp.pFirst); cards.push(c); unseen--; }
+      if(!doneKey && !unseen && newPerDay>0) doneKey=k;
+    }
+    let hard=0; for(const c of cards) if((c.f.scheduled_days||0)>=MATURE_IVL) hard++;
+    out.push({k, hard, soft:cards.length-hard, unseen});
+  }
+  const ex=new Date(EXAM_DAY+'T12:00:00+09:00'); let K=0;
+  for(const c of cards){ try{ K+=eng.get_retrievability(c.f, ex, false); }catch(e){} }
+  return {days:out, K:Math.round(K), doneKey};
+}
+function simTrajectory(inp, newPerDay, seeds){
+  const runs=(seeds||SIM_SEEDS).map(sd=>simOnce(inp, newPerDay, sd));
+  const days=runs[0].days.map((d,i)=>({ k:d.k,
+    hard:Math.round(runs.reduce((a,r)=>a+r.days[i].hard,0)/runs.length),
+    soft:Math.round(runs.reduce((a,r)=>a+r.days[i].soft,0)/runs.length),
+    unseen:Math.round(runs.reduce((a,r)=>a+r.days[i].unseen,0)/runs.length) }));
+  return { days, K:Math.round(runs.reduce((a,r)=>a+r.K,0)/runs.length), doneKey:runs[0].doneKey };
+}
+/* ═══ 궤적 그림 — 누적 면적 3층(굳음/무름/안 나옴) · 실측 실선 + 예측 옅게 + 시험일 선 ═══ */
+function trajChart(hist, pred, zero){
+  const W=680, H=170, PADB=16;
+  const all=[...hist, ...pred];
+  if(!all.length) return '';
+  const tot=Math.max(1, ...all.map(d=>d.hard+d.soft+d.unseen));
+  const x=i=>i/(all.length-1||1)*W;
+  const y=v=>H-PADB-(v/tot)*(H-PADB);
+  const band=(from,to,pick,upto)=>{                     // 누적 면적 한 층
+    const top=[], bot=[];
+    for(let i=from;i<to;i++){ const d=all[i];
+      top.push(x(i).toFixed(1)+','+y(upto(d)).toFixed(1));
+      bot.unshift(x(i).toFixed(1)+','+y(upto(d)-pick(d)).toFixed(1)); }
+    return top.concat(bot).join(' ');
+  };
+  const nH=hist.length, L=all.length;
+  /* 🔴 층은 **불투명도로** 가른다 — `--*-dim` 토큰은 알파가 .13이라 셋을 겹치면 한 덩어리로 보인다(첫 판이 그랬다). */
+  const layers=[[d=>d.unseen, d=>d.hard+d.soft+d.unseen, 'var(--mute)',   .13],
+                [d=>d.soft,   d=>d.hard+d.soft,          'var(--hard)',   .30],
+                [d=>d.hard,   d=>d.hard,                 'var(--accent)', .45]];
+  let g='';
+  for(const L2 of layers){
+    g+='<polygon points="'+band(0,nH,L2[0],L2[1])+'" fill="'+L2[2]+'" opacity="'+L2[3]+'"/>';
+    if(pred.length) g+='<polygon points="'+band(nH-1,L,L2[0],L2[1])+'" fill="'+L2[2]+'" opacity="'+(L2[3]*0.55).toFixed(2)+'"/>';
+  }
+  // 무름 위 경계선 — 층이 읽히게
+  const softTop=(from,to)=>all.slice(from,to).map((d,i)=>x(from+i).toFixed(1)+','+y(d.hard+d.soft).toFixed(1)).join(' ');
+  g+='<polyline points="'+softTop(0,nH)+'" fill="none" stroke="var(--hard)" stroke-width="1.2" opacity=".7"/>';
+  if(pred.length) g+='<polyline points="'+softTop(nH-1,L)+'" fill="none" stroke="var(--hard)" stroke-width="1.2" opacity=".5" stroke-dasharray="4 4"/>';
+  const line=(from,to)=>all.slice(from,to).map((d,i)=>x(from+i).toFixed(1)+','+y(d.hard).toFixed(1)).join(' ');
+  g+='<polyline points="'+line(0,nH)+'" fill="none" stroke="var(--accent)" stroke-width="2"/>';
+  if(pred.length) g+='<polyline points="'+line(nH-1,L)+'" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="5 4"/>';
+  if(zero&&zero.length){                                // 「오늘부터 신규 0」 아래쪽 경계
+    const z=[all[nH-1]].concat(zero);
+    g+='<polyline points="'+z.map((d,i)=>x(nH-1+i).toFixed(1)+','+y(d.hard).toFixed(1)).join(' ')
+      +'" fill="none" stroke="var(--mute)" stroke-width="1.5" stroke-dasharray="2 4"/>';
+  }
+  g+='<line x1="'+x(nH-1).toFixed(1)+'" y1="0" x2="'+x(nH-1).toFixed(1)+'" y2="'+(H-PADB)+'" stroke="var(--line)" stroke-width="1"/>';
+  g+='<line x1="'+W+'" y1="0" x2="'+W+'" y2="'+(H-PADB)+'" stroke="var(--again)" stroke-width="1.5"/>';
+  const lab=(i,t,anc)=>'<text x="'+Math.min(W-2,Math.max(2,x(i))).toFixed(1)+'" y="'+(H-4)+'" font-size="10" fill="var(--mute)" text-anchor="'+anc+'">'+t+'</text>';
+  g+=lab(0, all[0].k.slice(5), 'start')+lab(nH-1,'오늘','middle')+lab(L-1,'시험','end');
+  return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="width:100%;height:'+H+'px;display:block">'+g+'</svg>';
+}
+/* 궤적은 무겁다(시뮬 ≈1.4초) — 통계를 열 때마다 다시 돌리지 않는다.
+   🔴 렌더 경로에 전수 계산을 넣으면 화면이 죽는다(09-06 F2-1 회귀에서 배운 것). */
+let TRAJ=null, TRAJ_KEY='', TRAJ_BUSY=false;
+function trajKey(){ return state.log.length+'|'+todayKey()+'|'+fsrsCfg.ret+'|'+(fsrsCfg.wAt||'')+'|'+DATA.length; }
+/* 🔴 **화면을 막지 않는다.** 시뮬은 1.7초쯤 걸린다 — 그동안 동기로 붙들면 아이패드에서 「뻗은 것」으로 보인다
+   (09-06에 그 사고를 한 번 냈다). 캐시가 맞으면 바로 주고, 아니면 **null을 주고 뒤에서 계산한 뒤 다시 그린다.** */
+function trajectory(){
+  const key=trajKey();
+  if(TRAJ&&TRAJ_KEY===key) return TRAJ;
+  if(!TRAJ_BUSY){ TRAJ_BUSY=true;
+    setTimeout(()=>{
+      try{
+        const inp=statInputs(), hist=maturityHistory();
+        const main=simTrajectory(inp, inp.newPerDay), zero=simTrajectory(inp, 0, [1]);
+        TRAJ={inp, hist, pred:main.days, zero:zero.days, K:main.K, doneKey:main.doneKey,
+              zeroEnd:zero.days[zero.days.length-1]};
+        TRAJ_KEY=key;
+      }catch(e){ console.warn('[궤적] 계산 실패 — 이번 화면은 궤적 없이 갑니다', e); }
+      finally{ TRAJ_BUSY=false;
+        if($('scrStats').classList.contains('on')) renderStats(); }
+    }, 30); }
+  return null;
+}
+/* 오늘 한 줄에 쓰는 값 — 새로 굳은 / 거머리 탈출 */
+function todayGains(hist){
+  const tk=todayKey(), a=hist[hist.length-1], b=hist[hist.length-2];
+  const newHard=(a&&b)?a.hard-b.hard:0;
+  let escaped=0; const missBefore={}, okToday={};
+  for(const e of state.log){ const k=dayKey(logDate(e));
+    if(k===tk){ if(e[2]>=3) okToday[e[0]]=true; continue; }
+    if(e[2]===1) missBefore[e[0]]=(missBefore[e[0]]||0)+1; }
+  for(const id in okToday) if((missBefore[id]||0)>=3) escaped++;
+  return {newHard, escaped};
+}
+/* C. 신호 — 규칙 기반 · 최대 3줄 · 문턱은 코드 상수(설정에 두지 않는다 · 메타 실측으로만 바꾼다) */
+const SIG_SUBJ_GAP=10, SIG_AGAIN_GAP=8, SIG_LEECH=20;
+/* 🔴 「진짜 밀림」 = due가 **어제 이전** ∧ 오늘 안 풀었고 ∧ **오늘 어느 세션에서든 나올 수 있음**.
+   옛 화면의 「지금 밀린 것 48」은 `forecastCarry.overdue`(due ≤ 오늘 전부)라 오늘 이미 푼 「다시」 카드·
+   격리로 내일 미뤄진 카드·직접 세션 전용 카드까지 셌다 — 그래서 「오늘 복습 0」과 동거했다. 그 이름을 화면에서 뺐다. */
+function realOverdue(){
+  const T=todayKey(), qIds=new Set();
+  for(const sx of sessions) for(const id of (sx&&sx.q)||[]) qIds.add(id);
+  const autoScopes=sessions.filter(sx=>!isFixed(sx)).map(sx=>asPreset(sx).scope);
+  const inQ=[], rest=[];
+  for(const c of DATA){ const s=state.cards[c.id];
+    if(!s||!s.fsrs||s.retired||buried(c)) continue;
+    if(effDueKey(dayKey(new Date(s.fsrs.due)), c.id) >= T) continue;
+    if(settledToday(c)) continue;
+    if(qIds.has(c.id)) inQ.push(c); else if(autoScopes.some(sc=>inScope(c,sc))) rest.push(c); }
+  const live=dropSettled(inQ).concat(gateIn(rest, inQ));
+  let oldest=0;
+  for(const c of live){ const s=state.cards[c.id];
+    const d=dkDiff(T, effDueKey(dayKey(new Date(s.fsrs.due)), c.id)); if(d>oldest) oldest=d; }
+  return {n:live.length, days:oldest};
+}
+function statSignals(){
+  const out=[];
+  const sr=retentionSplit(0,(e,c)=>c.subj), all=retentionSplit(0,()=>'x')['x'];
+  const allP=all&&all.n?all.pass/all.n*100:null;
+  if(allP!=null){ let worst=null;
+    for(const sj of SUBJECTS){ const o=sr[sj]; if(!o||o.n<30) continue;
+      const p=o.pass/o.n*100; if(allP-p>=SIG_SUBJ_GAP && (!worst||p<worst.p)) worst={sj:sj,p:p}; }
+    if(worst) out.push({t:'<b>'+esc(worst.sj.split('.')[1]||worst.sj)+'</b> 유지율 '+Math.round(worst.p)+'% (전체 '+Math.round(allP)+'%) — 읽고 오세요', go:'scrRead'});
+  }
+  const od=realOverdue();
+  if(od.n>0) out.push({t:'<b>'+od.n.toLocaleString()+'장</b>이 '+od.days+'일째 밀렸어요 — 지금 풀기', go:'scrHome'});
+  const w7=retentionSplit(7,()=>'x')['x'], w30=retentionSplit(30,()=>'x')['x'];
+  if(w7&&w30&&w7.n>=30&&w30.n>=30){
+    const a7=(1-w7.pass/w7.n)*100, a30=(1-w30.pass/w30.n)*100;
+    if(a7-a30>=SIG_AGAIN_GAP) out.push({t:'이번 주 「다시」 '+Math.round(a7)+'% (30일 '+Math.round(a30)+'%) — 간격이 긴가? 복습 강도를 보세요', go:'scrHome'});
+  }
+  let leech=0; for(const c of DATA) if(isLeech(c)) leech++;
+  if(leech>=SIG_LEECH) out.push({t:'거머리 <b>'+leech+'장</b> — 약점에서 손보세요', go:'scrWeak'});
+  return out.slice(0,3);
+}
 function renderStats(){
   if(!statsLoaded){ statsLoaded=true;
-    /* 🔴 없는 주를 긁지 않는다 (09-02) — `weeksBack(13)`은 오늘부터 13주를 **무조건** 만들어서
-       로그 시작(`LOG_FIRST_MON`) 이전 주까지 요청했다. 통계에 들어갈 때마다 404가 10건(W24~W33).
-       「있을 수 있는 주」와 교집합만 받는다. ⚠ 상한은 `logWeeksRange()`가 아니라 **여전히 13주**다 —
-       기록이 13주를 넘기면 교집합이 최근 13주로 좁혀진다(통계가 쓰는 범위 그대로). */
+    /* 🔴 없는 주를 긁지 않는다 (09-02) — 「있을 수 있는 주」와 교집합만. 상한은 여전히 13주. */
     const HAVE=new Set(logWeeksRange());
     loadWeeks(weeksBack(13).filter(k=>HAVE.has(k))).then(ok=>{ if(ok&&$('scrStats').classList.contains('on'))renderStats(); }); }
   const tk=todayKey(), by=dailyStats();
   const today=by[tk]||{n:0,nw:0,ms:0,msN:0,r:[0,0,0,0,0]};
-  let due=0,nw=0,ret=0,bur=0,learned=0;
-  const bySubj={};
+  let ret=0,bur=0,learned=0; const bySubj={};
   for(const c of DATA){
     const s=state.cards[c.id];
     if(s&&s.retired){ret++;continue;}
     if(buried(c))bur++;
     const e=bySubj[c.subj]||(bySubj[c.subj]={tot:0,done:0,due:0});
     e.tot++;
-    if(isNew(c))nw++; else { learned++; e.done++; }
-    if(isDue(c)&&!buried(c)){ due++; e.due++; }
+    if(!isNew(c)){ learned++; e.done++; }
+    if(isDue(c)&&!buried(c)) e.due++;
   }
-  const alive=DATA.length-ret;        // 🔴 분모에서 은퇴를 뺀다 — 분자는 이미 빼고 있었다(감사 S5)
-  const g=(k,v,sm)=>`<div class="stat"><div class="k">${k}</div><div class="v">${v}${sm?`<small> ${sm}</small>`:''}</div></div>`;
+  const alive=DATA.length-ret;
+  let h='';
 
-  /* ═══ ① 오늘·이번 주 뭘 했나 ═══ */
-  let h=`<div class="rail-grp" style="margin:4px 4px 10px">① 오늘 · 이번 주 뭘 했나</div>`;
-  h+='<div class="stat-grid">'
-    +g('오늘 채점',today.n,'회')+g('오늘 신규',today.nw,'장')
-    +g('오늘 학습시간',fmtMin(today.ms),'')+g('평균 응답',today.msN?fmtDur(Math.round(today.ms/today.msN)):'—','')
-    +g('오늘 복습',dueTodayCount(),'장')+g('내일 예상','~'+tomorrowCount(null),'장')   // 홈과 같은 정의(F5-1)
-    +g('학습 진입',learned,`/ ${alive.toLocaleString()}`)+g('끈 카드 · 미룸',`${ret} · ${bur}`,'장')
+  /* ═══ A. 시험까지의 궤적 ═══ */
+  const T=trajectory(), M=maturitySplit(), dd=dDay();
+  const cap=T?T.inp.cap:dailyThroughput();
+  if(!T){
+    h+='<div class="card-box"><h3>시험까지의 궤적</h3>'
+      +'<div class="cap">D-'+dd+' · 굳음 <b>'+M.mature.toLocaleString()+'</b> / '+alive.toLocaleString()+'</div>'
+      +'<div class="empty-note" style="padding:24px 0">시험까지 그려 보는 중…</div></div>';
+  } else {
+    const end=T.pred.length?T.pred[T.pred.length-1]:{hard:M.mature};
+    const pctEnd=alive?Math.round(end.hard/alive*100):0;
+    h+='<div class="card-box"><h3>시험까지의 궤적</h3>'
+      +'<div class="cap">D-'+dd+' · 굳음 <b>'+M.mature.toLocaleString()+'</b> / '+alive.toLocaleString()
+      +' · <b>이 속도면</b> 시험날 굳음 약 <b>'+end.hard.toLocaleString()+'장('+pctEnd+'%)</b>'
+      +' · 시험날 떠올릴 수 있는 것 약 <b>'+T.K.toLocaleString()+'장</b></div>'
+      +trajChart(T.hist, T.pred, T.zero)
+      +'<div class="cap" style="margin-top:6px">굳음(21일 이상) · 무름 · 안 나옴 순으로 쌓았어요 · '
+      +'점선 = 예측 · 옅은 점선 = 오늘부터 신규를 안 넣으면('+((T.zeroEnd&&T.zeroEnd.hard)||0).toLocaleString()+'장)</div>'
+      +'<div class="cap" style="margin-top:4px;opacity:.75">최근 7일 기준 — 신규 '+T.inp.newPerDay+'/일 · 처리 '+T.inp.cap+'/일'
+      +' · 유지율 '+Math.round(T.inp.pFirst*100)+'/'+Math.round(T.inp.pRev*100)+'%'
+      +(T.doneKey?' · 신규 소진 '+T.doneKey.slice(5).replace('-','/'):'')+'</div></div>';
+  }
+
+  /* ═══ B. 오늘 ═══ */
+  h+='<div class="card-box"><h3>오늘</h3>';
+  if(!T){
+    h+='<div class="cap">신규 '+today.nw+' · 복습 '+Math.max(0,today.n-today.nw)+' · '+fmtMin(today.ms)+'</div>';
+  } else {
+    const G=todayGains(T.hist), hs=T.hist, spark=[];
+    for(let i=Math.max(1,hs.length-14);i<hs.length;i++){
+      const k=hs[i].k, v=Math.max(0, hs[i].hard-hs[i-1].hard);
+      spark.push({a:v, label:(i===hs.length-1)?'오늘':'', cls:isRestDay(k)?'rest':'', title:k+' · 새로 굳은 '+v+'장'}); }
+    h+='<div class="cap">새로 굳은 <b>'+(G.newHard>=0?'+':'')+G.newHard+'</b> · 거머리 탈출 <b>'+G.escaped+'</b>'
+      +' · 신규 '+today.nw+' · 복습 '+Math.max(0,today.n-today.nw)+' · '+fmtMin(today.ms)+'</div>'
+      +(spark.length?barChart(spark,{h:60}):'')
+      +'<div class="cap" style="margin-top:4px;opacity:.75">막대 = 하루에 새로 굳은 장수(최근 14일)</div>';
+  }
+  h+='</div>';
+
+  /* ═══ C. 신호 ═══ */
+  const SIG=statSignals();
+  h+='<div class="card-box"><h3>신호</h3>';
+  if(!SIG.length) h+='<div class="cap">신호 없음 — 하던 대로 가면 돼요</div>';
+  else h+='<div class="bar-list" style="background:none;padding:2px 0;margin:0">'
+    +SIG.map(x=>'<div class="bl-row sig-row" data-go="'+x.go+'" style="cursor:pointer">'
+      +'<span class="m" style="text-align:left;flex:1">'+x.t+'</span><span class="c">›</span></div>').join('')
     +'</div>';
+  h+='</div>';
 
-  /* 최근 28일 풀이량 */
-  const acols=[];
-  for(let i=27;i>=0;i--){ const k=dayKeyOffset(-i);
-    const e=by[k]||{n:0,nw:0};
-    acols.push({a:e.n-e.nw, b:e.nw, cls:i===0?'today':'',
-      label:(i%7===0)?`${+k.slice(5,7)}/${+k.slice(8,10)}`:'', title:`${k} · 총 ${e.n}회 (신규 ${e.nw})`}); }   // 라벨도 논리적 날짜에서(F5-2)
-  const tot28=acols.reduce((a,c)=>a+c.a+c.b,0), act=acols.filter(c=>c.a+c.b>0).length;
-  h+=`<div class="card-box"><h3>최근 4주 풀이량</h3>
-    <div class="cap">총 ${tot28.toLocaleString()}회 · 푼 날 ${act}일 · 하루 평균 ${act?Math.round(tot28/act):0}회</div>
-    ${barChart(acols)}
-    <div class="legend"><span><i style="background:var(--accent)"></i>복습</span><span><i style="background:var(--good)"></i>신규</span></div></div>`;
-
-  /* 채점 분포 — 라벨을 「복습 유지율」로 못 박는다 (감사 S2: 세션 성적표의 「회차 정답률」과 정의가 다르다) */
-  const seen=new Set(); const R=[0,0,0,0,0]; let msSum=0,msN=0;
-  const cut=Date.now()-30*86400000;
-  for(const e of state.log){
-    const isFirst=!seen.has(e[0]); seen.add(e[0]);
-    if(logTs(e)<cut)continue;
-    if(!isFirst)R[e[2]]=(R[e[2]]||0)+1;
-    const ex=e[3]; if(ex&&typeof ex.ms==='number'){ msSum+=ex.ms; msN++; }
-  }
-  const rtot=R[1]+R[2]+R[3]+R[4];
-  const pct=n=>rtot?Math.round(n/rtot*100):0;
-  h+=`<div class="card-box"><h3>복습 유지율 · 채점 분포</h3>
-    <div class="cap">최근 30일 복습 ${rtot.toLocaleString()}회 · 신규 첫 대면 제외</div>
-    <div class="big-num"><b>${rtot?Math.round((rtot-R[1])/rtot*100):0}%</b><small>「다시」를 안 누른 비율 — 목표 ${Math.round(fsrsCfg.ret*100)}%</small></div>
-    <div class="sbar" style="margin-top:12px">
-      <i style="width:${pct(R[1])}%;background:var(--again)"></i><i style="width:${pct(R[2])}%;background:var(--hard)"></i>
-      <i style="width:${pct(R[3])}%;background:var(--good)"></i><i style="width:${pct(R[4])}%;background:var(--easy)"></i></div>
-    <div class="legend">
-      <span><i style="background:var(--again)"></i>다시 ${R[1]}</span><span><i style="background:var(--hard)"></i>어려움 ${R[2]}</span>
-      <span><i style="background:var(--good)"></i>알맞음 ${R[3]}</span><span><i style="background:var(--easy)"></i>쉬움 ${R[4]}</span></div>
-    ${msN?`<div class="cap" style="margin:10px 0 0">응답 시간 평균 ${fmtDur(Math.round(msSum/msN))} · 기록된 채점 ${msN.toLocaleString()}회</div>`:''}</div>`;
-
-  /* 12주 달력 — 접어 둔다 (감사 S4: 84칸 중 71칸이 공백이라 밀도 15%) */
-  let heat='';
-  const start=new Date(Date.now()-83*86400000);
-  for(let i=0;i<84;i++){ const d=new Date(start.getTime()+i*86400000), k=dayKey(d);
-    const v=(by[k]||{n:0}).n;
-    const lv=v===0?0:(v<10?1:(v<40?2:(v<100?3:4)));
-    heat+=`<i class="l${lv}" title="${k} · ${v}회"></i>`; }
-  h+=`<div class="card-box"><details><summary style="cursor:pointer;font-weight:600">12주 달력</summary>
-    <div class="cap" style="margin-top:8px">세로 한 칸 = 하루, 색이 진할수록 많이 푼 날</div>
-    <div class="heat">${heat}</div></details></div>`;
-
-  /* A7 — 접어 둔다. 매일 볼 것은 아니고 「가끔 들여다보는」 층이다(동하 지시로 신설). */
-  const IV=ivlBuckets(), HR=hourBuckets(), MS=msBuckets();
-  let adv='';
-  if(IV.n){
-    const cols=IV.labels.map((L,i)=>({a:IV.cnt[i], label:L.replace('일','').replace('주','주').replace('달','달'),
-      title:`${L} · ${IV.cnt[i].toLocaleString()}장`}));
-    const mature=IV.cnt.slice(4).reduce((x,y)=>x+y,0);
-    adv+=`<h4 style="margin:14px 0 4px;font-size:13px">복습 간격 분포</h4>
-      <div class="cap">복습한 카드 ${IV.n.toLocaleString()}장이 어떤 간격에 있나 — 오른쪽이 많아질수록 굳은 거예요.
-        3주 이상이 <b>${mature.toLocaleString()}장</b>.</div>${barChart(cols)}`;
-  }
-  if(MS.n){
-    const cols=MS.labels.map((L,i)=>({a:MS.cnt[i], label:L, title:`${L} · ${MS.cnt[i].toLocaleString()}회`}));
-    adv+=`<h4 style="margin:16px 0 4px;font-size:13px">응답 시간 분포</h4>
-      <div class="cap">기록된 채점 ${MS.n.toLocaleString()}회 · 평균 ${fmtDur(Math.round(MS.avg))}.
-        <b>오래 걸린 쪽이 많으면</b> 카드가 무겁다는 뜻이에요(쪼갤 후보).</div>${barChart(cols)}`;
-  }
-  if(HR.n){
-    const cols=[]; for(let h=0;h<24;h++) cols.push({a:HR.cnt[h], label:(h%6===0)?h+'시':'',
-      title:`${h}시 · ${HR.cnt[h].toLocaleString()}회`});
-    let best=0; for(let h=0;h<24;h++) if(HR.cnt[h]>HR.cnt[best]) best=h;
-    adv+=`<h4 style="margin:16px 0 4px;font-size:13px">시간대별 풀이량</h4>
-      <div class="cap">전체 ${HR.n.toLocaleString()}회 · 제일 많이 푸는 때는 <b>${best}시</b>대예요.</div>${barChart(cols)}`;
-  }
-  if(adv) h+=`<div class="card-box"><details><summary style="cursor:pointer;font-weight:600">자세히 — 간격 · 응답 시간 · 시간대</summary>${adv}</details></div>`;
-
-  /* ═══ ② 앞으로 뭐가 오나 ═══ */
+  /* ═══ D. 부하 예보 (14일) — 「지금 밀린 것」 문구는 뺐다(정의가 밀림이 아니다 · C 참조) ═══ */
   const F=forecastCarry(14);
-  h+=`<div class="rail-grp" style="margin:18px 4px 10px">② 앞으로 뭐가 오나</div>`;
-  const fcols=F.cols.map((c,i)=>{ const k=dayKeyOffset(i);   // 논리적 날짜 라벨(F5-2)
-    return {a:c.load, cls:i===0?'today':(c.rest?'rest':''),
-      label:i%2===0?`${+k.slice(5,7)}/${+k.slice(8,10)}`:'',
-      title:`${c.k}${c.rest?' (휴식일)':''} · 그날 부하 ${c.load}장`
-        +(c.carry?` = 이월 ${c.carry} + 새로 ${c.fresh}`:'')}; });
+  const fcols=F.cols.map((c,i)=>{ const k=dayKeyOffset(i);
+    return {a:c.carry, b:c.fresh, label:(i%2===0)?k.slice(5).replace('-','/'):'', cls:isRestDay(k)?'rest':'',
+      title:k+' · 쌓임 '+c.load+'장 (이월 '+c.carry+' + 새로 '+c.fresh+')'}; });
   const peak=F.cols.reduce((m,c)=>Math.max(m,c.load),0);
   const wk1=F.cols.slice(0,7).reduce((a,c)=>a+c.fresh,0);
-  h+=`<div class="card-box"><h3>복습 부하 예보 (14일)</h3>
-    <div class="cap">막대 = 그날 쌓일 양(이월 + 새 due) · 하루 처리량 ${F.cap}장(최근 실측) · 휴식일 0장</div>
-    ${barChart(fcols)}
-    <div class="cap" style="margin-top:8px">앞 7일에 <b>새로</b> due가 되는 건 ${wk1.toLocaleString()}장 ·
-      가장 몰리는 날 <b>${peak.toLocaleString()}장</b>${F.overdue?` · 지금 밀린 것 ${F.overdue.toLocaleString()}장`:''}</div></div>`;
+  h+='<div class="card-box"><h3>복습 부하 예보 (14일)</h3>'
+    +'<div class="cap">막대 = 그날 쌓일 양(이월 + 새 due) · 하루 처리량 '+cap+'장(최근 실측) · 휴식일 0장</div>'
+    +barChart(fcols,{h:110})
+    +'<div class="cap" style="margin-top:8px">앞 7일에 <b>새로</b> due가 되는 건 '+wk1.toLocaleString()+'장 · 가장 몰리는 날 <b>'+peak.toLocaleString()+'장</b></div></div>';
 
-  /* ═══ ③ 시험까지 괜찮나 ═══ */
-  const dd=dDay(), NE=newExhaust(), M=maturitySplit(), K=knowledgeSum();
-  h+=`<div class="rail-grp" style="margin:18px 4px 10px">③ 시험까지 괜찮나</div>`;
-  h+='<div class="stat-grid">'
-    +g('시험까지','D-'+dd,'일')
-    +g('안 나온 카드',NE.left.toLocaleString(),'장')
-    +g('신규 소진 예상',NE.days!=null?NE.days+'일':'—', NE.days!=null?`· 하루 ${NE.rate}장`:'')
-    +g('굳은 카드',M.mature.toLocaleString(),`/ ${(M.young+M.mature).toLocaleString()}`)
-    +'</div>';   // 「지금 아는 것」 타일은 뺐다 — 4칸 격자에서 혼자 떨어졌고, 같은 값이 아래 「얼마나 굳었나」에 있다(동하 09-05 비평 6)
-  h+=`<div class="card-box"><h3>시험까지의 셈</h3>
-    <div class="cap">새 카드 소진 <b>${NE.days!=null?NE.days+'일 뒤':'—'}</b>(하루 ${NE.rate}장) · 시험까지 ${dd}일 ·
-      복습만 하는 기간 <b>${NE.days!=null?Math.max(0,dd-NE.days):'—'}일</b></div></div>`;
-  h+=`<div class="card-box"><h3>얼마나 굳었나</h3>
-    <div class="cap">안 나옴 ${M.nw.toLocaleString()} · 무름 ${M.young.toLocaleString()}(21일 미만) ·
-      <b>굳음 ${M.mature.toLocaleString()}</b>(21일 이상 · 시험날까지 갈 것) · 지금 떠올릴 수 있는 것 <b>${K.sum.toLocaleString()}장</b></div>
-    <div class="sbar" style="margin-top:12px">
-      <i style="width:${alive?M.nw/alive*100:0}%;background:var(--mute)"></i>
-      <i style="width:${alive?M.young/alive*100:0}%;background:var(--hard)"></i>
-      <i style="width:${alive?M.mature/alive*100:0}%;background:var(--good)"></i></div>
-    <div class="legend"><span><i style="background:var(--mute)"></i>안 나옴</span>
-      <span><i style="background:var(--hard)"></i>무름</span><span><i style="background:var(--good)"></i>굳음</span></div></div>`;
+  /* ═══ E. 과목별 — 유지율 오름차순(나쁜 과목이 위) ═══ */
+  const sr=retentionSplit(0, (e,c)=>c.subj);
+  const rows=SUBJECTS.map(sj=>{ const e=bySubj[sj]||{tot:0,done:0,due:0}; const o=sr[sj];
+      return {sj:sj, e:e, p:(o&&o.n>=30)?Math.round(o.pass/o.n*100):null, n:o?o.n:0}; })
+    .filter(r=>r.e.done)
+    .sort((a,b)=>(a.p==null?999:a.p)-(b.p==null?999:b.p));
+  h+='<div class="card-box"><h3>과목별 — 진도와 유지율</h3>'
+    +'<div class="cap">유지율 낮은 과목이 위 · 막대 = 학습 진입 · 오른쪽 = 오늘 due</div>'
+    +'<div class="bar-list" style="background:none;padding:4px 0;margin:0">';
+  for(const r of rows){ const pr=r.e.tot?Math.round(r.e.done/r.e.tot*100):0;
+    h+='<div class="bl-row"><span class="n" style="min-width:52px">'+esc(r.sj.split('.')[1]||r.sj)+'</span>'
+      +'<span class="bar" title="'+r.e.done+'/'+r.e.tot+'장"><i style="width:'+pr+'%"></i></span>'
+      +'<span class="m '+(r.p!=null&&r.p<70?'warn':'')+'" style="min-width:44px;text-align:right" title="'+(r.n?r.n+'회 복습':'복습 없음')+'">'+(r.p==null?'—':r.p+'%')+'</span>'
+      +'<span class="c">'+(r.e.due?r.e.due:'·')+'</span></div>'; }
+  h+='</div></div>';
 
-  /* ═══ 문풀 준비된 대주제 (동하 2026-09-02) ═══
-     「이 대주제는 이제 문제를 풀어도 되나」를 한 눈에. 정의 = **그 대주제의 카드 전부**가
-     지금 기억 확률(R) **기준값 이상**. 🔴 **기준값은 복습 강도 슬라이더 그 값**이다
-     (`fsrsCfg.ret` · 동하 09-02 「기준값은 앱 슬라이더 그거 말하는거」) — 새 설정을 만들지 않는다.
-     슬라이더를 옮기면 이 목록도 같이 움직인다. 뜻도 맞는다: 「내가 정한 만큼 안 잊었나」.
-     ⚠ **안 나온 새 카드가 하나라도 있으면 미달**이다(R이 없다 = 아직 모른다).
-     ⚠ 은퇴·끈 카드는 셈에서 뺀다.
-     ⚠ 순서 = 과목 번호 → 과목 안에서는 `cards-data.json` 첫 등장 순(= spec 문서 순). */
-  {
-    const th=fsrsCfg.ret, nowR=new Date(), G=new Map();
-    DATA.forEach((c,i)=>{
-      const s0=state.cards[c.id];
-      if(s0&&(s0.retired||(s0.ann&&s0.ann.includes('끄기')))) return;
-      const top=(c.tags||[])[0]||''; if(!top) return;
-      const k=c.subj+'|'+top;
-      let e=G.get(k); if(!e){ e={subj:c.subj, top:top, n:0, nw:0, low:0, min:1, i:i}; G.set(k,e); }
-      e.n++;
-      if(!s0||!s0.fsrs){ e.nw++; e.low++; e.min=0; return; }
-      let r=0; try{ r=engine.get_retrievability(fsrsRevive(s0.fsrs), nowR, false); }catch(err){}
-      if(r<e.min) e.min=r;
-      if(r<th) e.low++;
-    });
-    const rows=[...G.values()].sort((a,b)=>SUBJECTS.indexOf(a.subj)-SUBJECTS.indexOf(b.subj) || a.i-b.i);
-    const ready=rows.filter(e=>e.low===0);
-    const near=rows.filter(e=>e.low>0 && e.nw===0).sort((a,b)=>b.min-a.min).slice(0,5);
-    const rpct=Math.round(th*100);
-    h+='<div class="card-box"><h3>문풀 준비된 대주제</h3>'
-      +'<div class="cap">카드 전부가 기억 확률 '+rpct+'% 이상(복습 강도 값) · 안 나온 새 카드가 있으면 아직</div>';
-    if(!ready.length){
-      h+='<div class="empty-note" style="padding:8px 0">아직 없어요 — 아래 「거의 된 것」을 먼저 메우세요</div>';
-    } else {
-      h+='<div class="bar-list" style="background:none;padding:4px 0;margin:0">';
-      for(const sj of SUBJECTS){
-        const mine=ready.filter(e=>e.subj===sj); if(!mine.length) continue;
-        const total=rows.filter(e=>e.subj===sj).length;
-        h+='<div class="bl-row" style="font-weight:800"><span class="n" style="min-width:74px">'+esc(sj)+'</span>'
-          +'<span class="m" style="text-align:left;flex:1">'+(mine.length===total?'✅ 과목 전체 준비됨':mine.length+' / '+total+' 대주제')+'</span></div>';
-        for(const e of mine) h+='<div class="bl-row"><span class="n" style="min-width:12px"></span>'
-          +'<span class="m" style="text-align:left;flex:1">'+esc(e.top)+'</span><span class="c">'+e.n+'장</span></div>';
-      }
-      h+='</div>';
-    }
-    if(near.length){
-      h+='<div class="cap" style="margin-top:10px"><b>거의 된 것</b> — 최저 기억 확률 · 모자란 장수</div>'
-        +'<div class="bar-list" style="background:none;padding:4px 0;margin:0">';
-      for(const e of near) h+='<div class="bl-row"><span class="n" style="min-width:74px">'+esc(e.subj)+'</span>'
-        +'<span class="m" style="text-align:left;flex:1">'+esc(e.top)+'</span>'
-        +'<span class="m" style="min-width:44px;text-align:right">'+Math.round(e.min*100)+'%</span>'
-        +'<span class="c">'+e.low+'장</span></div>';
-      h+='</div>';
-    }
-    h+='</div>';
-  }
-
-  /* 유지율 주별 추이 (감사 S1) */
+  /* ═══ F. 자세히 — 판단이 안 붙는 수는 전부 접는다 ═══ */
+  let adv='';
+  const acols=[];
+  for(let i=27;i>=0;i--){ const k=dayKeyOffset(-i); const e=by[k]||{n:0,nw:0};
+    acols.push({a:Math.max(0,e.n-e.nw), b:e.nw, cls:i===0?'today':(isRestDay(k)?'rest':''),
+      label:(i%7===0)?k.slice(5).replace('-','/'):'', title:k+' · 복습 '+Math.max(0,e.n-e.nw)+' · 신규 '+e.nw}); }
+  const tot28=acols.reduce((a,c)=>a+c.a+c.b,0), act=acols.filter(c=>c.a+c.b>0).length;
+  adv+='<div class="cap" style="margin-top:8px"><b>최근 4주 풀이량</b> — 총 '+tot28.toLocaleString()+'회 · 푼 날 '+act+'일 · 하루 평균 '+(act?Math.round(tot28/act):0)+'회</div>'+barChart(acols,{h:90});
+  const seen=new Set(); const R=[0,0,0,0,0]; let msSum=0,msN=0;
+  const cut=Date.now()-30*86400000;
+  for(const e of state.log){ const isFirst=!seen.has(e[0]); seen.add(e[0]);
+    if(logTs(e)*1000<cut||isFirst) continue;
+    R[e[2]]=(R[e[2]]||0)+1;
+    const ex=e[3]; if(ex&&typeof ex.ms==='number'){ msSum+=ex.ms; msN++; } }
+  const rtot=R[1]+R[2]+R[3]+R[4], pct=n=>rtot?Math.round(n/rtot*100):0;
+  if(rtot) adv+='<div class="cap" style="margin-top:14px"><b>채점 분포</b> — 최근 30일 복습 '+rtot.toLocaleString()+'회 · 유지율 '+pct(R[2]+R[3]+R[4])+'%</div>'
+    +barChart([{a:R[1],label:'다시',title:'다시 '+R[1]},{a:R[2],label:'어려움',title:'어려움 '+R[2]},
+               {a:R[3],label:'알맞음',title:'알맞음 '+R[3]},{a:R[4],label:'쉬움',title:'쉬움 '+R[4]}],{val:true,h:80});
+  if(msN) adv+='<div class="cap" style="margin-top:10px">응답 시간 평균 '+fmtDur(Math.round(msSum/msN))+' · 기록된 채점 '+msN.toLocaleString()+'회</div>';
   const wr=retentionSplit(0, e=>weekKeyOf(logDate(e)));
   const wks=Object.keys(wr).sort().slice(-8);
   if(wks.length){
     const wcols=wks.map((k,i)=>{ const o=wr[k], p=o.n?Math.round(o.pass/o.n*100):0;
-      return {a:p, cls:i===wks.length-1?'today':'', label:k.slice(-3), title:`${k} · ${p}% (${o.n.toLocaleString()}회)`}; });
-    const last=wr[wks[wks.length-1]], lp=last.n?Math.round(last.pass/last.n*100):0;
-    h+=`<div class="card-box"><h3>유지율 추이 (주별)</h3>
-      <div class="cap">이번 주 <b>${lp}%</b> (${last.n.toLocaleString()}회) · 밀린 걸 몰아 푼 주는 낮게 나와요 · 살아 있는 카드만</div>
-      ${barChart(wcols,{val:true,unit:'%',h:80})}</div>`;
+      return {a:p, cls:i===wks.length-1?'today':'', label:k.slice(-3), title:k+' · '+p+'% ('+o.n.toLocaleString()+'회)'}; });
+    adv+='<div class="cap" style="margin-top:14px"><b>유지율 추이 (주별)</b> — 밀린 걸 몰아 푼 주는 낮게 나와요</div>'+barChart(wcols,{val:true,unit:'%',h:80});
   }
+  const IV=ivlBuckets(), HR=hourBuckets(), MS=msBuckets();
+  if(IV.n) adv+='<div class="cap" style="margin-top:14px"><b>간격 분포</b> — 복습한 카드 '+IV.n.toLocaleString()+'장 · 3주 이상 '+IV.cnt.slice(4).reduce((x,y)=>x+y,0).toLocaleString()+'장</div>'
+    +barChart(IV.labels.map((L,i)=>({a:IV.cnt[i], label:L, title:L+' · '+IV.cnt[i].toLocaleString()+'장'})),{h:80});
+  if(MS.n) adv+='<div class="cap" style="margin-top:14px"><b>응답 시간 분포</b> — 평균 '+fmtDur(Math.round(MS.avg))+'</div>'
+    +barChart(MS.labels.map((L,i)=>({a:MS.cnt[i], label:L, title:L+' · '+MS.cnt[i].toLocaleString()+'회'})),{h:80});
+  if(HR.n){ const cols=[]; for(let hh=0;hh<24;hh++) cols.push({a:HR.cnt[hh], label:(hh%6===0)?hh+'시':'', title:hh+'시 · '+HR.cnt[hh].toLocaleString()+'회'});
+    adv+='<div class="cap" style="margin-top:14px"><b>시간대</b></div>'+barChart(cols,{h:70}); }
+  adv+='<div class="cap" style="margin-top:14px">끈 카드 '+ret.toLocaleString()+' · 오늘 미룸 '+bur.toLocaleString()+'</div>';
+  h+='<div class="card-box"><details><summary style="cursor:pointer;font-weight:600">자세히 — 풀이량 · 분포 · 추이</summary>'+adv+'</details></div>';
 
-  /* 과목별 유지율 (감사 S1·A4) — 진도와 같이 본다 */
-  const sr=retentionSplit(0, (e,c)=>c.subj);
-  h+='<div class="card-box"><h3>과목별 — 진도와 유지율</h3>'
-    +'<div class="cap">막대 = 학습 진입 · 가운데 = 복습 유지율(30회 미만 —) · 오른쪽 = 오늘 due</div>'
-    +'<div class="bar-list" style="background:none;padding:4px 0;margin:0">';
-  for(const sj of SUBJECTS){ const e=bySubj[sj]||{tot:0,done:0,due:0};
-    if(!e.done) continue;                    // 아직 한 장도 안 들어온 과목은 빈 줄(—)만 남긴다 — 숨긴다(동하 09-05 비평 6)
-    const r=e.tot?Math.round(e.done/e.tot*100):0;
-    const o=sr[sj], p=(o&&o.n>=30)?Math.round(o.pass/o.n*100):null;
-    const cls=p==null?'':(p<70?'warn':'');
-    h+=`<div class="bl-row"><span class="n" style="min-width:52px">${esc(sj.split('.')[1]||sj)}</span>
-      <span class="bar" title="${e.done}/${e.tot}장"><i style="width:${r}%"></i></span>
-      <span class="m ${cls}" style="min-width:44px;text-align:right" title="${o?o.n+'회 복습':'복습 없음'}">${p==null?'—':p+'%'}</span>
-      <span class="c">${e.due?e.due:'·'}</span></div>`; }
-  h+='</div></div>';
-  $('statsBody').innerHTML=h;   // 맨 아래 「리뷰 로그 N건」 꼬리는 뺐다 — 홈 바닥줄에 이미 있다
+  $('statsBody').innerHTML=h;
+  $('statsBody').querySelectorAll('.sig-row').forEach(el=>{ el.onclick=()=>go(el.dataset.go); });
 }
 
 /* ═══════════════ 읽기 (2026-09-05 · 동하 결정 · 메타 스펙) ═══════════════ */

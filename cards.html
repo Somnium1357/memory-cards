@@ -8755,16 +8755,25 @@ function readPrep(){
 function readGroups(){ return [...readRepair(), ...readPrep()]; }   // 회독본 오버레이(qsFor)가 key로 찾는다
 function readRec(key){ const r=(state.read||{})[key]; return (r&&r.at)?{at:r.at, r:(r.r!=null?r.r:1)}:null; }   // 옛 {at,n}은 r=1로 읽는다
 function readCooling(key){ const r=readRec(key); return !!(r && dkDiff(todayKey(), r.at) < READ_COOL); }
+/* 저장된 재등장 횟수 원값 — `readRec`은 「지금 읽음 상태인가」를 보지만 이쪽은 **횟수만** 본다.
+   해제 툼스톤(`{at:null, r}`)에서도 읽혀야 하기 때문이다(F6-3). 옛 `{at,n}` 꼴은 1로 읽는다. */
+function readRawR(key){ const r=(state.read||{})[key]; if(!r) return 0; return (r.r!=null)?r.r:(r.at?1:0); }
 function markRead(key){
   if(!state.read) state.read={};
-  const prev=readRec(key);
-  state.read[key]={at:todayKey(), r:(prev?prev.r:0)+1};
+  state.read[key]={at:todayKey(), r:readRawR(key)+1};
   cacheState(); markDirty('sess'); renderRead();
   toast(`읽음 — ${READ_COOL}일 쉬어요`);
 }
 function unmarkRead(key){
   if(!state.read) state.read={};
-  state.read[key]=null;                              // null 툼스톤 — 합집합 병합에서도 취소가 이긴다
+  /* 🔴 해제는 **방금 한 체크를 무르는 것**이다 — `r`을 하나 되돌린다 (전층 감사 F6-3 · 2026-09-06).
+     예전엔 `state.read[key]=null`이라 **횟수가 통째로 사라졌다**: 두 번째 읽고(r:2) 오탭으로 한 번 풀면
+     다시 체크해도 r:1로 내려앉아, 「3번째 등장 = 카드·spec 신호」라는 설계 의도가 무력화됐다.
+     이제 r:2 → 해제 → r:1 → 체크 → **r:2**로 제자리다(그냥 보존하면 반대로 토글마다 부풀어 오른다).
+     `{at:null, r}`도 키가 있으므로 **툼스톤 구실은 그대로**다(병합 `{...원격, ...로컬}` = 로컬 승) —
+     `readRec`이 `at` 없는 것을 「안 읽음」으로 읽는다. 한 번도 안 읽은 키는 종전대로 `null`. */
+  const n=readRawR(key)-1;
+  state.read[key]= n>0 ? {at:null, r:n} : null;
   cacheState(); markDirty('sess'); renderRead();
 }
 /* 질문 앞의 〔과목 · 대주제〕 스코프는 항목 제목이 이미 말해 준다 — 맨 앞 것 하나만 뗀다. */

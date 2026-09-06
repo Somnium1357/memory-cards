@@ -5508,6 +5508,21 @@ function addToast(n, sx){
   toast(n ? `${n}장 추가${tail}` : (why.length?`지금 넣을 건 없어요${tail}`:'추가할 카드가 없어요'));
 }
 let lastPlaySid=null;   // 마지막으로 playSess한 세션 id — curSess가 끊겨도 화면 큐의 주인을 되찾는 열쇠
+/* 🔴 세션에 저장할 「남은 큐」 = **화면 잔량 + 문 ①이 오늘 못 낸 것** (전층 감사 F3-2 · 2026-09-06).
+   예전에는 화면 잔량만 썼다. 그런데 짝 키·방향·이웃 격리로 **오늘 안 나온 카드는 화면 큐에 아예 없다** —
+   첫 채점의 `syncSessQueue` 한 번에 저장 큐에서 **툼스톤도 없이** 사라졌다.
+   자동 세션은 `refillSess`가 매일 다시 짜므로 무해했지만, **직접 추가 세션(누적복습·총창)은 저장 큐가
+   이월 목록 그 자체**라 보류 카드가 조용히 빠진다. 되돌아오는 길은 「＋ 이어서 채우기」로 범위를 통째로
+   재조립하는 것뿐이었고, 툼스톤이 없어 다른 기기 사본과 만나면 되살아나 기기 간 값이 갈렸다.
+   재현(합성): 같은 사슬의 인접 낱장 둘을 큐에 넣고 `playSess` ⇒ 화면 1장 · 저장 큐 2 → **1**(보류분 소멸).
+   ⚠ 「오늘 정리된 것」은 종전대로 뺀다(`dropSettled`와 같은 술어) · 죽은 ID는 이 참에 턴다.
+   ⚠ 사람이 뺀 것(`qDel` 툼스톤)은 애초에 `q`에 없으므로 되살아나지 않는다. */
+function keepIds(tgt){
+  const rest=queue.slice(qPos).map(c=>c.id);
+  const seen=new Set(queue.map(c=>c.id));               // 화면에 올랐던 것(푼 것 포함)은 위에서 다뤘다
+  const held=dropSettled((tgt&&tgt.q||[]).filter(id=>!seen.has(id)).map(id=>BYID[id]).filter(Boolean)).map(c=>c.id);
+  return [...rest, ...held];
+}
 function syncSessQueue(){ // 진행 중 세션의 남은 큐를 저장 (새로고침·탭 종료에도 살아남게)
   const rest=queue.slice(qPos);
   /* 🔴 예전에는 첫 줄이 `if(!curSess) return;`이었다. 화면 큐(queue·qPos)는 살아 있는데 curSess만
@@ -5530,7 +5545,7 @@ function syncSessQueue(){ // 진행 중 세션의 남은 큐를 저장 (새로�
     if(rest.length) console.warn('[세션] 남은 큐 '+rest.length+'장을 저장할 세션을 못 찾았습니다 — 저장 안 함 (curSess='+(curSess?curSess.id:'null')+', lastPlaySid='+lastPlaySid+')');
     return;
   }
-  tgt.q=rest.map(c=>c.id);
+  tgt.q=keepIds(tgt);            // 화면 잔량 + 오늘 못 낸 보류분 (F3-2)
   tgt.lastAt=Date.now(); tgt.day=todayKey();
   saveSessionsSoon();
 }
@@ -5978,7 +5993,7 @@ function finishSess(){         // 큐 소진 = 세션 화면으로 복귀 (성�
       curSess.scores=[sc, ...(curSess.scores||[])];
       if(curSess.scores.length>30) curSess.scores.length=30;
     }
-    curSess.q=queue.slice(qPos).map(c=>c.id);
+    curSess.q=keepIds(curSess);   // 화면 잔량 + 오늘 못 낸 보류분 (F3-2)
     /* 🔴 증가분만 더한다. 예전엔 `+sessionDone`이라 **한 번의 playSess에서 finishSess가 여러 번**
        불릴 때마다 러닝 총계가 통째로 다시 더해졌다(큐 소진 → 「신규 이어가기」로 더 풀고 또 소진,
        또는 다음 주제가 없어 extendWithNew가 곧바로 finishSess). 실측 2026-08-26: 실제 채점 약 2,700회인데

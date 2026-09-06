@@ -6518,10 +6518,14 @@ function intervalsPreview(c){ // 채점 버튼 위 다음 간격 미리보기
 }
 function rate(num){
   const c=cur(); if(!c||!revealed)return;
-  const s=st(c.id), tk=todayKey();
   const ts=Math.round(Date.now()/1000), now=new Date(ts*1000);
   // 🔴 채점 시각을 초로 끊는다 — FSRS fuzz 시드가 밀리초를 쓰기 때문에, 로그(초 단위)로 재계산할 때
   //    같은 결과가 나오려면 처음부터 같은 값을 넣어야 한다 (로그 = 정본 구조의 전제)
+  /* 🔴 **날짜도 그 `now`에서 뽑는다** (전층 감사 F1-9 · 2026-09-06). 예전엔 `todayKey()`가 먼저였는데,
+     `Math.round`가 시각을 올림하면 04:00 경계 직전 0.5초에 **둘이 갈린다** — 그 채점은 `rate()`에선
+     「오늘 두 번째」라 FSRS를 건너뛰고, `replayLog()`는 다음 날 첫 채점으로 반영한다(재현 확정 · 실데이터 0건).
+     로그가 정본이므로 로그가 쓰는 시각에 날짜를 맞춘다. */
+  const s=st(c.id), tk=dayKey(now);
   const hasItems=itemMarks.length>=2, anyX=itemMarks.some(Boolean);
   if(anyX && num!==1){ toast('빠뜨린 항목이 있어요 — 「다시」만 눌러요'); return; } // X 있으면 Again만
   if(hintUsed.size && num!==1){ toast('초성 힌트를 열었어요 — 「다시」만 눌러요'); return; } // 힌트 = 다시 (동하·메타 09-05)

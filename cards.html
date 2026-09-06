@@ -6873,7 +6873,12 @@ function presetDesc(p){
   if(p.bury)parts.push('방향 분산');
   return parts.join(' · ');
 }
-/* 🔴 「오늘 실제로 나올 수 있는 복습」 — 홈 「남은 복습」·「세션 · due N」 줄·통계 「due 남음」 타일이 **같은 수**를 말한다
+/* 🔴 「오늘 실제로 나올 수 있는 복습」 — 홈 「남은 복습」·「세션 · due N」 줄·통계 「due 남음」 타일·
+   복습 강도 슬라이더의 「오늘 풀 것 N장」이 **같은 수**를 말한다
+   ⚠ **정의는 이 하나뿐이다.** 09-06 새벽에 이 함수를 세우면서 옛 정의(「지금 밀린 것 — 강도 변경 전후 비교용」)를
+   안 지워서, **파일 뒤쪽의 옛 정의가 이것을 통째로 덮고 있었다**(함수 선언은 뒤엣것이 이긴다).
+   그래서 F5-1 처방이 배포된 채로 죽어 있었다 — 실측 라이브 317 vs 이 정의 296(21장 차이).
+   같은 이름을 또 만들지 마라.
    (전층 감사 F5-1: 같은 화면에서 0 vs 39가 동거했다). 정의 = 어느 세션 범위에든 드는 due 중, 큐에 든 것은 dropSettled 뒤 그대로,
    나머지는 큐를 씨앗으로 gateIn(오늘 채점한 것 · 격리로 내일 미뤄진 것 제외). 세션 큐와 같은 두 문. */
 function dueTodayCount(){
@@ -7604,12 +7609,6 @@ function renderRetUI(){
   const r=$('retRange'); if(r) r.value=pct;
   const v=$('retVal'); if(v) v.textContent=pct+'%';
   const l=$('retLoad'); if(l) l.textContent='오늘 풀 것 '+dueTodayCount().toLocaleString()+'장';
-}
-function dueTodayCount(){        // 「지금 밀린 것」 — 강도 변경 전후 비교용
-  const T=todayKey(); let n=0;
-  for(const c of DATA){ const s=state.cards[c.id]; if(!s||!s.fsrs||s.retired) continue;
-    if(effDueKey(dayKey(new Date(s.fsrs.due)), c.id) <= T) n++; }
-  return n;
 }
 /* 🔴 **강도를 바꾸면 오늘 큐도 지금 기준에 맞춘다** (동하 09-01 실기:
    「이미 큐에 들어간 거에 적용이 안 돼 — 비웠다 다시 채워야 함」).

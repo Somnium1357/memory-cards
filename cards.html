@@ -4463,7 +4463,14 @@ function mergeFbInto(remote, base){   // 피드백: u 최신 엔트리가 통째
        「원격에 있음」이라 영영 안 걷는다). 같은 u = 같은 판이므로 합칠 것이 없다.
        진짜 구식(`r.u < mine.u`)일 때만 합집합을 남긴다 — 오래된 기기가 **먼저 달아 둔** 주석이
        최신 판에 없을 수 있어서다(그건 제거가 아니라 미전파다). */
-    else if((r.u||'') < (mine.u||'')) mine.ann=[...new Set([...(mine.ann||[]), ...(r.ann||[])])];
+    /* 🔴 그 합집합도 **아직 한 번도 안 올라간 주석**에만 건다 (전층 감사 L0 목록 밖 · 2026-09-06).
+       마지막 성공 push 시각(`fbBase`)보다 **오래된** 엔트리는 이미 원격에 갔던 것이다 —
+       그 뒤 루틴이 소진해 지웠는데 낡은 사본이 그것을 도로 붙이면, `reapFb`는 「원격에 살아 있다」로 보고
+       **영영 못 걷는다**(같은 카드에 새 플래그가 달려 `u`가 갱신된 조합에서만 나던 마지막 구멍이다). */
+    else if((r.u||'') < (mine.u||'')){
+      const sync=(base!==undefined&&base!==null&&base!=='') ? base : fbBase();
+      if(!sync || (r.u||'') > sync) mine.ann=[...new Set([...(mine.ann||[]), ...(r.ann||[])])];
+    }
   }
 }
 function mergeLogInto(remote, wk){    // 로그: (카드|시각) 합집합

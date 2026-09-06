@@ -4530,7 +4530,12 @@ async function push(force){ // 배치 push — 옵티미스틱: 실패해도 로
   if(!cfg||!cfg.token){
     /* 토큰은 기기별이다. 조용히 리턴하면 저장 배지만 켜진 채로 영원히 남아
        「미저장분 있음」이 왜 뜨는지 알 길이 없다 (동하 아이패드 2026-08-21). */
-    if(hasPending()) showBanner('이 기기는 GitHub에 연결 안 됨 — 채점이 이 기기에만 쌓여요', true);
+    /* 🔴 문구가 원인을 오도했다 (전층 감사 X 목록 밖 · 2026-09-06) — 채점을 한 번도 안 한 새 기기에서도
+       「채점이 이 기기에만 쌓여요」가 떴다. `hasPending()`이 부팅의 이관·고아 정리로도 참이 되기 때문이다.
+       **쌓인 것이 채점일 때만** 그렇게 말한다. */
+    if(hasPending()) showBanner(dirtyLogs.size
+      ? '이 기기는 GitHub에 연결 안 됨 — 채점이 이 기기에만 쌓여요'
+      : '이 기기는 GitHub에 연결 안 됨 — 「연결」에서 토큰을 넣으면 올라가요', true);
     return;
   }
   if(pushing){ return; }

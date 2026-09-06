@@ -3491,6 +3491,9 @@ const K_REST='cards_rest_v1', K_CFG='cards_cfg_v1', K_STATE='cards_state_cache_v
       K_WKSYNC='cards_week_sync_v1';      // 지난 주 로그를 마지막으로 다시 받은 주차 — loadWeeks의 「주가 바뀌면 한 번 재수신」 기준선
 const OLD_CFG='review_cfg_v1';            // 관리앱(같은 오리진)의 토큰 재사용
 const DAY_CUT=4;                          // 하루 경계 = 새벽 4시
+/* 확인창 문턱 — 🔴 **연산자는 전부 `>=`로 통일한다** (전층 감사 F5-4 · 2026-09-06).
+   예전엔 큐 비우기 `n>20` · 단위 빼기 `n>50` · 일괄 끄기 `>=20`으로 제각각이라 경계에서 다르게 굴었다. */
+const BULK_ASK=20, UNIT_ASK=50;
 const EXAM_DAY='2026-11-07';              // due 최대 클램프
 const PUSH_EVERY_N=20, PUSH_EVERY_MS=5*60*1000, STALE_MS=10*60*1000;
 /* (옛 PAIR_TYPES — @방향 버튼 노출 대상이었다. 2026-08-22 방향 버튼 폐기로 함께 제거.
@@ -7148,7 +7151,7 @@ function renderSession(){
       saveSessionsFlush(); push();
       toast(`큐를 비웠어요 (${n}장) — 범위는 그대로예요`); renderSession();
     };
-    if(n>20) askConfirm('큐 비우기', `${n}장이 오늘 큐에서 빠집니다. 세션의 범위·누적 횟수·성적은 그대로예요.`, '비우기', doIt);
+    if(n>=BULK_ASK) askConfirm('큐 비우기', `${n}장이 오늘 큐에서 빠집니다. 세션의 범위·누적 횟수·성적은 그대로예요.`, '비우기', doIt);
     else doIt();
   };
   const br=$('ssRefill'); if(br)br.onclick=()=>{
@@ -7215,7 +7218,7 @@ function renderSession(){
        onName:(kk)=>playUnitFirst(sx,kk),
        onAction2:(kk)=>{
          const n=seen[kk]||0;
-         if(n>50) askConfirm('단위 빼기', `${rowLabel(kk)} ${n}장이 이 세션에서 빠집니다. [＋ 내용 추가]로 다시 넣을 수 있어요.`,
+         if(n>=UNIT_ASK) askConfirm('단위 빼기', `${rowLabel(kk)} ${n}장이 이 세션에서 빠집니다. [＋ 내용 추가]로 다시 넣을 수 있어요.`,
            '빼기', ()=>removeUnitFromSess(sx,kk));
          else removeUnitFromSess(sx,kk);
        }});
@@ -8334,8 +8337,13 @@ function bulkDo(kind){
     const lbl={retire:'끄기',restore:'다시 켜기',flag:'플래그',unflag:'플래그 해제',bury:'내일로'}[kind];
     picked.clear(); refreshList(); syncBulk(); toast(`${cs.length}장 ${lbl}`);
   };
-  if(kind==='retire'&&cs.length>=20)
+  if(kind==='retire'&&cs.length>=BULK_ASK)
     askConfirm('한꺼번에 끄기', `${cs.length}장을 끕니다. 목록에서 다시 켤 수 있고, 오늘 밤 루틴이 spec에도 반영해요.`, '끄기', run);
+  /* 🔴 일괄 플래그 해제에도 같은 규모 기준을 건다 (전층 감사 F5-4 · 2026-09-06).
+     끄기는 20장부터 물었는데 **플래그 해제는 규모와 무관하게 즉시**였다. 플래그·@주석은
+     사람이 남긴 **유일 사본의 노트**다(루틴이 수거하면 지운다) — 되돌리기 대상도 아니다. */
+  else if(kind==='unflag'&&cs.length>=BULK_ASK)
+    askConfirm('한꺼번에 플래그 해제', `${cs.length}장의 플래그와 @주석을 지웁니다. 되돌릴 수 없어요.`, '해제', run);
   else run();
 }
 $('qSearch').addEventListener('input',()=>renderList(true));
@@ -8927,8 +8935,16 @@ function renderFlags(){
       const el=cardRow(c, tail(c));
       el.onclick=()=>openCardSheet(c, renderFlags);
       const b=el.querySelector('button[data-cid]');
-      if(b)b.onclick=(ev)=>{ ev.stopPropagation(); const s=st(c.id); s.flag=null; s.ann=[]; s.ft=[]; touchFb(s);
-        cacheState(); renderFlags(); toast('해제했어요'); };
+      /* 🔴 남긴 노트가 있으면 한 번 묻는다 (전층 감사 F5-4 · 2026-09-06).
+         이 버튼 하나가 `flag`·`ann`(@주석 전체)·`ft`를 **한꺼번에** 비우는데 되돌리기 대상이 아니고,
+         토스트도 의도한 해제와 똑같은 「해제했어요」라 오터치가 조용히 지나간다(표적도 작다 — F5-5).
+         플래그만 달려 있으면 다시 달면 그만이라 묻지 않는다 — **잃을 것이 있을 때만** 묻는다. */
+      if(b)b.onclick=(ev)=>{ ev.stopPropagation();
+        const s=st(c.id);
+        const run=()=>{ s.flag=null; s.ann=[]; s.ft=[]; touchFb(s); cacheState(); renderFlags(); toast('해제했어요'); };
+        const notes=(s.ann||[]).length+(s.ft||[]).length;
+        if(notes) askConfirm('플래그 해제', `@주석·사유 ${notes}건도 함께 지웁니다. 되돌릴 수 없어요.`, '해제', run);
+        else run(); };
       d.appendChild(el);
     }
     body.appendChild(d);

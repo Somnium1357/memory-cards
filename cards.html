@@ -9285,6 +9285,17 @@ function fixScopeKeys(){
       n++;
     }
   }
+  /* 🔴 **`state.hoedok`·`state.read`도 같은 개명표로 옮긴다** (전층 감사 F2-5 = F6-4 · 2026-09-06).
+     예전엔 세션 `scope.mids`만 고쳐서, 회독 읽음 체크 8건 중 2건(`9.미술|평면 표현` 계열)이
+     08-30 분할 이후 **7일 넘게 고아**로 남아 있었다 — 읽었다는 표시가 화면에서 사라진 채로.
+     ⚠ 새 키에 이미 값이 있으면 손대지 않는다(사람이 다시 체크한 것일 수 있다). */
+  for(const [OLD,NEW] of SCOPE_FIX){
+    for(const st of [state.hoedok, state.read]){
+      if(!st || !(OLD in st)) continue;
+      if(NEW in st) continue;
+      st[NEW]=st[OLD]; delete st[OLD]; n++;
+    }
+  }
   if(n) saveSessions();
   return n;
 }

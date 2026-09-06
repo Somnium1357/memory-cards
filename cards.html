@@ -3599,6 +3599,12 @@ async function loadFsrsParams(){
   }catch(e){ /* 없거나 깨졌으면 표준값 그대로 */ }
 }
 const EXAM_END = new Date(EXAM_DAY+'T12:00:00+09:00');
+/* 🔴 시험일 클램프 — 시험 뒤로 잡힌 due는 시험 **전 창(D-7~D-1)**의 하루로 (동하 결정 2026-09-06 · 전층 감사 F1-2).
+   예전엔 시험 당일(11-07)로 모아서 클램프 = 「시험 전엔 안 본다」였다(시뮬: 4,980장이 11-07 하루에 · 직전 2주 하루 10~24장).
+   자리는 카드 ID 해시로 결정적 — 로그가 정본이라 어느 기기가 재계산해도 같다. 로그·등급은 무변, 파생 due만 바뀐다. */
+const EXAM_SPREAD=7;
+function examClampKey(id){ let h=0; const s=String(id||''); for(let i=0;i<s.length;i++) h=(h*33+s.charCodeAt(i))>>>0; return dkAdd(EXAM_DAY, -(1+h%EXAM_SPREAD)); }
+function clampDue(due, id){ const d=(due instanceof Date)?due:new Date(due); return d>EXAM_END ? new Date(examClampKey(id)+'T12:00:00+09:00') : d; }
 const RATING = {1:FSRS.Rating.Again, 2:FSRS.Rating.Hard, 3:FSRS.Rating.Good, 4:FSRS.Rating.Easy};
 
 function fsrsSerialize(c){
@@ -3722,7 +3728,7 @@ function effDueKey(k, id){               // 저장된 due → 화면에 쓰는 �
     }
   }
   /* 시험일 상한 — 휴식일 뒤로 밀기·백로그 슬롯이 시험 뒤로 보내지 않게(F1-1 곁가지). 클램프 창(D-7~D-1)은 동하 결정 뒤 F1-2에서 */
-  const EK=dayKey(EXAM_END); if(d>EK) d=EK;
+  if(d>dayKey(EXAM_END)) d=examClampKey(id);   // 시험 뒤로 못 간다 — 클램프 창(D-7~D-1)의 그 카드 자리로
   _effCache.set(ck, d); return d;
 }
 function weekKeyOf(d){            // ISO 주 (월요일 시작) — 하루 경계 4시를 먼저 적용한 날짜 기준
@@ -3799,8 +3805,7 @@ function setBase(s, fsrs, id){
 function forgetCard(c){ setBase(st(c.id), null, c.id); }
 function setDueDays(c,n){ // due를 n일 뒤로 (FSRS 상태가 있는 카드만) — 시험일 클램프 유지
   const s=st(c.id); if(!s.fsrs) return false;
-  let d=new Date(Date.now()+n*86400000);
-  if(d>EXAM_END) d=new Date(EXAM_END);
+  let d=clampDue(new Date(Date.now()+n*86400000), c.id);
   setBase(s, {...s.fsrs, due:d.toISOString()}, c.id);
   return true;
 }
@@ -4019,7 +4024,7 @@ function applyLogEntry(sx, e){        // rate()와 같은 규칙으로 한 건 �
     const fc = sx.fsrs?fsrsRevive(sx.fsrs):FSRS.createEmptyCard(new Date(ts));
     const r=engine.next(fc, new Date(ts), RATING[num]);
     const nc=r.card;
-    if(nc.due>EXAM_END) nc.due=EXAM_END;
+    nc.due=clampDue(nc.due, e[0]);           // 시험일 클램프(D-7~D-1 창)
     sx.fsrs=fsrsSerialize(nc); sx.d=day;
   }
   if(num===1) sx.miss=(sx.miss||0)+1;
@@ -6215,7 +6220,7 @@ function intervalsPreview(c){ // 채점 버튼 위 다음 간격 미리보기
     if(!firstToday){ $(lab).textContent='기록만'; continue; }   // 당일 재출이 없어져 사실상 안 뜨는 경로
     try{
       const r=engine.next(fc, now, RATING[num]);
-      let due=new Date(r.card.due); if(due>EXAM_END)due=EXAM_END;
+      let due=clampDue(r.card.due, c.id);
       const days=Math.max(0,Math.round((due-now)/86400000));
       $(lab).textContent = days<1?'<1일':(days<30?days+'일':(days/30.4).toFixed(1)+'개월');
     }catch(e){ $(lab).textContent=''; }
@@ -6240,7 +6245,7 @@ function rate(num){
     const fc = s.fsrs?fsrsRevive(s.fsrs):FSRS.createEmptyCard(now);
     const r=engine.next(fc, now, RATING[num]);
     const nc=r.card;
-    if(nc.due>EXAM_END) nc.due=EXAM_END;   // 시험일 클램프
+    nc.due=clampDue(nc.due, c.id);          // 시험일 클램프(D-7~D-1 창)
     s.fsrs=fsrsSerialize(nc); s.d=tk;
   }                                        // 재출 채점은 로그만 (이중 반영 방지)
   const extra = {};

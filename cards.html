@@ -876,6 +876,55 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
   border-radius:6px;padding:2px 6px;margin:0 1px;}
 #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
   background:var(--bg);z-index:50;font-size:14px;color:var(--mute);font-weight:600;}
+
+/* ══ 연문 모드 (발주 §1·§6) — 악센트가 다르다 · 카드 모드 화면은 이 블록의 영향을 받지 않는다(:root.ym 아래에만) ══ */
+:root.ym, :root.ym[data-theme="b"]{ --accent:#5FD3C1; --accent-ink:#0E1014; --accent-dim:rgba(95,211,193,.14); }
+:root.ym[data-theme="c"]{ --accent:#2E7D5B; --accent-ink:#FBF7EC; --accent-dim:rgba(46,125,91,.12); }
+.ym-pill{margin-left:auto;font-size:13px;font-weight:800;color:var(--accent);background:var(--accent-dim);border-radius:99px;padding:8px 14px;
+  min-height:40px;display:flex;align-items:center;gap:4px;letter-spacing:.02em;}
+.ym-tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.14em;color:var(--accent);background:var(--accent-dim);
+  border-radius:6px;padding:3px 7px;margin-left:8px;vertical-align:middle;}
+.ym-sec{font-size:12px;font-weight:800;letter-spacing:.12em;color:var(--faint);margin:18px 4px 8px;display:flex;align-items:baseline;gap:8px;}
+.ym-sec small{font-weight:600;letter-spacing:0;color:var(--mute);}
+.ym-list{display:flex;flex-direction:column;gap:6px;}
+.ym-row{display:flex;align-items:center;gap:10px;min-height:54px;padding:8px 12px 8px 14px;border-radius:14px;background:var(--surface);
+  box-shadow:var(--shadow-sm);cursor:pointer;-webkit-user-select:none;user-select:none;}
+.ym-row:active{background:var(--surface2);}
+.ym-row .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.ym-row .t b{font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ym-row .t small{font-size:12px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ym-row .n{font-size:12.5px;color:var(--mute);white-space:nowrap;}
+.ym-row.done{opacity:.55;}
+.ym-mark{flex:0 0 auto;min-width:44px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:800;background:var(--sunken);color:var(--faint);}
+.ym-mark.ok{background:var(--again-dim);color:var(--again);}     /* ✓ = 틀림 표시 (연문 규약) */
+.ym-mark.hard{background:var(--hard-dim);color:var(--hard);}     /* △ */
+.ym-mark.q{background:var(--surface2);color:var(--ink2);}         /* ? */
+.ym-mark.pass{background:var(--good-dim);color:var(--good);}      /* ○ */
+.ym-mark.closed{background:var(--easy-dim);color:var(--easy);}    /* ▽ */
+.ym-bar{flex:0 0 auto;width:64px;height:8px;border-radius:99px;background:var(--sunken);overflow:hidden;}
+.ym-bar i{display:block;height:100%;background:var(--accent);border-radius:99px;}
+.ym-pct{flex:0 0 auto;width:42px;text-align:right;font-size:13px;font-weight:800;color:var(--ink2);font-variant-numeric:tabular-nums;}
+.ym-pct.none{color:var(--faint);font-weight:600;}
+.ym-btns{display:flex;gap:6px;flex:0 0 auto;}
+.ym-btn{min-height:44px;padding:0 14px;border-radius:12px;font-size:13.5px;font-weight:800;background:var(--surface2);color:var(--ink);}
+.ym-btn.close{background:var(--easy-dim);color:var(--easy);}
+.ym-btn.again{background:var(--again-dim);color:var(--again);}
+.ym-btn.primary{background:var(--accent);color:var(--accent-ink);}
+.ym-btn.ghost{background:none;border:1.5px solid var(--line);color:var(--ink2);}
+.ym-btn[disabled]{opacity:.45;}
+.ym-prog{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--mute);padding:10px 4px 0;}
+.ym-prog b{color:var(--ink);font-variant-numeric:tabular-nums;}
+.ym-empty{padding:14px 4px;font-size:13.5px;color:var(--mute);}
+.ym-foot{display:flex;gap:8px;padding:14px 0 4px;position:sticky;bottom:0;background:var(--bg);}
+.ym-foot .ym-btn{flex:1;}
+details.ym-subj>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:48px;padding:6px 4px;font-size:15px;font-weight:800;}
+details.ym-subj>summary::-webkit-details-marker{display:none;}
+details.ym-subj>summary::before{content:'▸';font-size:12px;color:var(--faint);transition:transform .15s;}
+details.ym-subj[open]>summary::before{transform:rotate(90deg);}
+details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px;margin-left:auto;}
+.ym-warn{font-size:12.5px;color:var(--hard);padding:6px 4px;}
+
 </style>
 </head>
 <body>
@@ -923,6 +972,21 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
         <button class="gbtn" id="gEasy"><span class="gl">쉬움</span><span class="gi" id="giEasy"></span></button>
       </div>
       <div id="summary" style="display:none"></div>
+    </div>
+
+
+    <!-- ══ 연문 모드 (발주 2026-09-08) — 세 화면. 카드 모드 화면과 완전히 갈린다 ══ -->
+    <div class="scr" id="scrYmToday">
+      <div class="sub-head"><button class="tb-btn" id="ymBack" title="카드 모드로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title">오늘<span class="ym-tag">연문</span></div><button class="tb-btn" id="ymToUnits" title="단위 목록" style="margin-left:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div>
+      <div class="sub-body"><div class="sub-inner" id="ymTodayBody"></div></div>
+    </div>
+    <div class="scr" id="scrYmUnits">
+      <div class="sub-head"><button class="tb-btn" id="ymUnitsBack" title="오늘로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title">단위<span class="ym-tag">연문</span></div></div>
+      <div class="sub-body"><div class="sub-inner" id="ymUnitsBody"></div></div>
+    </div>
+    <div class="scr" id="scrYmUnit">
+      <div class="sub-head"><button class="tb-btn" id="ymUnitBack" title="뒤로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title" id="ymUnitTitle">단위</div></div>
+      <div class="sub-body"><div class="sub-inner" id="ymUnitBody"></div></div>
     </div>
 
     <!-- 홈 -->
@@ -10247,6 +10311,152 @@ function ymProgress(){
   for(const it of items){ const s=YM.st.items[it.id]; if(s&&(s.m||s.closed)) id++; if(s&&!s.closed&&s.due) re++; }
   return {units:ud, unitsN:units.length, items:id, itemsN:items.length, redo:re};
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════
+   연문 모드 — 화면 (발주 §1 모드 전환 · §3 화면 · §6 디자인)
+   🔴 모드 = 화면·큐·상태 완전 분리. 연문 화면은 scrYm* 셋뿐이고 카드 화면은 손대지 않는다(홈 머리의 「연문」 알약 하나만 예외).
+   🔴 어느 모드인지는 <html class="ym"> 하나로 정해진다 — 악센트 색·알약 라벨이 거기서 갈린다. 마지막 모드를 기억한다(K_MODE).
+   ═══════════════════════════════════════════════════════════════════════════════════════ */
+const K_MODE='cards_mode_v1', K_YM_OPEN='cards_ym_open_v1', YM_DEADLINE='2026-10-08';
+let ymMode = lsGet(K_MODE)==='ym';
+function ymSetMode(on){ ymMode=!!on; lsSet(K_MODE, ymMode?'ym':'card'); document.documentElement.classList.toggle('ym', ymMode); }
+/* 화면 전환은 앱의 go() 하나를 그대로 쓴다. 연문 화면으로 가면 모드가 켜지고, 카드 화면으로 가면 꺼진다 —
+   두 문을 따로 두면 「홈 버튼으로 나갔는데 다음 부팅에 연문이 뜨는」 식으로 갈린다. */
+{ const _go=go; go=function(id){ ymSetMode(/^scrYm/.test(id)); return _go(id); }; }
+const ymSubj=s=>String(s||'').split('.')[1]||s;
+/* 연문절 파일명의 꼬리 「(국어 연습문제)」「(수학 계산원리·표준알고리즘 연습)」는 QC 내부 표시라 화면에서 뗀다 — 이름 자체는 안 바꾼다(키 아님). */
+function ymName(n){ n=String(n||''); const i=n.lastIndexOf('('); if(i>0 && n.endsWith(')') && n.slice(i).indexOf('연습')>=0) n=n.slice(0,i).trim(); return n; }
+function ymLabel(u){                             // 1차 라벨 · 2차 라벨 (메타 09-08: 구간형은 문항 범위가 1차)
+  const nm=ymName(u.name);
+  return u.kind==='topic' ? [nm, ymSubj(u.subj)+' '+u.range] : [ymSubj(u.subj)+' '+u.range, nm];
+}
+function ymUnitById(id){ return ((YM.cat&&YM.cat.units)||[]).find(u=>u.id===id)||null; }
+function ymMarkChip(s){                          // 현재 상태 → 칩 (클래스, 글자)
+  if(!s) return ['', '·'];
+  if(s.closed) return ['closed','▽'];
+  if(s.m==='✓') return ['ok', s.n>1 ? '✓'+s.n : '✓'];
+  if(s.m==='△') return ['hard','△'];
+  if(s.m==='?') return ['q','?'];
+  if(s.m==='○') return ['pass','○'];
+  return ['','·'];
+}
+let _ymReady=null;                               // 단위별 준비도 — 연문 모드 **진입 때** 한 번 (렌더마다 아님)
+function ymReadyAll(){ const m={}; for(const u of (YM.cat&&YM.cat.units)||[]) m[u.id]=ymReadiness(u); _ymReady=m; return m; }
+function ymReady(u){ if(!_ymReady) ymReadyAll(); return _ymReady[u.id]||{n:0,ok:0,pct:null}; }
+let _ymRT=null; function ymRenderSoon(){ clearTimeout(_ymRT); _ymRT=setTimeout(ymRenderCurrent, 60); }
+function ymRenderCurrent(){
+  if($('scrYmToday').classList.contains('on')) ymRenderToday();
+  else if($('scrYmUnits').classList.contains('on')) ymRenderUnits();
+  else if($('scrYmUnit').classList.contains('on') && _ymUnit) ymRenderUnit(_ymUnit);
+}
+async function ymEnter(){
+  if(!YM.loaded || !YM.cat){ $('ymTodayBody').innerHTML='<div class="ym-empty">연문 카탈로그 여는 중…</div>'; go('scrYmToday'); await ymLoad(); }
+  else go('scrYmToday');
+  _ymReady=null; ymRenderToday();
+}
+function ymLeave(){ go('scrHome'); renderHome(); }
+/* ── 오늘 ────────────────────────────────────────────────────────────────────── */
+function ymRenderToday(){
+  const body=$('ymTodayBody'); if(!YM.cat){ body.innerHTML='<div class="ym-empty">카탈로그를 못 받았어요 — 네트워크를 확인하고 다시 열어요</div>'; return; }
+  let h='';
+  if(!YM.remoteOK) h+='<div class="ym-warn">'+(cfg&&cfg.token?'연문 기록을 GitHub에서 못 받았어요 — 이 기기 사본으로 보여요':'이 기기는 GitHub에 연결 안 됨 — 탭은 이 기기에만 쌓여요')+'</div>';
+  // 1) 오늘 다시 풀 문항
+  const due=ymDueToday();
+  h+='<div class="ym-sec">오늘 다시 풀 문항 <small>'+due.length+'</small></div>';
+  if(!due.length) h+='<div class="ym-empty">오늘 다시 풀 문항이 없어요</div>';
+  else h+='<div class="ym-list">'+due.map(({it,s})=>{ const u=ymUnitById(it.unit); const [l1]=u?ymLabel(u):[it.unit]; const [cls,txt]=ymMarkChip(s);
+    return '<div class="ym-row" data-ym-item="'+esc(it.id)+'">'
+      +'<span class="ym-mark '+cls+'">'+esc(txt)+'</span>'
+      +'<div class="t"><b>'+esc(ymSubj(it.subj))+' '+esc(it.no)+'번 · '+esc(l1)+'</b><small>문제 p'+it.q+' · 해설 p'+it.a+(s.due<todayKey()?' · '+dkDiff(todayKey(),s.due)+'일 지남':'')+'</small></div>'
+      +'<div class="ym-btns"><button class="ym-btn close" data-ym-close="'+esc(it.id)+'">▽ 닫힘</button><button class="ym-btn again" data-ym-x="'+esc(it.id)+'">또 틀림</button></div></div>'; }).join('')+'</div>';
+  // 2) 과목별 다음 단위 — 준비도 최고 (안 끝낸 것 중)
+  h+='<div class="ym-sec">과목별 다음 단위 <small>준비도 = 카드 기억률이 목표 이상인 비율</small></div>';
+  const bySubj={};
+  for(const u of YM.cat.units){ if(YM.st.units[u.id]&&YM.st.units[u.id].done) continue;
+    const r=ymReady(u); const cur=bySubj[u.subj];
+    if(!cur || (r.pct||0)>(ymReady(cur).pct||0)) bySubj[u.subj]=u; }
+  const nextUnits=YM.cat.subjects.map(sj=>bySubj[sj]).filter(Boolean);
+  if(!nextUnits.length) h+='<div class="ym-empty">남은 단위가 없어요 — 전부 풀었어요</div>';
+  else h+='<div class="ym-list">'+nextUnits.map(u=>{ const r=ymReady(u); const [l1,l2]=ymLabel(u);
+    return '<div class="ym-row" data-ym-unit="'+esc(u.id)+'"><div class="t"><b>'+esc(ymSubj(u.subj))+' · '+esc(l1)+'</b><small>'+esc(l2)+' · '+u.items.length+'문항'+(r.n?'':' · 카드 없음')+'</small></div>'
+      +'<div class="ym-bar"><i style="width:'+(r.pct||0)+'%"></i></div><span class="ym-pct'+(r.pct==null?' none':'')+'">'+(r.pct==null?'—':r.pct+'%')+'</span></div>'; }).join('')+'</div>';
+  // 3) 진도 한 줄
+  const p=ymProgress(); const daysLeft=Math.max(1, dkDiff(YM_DEADLINE, todayKey())); const need=Math.ceil((p.unitsN-p.units)/daysLeft);
+  h+='<div class="ym-prog"><span>단위 <b>'+p.units+'</b>/'+p.unitsN+'</span><span>문항 <b>'+p.items+'</b>/'+p.itemsN+'</span>'
+    +'<span>'+YM_DEADLINE.slice(5).replace('-','/')+'까지 하루 <b>'+need+'</b>단위</span><span>재풀이 잔여 <b>'+p.redo+'</b></span></div>';
+  body.innerHTML=h;
+  body.querySelectorAll('[data-ym-close]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); ymEvent(b.dataset.ymClose,'▽'); toast('닫았어요'); ymRenderToday(); });
+  body.querySelectorAll('[data-ym-x]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); ymEvent(b.dataset.ymX,'x'); toast('또 틀림 — 7일 뒤'); ymRenderToday(); });
+  body.querySelectorAll('[data-ym-unit]').forEach(r=>r.onclick=()=>ymOpenUnit(r.dataset.ymUnit));
+  body.querySelectorAll('[data-ym-item]').forEach(r=>r.onclick=()=>{ const it=YM.cat.items.find(x=>x.id===r.dataset.ymItem); if(it) ymOpenUnit(it.unit); });
+}
+/* ── 단위 목록 ───────────────────────────────────────────────────────────────── */
+function ymRenderUnits(){
+  const body=$('ymUnitsBody'); if(!YM.cat){ body.innerHTML=''; return; }
+  let open={}; try{ open=JSON.parse(lsGet(K_YM_OPEN)||'{}'); }catch(e){}
+  let h='';
+  for(const sj of YM.cat.subjects){
+    const us=YM.cat.units.filter(u=>u.subj===sj);
+    const done=u=>!!(YM.st.units[u.id]&&YM.st.units[u.id].done);
+    us.sort((a,b)=> (done(a)-done(b)) || ((ymReady(b).pct||0)-(ymReady(a).pct||0)) || (a.seq-b.seq));   // 준비도 높은 순 · 끝낸 것은 아래 · 동률 = 합본 순
+    const nd=us.filter(done).length;
+    h+='<details class="ym-subj" data-subj="'+esc(sj)+'"'+(open[sj]?' open':'')+'><summary>'+esc(ymSubj(sj))+'<small>'+nd+'/'+us.length+'단위</small></summary><div class="ym-list" style="margin-bottom:10px">'
+      +us.map(u=>{ const r=ymReady(u); const [l1,l2]=ymLabel(u); const d=done(u);
+        return '<div class="ym-row'+(d?' done':'')+'" data-ym-unit="'+esc(u.id)+'"><div class="t"><b>'+esc(l1)+'</b><small>'+esc(l2)+' · '+u.items.length+'문항'+(d?' · 풀었음 '+YM.st.units[u.id].done.slice(5):'')+'</small></div>'
+          +'<div class="ym-bar"><i style="width:'+(r.pct||0)+'%"></i></div><span class="ym-pct'+(r.pct==null?' none':'')+'">'+(r.pct==null?'—':r.pct+'%')+'</span></div>'; }).join('')
+      +'</div></details>';
+  }
+  body.innerHTML=h;
+  body.querySelectorAll('details.ym-subj').forEach(d=>d.ontoggle=()=>{ const o={}; body.querySelectorAll('details.ym-subj').forEach(x=>{ o[x.dataset.subj]=x.open; }); try{ lsSet(K_YM_OPEN, JSON.stringify(o)); }catch(e){} });
+  body.querySelectorAll('[data-ym-unit]').forEach(r=>r.onclick=()=>ymOpenUnit(r.dataset.ymUnit));
+}
+/* ── 단위 화면 ───────────────────────────────────────────────────────────────── */
+let _ymUnit=null, _ymFrom='scrYmToday';
+function ymOpenUnit(id){ _ymFrom=$('scrYmUnits').classList.contains('on')?'scrYmUnits':'scrYmToday'; _ymUnit=id; go('scrYmUnit'); ymRenderUnit(id); }
+function ymCycle(it){                             // 탭 순환: 없음→✓→△→?→없음 · 단위를 풀었으면 ○→✓→△→?→○
+  const s=YM.st.items[it.id]; const m=s?(s.closed?'▽':s.m):null;
+  const u=YM.st.units[it.unit]; const base = (u&&u.done) ? '○' : '-';
+  const next = m==null||m==='-'||m==='○'||m==='▽' ? '✓' : m==='✓' ? '△' : m==='△' ? '?' : base;
+  ymEvent(it.id, next);
+}
+function ymRenderUnit(id){
+  const u=ymUnitById(id); const body=$('ymUnitBody'); if(!u){ body.innerHTML=''; return; }
+  const [l1,l2]=ymLabel(u); const r=ymReady(u); const done=YM.st.units[u.id]&&YM.st.units[u.id].done;
+  $('ymUnitTitle').innerHTML=esc(ymSubj(u.subj))+' · '+esc(l1)+'<span class="ym-tag">연문</span>';
+  const its=ymItemsOf(u);
+  let h='<div class="ym-prog" style="padding-top:0"><span>'+esc(l2)+'</span><span>문항 <b>'+its.length+'</b></span><span>면 '+esc(u.pages||'')+'</span>'
+    +'<span>준비도 <b>'+(r.pct==null?'—':r.pct+'%')+'</b>'+(r.n?' <small>(카드 '+r.n+')</small>':'')+'</span>'+(done?'<span>풀었음 <b>'+done.slice(5)+'</b></span>':'')+'</div>';
+  h+='<div class="ym-sec">문항 <small>줄을 탭하면 없음 → ✓ → △ → ? 순으로 바뀌어요'+(done?' (풀었음 뒤에는 ○로 돌아와요)':'')+'</small></div>';
+  h+='<div class="ym-list">'+its.map(it=>{ const s=YM.st.items[it.id]; const [cls,txt]=ymMarkChip(s);
+    return '<div class="ym-row" data-ym-tap="'+esc(it.id)+'"><span class="ym-mark '+cls+'">'+esc(txt)+'</span><div class="t"><b>'+esc(it.no)+'번</b><small>문제 p'+it.q+' · 해설 p'+it.a+(s&&s.due&&!s.closed?' · 다시 '+s.due.slice(5).replace('-','/'):'')+'</small></div></div>'; }).join('')+'</div>';
+  h+='<div class="ym-foot"><button class="ym-btn ghost" id="ymUndoBtn">되돌리기</button><button class="ym-btn primary" id="ymDoneBtn"'+(done?' disabled':'')+'>'+(done?'풀었음 '+done.slice(5):'이 단위 풀었음')+'</button></div>';
+  body.innerHTML=h;
+  body.querySelectorAll('[data-ym-tap]').forEach(row=>row.onclick=()=>{ const it=its.find(x=>x.id===row.dataset.ymTap); if(it){ ymCycle(it); ymRenderUnit(id); } });
+  $('ymUndoBtn').onclick=()=>{ if(ymUndoLast()){ toast('되돌렸어요'); ymRenderUnit(id); } else toast('되돌릴 것이 없어요'); };
+  $('ymDoneBtn').onclick=()=>{
+    if(done) return;
+    /* 「이 단위 풀었음」 = 초회 완료 날짜 + 그때 표시 없는 문항 전부에 ○를 **실제 이벤트로** 저장(§3-2 · 해석 규칙이 아니라 데이터) */
+    ymEvent(u.id,'done');
+    let n=0; for(const it of its){ const s=YM.st.items[it.id]; if(!s||(!s.m&&!s.closed)){ ymEvent(it.id,'○'); n++; } }
+    toast('풀었음 — 표시 없던 '+n+'문항에 ○'); _ymReady=null; ymRenderUnit(id);
+  };
+}
+/* ── 배선 ───────────────────────────────────────────────────────────────────── */
+$('ymBack').onclick=ymLeave;
+$('ymToUnits').onclick=()=>{ go('scrYmUnits'); ymRenderUnits(); };
+$('ymUnitsBack').onclick=()=>{ go('scrYmToday'); ymRenderToday(); };
+$('ymUnitBack').onclick=()=>{ go(_ymFrom); if(_ymFrom==='scrYmUnits') ymRenderUnits(); else ymRenderToday(); };
+/* 홈 머리의 알약 하나 — 카드 모드 화면에 얹는 유일한 것 */
+{ const hh=document.querySelector('.home-head');
+  if(hh){ const b=document.createElement('button'); b.className='ym-pill'; b.id='ymPill'; b.textContent='연문 →'; b.title='연습문제 모드';
+    b.onclick=ymEnter; hh.insertBefore(b, hh.querySelector('.gear')); } }
+/* 마지막 모드가 연문이면 부팅 뒤 그리로. 앱 부팅이 끝난 뒤(로딩 가림막이 내려간 뒤)에만. */
+if(ymMode){ (function waitBoot(n){ const l=$('loading');
+  if(typeof DATA!=='undefined' && DATA && DATA.length && l && l.style.display==='none'){ ymEnter(); }
+  else if(n<200) setTimeout(()=>waitBoot(n+1), 250); })(0); }
+/* 카드 재로드(loadData) 뒤에는 노드→카드 인덱스를 버린다 — 새 카드가 준비도에 들어오게 */
+{ const _ld=loadData; loadData=async function(){ const r=await _ld.apply(this, arguments); YM.idx=null; _ymReady=null; return r; }; }
 
 </script>
 </body>

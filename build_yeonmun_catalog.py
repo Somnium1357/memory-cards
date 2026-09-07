@@ -8,7 +8,9 @@
 입력
   <IDX>\_연문인덱스_<과목>.tsv  ×12 : 열 6개 고정 = 문항 · 문제면 · 해설면 · 연문절 · 덮는노드 · 각론원문
       · 「문항」 = 인쇄된 문항 번호(2~3자리 · 앞 0) — 절마다 01로 되돌아가는 과목은 `(등장순번)`을 붙인다 (예 01 · 173 · 01(26))
-        🔴 합본 전체 순번이 아니다. 안정 id = 과목/문항키 (인쇄된 번호라 동하가 눈으로 대조할 수 있다)
+        🔴 합본 전체 순번이 아니고, `(등장순번)`은 검출이 바뀔 때마다 밀린다(09-08 밤 +127이 증거).
+        🔴 안정 id = **과목/p<문제면>/<인쇄번호>** (메타 09-08 정정 · 예 1.국어/p16/29) — 면과 인쇄 번호는 클린 합본이 고정이고 한 면 안에서 인쇄 번호는 고유하다.
+           등장 순번은 정렬용 속성(seq)으로만.
       · 문제면·해설면 = 합본 면 정수 · 파일 안 줄 순서 = 합본 등장 순
       · 덮는노드 = spec 노드 **이름**(대개 중주제) · ';' 구분
   <IDX>\_매핑표_3단계.tsv : 과목 · 출처 · 단원파일 · 단원명 · 면범위 · 덮는_spec_노드
@@ -20,7 +22,7 @@
 출력
   yeonmun-catalog.json  {v, built, subjects, units:[…], items:[…], stats}
     unit = {id:'과목/NN', subj, seq, name(단원파일-.txt), label(★ 뗀 단원명), star, pages, kind('topic'|'range'), range('첫~끝'), nodes[], items[ids]}
-    item = {id:'과목/문항키', subj, unit, no(문항키), seq(과목 내 등장 순), q(문제면), a(해설면), nodes[]}
+    item = {id:'과목/p<문제면>/<인쇄번호>', subj, unit, no(인쇄번호 · 괄호 뗀 것), key(인덱스 원문), seq(과목 내 등장 순), q(문제면), a(해설면), nodes[]}
     kind: 국·수·영·과 = 주제형('topic' · 이름이 1차 라벨) / 그 밖 = 구간형('range' · 문항 범위가 1차 라벨 — 메타 09-08)
 
 검증 출력(매번 찍는다 — 값이 흔들리면 인덱스가 바뀐 것이다)
@@ -43,6 +45,14 @@ def rows(path):
             continue
         out.append([c.strip() for c in ln.rstrip(chr(13)).split(TAB)])
     return out
+
+def printed(key):
+    """문항키 '01(26)' → '01' (인쇄된 번호만) · '173' → '173'"""
+    k = key.strip()
+    return k[:k.index("(")].strip() if "(" in k else k
+
+def item_id(subj, q, key):
+    return subj + "/p" + str(q) + "/" + printed(key)
 
 def num_part(key):
     """문항키 '01(26)' → 26 (괄호가 있으면 등장순번), '173' → 173. 구멍 검사용."""
@@ -105,8 +115,8 @@ def main():
                     nodes.append(x)
         units.append({"id": uid, "subj": subj, "seq": seq_by_subj[subj], "name": name, "label": label_clean,
                       "star": star, "pages": pages, "kind": "topic" if subj in TOPIC_SUBJ else "range",
-                      "range": its[0]["no"] + "~" + its[-1]["no"], "nodes": nodes,
-                      "items": [subj + "/" + it["no"] for it in its]})
+                      "range": printed(its[0]["no"]) + "~" + printed(its[-1]["no"]), "nodes": nodes,
+                      "items": [item_id(subj, it["q"], it["no"]) for it in its]})
         for it in its:
             it["unit"] = uid
 
@@ -116,12 +126,12 @@ def main():
     for subj, lst in items_by_subj.items():
         seen = set()
         for i, it in enumerate(lst):
-            iid = subj + "/" + it["no"]
+            iid = item_id(subj, it["q"], it["no"])
             if iid in seen:
                 dup.append(iid)
             seen.add(iid)
             assert it.get("unit"), ("단위 없는 문항", iid, it["unit_file"])
-            items.append({"id": iid, "subj": subj, "unit": it["unit"], "no": it["no"], "seq": i + 1,
+            items.append({"id": iid, "subj": subj, "unit": it["unit"], "no": printed(it["no"]), "key": it["no"], "seq": i + 1,
                           "q": it["q"], "a": it["a"], "nodes": it["nodes"]})
 
     # ── 검증: 노드 매칭 (QC 규칙 = 덮는노드 == 같은 과목 카드 node 경로의 어느 마디, 과목 마디 제외)

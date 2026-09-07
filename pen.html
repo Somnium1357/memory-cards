@@ -1,0 +1,60 @@
+<!doctype html><html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>펜슬 탭 진단</title>
+<style>
+ :root{color-scheme:light dark}
+ body{margin:0;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif;
+   background:#F3EDDE;color:#2A2722;padding:12px;}
+ h1{font-size:17px;margin:0 0 4px} p.d{margin:0 0 10px;color:#7a7268;font-size:13px}
+ .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+ .box{border-radius:16px;padding:18px 14px;min-height:120px;display:flex;flex-direction:column;
+   justify-content:center;align-items:center;background:#fff;box-shadow:0 1px 3px #0002;
+   -webkit-user-select:none;user-select:none;}
+ .box.hit{background:#CDE8CD}
+ .box b{font-size:15px} .box .n{font-size:34px;font-weight:800;letter-spacing:-1px}
+ .box small{color:#7a7268;font-size:12px;text-align:center}
+ #B,#D{cursor:pointer}
+ #log{margin-top:12px;background:#fff;border-radius:14px;padding:10px 12px;font-size:12.5px;
+   font-family:ui-monospace,Menlo,monospace;white-space:pre-wrap;min-height:120px}
+ #env{margin-top:10px;font-size:12px;color:#7a7268}
+ button{font:inherit;padding:10px 16px;border-radius:12px;border:1px solid #0002;background:#fff;margin-top:10px}
+</style></head><body>
+<h1>펜슬 탭 진단</h1>
+<p class="d">네 칸을 <b>애플펜슬로</b> 한 번씩 눌러 보세요. 숫자가 오르는 칸과 안 오르는 칸을 알려 주시면 됩니다.<br>
+그다음 <b>손가락으로</b> 똑같이 한 번씩 눌러 주세요.</p>
+<div class="grid">
+ <div class="box" id="A"><b>A</b><div class="n">0</div><small>아무 표시 없음<br>탭 신호만 받음</small></div>
+ <div class="box" id="B"><b>B</b><div class="n">0</div><small>누를 수 있는 표시<br>+ 탭 신호</small></div>
+ <div class="box" id="C"><b>C</b><div class="n">0</div><small>뗄 때 직접 받음</small></div>
+ <div class="box" id="D"><b>D</b><div class="n">0</div><small>지금 앱과 같은 방식</small></div>
+</div>
+<button id="clr">기록 지우기</button>
+<div id="log"></div>
+<div id="env"></div>
+<script>
+var L=[],logEl=document.getElementById('log');
+function log(s){ L.unshift(s); if(L.length>16)L.pop(); logEl.textContent=L.join('\n'); }
+function bump(id){ var b=document.getElementById(id), n=b.querySelector('.n');
+  n.textContent=(+n.textContent)+1; b.classList.add('hit'); setTimeout(function(){b.classList.remove('hit')},220); }
+function watch(id){ ['pointerdown','pointerup','click','touchstart','touchend'].forEach(function(t){
+  document.getElementById(id).addEventListener(t,function(e){
+    log(id+'  '+t+(e.pointerType?('  ['+e.pointerType+']'):'')); },{passive:true}); }); }
+['A','B','C','D'].forEach(watch);
+document.getElementById('A').addEventListener('click',function(){bump('A')});
+document.getElementById('B').addEventListener('click',function(){bump('B')});
+document.getElementById('C').addEventListener('pointerup',function(){bump('C')});
+var dUp=0,dDown=null;
+var D=document.getElementById('D');
+D.addEventListener('pointerdown',function(e){ dDown={x:e.clientX,y:e.clientY}; });
+D.addEventListener('pointerup',function(e){ var d=dDown; dDown=null; if(!d)return;
+  if(Math.abs(e.clientX-d.x)>10||Math.abs(e.clientY-d.y)>10)return; dUp=Date.now(); bump('D'); });
+D.addEventListener('click',function(){ if(Date.now()-dUp<600)return; bump('D'); });
+document.getElementById('clr').onclick=function(){ L=[]; logEl.textContent='';
+  document.querySelectorAll('.n').forEach(function(n){n.textContent='0'}); };
+document.getElementById('env').textContent=
+  'maxTouchPoints '+navigator.maxTouchPoints+
+  ' · hover:hover '+matchMedia('(hover:hover)').matches+
+  ' · pointer:fine '+matchMedia('(pointer:fine)').matches+
+  ' · PointerEvent '+(typeof PointerEvent!=='undefined')+
+  ' · '+navigator.userAgent;
+</script></body></html>

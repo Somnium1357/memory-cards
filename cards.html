@@ -6959,10 +6959,16 @@ let zoneTapOn = lsGet(K_ZTAP)!=='0';
    30px로 넉넉히 준다. 이만큼 움직여도 탭이 아닌 것과는 안 겹친다: 왼쪽 가장자리 뒤로가기와
    채점 스와이프는 최소 64px(SW_MIN)를 가고, 마당은 스크롤하지 않는다(스크롤은 카드 **안**). */
 const ZT_SLOP=30;
+/* 🔴 마당 탭이 **삼키면 안 되는 것들** (동하 09-07: 「배경탭 때문에 초성 기능이 고장났어」).
+   초성 칩은 `ev.stopPropagation()`으로 **click만** 막고 있었는데, 내 새 경로는 pointerup이라
+   그물을 그냥 통과했다 — 칩을 누르면 답면이 곧바로 열렸다.
+   🔴 남의 `stopPropagation`에 기대지 마라. **내가 먼저 비켜 준다** — 누를 수 있는 것은 전부.
+   (#card는 제 리스너 몫 · #gradeBar는 채점 · 그 밖 button/a/input은 칩·링크·태그 입력.) */
+const ZT_SKIP='#card,#gradeBar,button,a,input,textarea,select,label';
 let zoneUpAt=0, zDown=null;
 function zoneTap(ev){
   if(!zoneTapOn)return;
-  if(ev.target&&ev.target.closest&&(ev.target.closest('#card')||ev.target.closest('#gradeBar')))return;
+  if(ev.target&&ev.target.closest&&ev.target.closest(ZT_SKIP))return;
   if(Date.now()-lastSwipeAt<450)return;
   if(selecting())return;
   revealed?unreveal():reveal();
@@ -6974,7 +6980,7 @@ $('scrSolve').addEventListener('pointerup',e=>{
   const d=zDown; zDown=null;
   if(!d)return;
   if(Math.abs(e.clientX-d.x)>ZT_SLOP || Math.abs(e.clientY-d.y)>ZT_SLOP)return;
-  if(d.tgt&&d.tgt.closest&&(d.tgt.closest('#card')||d.tgt.closest('#gradeBar')))return;
+  if(d.tgt&&d.tgt.closest&&d.tgt.closest(ZT_SKIP))return;   // 눌린 자리가 조작 요소면 그쪽 몫
   zoneUpAt=Date.now();                                     // 뒤따르는 합성 click을 지울 표식
   zoneTap(e);
 });

@@ -135,6 +135,10 @@ input:focus,select:focus{border-color:var(--accent);}
    세로 방향 flex라 「카드를 탭하면 정답」 힌트는 카드 바로 아래에 붙어 같이 가운데로 온다(바닥 절대 위치는 토스트에 가렸다).
    넓은 표 카드는 .tblleft로 왼쪽부터(가로). 채점 바는 바닥(엄지 자리). */
 #cardZone{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 18px 10px;position:relative;}
+/* 🔴 마당 탭이 켜져 있을 때만 「눌러도 되는 자리」로 보이게 한다 — iOS는 그렇게 생기지 않은
+   요소에는 합성 click을 안 내는 판이 있고(그래서 #card에 원래 cursor:pointer가 있다),
+   **애플펜슬은 그 판정이 손가락보다 깐깐하다**(동하 09-07 실기: 펜슬만 마당이 무반응). */
+#cardZone.ztap{cursor:pointer;}
 #card{width:100%;max-width:660px;max-height:calc(100% - 30px);flex:0 1 auto;display:flex;flex-direction:column;
   background:var(--surface);border-radius:22px;box-shadow:var(--shadow);
   padding:26px 28px;overflow:hidden;cursor:pointer;position:relative;
@@ -6926,12 +6930,35 @@ $('card').addEventListener('click',()=>{ if(Date.now()-lastSwipeAt<450)return;
       열거 항목 표시·＋태그·회독본 링크가 전부 카드 안이라 그대로 산다.
    ⚠ 스와이프는 건드리지 않았다(동하 「뒤로가기와 충돌할 듯」 — 채점 제스처는 여전히 카드 위에서만). */
 let zoneTapOn = lsGet(K_ZTAP)!=='0';
-$('cardZone').addEventListener('click',(ev)=>{
+/* 🔴 펜슬 무반응 수리 (동하 09-07 실기 — 손가락·마우스는 되는데 애플펜슬만 마당이 안 먹었다).
+   원인은 **합성 click이 안 오는 것**이지 우리 조건이 아니다. 그래서 두 겹으로 받는다 —
+   ① CSS `.ztap`으로 cursor:pointer를 준다(위 CSS 절)  ② click을 기다리지 말고 pointerup에서 직접.
+   🔴 두 경로가 겹쳐 두 번 먹으면 공개→접힘으로 **제자리**가 된다. 막는 방향이 중요하다 —
+      **pointerup을 정본으로 두고, 뒤따르는 합성 click만 지운다**(반대로 하면 빠른 두 번 탭이
+      통째로 삼켜진다 — 처음엔 그렇게 짰다가 검증에서 잡혔다).
+   🔴 남겨 둔 click 경로를 지우지 마라: pointerup이 안 오는 판의 보험이다.
+   ⚠ 끌었으면 탭이 아니다 — 10px를 넘으면 무시한다. 왼쪽 가장자리 뒤로가기 스와이프와
+      마당 스크롤이 여기서 갈린다(그것들은 훨씬 크게 움직인다). */
+let zoneUpAt=0, zDown=null;
+function zoneTap(ev){
   if(!zoneTapOn)return;
   if(ev.target&&ev.target.closest&&ev.target.closest('#card'))return;
   if(Date.now()-lastSwipeAt<450)return;
   if(selecting())return;
-  revealed?unreveal():reveal(); });
+  revealed?unreveal():reveal();
+}
+$('cardZone').classList.toggle('ztap',zoneTapOn);   // 부팅 즉시 — renderHome을 안 거치고 세션으로 들어가는 길이 있다
+$('cardZone').addEventListener('pointerdown',e=>{ zDown={x:e.clientX,y:e.clientY,tgt:e.target}; });
+$('cardZone').addEventListener('pointercancel',()=>{ zDown=null; });
+$('cardZone').addEventListener('pointerup',e=>{
+  const d=zDown; zDown=null;
+  if(!d)return;
+  if(Math.abs(e.clientX-d.x)>10 || Math.abs(e.clientY-d.y)>10)return;
+  if(d.tgt&&d.tgt.closest&&d.tgt.closest('#card'))return;   // 카드 안에서 시작했으면 카드 몫
+  zoneUpAt=Date.now();                                     // 뒤따르는 합성 click을 지울 표식
+  zoneTap(e);
+});
+$('cardZone').addEventListener('click',ev=>{ if(Date.now()-zoneUpAt<600)return; zoneTap(ev); });
 $('gAgain').onclick=()=>rate(1); $('gHard').onclick=()=>rate(2);
 $('gGood').onclick=()=>rate(3); $('gEasy').onclick=()=>rate(4);
 $('btnUndo').onclick=doUndo;
@@ -7306,6 +7333,7 @@ function renderHome(){
   $('thB').classList.toggle('on',theme==='b');
   $('thC').classList.toggle('on',theme==='c');
   $('tglZtap').classList.toggle('on',zoneTapOn);
+  $('cardZone').classList.toggle('ztap',zoneTapOn);
   $('tglSwipe').classList.toggle('on',swipeOn);
   $('tglKbd').classList.toggle('on',kbdOn);
   renderToday();
@@ -8098,7 +8126,8 @@ $('btnBackup').onclick=()=>{   // 파일이 나뉜 뒤로는 한 덩어리로 �
 };
 $('btnSetup').onclick=openSetup;
 $('tglSwipe').onclick=()=>{ swipeOn=!swipeOn; lsSet(K_SWIPE,swipeOn?'1':'0'); $('tglSwipe').classList.toggle('on',swipeOn); };
-$('tglZtap').onclick=()=>{ zoneTapOn=!zoneTapOn; lsSet(K_ZTAP,zoneTapOn?'1':'0'); $('tglZtap').classList.toggle('on',zoneTapOn); };
+$('tglZtap').onclick=()=>{ zoneTapOn=!zoneTapOn; lsSet(K_ZTAP,zoneTapOn?'1':'0');
+  $('tglZtap').classList.toggle('on',zoneTapOn); $('cardZone').classList.toggle('ztap',zoneTapOn); };
 $('tglKbd').onclick=()=>{ kbdOn=!kbdOn; lsSet(K_KBD,kbdOn?'1':'0'); $('tglKbd').classList.toggle('on',kbdOn); };
 
 /* ═══════════════ 키보드 (PC 전용 보조 — 터치 흐름은 그대로) ═══════════════ */

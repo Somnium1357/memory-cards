@@ -3531,7 +3531,7 @@ function logPath(wk){ return `cards-log-${wk}.json`; }
    ⚠ Pages 상대경로로 읽는 것(`cards-data.json`·`cards-plan.json`·`hoedok/`)은 **그대로 main**이다. */
 const DATA_BRANCH_DEF='data';
 function dataBr(){ const b=(cfg&&cfg.dataBranch!==undefined)?cfg.dataBranch:DATA_BRANCH_DEF; return b||''; }
-function onData(path){ return path===MARKS_PATH || path===SESS_PATH || /^cards-log-/.test(path); }
+function onData(path){ return path===MARKS_PATH || path===SESS_PATH || path===YM_PATH || /^cards-log-/.test(path); }   // YM_PATH = 연문 상태(data 브랜치)
 function refFor(path){ return onData(path) ? dataBr() : ''; }   // '' = 기본 브랜치(main)
 /* 🔴 1단계 = **양쪽 읽기 · 한쪽 쓰기.** 옛 앱을 물고 있는 기기가 `main`에 쓴 것을 여기서 건진다.
    🔴 **2단계(2026-09-05 동하 확인 · 「다 보여」)** — 09-02 이후 `main`에 앱 커밋 0 · 아이패드·PC 모두 새 앱으로 `data`에 저장하는 것을
@@ -10065,6 +10065,189 @@ function fixScopeKeys(){
   loadFsrsParams();          // 맞춤값 파일은 있으면 읽고 없으면 조용히 넘어간다 (설정에서만 쓴다)
   loadIndexes();    // 회독본·판 색인 갱신은 뒤에서 — 실패하면 재시도하고, 올 때마다 보고 있던 화면을 고친다(F6-1)
 })();
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════
+   연문 모드 — 자료층 (메타 발주 2026-09-08 §5 · 동하 「카드에서 개판쳐서 고생했어 — 자료구조를 처음부터 제대로」)
+   스키마·병합 규칙 정본 = skills\card\카드앱_구조안내.md §7.5 (이 블록과 같이 고친다)
+
+   🔴 원칙 다섯 (카드앱 전층 감사 59건의 재발 방지)
+   ① 이벤트 로그가 정본, 상태는 파생 — 탭 하나 = 이벤트 하나. 되돌리기도 이벤트(`m:'u'` + `ref`).
+      due·closed·n·done은 전부 `ymDerive()`가 로그에서 다시 계산한다(파일에 파생값을 쓰지 않는다).
+   ② 스키마 `v` · 키는 카탈로그 키 그대로(문항 `과목/문항키` · 단위 `과목/NN`) · 임시 키 없음.
+   ③ PUT = 읽기 → 병합 → 쓰기. 비행 중 들어온 이벤트는 사라지지 않는다(F0-1): 올린 것은 **올리기 시작할 때 잡은 id 집합**만 지운다.
+      409는 이벤트 **id 합집합**으로 병합하고 재시도(ghPut의 onConflict).
+   ④ localStorage는 **미전송 이벤트 큐**로만 쓴다(전량 재기록 금지 · F0-5). 전체 로그 사본은 IDB(오프라인 읽기용).
+   ⑤ 카드 모드의 파일(로그·마크·세션·피드백)은 **한 줄도 안 건드린다.** 연문 상태는 `cards-yeonmun.json` 하나(data 브랜치).
+
+   파일 = { v:1, ev:[ {i, t, k, m, ref?} … ] }   (t 오름차순 · i = 이벤트 id(난수) · k = 문항/단위 키)
+     m ∈ '○' | '✓' | '△' | '?'   표시 (문항)             — 탭 순환: 없음→✓→△→?→없음 · ○ 뒤에는 ○→✓→△→?→○
+         '▽'                      닫힘 (문항 · 재풀이 통과)  — closed=true · due 없음 · n 유지 · 로그에 남긴다(메타가 「몇 번에 닫혔나」를 센다)
+         'x'                      또 틀림 (문항 · 재풀이)   — n+1 · due = 그날+7 · △였으면 ✓로
+         'done'                   이 단위 풀었음 (단위)     — 초회 완료 날짜 · 그때 미표시 문항 전부에 '○'를 **실제 이벤트로** 같이 남긴다
+         '-'                      표시 지움 (문항 · 순환의 「없음」)
+         'u'                      되돌리기 — ref = 무르는 이벤트 id (파생에서 그 이벤트를 없는 셈 친다)
+   사다리(§4): ✓ → due = 표시일 + 3일 · △ → +7일 · ? · ○ · - → due 없음 · x → +7일 · ▽ → 없음. due가 목요일이면 금요일로. 하루 경계 04시(dayKey).
+   ═══════════════════════════════════════════════════════════════════════════════════════ */
+const YM_PATH='cards-yeonmun.json', YM_CAT_PATH='yeonmun-catalog.json', YM_V=1;
+const K_YM_PENDING='cards_ym_pending_v1';      // localStorage — 미전송 이벤트 큐만
+const K_YM_LOG='cards_ym_log_v1';              // IDB — 원격 로그 사본(오프라인 읽기용) · 정본 아님
+const K_YM_CAT='cards_ym_cat_v1';              // IDB — 카탈로그 사본
+const YM_MARKS=['✓','△','?','○','-','▽','x'];
+let YM={cat:null, ev:[], ids:new Set(), pending:[], loaded:false, catOK:false, remoteOK:false,
+        st:{units:{}, items:{}}, idx:null, pushing:false, lastErr:null};
+/* 🔴 이벤트 id는 **같은 밀리초 안에서도 순서가 보존**돼야 한다 — 탭 순환(✓→△→?)은 한 ms 안에 두 번 올 수 있고,
+   정렬이 (t, i)라서 i가 난수면 순서가 뒤집혀 파생값이 틀린다(검증에서 잡았다: ✓ 뒤 △가 ✓로 남았다).
+   시각36 + 부팅 내 일련번호(4자리) + 난수 꼬리 — 같은 기기에서는 단조, 다른 기기와는 겹치지 않는다. */
+let _ymSeq=0;
+function ymNonce(){ _ymSeq=(_ymSeq+1)%1679616; return Date.now().toString(36)+_ymSeq.toString(36).padStart(4,'0')+Math.random().toString(36).slice(2,6); }
+function ymSavePending(){ try{ lsSet(K_YM_PENDING, JSON.stringify(YM.pending)); }catch(e){} }
+function ymLoadPending(){ try{ const a=JSON.parse(lsGet(K_YM_PENDING)||'[]'); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+/* 이벤트를 한 벌에 넣는다 — id로 중복을 걸러 **합집합**이 된다(병합·재시도·재부팅 어느 길로 와도 같은 결과). */
+function ymAdd(list){
+  let n=0;
+  for(const e of list||[]){
+    if(!e||!e.i||!e.t||!e.k||!e.m) continue;
+    if(YM.ids.has(e.i)) continue;
+    YM.ids.add(e.i); YM.ev.push(e); n++;
+  }
+  if(n) YM.ev.sort((a,b)=> a.t<b.t?-1: a.t>b.t?1: (a.i<b.i?-1:1));
+  return n;
+}
+function ymFile(){ return {v:YM_V, ev:YM.ev}; }
+/* ── 사다리 날짜 ─────────────────────────────────────────────────────────────── */
+function ymDueFrom(t, days){                   // t = ISO · 표시한 날(04시 경계) + days · 목요일이면 금요일로
+  let k=dkAdd(dayKey(new Date(t)), days);
+  const wd=new Date(k+'T12:00:00').getDay();  // 0=일 … 4=목
+  if(wd===4) k=dkAdd(k,1);
+  return k;
+}
+/* ── 파생 상태 ───────────────────────────────────────────────────────────────
+   items[key] = {m, due, closed, n, at}   (m = 현재 표시 · at = 마지막 이벤트 시각)
+   units[key] = {done}                    (초회 완료 날짜 'YYYY-MM-DD')
+   🔴 여기 말고는 아무도 due·n·closed를 정하지 않는다. */
+function ymDerive(){
+  const undone=new Set();
+  for(const e of YM.ev) if(e.m==='u' && e.ref) undone.add(e.ref);
+  const items={}, units={};
+  for(const e of YM.ev){
+    if(e.m==='u' || undone.has(e.i)) continue;
+    if(e.m==='done'){ const u=units[e.k]||(units[e.k]={done:null}); if(!u.done) u.done=dayKey(new Date(e.t)); continue; }
+    const it=items[e.k]||(items[e.k]={m:null, due:null, closed:false, n:0, at:null});
+    it.at=e.t;
+    if(e.m==='▽'){ it.closed=true; it.due=null; continue; }
+    if(e.m==='x'){ it.closed=false; it.n++; it.m='✓'; it.due=ymDueFrom(e.t,7); continue; }
+    it.closed=false;
+    it.m = e.m==='-' ? null : e.m;
+    if(e.m==='✓'){ it.due=ymDueFrom(e.t,3); it.n++; }
+    else if(e.m==='△'){ it.due=ymDueFrom(e.t,7); }
+    else it.due=null;                          // ? · ○ · -
+  }
+  YM.st={items:items, units:units};
+  return YM.st;
+}
+/* ── 이벤트 남기기 (화면이 부르는 유일한 창구) ─────────────────────────────────── */
+function ymEvent(k, m, extra){
+  if(!k || YM_MARKS.indexOf(m)<0 && m!=='done' && m!=='u') return null;
+  const e=Object.assign({i:ymNonce(), t:new Date().toISOString(), k:k, m:m}, extra||{});
+  ymAdd([e]); YM.pending.push(e); ymSavePending();
+  ymDerive(); ymPushSoon();
+  return e;
+}
+function ymUndoLast(){                          // 마지막 (안 무른) 이벤트 하나를 무른다 — 이것도 이벤트
+  const undone=new Set(YM.ev.filter(e=>e.m==='u'&&e.ref).map(e=>e.ref));
+  for(let i=YM.ev.length-1;i>=0;i--){ const e=YM.ev[i];
+    if(e.m==='u' || undone.has(e.i)) continue;
+    return ymEvent(e.k,'u',{ref:e.i});
+  }
+  return null;
+}
+/* ── 원격 ─────────────────────────────────────────────────────────────────── */
+async function ymLoadCatalog(){
+  try{
+    const r=await fetch(YM_CAT_PATH+'?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok) throw 0;
+    const j=await r.json(); YM.cat=j; YM.catOK=true;
+    try{ await idbSet(K_YM_CAT, JSON.stringify(j)); }catch(e){}
+  }catch(e){
+    try{ const c=await idbGet(K_YM_CAT); if(c){ YM.cat=JSON.parse(c); } }catch(e2){}
+    YM.catOK=false;
+  }
+  YM.idx=null;
+  return !!YM.cat;
+}
+async function ymLoadRemote(){                 // 원격 로그 → 합집합 · 실패하면 IDB 사본
+  let got=null;
+  try{ got=await ghGet(YM_PATH); YM.remoteOK=true; }
+  catch(e){ YM.remoteOK=false; YM.lastErr=e; }
+  if(!got){ try{ const c=await idbGet(K_YM_LOG); if(c) got=JSON.parse(c); }catch(e){} }
+  if(got && Array.isArray(got.ev)) ymAdd(got.ev);
+  ymAdd(ymLoadPending()); YM.pending=ymLoadPending();
+  ymDerive();
+  try{ await idbSet(K_YM_LOG, JSON.stringify(ymFile())); }catch(e){}
+  YM.loaded=true;
+}
+async function ymLoad(){ await Promise.all([ymLoadCatalog(), ymLoadRemote()]); }
+let _ymPushT=null;
+function ymPushSoon(){ clearTimeout(_ymPushT); _ymPushT=setTimeout(ymPush, 900); }   // 탭을 묶어 한 번에
+async function ymPush(){
+  if(!YM.pending.length || YM.pushing) return;
+  if(!cfg||!cfg.token){ return; }              // 토큰 없는 기기 — 큐에만 쌓인다(카드 모드와 같은 규칙)
+  YM.pushing=true;
+  const inFlight=new Set(YM.pending.map(e=>e.i));   // 🔴 F0-1: 비행 중 들어온 것은 이 집합 밖 → 안 지운다
+  try{
+    await ghPut(YM_PATH, ymFile, (remote)=>{ if(remote&&Array.isArray(remote.ev)) ymAdd(remote.ev); ymDerive(); });
+    YM.pending=YM.pending.filter(e=>!inFlight.has(e.i)); ymSavePending();
+    try{ await idbSet(K_YM_LOG, JSON.stringify(ymFile())); }catch(e){}
+    YM.lastErr=null;
+  }catch(e){ YM.lastErr=e; }
+  finally{ YM.pushing=false; if(YM.pending.length) ymPushSoon(); if(typeof ymRenderSoon==='function') ymRenderSoon(); }
+}
+/* ── 준비도 (§4) — 단위 카드 = 덮는 노드가 같은 과목 카드 node 경로의 어느 마디와 정확 일치(과목 마디 제외) ──
+   🔴 노드→카드 인덱스는 **한 번만** 만든다(카드 재로드 때 `YM.idx=null`로 비운다). 렌더마다 10,600장을 훑지 않는다(홈 17초 전례). */
+function ymBuildIdx(){
+  const idx={};                                 // '과목|마디' → [card…]
+  for(const c of DATA){
+    const parts=String(c.node||'').split('/').filter(Boolean);
+    const seen=new Set();
+    for(let i=1;i<parts.length;i++){ const key=c.subj+'|'+parts[i].trim(); if(seen.has(key))continue; seen.add(key);
+      (idx[key]||(idx[key]=[])).push(c); }
+  }
+  YM.idx=idx; YM.idxN=DATA.length;
+  return idx;
+}
+function ymUnitCards(u){
+  if(!YM.idx || YM.idxN!==DATA.length) ymBuildIdx();
+  const set=new Set(), out=[];
+  for(const nd of u.nodes||[]){ for(const c of (YM.idx[u.subj+'|'+nd]||[])){ if(!set.has(c.id)){ set.add(c.id); out.push(c); } } }
+  return out;
+}
+function ymReadiness(u){                        // {n, ok, pct} · 끄기·은퇴 제외 · 안 본 카드 R=0 · 카드 0이면 pct=null
+  const ret=(typeof fsrsCfg!=='undefined'&&fsrsCfg&&fsrsCfg.ret)||0.9;   // 목표 기억률 = 설정(fsrsCfg.ret · 감사 A1)
+  let n=0, ok=0;
+  for(const c of ymUnitCards(u)){
+    if(retired(c)||offed(c)) continue;
+    n++;
+    const s=state.cards[c.id]; const r=s&&s.fsrs?retrievability(s.fsrs):null;
+    if(r!=null && r>=ret) ok++;
+  }
+  return {n:n, ok:ok, pct: n?Math.round(ok/n*100):null};
+}
+/* ── 조회 (화면용) ──────────────────────────────────────────────────────────── */
+function ymItemsOf(u){ const m={}; for(const it of (YM.cat&&YM.cat.items)||[]) m[it.id]=it; return (u.items||[]).map(id=>m[id]).filter(Boolean); }
+function ymDueToday(){                          // due ≤ 오늘 · 안 닫힌 것
+  const tk=todayKey(), out=[]; const byId={}; for(const it of (YM.cat&&YM.cat.items)||[]) byId[it.id]=it;
+  for(const k in YM.st.items){ const s=YM.st.items[k]; if(s.closed||!s.due||s.due>tk) continue; const it=byId[k]; if(it) out.push({it:it, s:s}); }
+  out.sort((a,b)=> a.s.due<b.s.due?-1: a.s.due>b.s.due?1: (a.it.subj+a.it.seq).localeCompare(b.it.subj+b.it.seq));
+  return out;
+}
+function ymProgress(){
+  const units=(YM.cat&&YM.cat.units)||[], items=(YM.cat&&YM.cat.items)||[];
+  let ud=0, id=0, re=0;
+  for(const u of units) if(YM.st.units[u.id]&&YM.st.units[u.id].done) ud++;
+  for(const it of items){ const s=YM.st.items[it.id]; if(s&&(s.m||s.closed)) id++; if(s&&!s.closed&&s.due) re++; }
+  return {units:ud, unitsN:units.length, items:id, itemsN:items.length, redo:re};
+}
+
 </script>
 </body>
 </html>

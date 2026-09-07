@@ -9144,6 +9144,25 @@ function realOverdue(){
     const d=dkDiff(T, effDueKey(dayKey(new Date(s.fsrs.due)), c.id)); if(d>oldest) oldest=d; }
   return {n:live.length, days:oldest};
 }
+/* 🔴 「읽고 왔는지」를 신호 게이트에 넣는다 (동하 09-07: 「총창 읽고 오세요가 읽고 와도 안 없어져」).
+   그 신호는 **유지율만** 보고 떴다 — 읽음 여부를 안 봤으니 읽고 와도 안 사라졌고,
+   총창처럼 유지율이 구조적으로 낮은 과목에는 **영구히** 붙어 있었다. 문구는 「읽고 오세요」인데
+   읽는 것으로는 절대 안 없어지니 문구가 거짓말을 한 셈이다.
+   이제 신호는 **읽을 것이 남아 있을 때만** 뜬다 —
+     ① 그 과목 읽을거리가 0곳이면 안 띄운다(데려갈 데가 없는 신호는 소음이다. 총창이 지금 0곳이다)
+     ② 다 읽어 쿨다운(READ_COOL=5일) 중이면 안 띄운다 → 읽고 오면 **사라진다**
+   ⚠ 비용: `readRepair`+`readPrep`은 카드 전수를 훑는다. **worst가 정해진 뒤에만** 부른다
+      (신호가 뜰 만한 때만 한 번). 실측은 커밋 본문에. */
+function sigReadPending(sj){
+  try{
+    /* 🔴 이름 꼴이 두 가지다 — SUBJECTS는 `13.총창`, 읽을거리 항목(`secMeta`)은 번호를 뗀 `총창`.
+       처음엔 그냥 `===`로 비교했다가 **모든 과목에서 신호가 꺼졌다**(검증에서 잡았다). 둘 다 받는다. */
+    const short=sj.split('.').pop();
+    const es=[...readRepair(), ...readPrep()].filter(e=>e.subj===sj||e.subj===short);
+    if(!es.length) return false;
+    return es.some(e=>!readCooling(e.key));
+  }catch(e){ return true; }      // 못 재면 예전대로 띄운다 — 신호를 조용히 죽이지 않는다
+}
 function statSignals(){
   const out=[];
   const sr=retentionSplit(0,(e,c)=>c.subj), all=retentionSplit(0,()=>'x')['x'];
@@ -9151,7 +9170,7 @@ function statSignals(){
   if(allP!=null){ let worst=null;
     for(const sj of SUBJECTS){ const o=sr[sj]; if(!o||o.n<30) continue;
       const p=o.pass/o.n*100; if(allP-p>=SIG_SUBJ_GAP && (!worst||p<worst.p)) worst={sj:sj,p:p}; }
-    if(worst) out.push({t:'<b>'+esc(worst.sj.split('.')[1]||worst.sj)+'</b> 유지율 '+Math.round(worst.p)+'% (전체 '+Math.round(allP)+'%) — 읽고 오세요', go:'scrRead'});
+    if(worst && sigReadPending(worst.sj)) out.push({t:'<b>'+esc(worst.sj.split('.')[1]||worst.sj)+'</b> 유지율 '+Math.round(worst.p)+'% (전체 '+Math.round(allP)+'%) — 읽고 오세요', go:'scrRead'});
   }
   const od=realOverdue();
   if(od.n>0) out.push({t:'<b>'+od.n.toLocaleString()+'장</b>이 '+od.days+'일째 밀렸어요 — 지금 풀기', go:'scrHome'});

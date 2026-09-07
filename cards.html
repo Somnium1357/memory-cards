@@ -138,7 +138,7 @@ input:focus,select:focus{border-color:var(--accent);}
 /* 🔴 마당 탭이 켜져 있을 때만 「눌러도 되는 자리」로 보이게 한다 — iOS는 그렇게 생기지 않은
    요소에는 합성 click을 안 내는 판이 있고(그래서 #card에 원래 cursor:pointer가 있다),
    **애플펜슬은 그 판정이 손가락보다 깐깐하다**(동하 09-07 실기: 펜슬만 마당이 무반응). */
-#cardZone.ztap{cursor:pointer;}
+#scrSolve.ztap{cursor:pointer;}
 #card{width:100%;max-width:660px;max-height:calc(100% - 30px);flex:0 1 auto;display:flex;flex-direction:column;
   background:var(--surface);border-radius:22px;box-shadow:var(--shadow);
   padding:26px 28px;overflow:hidden;cursor:pointer;position:relative;
@@ -6923,6 +6923,11 @@ $('card').addEventListener('click',()=>{ if(Date.now()-lastSwipeAt<450)return;
   if(selecting())return;
   revealed?unreveal():reveal(); });   // 뒷면에서 다시 탭하면 앞면 (동하 요청 2026-08-21)
 /* 🔴 카드 마당 전체 탭 (동하 09-07 요청 · 설정 토글 · 기본 켜짐)
+   🔴 「마당」 = **풀이 화면 전체**(#scrSolve)다. 처음엔 #cardZone에만 걸었는데 동하가
+      「마당이 전체가 아님 · 아래쪽이 빠졌다」고 잡아냈다 — 답면 전에는 채점 바가
+      `visibility:hidden`이라 눈에는 빈 띠인데(가로 64px·세로 64px) 그 자리는 #cardZone 밖이라
+      먹지 않았다. 화면 맨 아래 = 팔이 제일 편한 자리인데 거기가 죽어 있었던 것이다.
+      지금은 #scrSolve에서 받고 **카드와 채점 버튼만** 비켜 준다.
    카드 상자는 문면 길이만큼만 커서, 가로 아이패드(1180×820)에서 마당의 **12%**밖에 안 먹었다
    (카드 660×152 / 마당 1180×678 — 실측). 받침대에 올려 두고 팔을 뻗은 채 그 띠를 조준해야 했다.
    이제 카드 둘레 여백 아무 데나 짚어도 같은 동작이다. 겉모습은 안 바꾼다 — **닿는 자리만** 넓혔다.
@@ -6939,26 +6944,31 @@ let zoneTapOn = lsGet(K_ZTAP)!=='0';
    🔴 남겨 둔 click 경로를 지우지 마라: pointerup이 안 오는 판의 보험이다.
    ⚠ 끌었으면 탭이 아니다 — 10px를 넘으면 무시한다. 왼쪽 가장자리 뒤로가기 스와이프와
       마당 스크롤이 여기서 갈린다(그것들은 훨씬 크게 움직인다). */
+/* 🔴 탭으로 인정하는 흔들림 (동하 09-07 실기: 「정성스럽게 눌러야 됨 · 대충 누르면 안 됨」).
+   10px는 받침대에 올려 두고 팔 뻗어 짚는 손에는 너무 빡빡했다 — 펜슬은 더하다.
+   30px로 넉넉히 준다. 이만큼 움직여도 탭이 아닌 것과는 안 겹친다: 왼쪽 가장자리 뒤로가기와
+   채점 스와이프는 최소 64px(SW_MIN)를 가고, 마당은 스크롤하지 않는다(스크롤은 카드 **안**). */
+const ZT_SLOP=30;
 let zoneUpAt=0, zDown=null;
 function zoneTap(ev){
   if(!zoneTapOn)return;
-  if(ev.target&&ev.target.closest&&ev.target.closest('#card'))return;
+  if(ev.target&&ev.target.closest&&(ev.target.closest('#card')||ev.target.closest('#gradeBar')))return;
   if(Date.now()-lastSwipeAt<450)return;
   if(selecting())return;
   revealed?unreveal():reveal();
 }
-$('cardZone').classList.toggle('ztap',zoneTapOn);   // 부팅 즉시 — renderHome을 안 거치고 세션으로 들어가는 길이 있다
-$('cardZone').addEventListener('pointerdown',e=>{ zDown={x:e.clientX,y:e.clientY,tgt:e.target}; });
-$('cardZone').addEventListener('pointercancel',()=>{ zDown=null; });
-$('cardZone').addEventListener('pointerup',e=>{
+$('scrSolve').classList.toggle('ztap',zoneTapOn);   // 부팅 즉시 — renderHome을 안 거치고 세션으로 들어가는 길이 있다
+$('scrSolve').addEventListener('pointerdown',e=>{ zDown={x:e.clientX,y:e.clientY,tgt:e.target}; });
+$('scrSolve').addEventListener('pointercancel',()=>{ zDown=null; });
+$('scrSolve').addEventListener('pointerup',e=>{
   const d=zDown; zDown=null;
   if(!d)return;
-  if(Math.abs(e.clientX-d.x)>10 || Math.abs(e.clientY-d.y)>10)return;
-  if(d.tgt&&d.tgt.closest&&d.tgt.closest('#card'))return;   // 카드 안에서 시작했으면 카드 몫
+  if(Math.abs(e.clientX-d.x)>ZT_SLOP || Math.abs(e.clientY-d.y)>ZT_SLOP)return;
+  if(d.tgt&&d.tgt.closest&&(d.tgt.closest('#card')||d.tgt.closest('#gradeBar')))return;
   zoneUpAt=Date.now();                                     // 뒤따르는 합성 click을 지울 표식
   zoneTap(e);
 });
-$('cardZone').addEventListener('click',ev=>{ if(Date.now()-zoneUpAt<600)return; zoneTap(ev); });
+$('scrSolve').addEventListener('click',ev=>{ if(Date.now()-zoneUpAt<600)return; zoneTap(ev); });
 $('gAgain').onclick=()=>rate(1); $('gHard').onclick=()=>rate(2);
 $('gGood').onclick=()=>rate(3); $('gEasy').onclick=()=>rate(4);
 $('btnUndo').onclick=doUndo;
@@ -7333,7 +7343,7 @@ function renderHome(){
   $('thB').classList.toggle('on',theme==='b');
   $('thC').classList.toggle('on',theme==='c');
   $('tglZtap').classList.toggle('on',zoneTapOn);
-  $('cardZone').classList.toggle('ztap',zoneTapOn);
+  $('scrSolve').classList.toggle('ztap',zoneTapOn);
   $('tglSwipe').classList.toggle('on',swipeOn);
   $('tglKbd').classList.toggle('on',kbdOn);
   renderToday();
@@ -8127,7 +8137,7 @@ $('btnBackup').onclick=()=>{   // 파일이 나뉜 뒤로는 한 덩어리로 �
 $('btnSetup').onclick=openSetup;
 $('tglSwipe').onclick=()=>{ swipeOn=!swipeOn; lsSet(K_SWIPE,swipeOn?'1':'0'); $('tglSwipe').classList.toggle('on',swipeOn); };
 $('tglZtap').onclick=()=>{ zoneTapOn=!zoneTapOn; lsSet(K_ZTAP,zoneTapOn?'1':'0');
-  $('tglZtap').classList.toggle('on',zoneTapOn); $('cardZone').classList.toggle('ztap',zoneTapOn); };
+  $('tglZtap').classList.toggle('on',zoneTapOn); $('scrSolve').classList.toggle('ztap',zoneTapOn); };
 $('tglKbd').onclick=()=>{ kbdOn=!kbdOn; lsSet(K_KBD,kbdOn?'1':'0'); $('tglKbd').classList.toggle('on',kbdOn); };
 
 /* ═══════════════ 키보드 (PC 전용 보조 — 터치 흐름은 그대로) ═══════════════ */

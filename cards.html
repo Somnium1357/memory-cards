@@ -71,7 +71,7 @@ input:focus,select:focus{border-color:var(--accent);}
    🔴 터치 기기에서는 아예 켜지 않는다: 아이패드에서 카드 텍스트가 선택되면 스와이프 채점·탭
    되접기와 충돌한다. 그래서 마우스가 있는 환경으로 못 박는다. JS 쪽에 같은 조건의 가드가 있다(SEL_OK). */
 @media (hover:hover) and (pointer:fine){
-  #cScope,#cFront,#cBack,#cItems,#cNote,
+  #cScope,#cFront,#cBack,#cItems,#cNote,#cSrc,
   .cs-scope,.cs-front,.cs-back,.cs-items,.cs-note{-webkit-user-select:text;user-select:text;}
   /* 기본 파랑은 두 테마 다 어긋난다. --accent-dim은 알파 .11~.13이라 선택 표시로는 안 보인다 */
   ::selection{background:var(--accent);color:var(--accent-ink);}
@@ -251,6 +251,13 @@ input:focus,select:focus{border-color:var(--accent);}
 #cHoedok.on{display:block;}
 #cHoedok a{font-size:12px;font-weight:700;color:var(--accent);text-decoration:none;white-space:nowrap;
   display:inline-block;padding:10px 12px;margin:-10px -12px;}   /* 표적 키우기 (F5-5) — 뒷면 아래라 이웃이 없어 넉넉히 준다 */
+/* 출처 (`src`) — 생성기 v2.38이 `note`에서 떼어낸 필드(1,912장). 동하 09-07 「작게 보여 줘」.
+   보충(#cNote)은 상자로 눈에 띄게, 출처는 **한 줄 회색 잔글씨**로. 카드가 이상해 보일 때
+   어디서 온 말인지 짚어 플래그를 제대로 걸기 위한 것이지 읽으라고 두는 줄이 아니다.
+   ⚠ 길다(예: `사례풀/7.체육/건강 체력.txt p25`). 줄바꿈을 허용하되 넘치면 잘라 가로 스크롤을 막는다. */
+#cSrc{display:none;margin-top:8px;font-size:11.5px;line-height:1.45;color:var(--faint);
+  overflow-wrap:anywhere;}
+#cSrc.on{display:block;}
 #cMeta{display:none;margin-top:14px;align-items:center;gap:8px;}
 #cMeta.on{display:flex;}
 .typ-tag{font-size:12px;font-weight:700;color:var(--mute);background:var(--surface2);
@@ -896,6 +903,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
               <div id="cItems"></div>
               <div id="cNote"></div>
               <div id="cHoedok"></div>
+              <div id="cSrc"></div>
               <div id="cMeta"><span class="typ-tag" id="cTyp"></span><span class="typ-tag" id="cDir">역방향</span><span id="cHint"></span><span id="cTags"></span><button class="typ-tag" id="cTagAdd">＋태그</button><input id="cTagInput" type="text" maxlength="16" placeholder="태그"><span id="annMarks"></span></div>
             </div>
           </div>
@@ -6613,6 +6621,8 @@ function reveal(){
   }
   const n=$('cNote'); n.classList.toggle('on',!!c.note);
   if(c.note)n.innerHTML='<b>보충</b>'+esc(c.note);
+  const sc=$('cSrc'); sc.classList.toggle('on',!!c.src);      // 출처 (v2.38 `src`)
+  sc.textContent = c.src ? '출처 '+c.src : '';
   $('cTyp').textContent=c.typ;
   $('cDir').style.display = isRev(c)?'inline-block':'none';   // 전방은 기본이라 무표시
   renderTable(c,true);
@@ -6911,7 +6921,7 @@ let lastSwipeAt=0;
 /* PC에서 카드 문면이 선택 가능해졌다(F3, 2026-08-24). CSS와 **같은 조건**으로 켜고 끈다 —
    여기가 어긋나면 터치 기기에서 없는 선택을 있다고 치고 탭·스와이프를 막아 버린다. */
 const SEL_OK = !!(window.matchMedia && window.matchMedia('(hover:hover) and (pointer:fine)').matches);
-const SEL_ZONE='#cScope,#cFront,#cBack,#cItems,#cNote';
+const SEL_ZONE='#cScope,#cFront,#cBack,#cItems,#cNote,#cSrc';
 function selecting(){   // 지금 글자가 실제로 잡혀 있나 = 방금 동작이 「선택」이었나
   if(!SEL_OK)return false;
   const s=window.getSelection&&window.getSelection();

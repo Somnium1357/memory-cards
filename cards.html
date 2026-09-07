@@ -286,6 +286,11 @@ input:focus,select:focus{border-color:var(--accent);}
 .gbtn .gl{font-size:15px;letter-spacing:-.2px;}
 .gbtn .gi{font-size:12px;font-weight:600;opacity:.75;}
 #gradeBar.noiv .gi{display:none;}   /* 간격 미리보기 숨김(기본) — 설정 토글 · 동하 09-05 */
+/* 재출 화면 = 버튼 둘(다시 / 통과). 08-21에 당일 재출을 폐지한 이유가 「일정에 안 실리는데
+   버튼이 넷」이었다 — 그때 기각된 대안을 이번에 채택했다(동하 09-07). 간격 미리보기도 없앤다:
+   재출 채점은 일정을 안 건드리므로 보여 줄 간격이 없다. */
+#gradeBar.re #gHard,#gradeBar.re #gEasy{display:none;}
+#gradeBar.re .gi{display:none;}
 /* .dim = 시각적으로만 죽인다 — pointer-events를 막으면 탭이 rate()에 못 가 안내 토스트가 안 뜬다 (감사 U2) */
 .gbtn.dim{opacity:.22;}
 #gAgain{background:var(--again-dim);color:var(--again);}
@@ -1455,6 +1460,9 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
     <div id="restList" style="margin-top:8px"></div>
     <p class="desc" style="margin-top:6px">직접 추가한 날은 <b>뒤 3일</b>에 나눠 갚아요 — 갑자기 쉬는 건 과거로 못 보내니까요.</p>
   </div>
+  <div class="tgl-row"><span>「다시」 카드 그날 다시 내기</span><div class="tgl" id="tglReshow"></div></div>
+  <div class="kbd-note">「다시」를 누른 카드가 <b>같은 세션에서 한 번 더</b> 나와요(남은 큐의 절반 · 최소 15장 · 최대 60장 뒤).
+    재출 화면은 <b>다시 / 통과</b> 둘만이고, 복습 일정과 「오늘 채점」 수는 <b>안 바뀌어요</b> — 첫 채점만 셉니다.</div>
   <div class="tgl-row"><span>카드 마당 전체 탭 (여백을 짚어도 공개)</span><div class="tgl" id="tglZtap"></div></div>
   <div class="tgl-row"><span>스와이프 채점 (좌 알맞음 · 우 다시)</span><div class="tgl" id="tglSwipe"></div></div>
   <div class="tgl-row"><span>키보드 단축키 (PC)</span><div class="tgl" id="tglKbd"></div></div>
@@ -3535,6 +3543,7 @@ const K_REST='cards_rest_v1', K_CFG='cards_cfg_v1', K_DIRTY='cards_dirty_v1', K_
       K_THEME='cards_theme_v1', K_PRESETS='cards_presets_v1',
       K_DATA='cards_data_cache_v1', K_SWIPE='cards_swipe_v1', K_INTAKE='cards_intake_v1',
       K_ZTAP='cards_zonetap_v1',          // 카드 마당 전체 탭 (기본 켜짐 · 09-07 동하 요청)
+      K_RESHOW='cards_reshow_v1',         // 「다시」 당일 재출 (기본 꺼짐 — 동하가 09-11 인강 끝나고 켠다)
       K_RESUME='cards_resume_v1',        // 회독본 갔다 돌아올 자리 (세션·카드·답면 · 오늘 것만)
       K_KBD='cards_kbd_v1', K_SESS='cards_sessions_v1',
       K_SCHED='cards_sched_v2', K_MARKS='cards_marks_v1', K_FB='cards_fb_v1', K_PLAN='cards_plan_v1', K_LOGP='cards_log_v2_',
@@ -3871,8 +3880,30 @@ let dirty=false, pushing=false, ratedSincePush=0, lastPushAt=Date.now();
 let hintUsed=new Set();   // 이 카드에서 초성 힌트를 연 항목 번호 — showCard가 비운다
 let queue=[], qPos=0, revealed=false, itemMarks=[], curPreset=null, phase='review',
     sessionDone=0, doneCredited=0, undoSnap=null, newServed=0, shownAt=0, pausedMs=0, pauseAt=0, pzTimer=null;
-let sess={r:[0,0,0,0,0], ms:0, streak:0, best:0};   // 이번 세션 성적 (요약 화면용)
-function sessReset(){ sess={r:[0,0,0,0,0], ms:0, streak:0, best:0}; }
+let sess={r:[0,0,0,0,0], ms:0, streak:0, best:0, re:0};   // 이번 세션 성적 (요약 화면용) · re = 재출 채점 수(성적에서 뺀다)
+function sessReset(){ sess={r:[0,0,0,0,0], ms:0, streak:0, best:0, re:0}; }
+/* ═══ 「다시」 당일 재출 (동하 결정 2026-09-07 · 메타 발주 · 판정대기 09-07 줄) ═══════════════
+   08-21에 폐지했던 것을 규칙을 고쳐 되살린다. 그때 문제는 「재출 채점이 일정에 안 실리는데
+   버튼이 넷」이었고, 이번엔 재출 화면을 **다시 / 통과 둘**로 좁혀 그 문제를 없앴다.
+   🔴 간격은 **고정 60장이 아니다**(동하 09-07: 「큰 복습 큐는 60장 넘지만 신규는 한 단위가
+      60장이 안 되니 걸린다」). 남은 큐의 절반, 최소 15장, 최대 60장 —
+      큰 큐에서는 60장(약 10분), 40장짜리 신규 단위에서는 20장 뒤에 돌아온다.
+      최소 15장은 동하가 「10장 뒤는 되뇌기라 기각」한 선을 지키려는 바닥값이다.
+      남은 큐가 그보다 짧으면 자연히 **세션 끝**에 붙는다(안키식 몰아 보기).
+   🔴 재출은 **일정을 건드리지 않는다** — FSRS는 그날 첫 채점만(기존 `firstToday` 분기 그대로),
+      `miss`도 첫 채점에서만 올린다(거머리 판정이 조용히 갈리면 안 된다).
+      로그에는 남긴다: `ex.re` = 몇 번째 재출. 메타가 재출 통과율을 이 값으로 잰다.
+   🔴 재출 항목은 **저장 큐에 안 넣는다**(`keepIds`) — 그날 그 세션 안에서만 사는 것이다. */
+const RE_GAP_MAX=60, RE_GAP_MIN=15;
+let reshowOn = lsGet(K_RESHOW)==='1';
+function reInsert(c, tries){
+  const rest=queue.length-qPos-1;
+  const gap = tries>=2 ? Infinity : Math.min(RE_GAP_MAX, Math.max(RE_GAP_MIN, Math.floor(rest/2)));
+  const at = Math.min(queue.length, qPos+1+gap);
+  const rc = Object.create(c); rc._re=tries;   // 같은 카드의 **다른 자리** — 원본 카드 객체는 안 건드린다
+  queue.splice(at, 0, rc);
+  return rc;
+}
 const MS_CAP=120000;                       // 응답 시간 상한 (자리 비움이 통계를 오염시키지 않게 — Anki도 상한을 둔다)
 
 function st(id){ // 카드 상태 엔트리 (없으면 생성)
@@ -4210,6 +4241,11 @@ function sessFile(){ return {v:1, sessions:[...sessions, ...sessTomb], hoedok:st
   rest:{dow:rest.dow, days:rest.days}, restAt:rest.at||0,
   ivShow:{v:ivShow.v}, ivShowAt:ivShow.at||0}; }
 function applyLogEntry(sx, e){        // rate()와 같은 규칙으로 한 건 반영 (그날 첫 채점만 FSRS)
+  /* 🔴 재출(`ex.re`)은 **상태에 아무것도 안 남긴다** — 일정도, 틀림 횟수도.
+     `rate()`가 그렇게 하므로 로그 재계산도 똑같아야 한다(로그가 정본 = 두 경로가 같은 값을 내야 한다).
+     이 줄이 없으면 재출 「다시」가 `miss`를 한 번 더 올려, 앱을 새로 켜는 순간 거머리 판정이
+     조용히 갈린다(같은 카드 같은 날인데 miss 2). 등가성 검사에서 잡은 것이다. */
+  if(e[3] && e[3].re) return;
   const ts=logTs(e), num=e[2], day=dayKey(new Date(ts));
   if(sx.d!==day){
     const fc = sx.fsrs?fsrsRevive(sx.fsrs):FSRS.createEmptyCard(new Date(ts));
@@ -4240,7 +4276,7 @@ function replayLog(){
     for(const e of byCard[id]){
       // base.at = 조작 시점의 마지막 채점 시각. 그 이하는 안 얹는다(같은 초 모호성이 없다).
       if(Math.round(logTs(e)/1000)<=from){
-        if(num1(e)) sx.miss=(sx.miss||0)+1;      // 누적 틀림(누수 판정)은 전 기간을 센다
+        if(num1(e) && !(e[3]&&e[3].re)) sx.miss=(sx.miss||0)+1;      // 누적 틀림(누수 판정)은 전 기간을 센다 · 재출 제외
         continue;
       }
       applyLogEntry(sx,e); n++;
@@ -5716,7 +5752,7 @@ let lastPlaySid=null;   // 마지막으로 playSess한 세션 id — curSess가 
    ⚠ 「오늘 정리된 것」은 종전대로 뺀다(`dropSettled`와 같은 술어) · 죽은 ID는 이 참에 턴다.
    ⚠ 사람이 뺀 것(`qDel` 툼스톤)은 애초에 `q`에 없으므로 되살아나지 않는다. */
 function keepIds(tgt){
-  const rest=queue.slice(qPos).map(c=>c.id);
+  const rest=queue.slice(qPos).filter(c=>!c._re).map(c=>c.id);   // 🔴 재출은 그 세션 안에서만 산다 — 저장하면 다음 부팅에 진짜 카드로 되살아난다
   const seen=new Set(queue.map(c=>c.id));               // 화면에 올랐던 것(푼 것 포함)은 위에서 다뤘다
   const held=dropSettled((tgt&&tgt.q||[]).filter(id=>!seen.has(id)).map(id=>BYID[id]).filter(Boolean)).map(c=>c.id);
   return [...rest, ...held];
@@ -6584,7 +6620,10 @@ function showCard(){
   let skipped=0;
   const picked = !!(curSess && curSess.pick);
   // 오늘 푼 것 + 오늘 미룬 것을 건너뛴다 (미룸은 09-01 감사 🟡6 — dropSettled의 같은 처방)
-  while(!picked && queue[qPos] && (settledToday(queue[qPos])||buried(queue[qPos])||retired(queue[qPos])||offed(queue[qPos]))){ qPos++; skipped++; }   // 끈 카드도(F3-8 — dropSettled와 같은 술어)
+  /* 🔴 재출(`_re`)은 이 관문에서 면제다 — 정의상 **오늘 푼 카드**를 일부러 다시 내미는 것이라
+     `settledToday`에 그대로 걸린다(08-21 폐지 때 이 줄이 남았다). 나머지 술어는 그대로 적용한다:
+     재출 대기 중에 그 카드를 끄거나 내일로 미루면 안 나오는 게 맞다. */
+  while(!picked && queue[qPos] && ((!queue[qPos]._re && settledToday(queue[qPos]))||buried(queue[qPos])||retired(queue[qPos])||offed(queue[qPos]))){ qPos++; skipped++; }   // 끈 카드도(F3-8 — dropSettled와 같은 술어)
   if(skipped) syncSessQueue();
   const c=cur();
   if(!c){ showSummaryOrNew(); return; }
@@ -6592,7 +6631,10 @@ function showCard(){
   hintUsed=new Set(); renderHintBox(c);
   $('summary').style.display='none'; $('cardZone').style.display='flex';
   $('revealHint').style.display='block';
-  $('revealHint').textContent = c.typ==='도식' ? '다 그렸으면 탭하세요' : '카드를 탭하면 정답';
+  const reN=c._re||0;
+  $('gradeBar').classList.toggle('re', reN>0);
+  { const gl=$('gGood').querySelector('.gl'); if(gl) gl.textContent = reN>0?'통과':'알맞음'; }
+  $('revealHint').textContent = (c.typ==='도식' ? '다 그렸으면 탭하세요' : '카드를 탭하면 정답') + (reN>0?' · 재출':'');
   const m=c.front.match(/^〔([^〕]*)〕\s*(.*)$/s);
   $('cScope').textContent=scopeOf(c); $('cFront').textContent=m?m[2]:c.front;
   $('cBackWrap').classList.remove('on');
@@ -6712,16 +6754,17 @@ function rate(num){
      「오늘 두 번째」라 FSRS를 건너뛰고, `replayLog()`는 다음 날 첫 채점으로 반영한다(재현 확정 · 실데이터 0건).
      로그가 정본이므로 로그가 쓰는 시각에 날짜를 맞춘다. */
   const s=st(c.id), tk=dayKey(now);
+  const reN=c._re||0;                       // 0 = 그날 첫 대면 · 1,2 = 재출 회차
   const hasItems=itemMarks.length>=2, anyX=itemMarks.some(Boolean);
   if(anyX && num!==1){ toast('빠뜨린 항목이 있어요 — 「다시」만 눌러요'); return; } // X 있으면 Again만
   if(hintUsed.size && num!==1){ toast('초성 힌트를 열었어요 — 「다시」만 눌러요'); return; } // 힌트 = 다시 (동하·메타 09-05)
   const firstToday = s.d!==tk;
-  undoSnap={ k:'rate', run:undoRun, id:c.id, card:c, entry:null,
+  undoSnap={ k:'rate', run:undoRun, id:c.id, card:c, entry:null, reIns:null,
              prev:JSON.parse(JSON.stringify(state.cards[c.id]||null)),
              sid:curSess?curSess.id:null, phase, sessionDone, newServed,
-             sess:{r:sess.r.slice(), ms:sess.ms, streak:sess.streak, best:sess.best} };
+             sess:{r:sess.r.slice(), ms:sess.ms, streak:sess.streak, best:sess.best, re:sess.re} };
   undoPush(undoSnap);
-  if(firstToday){                          // 그날 첫 채점만 FSRS 반영
+  if(firstToday && !reN){                  // 그날 첫 채점만 FSRS 반영 (재출은 절대 아니다)
     const fc = s.fsrs?fsrsRevive(s.fsrs):FSRS.createEmptyCard(now);
     const r=engine.next(fc, now, RATING[num]);
     const nc=r.card;
@@ -6743,14 +6786,21 @@ function rate(num){
   /* 초성 힌트를 연 항목 번호(0부터 · 단답은 [0]). 메타가 「힌트로 꺼낸 다시」 vs 「그냥 다시」의 다음 통과율을 가른다(09-05).
      필드 이름 `h` — 메타 분석기에 통보함. 힌트를 안 열었으면 필드 자체가 없다(옛 로그와 같은 꼴). */
   if(hintUsed.size) extra.h=[...hintUsed].sort((a,b)=>a-b);
+  if(reN) extra.re=reN;                    // 재출 표시 — 메타 측정용(재출 통과율)
   const hasExtra=Object.keys(extra).length>0;
   const entry=hasExtra?[c.id,ts,num,extra]:[c.id,ts,num];
   pushLog(entry); undoSnap.entry=entry;      // 되돌릴 때 이 항목만 지목해 뺀다
-  sess.r[num]++; sess.ms+=extra.ms||0;
-  if(num===1) sess.streak=0; else { sess.streak++; if(sess.streak>sess.best)sess.best=sess.streak; }
-  if(num===1) s.miss=(s.miss||0)+1;        // 당일 재출 없음 (동하 확정 2026-08-21) — 다음 복습일에 만난다
+  if(reN){ sess.re++; }                    // 🔴 재출은 성적·미룸 카운터에 안 들어간다 (「오늘 채점」 정의 = 첫 채점만)
+  else{
+    sess.r[num]++; sess.ms+=extra.ms||0;
+    if(num===1) sess.streak=0; else { sess.streak++; if(sess.streak>sess.best)sess.best=sess.streak; }
+    if(num===1) s.miss=(s.miss||0)+1;      // miss는 그날 첫 채점에서만 — 재출로 거머리 판정이 갈리면 안 된다
+  }
+  /* 「다시」면 같은 세션에서 한 번 더 만난다(설정으로 끈다). 재출에서 또 「다시」면 세션 끝에 한 번 더,
+     거기서도 「다시」면 그날은 끝 — 다음 복습일에 만난다(규칙 ③④). */
+  if(reshowOn && num===1 && reN<2) undoSnap.reIns=reInsert(c, reN+1);
   afterRate();   // 채점은 로그가 정본이라 카드 상태로 따로 올릴 것이 없다(옛 `touchRate`는 빈 함수였다 · FX-9)
-  sessionDone++; if(phase==='new')newServed++;
+  if(!reN){ sessionDone++; if(phase==='new')newServed++; }
   qPos++; updateUndo();
   /* 🔴 **저장이 먼저다** (전층 감사 F4-7 · 2026-09-06). `showCard()`는 큐가 소진되면 `finishSess()`를 부르는데,
      `curSess`가 고아(병합으로 `sessions` 배열이 통째로 갈린 뒤)면 그 기록이 **허공으로 간다**
@@ -6817,6 +6867,9 @@ function doUndo(){
   else { sn.prev.u=new Date().toISOString(); state.cards[sn.id]=sn.prev; }
   if(sn.k==='rate'){
     dropLogEntry(sn.entry);        // 2) 로그에서 그 채점만 제거
+    /* 그 채점 때문에 큐에 꽂았던 재출 항목도 같이 뺀다 — 안 빼면 「다시」를 무른 카드가
+       나중에 재출로 또 나온다(되돌리기가 절반만 된 꼴). */
+    if(sn.reIns){ const i=queue.indexOf(sn.reIns); if(i>=0) queue.splice(i,1); }
     if(sameRun){                   // 같은 런이면 성적 카운터까지 원상복구
       phase=sn.phase; sessionDone=sn.sessionDone; newServed=sn.newServed;
       /* 반영 뒤(finishSess) 같은 런에서 되돌린 경우 — 반영분이 실제보다 앞서므로 그만큼 누적에서 뺀다 */
@@ -7370,6 +7423,7 @@ function renderHome(){
   if(!sessions.length)box.innerHTML='<div class="empty-note" style="padding:20px">세션이 없어요 — 아래에서 만들어요</div>';
   $('thB').classList.toggle('on',theme==='b');
   $('thC').classList.toggle('on',theme==='c');
+  $('tglReshow').classList.toggle('on',reshowOn);
   $('tglZtap').classList.toggle('on',zoneTapOn);
   $('scrSolve').classList.toggle('ztap',zoneTapOn);
   $('tglSwipe').classList.toggle('on',swipeOn);
@@ -8164,6 +8218,7 @@ $('btnBackup').onclick=()=>{   // 파일이 나뉜 뒤로는 한 덩어리로 �
 };
 $('btnSetup').onclick=openSetup;
 $('tglSwipe').onclick=()=>{ swipeOn=!swipeOn; lsSet(K_SWIPE,swipeOn?'1':'0'); $('tglSwipe').classList.toggle('on',swipeOn); };
+$('tglReshow').onclick=()=>{ reshowOn=!reshowOn; lsSet(K_RESHOW,reshowOn?'1':'0'); $('tglReshow').classList.toggle('on',reshowOn); };
 $('tglZtap').onclick=()=>{ zoneTapOn=!zoneTapOn; lsSet(K_ZTAP,zoneTapOn?'1':'0');
   $('tglZtap').classList.toggle('on',zoneTapOn); $('scrSolve').classList.toggle('ztap',zoneTapOn); };
 $('tglKbd').onclick=()=>{ kbdOn=!kbdOn; lsSet(K_KBD,kbdOn?'1':'0'); $('tglKbd').classList.toggle('on',kbdOn); };
@@ -8793,11 +8848,15 @@ $('btnSolveList').onclick=()=>{
 
 /* ═══════════════ 통계 ═══════════════ */
 /* 로그 집계 — 하루 경계(4시) 기준 일별 통계. 신규 = 그 카드의 첫 로그 항목 */
+/* 🔴 「오늘 채점」의 정의 = **그날 첫 채점만**(재출 제외 · 동하/메타 09-07 규칙 ⑥).
+   재출을 n에 넣으면 하루 채점량이 재출 도입 전후로 조용히 갈려 메타의 시계열이 끊긴다.
+   재출은 `d.re`로 따로 센다 — 화면에도 「재출 N」으로 따로 적는다. */
 function dailyStats(){
   const by={}, firstSeen=new Set();
   for(const e of state.log){
     const k=dayKey(logDate(e));
-    const d=by[k]||(by[k]={n:0,nw:0,ms:0,msN:0,r:[0,0,0,0,0]});
+    const d=by[k]||(by[k]={n:0,nw:0,ms:0,msN:0,re:0,r:[0,0,0,0,0]});
+    if(e[3] && e[3].re){ d.re++; continue; }
     d.n++; d.r[e[2]]=(d.r[e[2]]||0)+1;
     if(!firstSeen.has(e[0])){ firstSeen.add(e[0]); d.nw++; }
     const ex=e[3];
@@ -8830,6 +8889,7 @@ function retentionSplit(days, keyFn){
   const seen=new Set(), out={};
   const cut=days?Date.now()-days*86400000:0;
   for(const e of state.log){
+    if(e[3] && e[3].re) continue;                    // 🔴 재출은 유지율 모수 밖 — 같은 카드를 같은 날 두 번 세면 기준선이 갈린다(메타가 따로 잰다)
     const first=!seen.has(e[0]); seen.add(e[0]);      // 🔴 cut 밖이어도 seen은 채운다 (첫 대면 판정의 정본)
     if(first) continue;
     if(logTs(e)<cut) continue;
@@ -9246,14 +9306,14 @@ function renderStats(){
   /* ═══ B. 오늘 ═══ */
   h+='<div class="card-box"><h3>오늘</h3>';
   if(!T){
-    h+='<div class="cap">신규 '+today.nw+' · 복습 '+Math.max(0,today.n-today.nw)+' · '+fmtMin(today.ms)+'</div>';
+    h+='<div class="cap">신규 '+today.nw+' · 복습 '+Math.max(0,today.n-today.nw)+(today.re?' · 재출 '+today.re:'')+' · '+fmtMin(today.ms)+'</div>';
   } else {
     const G=todayGains(T.hist), hs=T.hist, spark=[];
     for(let i=Math.max(1,hs.length-14);i<hs.length;i++){
       const k=hs[i].k, v=Math.max(0, hs[i].hard-hs[i-1].hard);
       spark.push({a:v, label:(i===hs.length-1)?'오늘':'', cls:isRestDay(k)?'rest':'', title:k+' · 새로 굳은 '+v+'장'}); }
     h+='<div class="cap">새로 굳은 <b>'+(G.newHard>=0?'+':'')+G.newHard+'</b> · 거머리 탈출 <b>'+G.escaped+'</b>'
-      +' · 신규 '+today.nw+' · 복습 '+Math.max(0,today.n-today.nw)+' · '+fmtMin(today.ms)+'</div>'
+      +' · 신규 '+today.nw+' · 복습 '+Math.max(0,today.n-today.nw)+(today.re?' · 재출 '+today.re:'')+' · '+fmtMin(today.ms)+'</div>'
       +(spark.length?barChart(spark,{h:60}):'')
       +'<div class="cap" style="margin-top:4px;opacity:.75">막대 = 하루에 새로 굳은 장수(최근 14일)</div>';
   }

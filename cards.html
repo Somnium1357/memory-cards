@@ -924,6 +924,10 @@ details.ym-subj>summary::before{content:'▸';font-size:12px;color:var(--faint);
 details.ym-subj[open]>summary::before{transform:rotate(90deg);}
 details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px;margin-left:auto;}
 .ym-warn{font-size:12.5px;color:var(--hard);padding:6px 4px;}
+.ym-fold{flex:0 0 auto;width:40px;height:40px;border-radius:11px;background:var(--sunken);color:var(--mute);font-size:13px;font-weight:800;transition:transform .15s;}
+.ym-fold.on{transform:rotate(180deg);color:var(--accent);background:var(--accent-dim);}
+.ym-sub{display:flex;flex-direction:column;gap:6px;margin:2px 0 8px 14px;padding-left:10px;border-left:2px solid var(--line);}
+.ym-row.sub{min-height:48px;background:var(--sunken);box-shadow:none;}
 .ym-subj{flex:0 0 auto;min-width:48px;text-align:center;font-size:12.5px;font-weight:800;color:var(--accent);background:var(--accent-dim);border-radius:9px;padding:7px 8px;}
 
 
@@ -1005,12 +1009,8 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 
     <!-- ══ 연문 모드 (발주 2026-09-08) — 세 화면. 카드 모드 화면과 완전히 갈린다 ══ -->
     <div class="scr" id="scrYmToday">
-      <div class="sub-head"><button class="tb-btn" id="ymBack" title="카드 모드로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title">오늘<span class="ym-tag">연문</span></div><button class="tb-btn" id="ymToUnits" title="단위 목록" style="margin-left:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div>
+      <div class="sub-head"><button class="tb-btn" id="ymBack" title="카드 모드로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title">오늘<span class="ym-tag">연문</span></div></div>
       <div class="sub-body"><div class="sub-inner" id="ymTodayBody"></div></div>
-    </div>
-    <div class="scr" id="scrYmUnits">
-      <div class="sub-head"><button class="tb-btn" id="ymUnitsBack" title="오늘로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title">단위<span class="ym-tag">연문</span></div></div>
-      <div class="sub-body"><div class="sub-inner" id="ymUnitsBody"></div></div>
     </div>
     <div class="scr" id="scrYmUnit">
       <div class="sub-head"><button class="tb-btn" id="ymUnitBack" title="뒤로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title" id="ymUnitTitle">단위</div></div>
@@ -10383,7 +10383,6 @@ function ymReady(u){ if(!_ymReady) ymReadyAll(); return _ymReady[u.id]||{n:0,ok:
 let _ymRT=null; function ymRenderSoon(){ clearTimeout(_ymRT); _ymRT=setTimeout(ymRenderCurrent, 60); }
 function ymRenderCurrent(){
   if($('scrYmToday').classList.contains('on')) ymRenderToday();
-  else if($('scrYmUnits').classList.contains('on')) ymRenderUnits();
   else if($('scrYmUnit').classList.contains('on') && _ymUnit) ymRenderUnit(_ymUnit);
 }
 async function ymEnter(){
@@ -10406,8 +10405,8 @@ function ymRenderToday(){
       +'<span class="ym-mark '+cls+'">'+esc(txt)+'</span>'
       +'<div class="t"><b>'+esc(ymSubj(it.subj))+' '+esc(it.no)+'번 · '+esc(l1)+'</b><small>문제 p'+it.q+' · 해설 p'+it.a+(s.due<todayKey()?' · '+dkDiff(todayKey(),s.due)+'일 지남':'')+'</small></div>'
       +'<div class="ym-btns"><button class="ym-btn close" data-ym-close="'+esc(it.id)+'">▽ 닫힘</button><button class="ym-btn again" data-ym-x="'+esc(it.id)+'">또 틀림</button></div></div>'; }).join('')+'</div>';
-  // 2) 과목별 다음 단위 — 준비도 최고 (안 끝낸 것 중)
-  h+='<div class="ym-sec">과목별 다음 단위 <small>과목마다 준비도가 가장 높은 단위 하나 · 준비도 = 카드 기억률이 목표 이상인 비율</small></div>';
+  // 2) 과목별 다음 단위 — 준비도 최고 (안 끝낸 것 중) · 줄을 펼치면 그 과목의 나머지 단위가 그 자리에 나온다
+  h+='<div class="ym-sec">과목별 다음 단위 <small>과목마다 준비도가 가장 높은 단위 하나 · ▾를 누르면 그 과목 전부 · 준비도 = 카드 기억률이 목표 이상인 비율</small></div>';
   const bySubj={};
   for(const u of YM.cat.units){ if(YM.st.units[u.id]&&YM.st.units[u.id].done) continue;
     const r=ymReady(u); const cur=bySubj[u.subj];
@@ -10418,10 +10417,28 @@ function ymRenderToday(){
   const subjOrd={}; YM.cat.subjects.forEach((sj,i)=>subjOrd[sj]=i);
   const nextUnits=YM.cat.subjects.map(sj=>bySubj[sj]).filter(Boolean)
     .sort((a,b)=>((ymReady(b).pct||0)-(ymReady(a).pct||0)) || (subjOrd[a.subj]-subjOrd[b.subj]));
+  /* 🔴 단위 목록을 **따로 화면으로 두지 않는다**(동하 09-09 「굳이 따로 뺄 필요가 있어? · 합치는 게 나음」).
+     그 화면이 오늘 화면에 없던 것은 셋뿐이었다 — 2순위 이하 단위 · 끝낸 단위 · 전체 조망. 셋 다 **펼침**으로 된다.
+     동선이 넷(오늘 → ☰ → 과목 접기 → 단위)에서 둘(오늘 → 펼침 → 단위)로 준다. 발주 §3-2의 별도 화면은 이걸로 갈음(메타 통보). */
+  let openS={}; try{ openS=JSON.parse(lsGet(K_YM_OPEN)||'{}'); }catch(e){}
+  const unitRow=(u,sub)=>{ const r=ymReady(u); const [l1,l2]=ymLabel(u); const left=leftBySubj[u.subj]||0;
+    const done=YM.st.units[u.id]&&YM.st.units[u.id].done;
+    return '<div class="ym-row'+(done?' done':'')+(sub?' sub':'')+'" data-ym-unit="'+esc(u.id)+'">'
+      +(sub?'':'<span class="ym-subj">'+esc(ymSubj(u.subj))+'</span>')
+      +'<div class="t"><b>'+esc(l1)+'</b><small>'+(sub? (done?'풀었음 '+done.slice(5):'아직') : '이 과목 준비도 1위 · 남은 '+left+'단위')
+      +' · '+u.items.length+'문항'+(l2!==l1?' · '+esc(l2):'')+(r.n?'':' · 카드 없음')+'</small></div>'
+      +'<div class="ym-bar"><i style="width:'+(r.pct||0)+'%"></i></div><span class="ym-pct'+(r.pct==null?' none':'')+'">'+(r.pct==null?'—':r.pct+'%')+'</span>'
+      +(sub?'':'<button class="ym-fold'+(openS[u.subj]?' on':'')+'" data-ym-fold="'+esc(u.subj)+'" title="이 과목 단위 전부">▾</button>')+'</div>'; };
   if(!nextUnits.length) h+='<div class="ym-empty">남은 단위가 없어요 — 전부 풀었어요</div>';
-  else h+='<div class="ym-list">'+nextUnits.map(u=>{ const r=ymReady(u); const [l1,l2]=ymLabel(u); const left=leftBySubj[u.subj]||0;
-    return '<div class="ym-row" data-ym-unit="'+esc(u.id)+'"><span class="ym-subj">'+esc(ymSubj(u.subj))+'</span><div class="t"><b>'+esc(l1)+'</b><small>이 과목 준비도 1위 · 남은 '+left+'단위 · '+u.items.length+'문항'+(l2!==l1?' · '+esc(l2):'')+(r.n?'':' · 카드 없음')+'</small></div>'
-      +'<div class="ym-bar"><i style="width:'+(r.pct||0)+'%"></i></div><span class="ym-pct'+(r.pct==null?' none':'')+'">'+(r.pct==null?'—':r.pct+'%')+'</span></div>'; }).join('')+'</div>';
+  else h+='<div class="ym-list">'+nextUnits.map(u=>{
+    let out=unitRow(u,false);
+    if(openS[u.subj]){
+      const rest=YM.cat.units.filter(x=>x.subj===u.subj&&x.id!==u.id)
+        .sort((a,b)=>((YM.st.units[a.id]&&YM.st.units[a.id].done?1:0)-(YM.st.units[b.id]&&YM.st.units[b.id].done?1:0))
+          || ((ymReady(b).pct||0)-(ymReady(a).pct||0)) || (a.seq-b.seq));
+      out+='<div class="ym-sub">'+(rest.length?rest.map(x=>unitRow(x,true)).join(''):'<div class="ym-empty" style="padding:8px 4px">다른 단위가 없어요</div>')+'</div>';
+    }
+    return out; }).join('')+'</div>';
   // 3) 진도 한 줄
   const p=ymProgress(); const daysLeft=Math.max(1, dkDiff(YM_DEADLINE, todayKey())); const need=Math.ceil((p.unitsN-p.units)/daysLeft);
   h+='<div class="ym-prog"><span>단위 <b>'+p.units+'</b>/'+p.unitsN+'</span><span>문항 <b>'+p.items+'</b>/'+p.itemsN+'</span>'
@@ -10431,30 +10448,14 @@ function ymRenderToday(){
   body.querySelectorAll('[data-ym-x]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); ymEvent(b.dataset.ymX,'x'); toast('또 틀림 — 7일 뒤'); ymRenderToday(); });
   body.querySelectorAll('[data-ym-unit]').forEach(r=>r.onclick=()=>ymOpenUnit(r.dataset.ymUnit));
   body.querySelectorAll('[data-ym-item]').forEach(r=>r.onclick=()=>{ const it=YM.cat.items.find(x=>x.id===r.dataset.ymItem); if(it) ymOpenUnit(it.unit); });
-}
-/* ── 단위 목록 ───────────────────────────────────────────────────────────────── */
-function ymRenderUnits(){
-  const body=$('ymUnitsBody'); if(!YM.cat){ body.innerHTML=''; return; }
-  let open={}; try{ open=JSON.parse(lsGet(K_YM_OPEN)||'{}'); }catch(e){}
-  let h='';
-  for(const sj of YM.cat.subjects){
-    const us=YM.cat.units.filter(u=>u.subj===sj);
-    const done=u=>!!(YM.st.units[u.id]&&YM.st.units[u.id].done);
-    us.sort((a,b)=> (done(a)-done(b)) || ((ymReady(b).pct||0)-(ymReady(a).pct||0)) || (a.seq-b.seq));   // 준비도 높은 순 · 끝낸 것은 아래 · 동률 = 합본 순
-    const nd=us.filter(done).length;
-    h+='<details class="ym-subj" data-subj="'+esc(sj)+'"'+(open[sj]?' open':'')+'><summary>'+esc(ymSubj(sj))+'<small>'+nd+'/'+us.length+'단위</small></summary><div class="ym-list" style="margin-bottom:10px">'
-      +us.map(u=>{ const r=ymReady(u); const [l1,l2]=ymLabel(u); const d=done(u);
-        return '<div class="ym-row'+(d?' done':'')+'" data-ym-unit="'+esc(u.id)+'"><div class="t"><b>'+esc(l1)+'</b><small>'+esc(l2)+' · '+u.items.length+'문항'+(d?' · 풀었음 '+YM.st.units[u.id].done.slice(5):'')+'</small></div>'
-          +'<div class="ym-bar"><i style="width:'+(r.pct||0)+'%"></i></div><span class="ym-pct'+(r.pct==null?' none':'')+'">'+(r.pct==null?'—':r.pct+'%')+'</span></div>'; }).join('')
-      +'</div></details>';
-  }
-  body.innerHTML=h;
-  body.querySelectorAll('details.ym-subj').forEach(d=>d.ontoggle=()=>{ const o={}; body.querySelectorAll('details.ym-subj').forEach(x=>{ o[x.dataset.subj]=x.open; }); try{ lsSet(K_YM_OPEN, JSON.stringify(o)); }catch(e){} });
-  body.querySelectorAll('[data-ym-unit]').forEach(r=>r.onclick=()=>ymOpenUnit(r.dataset.ymUnit));
+  body.querySelectorAll('[data-ym-fold]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation();
+    const sj=b.dataset.ymFold; let o={}; try{ o=JSON.parse(lsGet(K_YM_OPEN)||'{}'); }catch(e){}
+    o[sj]=!o[sj]; try{ lsSet(K_YM_OPEN, JSON.stringify(o)); }catch(e){}
+    const y=body.parentElement.scrollTop; ymRenderToday(); body.parentElement.scrollTop=y; });   // 펼쳐도 보던 자리를 지킨다
 }
 /* ── 단위 화면 ───────────────────────────────────────────────────────────────── */
-let _ymUnit=null, _ymFrom='scrYmToday';
-function ymOpenUnit(id){ _ymFrom=$('scrYmUnits').classList.contains('on')?'scrYmUnits':'scrYmToday'; _ymUnit=id; go('scrYmUnit'); ymRenderUnit(id); }
+let _ymUnit=null;
+function ymOpenUnit(id){ _ymUnit=id; go('scrYmUnit'); ymRenderUnit(id); }   // 돌아갈 곳은 오늘 하나뿐이다(단위 목록 화면 폐지 · 09-09)
 function ymCycle(it){                             // 탭 순환: 없음→✓→△→?→없음 · 단위를 풀었으면 ○→✓→△→?→○
   const s=YM.st.items[it.id]; const m=s?(s.closed?'▽':s.m):null;
   const u=YM.st.units[it.unit]; const base = (u&&u.done) ? '○' : '-';
@@ -10485,9 +10486,7 @@ function ymRenderUnit(id){
 }
 /* ── 배선 ───────────────────────────────────────────────────────────────────── */
 $('ymBack').onclick=ymLeave;
-$('ymToUnits').onclick=()=>{ go('scrYmUnits'); ymRenderUnits(); };
-$('ymUnitsBack').onclick=()=>{ go('scrYmToday'); ymRenderToday(); };
-$('ymUnitBack').onclick=()=>{ go(_ymFrom); if(_ymFrom==='scrYmUnits') ymRenderUnits(); else ymRenderToday(); };
+$('ymUnitBack').onclick=()=>{ go('scrYmToday'); ymRenderToday(); };
 /* 홈 머리의 알약 하나 — 카드 모드 화면에 얹는 유일한 것 */
 { const hh=document.querySelector('.home-head');
   if(hh){ const b=document.createElement('button'); b.className='ym-pill'; b.id='ymPill'; b.textContent='연문 →'; b.title='연습문제 모드';

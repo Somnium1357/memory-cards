@@ -10376,7 +10376,10 @@ function ymRenderToday(){
   for(const u of YM.cat.units){ if(YM.st.units[u.id]&&YM.st.units[u.id].done) continue;
     const r=ymReady(u); const cur=bySubj[u.subj];
     if(!cur || (r.pct||0)>(ymReady(cur).pct||0)) bySubj[u.subj]=u; }
-  const nextUnits=YM.cat.subjects.map(sj=>bySubj[sj]).filter(Boolean);
+  /* 과목 순이 아니라 **준비도 높은 순**(동하 09-09 실기: 「준비도순으로 나오는 것 같지가 않은데」). 과목당 하나는 그대로. 동률 = 과목 순. */
+  const subjOrd={}; YM.cat.subjects.forEach((sj,i)=>subjOrd[sj]=i);
+  const nextUnits=YM.cat.subjects.map(sj=>bySubj[sj]).filter(Boolean)
+    .sort((a,b)=>((ymReady(b).pct||0)-(ymReady(a).pct||0)) || (subjOrd[a.subj]-subjOrd[b.subj]));
   if(!nextUnits.length) h+='<div class="ym-empty">남은 단위가 없어요 — 전부 풀었어요</div>';
   else h+='<div class="ym-list">'+nextUnits.map(u=>{ const r=ymReady(u); const [l1,l2]=ymLabel(u);
     return '<div class="ym-row" data-ym-unit="'+esc(u.id)+'"><div class="t"><b>'+esc(ymSubj(u.subj))+' · '+esc(l1)+'</b><small>'+esc(l2)+' · '+u.items.length+'문항'+(r.n?'':' · 카드 없음')+'</small></div>'

@@ -6920,6 +6920,10 @@ function mdY(v){ const k=dayKey(new Date(v)); return `${+k.slice(5,7)}/${+k.slic
 function whyNow(c){
   /* 규칙이 보이지 않게 작동하면 「왜 이게 나왔지」가 안 읽힌다.
      한 줄이라도 이유를 대면 앱의 속셈이 드러난다 (동하 2026-08-21). */
+  /* 🔴 재출이 먼저다 — 그 카드는 오늘 이미 채점돼 FSRS due가 미래라 아래 분기가 「미리 보는 중」이라고
+     **거짓말을 했다**(동하 09-09 실기). 재출은 일정이 부른 것이 아니라 「아까 다시 한 것」이다. */
+  const reN=c&&c._re;
+  if(reN) return reN>=2 ? '재출 — 아까 다시 한 카드 · 세션 끝 한 번 더' : '재출 — 아까 「다시」 한 카드';
   if(isNew(c)) return curTopic&&tagKey(c)===curTopic ? `다음 진도 — ${rowLabel(curTopic)}` : '처음 보는 카드';
   const st2=state.cards[c.id]; if(!st2||!st2.fsrs) return '';
   const due=dayKey(new Date(st2.fsrs.due)), tk=todayKey();

@@ -718,7 +718,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .card-box{background:var(--surface);border-radius:16px;padding:14px 16px 12px;margin-bottom:12px;box-shadow:var(--shadow-sm);}
 .card-box h3{font-size:13px;font-weight:800;letter-spacing:-.1px;margin-bottom:2px;}
 .card-box .cap{font-size:12px;color:var(--mute);margin-bottom:12px;line-height:1.5;}
-.chart{display:flex;align-items:flex-end;gap:2px;height:104px;}
+.chart{display:flex;align-items:flex-end;gap:3px;height:104px;}   /* 채움 사이 간격 — 테두리 대신 surface 틈으로 가른다 */
 .chart .col{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:1px;height:100%;}
 .chart .col i{display:block;background:var(--accent);border-radius:2px 2px 0 0;min-height:3px;}
 /* 🔴 값 0인 칸이 1.19px 선으로만 남아 **막대 리듬이 끊겨** 「간격이 살짝씩 다르다」로 보였다(동하 09-09 · 실측: 폭 43·간격 2로 완전 균일했는데도).
@@ -739,6 +739,20 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .legend i{width:9px;height:9px;border-radius:3px;display:block;}
 .sbar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--sunken);}
 .sbar i{display:block;height:100%;}
+/* ══ dataviz 원칙 부품 (2026-09-09) ══
+   「데이터가 하는 일이 형태를 정한다」 — 구성비는 **가로 누적 막대 한 줄**, 추세는 **꺾은선**.
+   막대는 크기 비교(분포·시계열)에만 쓴다. 동하 09-09: 「저 거대한 막대가 막대그래프로 맞는 거야?」 — 아니었다. */
+.pw{display:flex;height:18px;border-radius:6px;overflow:hidden;background:var(--sunken);gap:2px;}  /* 2px = 채움 사이 surface 간격(테두리 대신) */
+.pw i{display:block;height:100%;}
+.pw-key{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;}
+.pw-key span{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--mute);}
+.pw-key i{width:9px;height:9px;border-radius:3px;flex:0 0 auto;}
+.pw-key b{color:var(--ink2);font-weight:800;font-variant-numeric:tabular-nums;}
+.spark{display:block;width:100%;height:44px;overflow:visible;}
+.spark .ln{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round;}
+.spark .dot{fill:var(--accent);}
+.spark-val{display:flex;gap:3px;margin-bottom:2px;}
+.spark-val span{flex:1;min-width:0;text-align:center;font-size:12px;font-weight:800;color:var(--ink2);font-variant-numeric:tabular-nums;}
 .heat{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,1fr);gap:3px;}
 .heat i{display:block;width:100%;aspect-ratio:1;border-radius:3px;background:var(--sunken);}
 .heat i.l1{background:var(--accent-dim);} .heat i.l2{background:color-mix(in srgb,var(--accent) 45%,transparent);}
@@ -8999,6 +9013,26 @@ function dailyStats(){
 function dayKeyOffset(n){ return dayKey(new Date(Date.now()+n*86400000)); }
 function fmtMin(ms){ if(!ms)return '0분'; const m=ms/60000;
   return m<1?Math.round(ms/1000)+'초':(m<60?Math.round(m)+'분':(m/60).toFixed(1)+'시간'); }
+/* 작은 꺾은선 — 추세용(4~8점). 축을 0에 고정하지 않고 **값 범위**에 맞춘다(변화를 보이게).
+   🔴 **글자는 SVG 안에 두지 마라.** `preserveAspectRatio="none"`으로 폭을 늘리면 텍스트가 통째로 늘어난다
+      (첫 판에서 「W34」가 가로 6배로 터졌다 · 09-09). 선·점만 SVG로 그리고, 값과 축 라벨은 HTML 줄로 얹는다.
+   점을 칸 중앙((i+0.5)/n)에 놓아 HTML flex 칸과 자리가 정확히 맞는다.
+   끝점과 최저점만 값을 적는다 — 모든 점에 숫자를 붙이는 것은 안티패턴이다. */
+function sparkLine(pts, opt){
+  if(!pts||pts.length<2) return '';
+  const n=pts.length, W=100, H=44;
+  const vs=pts.map(p=>p.v), lo=Math.min(...vs), hi=Math.max(...vs);
+  const span=Math.max(1,hi-lo), y=v=>6+(H-12)*(1-(v-lo)/span), x=i=>W*(i+0.5)/n;
+  const d=pts.map((p,i)=>(i?'L':'M')+x(i).toFixed(2)+' '+y(p.v).toFixed(2)).join(' ');
+  const last=n-1, loI=vs.indexOf(lo), show=new Set([last, loI]);
+  const dots=pts.map((p,i)=>'<circle class="dot" cx="'+x(i).toFixed(2)+'" cy="'+y(p.v).toFixed(2)+'" r="'+(i===last?2.4:1.5)+'"><title>'+esc(p.title||'')+'</title></circle>').join('');
+  const vals=pts.map((p,i)=>'<span>'+(show.has(i)?esc(String(p.v))+(opt&&opt.unit||''):'')+'</span>').join('');
+  const labs=pts.map(p=>'<span>'+esc(p.label||'')+'</span>').join('');
+  return '<div class="spark-val">'+vals+'</div>'
+    +'<svg class="spark" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" role="img">'
+    +'<path class="ln" d="'+d+'" vector-effect="non-scaling-stroke"/>'+dots+'</svg>'
+    +'<div class="xaxis">'+labs+'</div>';
+}
 function barChart(cols, opt){ // cols=[{a,b,label,title,cls}] a=주(아래)·b=부(위)
   const mx=Math.max(1,...cols.map(c=>(c.a||0)+(c.b||0)));
   /* 🔴 **값이 0인 단은 그리지 않는다** (동하 09-09). 예전엔 a가 0이어도 막대를 하나 깔아서,
@@ -9516,16 +9550,25 @@ function renderStats(){
     R[e[2]]=(R[e[2]]||0)+1;
     const ex=e[3]; if(ex&&typeof ex.ms==='number'){ msSum+=ex.ms; msN++; } }
   const rtot=R[1]+R[2]+R[3]+R[4], pct=n=>rtot?Math.round(n/rtot*100):0;
-  if(rtot) adv+='<div class="cap" style="margin-top:14px"><b>채점 분포</b> — 최근 30일 복습 '+rtot.toLocaleString()+'회 · 유지율 '+pct(R[2]+R[3]+R[4])+'%</div>'
-    +barChart([{a:R[1],label:'다시',title:'다시 '+R[1]},{a:R[2],label:'어려움',title:'어려움 '+R[2]},
-               {a:R[3],label:'알맞음',title:'알맞음 '+R[3]},{a:R[4],label:'쉬움',title:'쉬움 '+R[4]}],{val:true,h:80});
+  /* 🔴 채점 분포는 **구성비**다(한 총합이 넷으로 갈린다) → 세로 막대 넷이 아니라 **가로 누적 막대 한 줄**.
+     옛 형태는 안티패턴 둘에 걸렸다 — 「두껍고 진한 블록」과 「모든 막대에 숫자」. 「쉬움 100」은 1.3%라 보이지도 않았다.
+     숫자는 범례가 든다(직접 라벨은 선택적으로). */
+  if(rtot){
+    const gr=[{n:R[1],l:'다시',c:'var(--again)'},{n:R[2],l:'어려움',c:'var(--hard)'},
+              {n:R[3],l:'알맞음',c:'var(--good)'},{n:R[4],l:'쉬움',c:'var(--easy)'}];
+    adv+='<div class="cap" style="margin-top:14px"><b>채점 분포</b> — 최근 30일 복습 '+rtot.toLocaleString()+'회 · 유지율 '+pct(R[2]+R[3]+R[4])+'%</div>'
+      +'<div class="pw" style="margin-top:8px">'+gr.map(g=>g.n?'<i style="width:'+(g.n/rtot*100)+'%;background:'+g.c+'" title="'+g.l+' '+g.n.toLocaleString()+'회"></i>':'').join('')+'</div>'
+      +'<div class="pw-key">'+gr.map(g=>'<span><i style="background:'+g.c+'"></i>'+g.l+' <b>'+pct(g.n)+'%</b> <span style="color:var(--faint)">('+g.n.toLocaleString()+')</span></span>').join('')+'</div>';
+  }
   if(msN) adv+='<div class="cap" style="margin-top:10px">응답 시간 평균 '+fmtDur(Math.round(msSum/msN))+' · 기록된 채점 '+msN.toLocaleString()+'회</div>';
   const wr=retentionSplit(0, e=>weekKeyOf(logDate(e)));
   const wks=Object.keys(wr).sort().slice(-8);
   if(wks.length){
-    const wcols=wks.map((k,i)=>{ const o=wr[k], p=o.n?Math.round(o.pass/o.n*100):0;
-      return {a:p, cls:i===wks.length-1?'today':'', label:k.slice(-3), title:k+' · '+p+'% ('+o.n.toLocaleString()+'회)'}; });
-    adv+='<div class="cap" style="margin-top:14px"><b>유지율 추이 (주별)</b> — 밀린 걸 몰아 푼 주는 낮게 나와요</div>'+barChart(wcols,{val:true,unit:'%',h:80});
+    /* 🔴 추세는 **꺾은선**이다. 막대로 그리면 0부터 시작하는데, 84~88% 구간의 4%p 변화가 막대 넷에서는 안 보인다
+       (동하 09-09: 「저게 막대가 맞아?」 — 아니다). 값 범위에 맞춰 그리고 끝점만 직접 라벨한다. */
+    const wpts=wks.map(k=>{ const o=wr[k]; return {k:k, p:o.n?Math.round(o.pass/o.n*100):0, n:o.n}; });
+    adv+='<div class="cap" style="margin-top:14px"><b>유지율 추이 (주별)</b> — 밀린 걸 몰아 푼 주는 낮게 나와요</div>'
+      +sparkLine(wpts.map(x=>({v:x.p, label:x.k.slice(-3), title:x.k+' · '+x.p+'% ('+x.n.toLocaleString()+'회)'})), {unit:'%'});
   }
   const IV=ivlBuckets(), HR=hourBuckets(), MS=msBuckets();
   if(IV.n) adv+='<div class="cap" style="margin-top:14px"><b>간격 분포</b> — 복습한 카드 '+IV.n.toLocaleString()+'장 · 3주 이상 '+IV.cnt.slice(4).reduce((x,y)=>x+y,0).toLocaleString()+'장</div>'

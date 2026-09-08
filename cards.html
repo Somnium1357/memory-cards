@@ -926,6 +926,31 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 .ym-warn{font-size:12.5px;color:var(--hard);padding:6px 4px;}
 .ym-subj{flex:0 0 auto;min-width:48px;text-align:center;font-size:12.5px;font-weight:800;color:var(--accent);background:var(--accent-dim);border-radius:9px;padding:7px 8px;}
 
+
+/* ══ 그림 카드 (발주 `그림카드_앱과업_2026-09-09.md` · 동하 「앱에 그 도식 올려라」) ══
+   🔴 `img` 없는 카드는 한 픽셀도 안 바뀐다 — 아래는 전부 `.c-imgs`(비어 있으면 display:none) 안에서만 산다.
+   자료가 먼저, 물음이 아래(시험지 순서) → 앞면 그림은 문면 **위**. 뒷면 그림은 답면 아래.
+   세로 상한 45vh — 그림+문면+채점 버튼이 iPad 세로 한 화면에 들어가야 한다. 넘치는 그림은 탭해서 전체 화면으로 본다. */
+.c-imgs{display:none;flex-direction:column;gap:8px;}
+.c-imgs.on{display:flex;}
+.c-imgs.front{margin-bottom:12px;}
+.c-imgs.back{margin-top:12px;}
+.c-img{display:block;width:100%;max-height:45vh;object-fit:contain;object-position:center top;
+  border-radius:12px;background:var(--sunken);cursor:zoom-in;}
+.c-img.err{display:none;}
+.c-alt{display:block;padding:14px 16px;border-radius:12px;background:var(--sunken);
+  font-size:13px;line-height:1.55;color:var(--mute);}
+/* 확대 — 전체 화면. 채점 버튼·사이드바 위(z 85: 회독본 80보다 위, 확인창 90보다 아래). */
+#ovlImg{position:fixed;inset:0;z-index:85;background:rgba(0,0,0,.92);display:none;
+  align-items:center;justify-content:center;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);cursor:zoom-out;}
+#ovlImg.show{display:flex;}
+#ovlImg img{max-width:100%;max-height:100%;object-fit:contain;}
+#ovlImg .hint{position:absolute;left:0;right:0;bottom:calc(14px + env(safe-area-inset-bottom));text-align:center;
+  font-size:12.5px;font-weight:700;color:rgba(255,255,255,.62);pointer-events:none;}
+.cs-imgs{display:flex;flex-direction:column;gap:8px;margin:10px 0;}
+.cs-imgs img{display:block;width:100%;max-height:38vh;object-fit:contain;object-position:center top;
+  border-radius:10px;background:var(--sunken);cursor:zoom-in;}
+
 </style>
 </head>
 <body>
@@ -950,11 +975,13 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
         <div id="card">
           <div id="cScope"></div>
           <div id="cardScroll">
+            <div class="c-imgs front" id="cImgF"></div>
             <div id="cFront"></div>
             <div id="cTable"></div>
             <div id="cDiag"></div>
             <div id="cBackWrap">
               <div id="cBack"></div>
+              <div class="c-imgs back" id="cImgB"></div>
               <div id="cItems"></div>
               <div id="cNote"></div>
               <div id="cHoedok"></div>
@@ -1094,6 +1121,9 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
       <div class="sub-head"><button class="tb-btn" data-go="scrHome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title">통계</div></div>
       <div class="sub-body"><div class="sub-inner" id="statsBody"></div></div>
     </div>
+
+    <!-- 그림 확대 (그림 카드 · 탭하면 열리고 탭하면 닫힌다) -->
+    <div id="ovlImg"></div>
 
     <!-- 회독본 오버레이 — 앱 안에서 연다 (전체화면 유지 · 미저장분 방지) -->
     <div id="ovlHd">
@@ -6661,7 +6691,9 @@ function showDiag(c, back){
   const el=$('cDiag'), on = c && c.typ==='도식';
   el.classList.toggle('on', !!on);
   if(!on){ el.innerHTML=''; return; }
-  if(!back){ el.innerHTML='<b>그림 답</b>맞춰 볼 답면이 없는 카드예요 — 먼저 직접 그린 다음 넘기세요.'; return; }
+  if(!back){ el.innerHTML = imgsOf(c,'b').length
+    ? '<b>그림 답</b>먼저 직접 그린 다음 넘기세요.'                                    // 뒷면에 그림이 붙은 도식 카드 — 「맞춰 볼 답면이 없다」는 이제 거짓말이다(메타 09-09)
+    : '<b>그림 답</b>맞춰 볼 답면이 없는 카드예요 — 먼저 직접 그린 다음 넘기세요.'; return; }
   const uri=cardHoedokURI(c);
   el.innerHTML='<b>스스로 채점</b>회독본 그림과 대조해 직접 매기세요.'
     + (uri?` <a href="${uri.replace(/&/g,'&amp;')}">회독본 ↗</a>`:'');
@@ -6712,6 +6744,7 @@ function showCard(){
   $('gradeBar').classList.remove('on');
   renderTable(c,false);
   showDiag(c,false);
+  renderImgs($('cImgF'), c, 'f'); renderImgs($('cImgB'), c, 'b');   // 앞면 그림은 바로 · 뒷면 그림은 #cBackWrap 안이라 공개 전엔 부모가 숨긴다
   phase = isNew(c) ? 'new' : 'review';   // 신규 묶음을 다 풀고 잔량으로 넘어가면 라벨도 따라간다
   $('phaseLine').textContent = whyNow(c);   // 이 카드가 왜 지금 나왔는지 (동하 2026-08-21)
   syncRail(); counts();
@@ -8569,9 +8602,11 @@ function renderCardSheet(){
     ...((s.ann||[]).map(t=>`<button class="utag ann" data-unann="${esc(t)}">@${esc(t)} ✕</button>`))];
   $('csSheet').innerHTML=`
     <div class="cs-scope">${esc(scopeOf(c))}</div>
+    ${csImgs(c,'f')}
     <div class="cs-front">${esc(m?m[2]:c.front)}</div>
     ${hasItems?`<div class="cs-items">${c.items.map(i=>`<div>· ${esc(i)}</div>`).join('')}</div>`
               :`<div class="cs-back">${esc(c.back)}</div>`}
+    ${csImgs(c,'b')}
     ${(()=>{ /* 도식 카드는 답면이 「(도식 — 회독본 그림과 대조해…)」 한 줄뿐이라, 여기서도
                 회독본으로 갈 길이 있어야 한다. 풀이 화면 뒷면(showDiag)에는 이미 있었는데
                 상세 시트에는 없어서 카드 목록에서 열면 갈 데가 없었다 (동하 2026-08-23). */
@@ -10463,6 +10498,52 @@ if(ymMode){ (function waitBoot(n){ const l=$('loading');
   else if(n<200) setTimeout(()=>waitBoot(n+1), 250); })(0); }
 /* 카드 재로드(loadData) 뒤에는 노드→카드 인덱스를 버린다 — 새 카드가 준비도에 들어오게 */
 { const _ld=loadData; loadData=async function(){ const r=await _ld.apply(this, arguments); YM.idx=null; _ymReady=null; return r; }; }
+
+
+/* ═══════════════ 그림 카드 (발주 2026-09-09 · 목표 09-14) ═══════════════
+   카드 필드 `img: [{p, on:"f"|"b", alt}]` — `p`는 레포 상대 경로(`media/<sha1 12자>.png` · main · 생성기 소유).
+   🔴 `img`가 없으면 아무 일도 하지 않는다 — 그림 없는 카드는 한 픽셀도 안 바뀐다(배포 전 스크린샷 대조로 확인).
+   🔴 회독본 SVG를 앱이 그리는 게 아니다(그 경로는 회독본 오버레이 안에 있다) — 생성기가 뜬 PNG를 그린다.
+   지연 로드(`loading=lazy`) · 실패하면 `alt` 한 줄을 회색 상자로(그림이 없어도 카드는 풀 수 있어야 한다).
+   탭 = 전체 화면 확대(#ovlImg) — 카드 탭(공개/되접기)으로 새지 않게 stopPropagation. */
+function imgsOf(c, side){
+  const a=c&&c.img; if(!Array.isArray(a)) return [];
+  return a.filter(x=>x&&x.p&&((x.on||'f')===side));
+}
+function imgSrc(p){ return String(p||'').replace(/^\/+/,''); }
+/* 카드 상세 시트·목록에서도 같은 규칙 — 여기서는 확대만 되고 채점이 없어 문자열로 그린다(시트는 innerHTML 한 방으로 그린다). */
+function csImgs(c, side){
+  const list=imgsOf(c, side); if(!list.length) return '';
+  return '<div class="cs-imgs">'+list.map(it=>'<img src="'+esc(imgSrc(it.p))+'" alt="'+esc(it.alt||'')+'" loading="lazy" decoding="async" '
+    +'onclick="event.stopPropagation();openImg(this.src,this.alt)" '
+    +'onerror="this.style.display=&quot;none&quot;;this.insertAdjacentHTML(&quot;afterend&quot;,&quot;<div class=\&quot;c-alt\&quot;>'+esc((it.alt?it.alt+' — ':'')+'그림을 못 받았어요')+'</div>&quot;)">').join('')+'</div>';
+}
+function renderImgs(el, c, side){
+  const list=imgsOf(c, side);
+  el.classList.toggle('on', list.length>0);
+  el.innerHTML='';
+  for(const it of list){
+    const im=document.createElement('img');
+    im.className='c-img'; im.src=imgSrc(it.p); im.alt=it.alt||'';
+    im.loading='lazy'; im.decoding='async';
+    im.onclick=(ev)=>{ ev.stopPropagation(); openImg(im.src, it.alt||''); };
+    /* 못 받으면 대체 텍스트 상자로 바꾼다 — 눈가림·검수 도구가 그림을 못 볼 때 쓰는 그 한 줄이다(발주 §1). */
+    im.onerror=()=>{ im.classList.add('err');
+      const b=document.createElement('div'); b.className='c-alt';
+      b.textContent=(it.alt?it.alt+' — ':'')+'그림을 못 받았어요';
+      im.after(b); };
+    el.appendChild(im);
+  }
+}
+function openImg(src, alt){
+  const o=$('ovlImg');
+  o.innerHTML='<img alt="'+esc(alt||'')+'">'+'<div class="hint">탭하면 닫혀요</div>';
+  o.querySelector('img').src=src;
+  o.classList.add('show');
+  navGuard();                      // 기기 뒤로가기로 앱을 벗어나지 않게 — 회독본 오버레이와 같은 칸을 쓴다
+}
+function closeImg(){ const o=$('ovlImg'); o.classList.remove('show'); o.innerHTML=''; }
+$('ovlImg').onclick=closeImg;
 
 </script>
 </body>

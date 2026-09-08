@@ -7,3 +7,6 @@ cards-log-*.json
 
 # 연문 카탈로그 빌드 검증 상세(로컬 산출) — build_yeonmun_catalog.py
 yeonmun-catalog.check.txt
+
+# 파이썬 임시 산출(yeonmun_derive import 시)
+__pycache__/

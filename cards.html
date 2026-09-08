@@ -8335,6 +8335,11 @@ $('tglKbd').onclick=()=>{ kbdOn=!kbdOn; lsSet(K_KBD,kbdOn?'1':'0'); $('tglKbd').
 let kbdOn = lsGet(K_KBD)!=='0';
 document.addEventListener('keydown',e=>{
   if(!kbdOn || e.metaKey || e.ctrlKey || e.altKey)return;
+  /* 🔴 **키를 누르고 있으면 브라우저가 같은 키를 계속 보낸다**(`e.repeat`) — 스페이스를 길게 누르면
+     「공개 → 알맞음 → 다음 카드 공개 → 알맞음…」으로 카드가 줄줄이 넘어간다(동하 09-09 지적).
+     채점 버튼은 `revealed`가 false로 돌아가 이중 채점이 안 되지만, **연속 전진은 막을 것이 없었다.**
+     한 번 누름 = 한 번 처리 — 반복 입력은 통째로 버린다. 손을 떼고 다시 누르면 그때 먹는다. */
+  if(e.repeat) return;
   const t=e.target, tag=t&&t.tagName;
   const typing = tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT';
   const ovl=document.querySelector('.ovl.show');

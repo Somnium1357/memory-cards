@@ -718,7 +718,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .card-box{background:var(--surface);border-radius:16px;padding:14px 16px 12px;margin-bottom:12px;box-shadow:var(--shadow-sm);}
 .card-box h3{font-size:13px;font-weight:800;letter-spacing:-.1px;margin-bottom:2px;}
 .card-box .cap{font-size:12px;color:var(--mute);margin-bottom:12px;line-height:1.5;}
-.chart{display:flex;align-items:flex-end;gap:3px;height:104px;}   /* 채움 사이 간격 — 테두리 대신 surface 틈으로 가른다 */
+.chart{display:flex;align-items:flex-end;gap:3px;height:104px;}   /* 간격 3px = JS `CHART_GAP` — 둘을 같이 고쳐라 */
 .chart .col{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:1px;height:100%;}
 .chart .col i{display:block;background:var(--accent);border-radius:2px 2px 0 0;min-height:3px;}
 /* 🔴 값 0인 칸이 1.19px 선으로만 남아 **막대 리듬이 끊겨** 「간격이 살짝씩 다르다」로 보였다(동하 09-09 · 실측: 폭 43·간격 2로 완전 균일했는데도).
@@ -727,7 +727,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .chart .col em{font-style:normal;font-size:12px;font-weight:700;color:var(--mute);text-align:center;margin-bottom:2px;}  /* 막대 값 — 숫자 없는 막대는 읽을 게 없다(주별 유지율) */
 .chart .col.today i{background:var(--hard);}
 .chart .col.zero i{background:var(--line);}
-.xaxis{display:flex;gap:2px;margin-top:6px;}
+.xaxis{display:flex;gap:3px;margin-top:6px;}
 .xaxis span{flex:1;min-width:0;text-align:center;font-size:11.5px;font-weight:700;color:var(--faint);
   overflow:visible;white-space:nowrap;}
 /* 🔴 라벨을 칸 안에 가두지 마라 (동하 09-09 실기: 「밑에 날짜가 잘려」 · 「자세히 쪽 막대도 좀 이상」).
@@ -751,6 +751,13 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .spark{display:block;width:100%;height:44px;overflow:visible;}
 .spark .ln{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round;}
 .spark .dot{fill:var(--accent);}
+.kpi{display:flex;gap:8px;margin-top:8px;}
+.kpi span{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:10px 4px;border-radius:12px;background:var(--sunken);}
+.kpi span.on{background:var(--accent-dim);}
+.kpi b{font-size:19px;font-weight:800;letter-spacing:-.3px;color:var(--ink2);}
+.kpi span.on b{color:var(--accent);}
+.kpi small{font-size:11.5px;font-weight:700;color:var(--faint);}
 .spark-val{display:flex;gap:3px;margin-bottom:2px;}
 .spark-val span{flex:1;min-width:0;text-align:center;font-size:12px;font-weight:800;color:var(--ink2);font-variant-numeric:tabular-nums;}
 .heat{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,1fr);gap:3px;}
@@ -7436,6 +7443,7 @@ function renderToday(){ // 홈 첫 화면 = 오늘 한 일 (통계 탭까지 안
   const lead = t.n
     ? `<div class="big-num"><b>${t.n}</b><small>회 채점 · ${t.cards}장 (신규 ${t.nw}) · ${fmtMin(t.ms)}</small></div>`
     : `<div class="big-num"><b>0</b><small>회 — 아래 세션을 눌러 시작하세요</small></div>`;
+  /* 홈 주간 막대도 정수 폭으로 (아래 innerHTML 뒤에 snap) */
   $('todayBox').innerHTML=`
     <div class="today-top">
       <div class="lead"><div class="k">오늘 · ${d.getMonth()+1}/${d.getDate()} (${wdays[d.getDay()]})</div>${lead}</div>
@@ -7561,6 +7569,7 @@ function renderHome(){
   $('tglSwipe').classList.toggle('on',swipeOn);
   $('tglKbd').classList.toggle('on',kbdOn);
   renderToday();
+  snapAllCharts($('todayBox'));   // 주간 미니 막대 정수 폭
   counts();
 }
 
@@ -9018,8 +9027,19 @@ function fmtMin(ms){ if(!ms)return '0분'; const m=ms/60000;
       (첫 판에서 「W34」가 가로 6배로 터졌다 · 09-09). 선·점만 SVG로 그리고, 값과 축 라벨은 HTML 줄로 얹는다.
    점을 칸 중앙((i+0.5)/n)에 놓아 HTML flex 칸과 자리가 정확히 맞는다.
    끝점과 최저점만 값을 적는다 — 모든 점에 숫자를 붙이는 것은 안티패턴이다. */
+/* 🔴 점이 다섯 이하면 **꺾은선이 아니라 값 줄**이다 (동하 09-09: 「꺾은선 너무 못생겼다」).
+   원칙표: 「한 줌의 headline 숫자 → KPI 줄」 · 「추세 → 꺾은선」. 4주치는 전자다 —
+   폭 600px에 점 4개를 늘어놓으면 거의 평평한 선 하나가 되어 못생기고 읽히지도 않는다.
+   여섯 점부터 선으로 그린다(주가 쌓이면 저절로 선이 된다). */
 function sparkLine(pts, opt){
   if(!pts||pts.length<2) return '';
+  if(pts.length<=5){
+    const last=pts.length-1, d=pts[last].v-pts[0].v;
+    return '<div class="kpi">'+pts.map((p,i)=>'<span class="'+(i===last?'on':'')+'" title="'+esc(p.title||'')+'">'
+      +'<b>'+esc(String(p.v))+(opt&&opt.unit||'')+'</b><small>'+esc(p.label||'')+'</small></span>').join('')
+      +'</div>'+(d?'<div class="cap" style="margin-top:6px">'+esc(pts[0].label)+' → '+esc(pts[last].label)+' '
+      +(d>0?'+':'')+d+(opt&&opt.unit||'')+'</div>':'');
+  }
   const n=pts.length, W=100, H=44;
   const vs=pts.map(p=>p.v), lo=Math.min(...vs), hi=Math.max(...vs);
   const span=Math.max(1,hi-lo), y=v=>6+(H-12)*(1-(v-lo)/span), x=i=>W*(i+0.5)/n;
@@ -9032,6 +9052,39 @@ function sparkLine(pts, opt){
     +'<svg class="spark" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" role="img">'
     +'<path class="ln" d="'+d+'" vector-effect="non-scaling-stroke"/>'+dots+'</svg>'
     +'<div class="xaxis">'+labs+'</div>';
+}
+/* 🔴 **막대 폭을 정수 픽셀로 못 박는다** (동하 09-09: 「간격이 계속 조금씩 안 맞는다」 · 캡처로 확인).
+   원인: `flex:1`이 남는 폭을 소수점으로 나눠 준다(예 20.5·24.25px). 레이아웃상으론 균일하지만
+   기기 화소(아이패드 ×2, 폰 ×3)로 반올림할 때 막대마다 1px씩 다르게 떨어져 **간격이 들쭉날쭉해 보인다.**
+   → 칸 폭을 `floor`로 정수화하고, 남는 픽셀은 **차트 양 끝 여백**으로 보낸다. 그러면 모든 막대와 모든 간격이 같아진다.
+   축 라벨·값 줄에도 같은 폭을 먹여 세로 자리를 맞춘다. 폭이 바뀌면(회전·창 크기) `ResizeObserver`가 다시 잰다. */
+const CHART_GAP=3;
+function snapChart(box){
+  const rows=[box, box.previousElementSibling, box.nextElementSibling]
+    .filter(el=>el&&(el.classList.contains('chart')||el.classList.contains('xaxis')||el.classList.contains('spark-val')));
+  const chart=rows.find(el=>el.classList.contains('chart'))||box;
+  const n=chart.children.length; if(!n) return;
+  const W=chart.clientWidth; if(W<n) return;
+  const bw=Math.floor((W-CHART_GAP*(n-1))/n); if(bw<1) return;
+  const used=bw*n+CHART_GAP*(n-1), pad=Math.max(0, W-used);
+  for(const el of rows){
+    if(el.children.length!==n) continue;
+    el.style.paddingLeft=Math.floor(pad/2)+'px'; el.style.paddingRight=Math.ceil(pad/2)+'px';
+    for(const c of el.children){ c.style.flex='0 0 '+bw+'px'; c.style.width=bw+'px'; }
+  }
+}
+function snapAllCharts(root){
+  const r=root||document;
+  r.querySelectorAll('.chart').forEach(snapChart);
+  r.querySelectorAll('.wk').forEach(snapChart);   // 홈의 주간 미니 막대도 같은 병을 앓는다(106px에 7칸 = 12.57px)
+}
+let _snapRO=null;
+function watchCharts(){
+  snapAllCharts();
+  if(!_snapRO && window.ResizeObserver){
+    _snapRO=new ResizeObserver(()=>snapAllCharts());
+    document.querySelectorAll('.sub-body, #todayBox').forEach(el=>{ try{ _snapRO.observe(el); }catch(e){} });
+  }
 }
 function barChart(cols, opt){ // cols=[{a,b,label,title,cls}] a=주(아래)·b=부(위)
   const mx=Math.max(1,...cols.map(c=>(c.a||0)+(c.b||0)));
@@ -9581,6 +9634,7 @@ function renderStats(){
   h+='<div class="card-box"><details><summary style="cursor:pointer;font-weight:600">자세히 — 풀이량 · 분포 · 추이</summary>'+adv+'</details></div>';
 
   $('statsBody').innerHTML=h;
+  watchCharts();   // 🔴 그리고 나서 폭을 정수로 못 박는다(간격 들쭉날쭉 방지) · 창 크기가 바뀌면 ResizeObserver가 다시 잰다
   $('statsBody').querySelectorAll('.sig-row').forEach(el=>{ el.onclick=()=>go(el.dataset.go); });
 }
 

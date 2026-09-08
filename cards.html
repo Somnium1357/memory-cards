@@ -6481,20 +6481,9 @@ function tomorrowCount(sc){
     if(s&&s.fsrs&&!s.retired&&effDueKey(dayKey(new Date(s.fsrs.due)), c.id)===tk&&(!sc||inScope(c,sc))) n++; }
   return n;
 }
-/* 🔴 **「오늘 채점」은 어디서 세든 같은 수여야 한다** — 그날 **첫 채점만**(재출 제외 · 동하/메타 09-07 규칙 ⑥).
-   09-08에 `dailyStats`만 고치고 여기를 안 고쳐서 **상단 바 997 vs 홈 909**로 갈렸다(동하 09-09 실기 · 차이 88 = 그날 재출).
-   재출은 지우지 않고 `todayReshown()`으로 따로 세어 홈에 「재출 N」으로 적는다. */
+/* 상단 바 「오늘 N」 = **채점 횟수**라 재출을 포함한다(동하 09-09 · 「회」의 규칙). 홈의 「N회 채점」과 같은 수다. */
 function todayRated(){ let n=0; const tk=todayKey();
-  for(let i=state.log.length-1;i>=0;i--){ const e=state.log[i];
-    if(dayKey(logDate(e))!==tk){ if(n)break; continue; }
-    if(e[3] && e[3].re) continue;
-    n++; }
-  return n;
-}
-function todayReshown(){ let n=0; const tk=todayKey();
-  for(let i=state.log.length-1;i>=0;i--){ const e=state.log[i];
-    if(dayKey(logDate(e))!==tk){ if(n)break; continue; }
-    if(e[3] && e[3].re) n++; }
+  for(let i=state.log.length-1;i>=0;i--){ if(dayKey(logDate(state.log[i]))===tk)n++; else if(n)break; }
   return n;
 }
 function counts(){ // 상단 바 — 남은 수는 현재 세션 큐 · 「내일」은 전 범위(아래 U3 참고)
@@ -7421,7 +7410,7 @@ function renderToday(){ // 홈 첫 화면 = 오늘 한 일 (통계 탭까지 안
   for(let i=6;i>=0;i--){ const v=(by[dayKeyOffset(-i)]||{n:0}).n; wk.push(v); if(v>mx)mx=v; }
   const bars=wk.map((v,i)=>`<i class="${i===6?'on':''}" style="height:${Math.max(2,Math.round(v/mx*100))}%" title="${v}회"></i>`).join('');
   const lead = t.n
-    ? `<div class="big-num"><b>${t.n}</b><small>회 채점 · 신규 ${t.nw}장${t.re?` · 재출 ${t.re}`:''} · ${fmtMin(t.ms)}</small></div>`
+    ? `<div class="big-num"><b>${t.n}</b><small>회 채점 · ${t.cards}장 (신규 ${t.nw}) · ${fmtMin(t.ms)}</small></div>`
     : `<div class="big-num"><b>0</b><small>회 — 아래 세션을 눌러 시작하세요</small></div>`;
   $('todayBox').innerHTML=`
     <div class="today-top">
@@ -8969,16 +8958,23 @@ $('btnSolveList').onclick=()=>{
 
 /* ═══════════════ 통계 ═══════════════ */
 /* 로그 집계 — 하루 경계(4시) 기준 일별 통계. 신규 = 그 카드의 첫 로그 항목 */
-/* 🔴 「오늘 채점」의 정의 = **그날 첫 채점만**(재출 제외 · 동하/메타 09-07 규칙 ⑥).
-   재출을 n에 넣으면 하루 채점량이 재출 도입 전후로 조용히 갈려 메타의 시계열이 끊긴다.
-   재출은 `d.re`로 따로 센다 — 화면에도 「재출 N」으로 따로 적는다. */
+/* 🔴 **단위가 규칙을 정한다** (동하 09-09: 「채점 횟수는 재출까지 합해서 하나로, 카드 수는 재출 빼야 해」) —
+   **「회」로 세는 것은 재출 포함**(손이 실제로 한 일이다) · **「장」으로 세는 것은 고유 카드**(재출은 같은 카드다).
+   `n` = 채점 횟수(재출 포함) · `cards` = 그날 만진 고유 카드 수(재출 제외) · `nw` = 그중 첫 대면(신규) · `re` = 재출 횟수.
+   ⚠ `r[]`(등급 분포)와 `ms`(응답 시간)는 **첫 채점만** 센다 — 재출은 등급 넷이 아니라 다시/통과 둘이고(발주 ②),
+     같은 카드를 두 번 세면 등급 비율과 평균 응답 시간이 갈린다. 유지율(`retentionSplit`)도 같은 이유로 재출 제외(메타 기준선 64%).
+   09-07~09 이력: 처음엔 n에서 재출을 빼 「오늘 채점」이 상단 바(997)와 홈(909)으로 갈렸고, 그다음 정의를 하나로 모았고,
+   지금은 동하 지시로 **회 = 포함**으로 뒤집었다. 세는 자리를 늘리지 마라 — 이 함수 하나가 정본이다. */
 function dailyStats(){
-  const by={}, firstSeen=new Set();
+  const by={}, firstSeen=new Set(), seenDay={};
   for(const e of state.log){
     const k=dayKey(logDate(e));
-    const d=by[k]||(by[k]={n:0,nw:0,ms:0,msN:0,re:0,r:[0,0,0,0,0]});
-    if(e[3] && e[3].re){ d.re++; continue; }
-    d.n++; d.r[e[2]]=(d.r[e[2]]||0)+1;
+    const d=by[k]||(by[k]={n:0,nw:0,cards:0,ms:0,msN:0,re:0,r:[0,0,0,0,0]});
+    d.n++;                                   // 회 = 재출 포함
+    if(e[3] && e[3].re){ d.re++; continue; } // 아래(장·등급·시간)는 첫 채점만
+    const sd=seenDay[k]||(seenDay[k]=new Set());
+    if(!sd.has(e[0])){ sd.add(e[0]); d.cards++; }
+    d.r[e[2]]=(d.r[e[2]]||0)+1;
     if(!firstSeen.has(e[0])){ firstSeen.add(e[0]); d.nw++; }
     const ex=e[3];
     if(ex&&typeof ex.ms==='number'){ d.ms+=ex.ms; d.msN++; }
@@ -9427,14 +9423,14 @@ function renderStats(){
   /* ═══ B. 오늘 ═══ */
   h+='<div class="card-box"><h3>오늘</h3>';
   if(!T){
-    h+='<div class="cap">신규 '+today.nw+' · 복습 '+Math.max(0,today.n-today.nw)+(today.re?' · 재출 '+today.re:'')+' · '+fmtMin(today.ms)+'</div>';
+    h+='<div class="cap">'+today.cards+'장 — 신규 '+today.nw+' · 복습 '+Math.max(0,today.cards-today.nw)+' · '+fmtMin(today.ms)+'</div>';
   } else {
     const G=todayGains(T.hist), hs=T.hist, spark=[];
     for(let i=Math.max(1,hs.length-14);i<hs.length;i++){
       const k=hs[i].k, v=Math.max(0, hs[i].hard-hs[i-1].hard);
       spark.push({a:v, label:(i===hs.length-1)?'오늘':'', cls:isRestDay(k)?'rest':'', title:k+' · 새로 굳은 '+v+'장'}); }
     h+='<div class="cap">새로 굳은 <b>'+(G.newHard>=0?'+':'')+G.newHard+'</b> · 거머리 탈출 <b>'+G.escaped+'</b>'
-      +' · 신규 '+today.nw+' · 복습 '+Math.max(0,today.n-today.nw)+(today.re?' · 재출 '+today.re:'')+' · '+fmtMin(today.ms)+'</div>'
+      +' · '+today.cards+'장 — 신규 '+today.nw+' · 복습 '+Math.max(0,today.cards-today.nw)+' · '+fmtMin(today.ms)+'</div>'
       +(spark.length?barChart(spark,{h:60}):'')
       +'<div class="cap" style="margin-top:4px;opacity:.75">막대 = 하루에 새로 굳은 장수(최근 14일)</div>';
   }

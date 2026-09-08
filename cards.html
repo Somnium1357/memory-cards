@@ -924,6 +924,7 @@ details.ym-subj>summary::before{content:'▸';font-size:12px;color:var(--faint);
 details.ym-subj[open]>summary::before{transform:rotate(90deg);}
 details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px;margin-left:auto;}
 .ym-warn{font-size:12.5px;color:var(--hard);padding:6px 4px;}
+.ym-subj{flex:0 0 auto;min-width:48px;text-align:center;font-size:12.5px;font-weight:800;color:var(--accent);background:var(--accent-dim);border-radius:9px;padding:7px 8px;}
 
 </style>
 </head>
@@ -10371,18 +10372,20 @@ function ymRenderToday(){
       +'<div class="t"><b>'+esc(ymSubj(it.subj))+' '+esc(it.no)+'번 · '+esc(l1)+'</b><small>문제 p'+it.q+' · 해설 p'+it.a+(s.due<todayKey()?' · '+dkDiff(todayKey(),s.due)+'일 지남':'')+'</small></div>'
       +'<div class="ym-btns"><button class="ym-btn close" data-ym-close="'+esc(it.id)+'">▽ 닫힘</button><button class="ym-btn again" data-ym-x="'+esc(it.id)+'">또 틀림</button></div></div>'; }).join('')+'</div>';
   // 2) 과목별 다음 단위 — 준비도 최고 (안 끝낸 것 중)
-  h+='<div class="ym-sec">과목별 다음 단위 <small>준비도 = 카드 기억률이 목표 이상인 비율</small></div>';
+  h+='<div class="ym-sec">과목별 다음 단위 <small>과목마다 준비도가 가장 높은 단위 하나 · 준비도 = 카드 기억률이 목표 이상인 비율</small></div>';
   const bySubj={};
   for(const u of YM.cat.units){ if(YM.st.units[u.id]&&YM.st.units[u.id].done) continue;
     const r=ymReady(u); const cur=bySubj[u.subj];
     if(!cur || (r.pct||0)>(ymReady(cur).pct||0)) bySubj[u.subj]=u; }
   /* 과목 순이 아니라 **준비도 높은 순**(동하 09-09 실기: 「준비도순으로 나오는 것 같지가 않은데」). 과목당 하나는 그대로. 동률 = 과목 순. */
+  /* 「과목마다 하나」가 보이게 — 과목 배지를 앞에 세우고 「이 과목 준비도 1위 · 남은 N단위」를 적는다(동하 09-09: 「아무 단위나 뽑아온 것처럼 생겼다」). */
+  const leftBySubj={}; for(const u of YM.cat.units){ if(YM.st.units[u.id]&&YM.st.units[u.id].done) continue; leftBySubj[u.subj]=(leftBySubj[u.subj]||0)+1; }
   const subjOrd={}; YM.cat.subjects.forEach((sj,i)=>subjOrd[sj]=i);
   const nextUnits=YM.cat.subjects.map(sj=>bySubj[sj]).filter(Boolean)
     .sort((a,b)=>((ymReady(b).pct||0)-(ymReady(a).pct||0)) || (subjOrd[a.subj]-subjOrd[b.subj]));
   if(!nextUnits.length) h+='<div class="ym-empty">남은 단위가 없어요 — 전부 풀었어요</div>';
-  else h+='<div class="ym-list">'+nextUnits.map(u=>{ const r=ymReady(u); const [l1,l2]=ymLabel(u);
-    return '<div class="ym-row" data-ym-unit="'+esc(u.id)+'"><div class="t"><b>'+esc(ymSubj(u.subj))+' · '+esc(l1)+'</b><small>'+esc(l2)+' · '+u.items.length+'문항'+(r.n?'':' · 카드 없음')+'</small></div>'
+  else h+='<div class="ym-list">'+nextUnits.map(u=>{ const r=ymReady(u); const [l1,l2]=ymLabel(u); const left=leftBySubj[u.subj]||0;
+    return '<div class="ym-row" data-ym-unit="'+esc(u.id)+'"><span class="ym-subj">'+esc(ymSubj(u.subj))+'</span><div class="t"><b>'+esc(l1)+'</b><small>이 과목 준비도 1위 · 남은 '+left+'단위 · '+u.items.length+'문항'+(l2!==l1?' · '+esc(l2):'')+(r.n?'':' · 카드 없음')+'</small></div>'
       +'<div class="ym-bar"><i style="width:'+(r.pct||0)+'%"></i></div><span class="ym-pct'+(r.pct==null?' none':'')+'">'+(r.pct==null?'—':r.pct+'%')+'</span></div>'; }).join('')+'</div>';
   // 3) 진도 한 줄
   const p=ymProgress(); const daysLeft=Math.max(1, dkDiff(YM_DEADLINE, todayKey())); const need=Math.ceil((p.unitsN-p.units)/daysLeft);

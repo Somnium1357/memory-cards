@@ -9074,6 +9074,11 @@ function snapChart(box){
   const bd=Math.floor((Wd-gd*(n-1))/n); if(bd<1) return;
   const bw=bd/dpr, gap=gd/dpr;                                               // 화소 격자 위의 값으로 되돌린다
   const padD=Math.max(0, Wd-(bd*n+gd*(n-1)));
+  /* 🔴 **가로 간격만 맞추면 반만 고친 것이다** (동하 09-09 「다른 쪽 빈칸도 확인했어?」 — 안 했었다).
+     2단 막대의 **세로 이음새**(칸 안 1px)와 구성비 띠의 **세그먼트 간격**(2px)도 같은 반올림을 겪는다.
+     배율 1.25에서 1px는 1.25 화소라 이음새가 1·2px로 번갈아 나온다. 같은 방식으로 격자에 올린다. */
+  const seam=Math.max(1, Math.round(1*dpr))/dpr;
+  for(const c of chart.children) c.style.gap=seam+'px';
   for(const el of rows){
     if(el.children.length!==n) continue;
     el.style.gap=gap+'px';
@@ -9085,6 +9090,9 @@ function snapAllCharts(root){
   const r=root||document;
   r.querySelectorAll('.chart').forEach(snapChart);
   r.querySelectorAll('.wk').forEach(snapChart);   // 홈의 주간 미니 막대도 같은 병을 앓는다(106px에 7칸 = 12.57px)
+  /* 구성비 띠(채점 분포)의 세그먼트 사이 틈 — 폭은 %(데이터)라 그대로 두고 **틈만** 격자에 올린다 */
+  const dpr=window.devicePixelRatio||1, g=Math.max(1, Math.round(2*dpr))/dpr;
+  r.querySelectorAll('.pw').forEach(el=>{ el.style.gap=g+'px'; });
 }
 let _snapRO=null;
 function watchCharts(){

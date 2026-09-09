@@ -7719,14 +7719,17 @@ function renderSession(){
   const exN=exU.length+exM.length, exCards=exCount(sx);
   const exNames=[...exU.map(k=>{ try{return hoedokLabel(k);}catch(e){return k;} }),
                  ...exM.map(k=>k.split('||').slice(1).join(' · '))];
-  h+=`<div class="h-sec">이 세션의 단위</div>
-      <div id="ssUnits"></div>
-      <button class="more-btn" id="ssEx">－ 주제 빼 두기${exN?` (${exN}개 · ${exCards.toLocaleString()}장)`:''}</button>
+  /* 🔴 관리 버튼(주제 빼 두기·큐 비우기)은 단위 목록 **위**다 (동하 09-09: 「누복3차같은건 큐비우기나 세션빼기가 너무 밑으로 갔는데」).
+     목록은 65줄까지 가는데(누적복습 3차 실측) 이 둘은 목록을 훑다 누르는 게 아니라 **작정하고 누르는** 버튼이라,
+     아래에 두면 스크롤 끝에 숨는다. 그리고 목록 자체를 접는다 — 기본 접힘 · 편 상태는 기억한다. */
+  h+=`<button class="more-btn" id="ssEx">－ 주제 빼 두기${exN?` (${exN}개 · ${exCards.toLocaleString()}장)`:''}</button>
       <div class="why">${exN
         ? `제외 중 — <b>${esc(exNames.slice(0,2).join(' / '))}</b>${exN>2?` 외 ${exN-2}`:''}. 신규·복습 <b>둘 다</b> 이 세션엔 안 나와요 (다른 세션엔 그대로)`
         : '고른 주제를 <b>이 세션에서만</b> 계속 빼 둬요 — 신규·복습 둘 다. 위 「빼기」는 오늘 큐에서만 빼는 것이고, 이건 <b>계속</b> 빠집니다'}</div>
       ${remain?`<button class="more-btn dim" id="ssClear">큐 비우기 (${remain}장)</button>
-      <div class="why">오늘 <b>큐만</b> 비워요 — 범위·누적 횟수·성적은 그대로예요. 「빼기」와 달리 범위를 안 건드립니다</div>`:''}`;
+      <div class="why">오늘 <b>큐만</b> 비워요 — 범위·누적 횟수·성적은 그대로예요. 「빼기」와 달리 범위를 안 건드립니다</div>`:''}
+      <details class="fold" id="ssUnitFold"><summary id="ssUnitSum">이 세션의 단위</summary>
+        <div id="ssUnits"></div></details>`;
   body.innerHTML=h;
   $('ssGo').onclick=()=>{ if(live){ go('scrSolve'); showCard(); } else playSess(sx); };
   const bn=$('ssNew'); if(bn)bn.onclick=()=>{ if(!live)playSess(sx); curPreset=asPreset(sx); extendWithNew(); };
@@ -7777,10 +7780,16 @@ function renderSession(){
   for(const id of (live?queue.slice(qPos).map(c=>c.id):sx.q)){ const c=BYID[id];
     if(c)seen[cardRowKey(c,midSet)]=(seen[cardRowKey(c,midSet)]||0)+1; }
   let keys=Object.keys(seen);
-  if(isFixed(sx)){
+  /* 🔴 기준은 **방식(자동/직접)이 아니라 「범위를 담았나」**다 (동하 09-09: 「자동 충전으로 바꾸면 왜 세션 단위가 다 사라져」).
+     예전에는 자동 세션이면 무조건 「큐에 든 단위 상위 8개」만 그렸다 — 범위를 65단위 담아 둔 세션을
+     자동으로 바꾸면 화면 줄이 65 → 4로 줄어 **담은 것이 사라진 것처럼** 보였다(범위 데이터는 멀쩡했다).
+     8개 상한은 원래 「일일 복습」처럼 **범위가 비어 전 범위를 긁는 자동 세션**의 79줄을 막으려던 것이다 —
+     그 조건에만 건다. 범위를 담은 세션은 자동이든 직접이든 담은 단위를 다 보여 준다. */
+  const scoped=((sx.scope.units||[]).length||(sx.scope.mids||[]).length);
+  if(scoped){
     for(const k of (sx.scope.units||[])) if(!seen[k])keys.push(k);
     for(const mk of (sx.scope.mids||[])) if(!seen[mk]&&!keys.includes(mk))keys.push(mk);
-  } else keys=keys.sort((a,b)=>seen[b]-seen[a]).slice(0,8);
+  } else if(!isFixed(sx)) keys=keys.sort((a,b)=>seen[b]-seen[a]).slice(0,8);
   keys.sort((a,b)=>planRank(a)-planRank(b)||(isMidRow(a)?rowMid(a):'').localeCompare(isMidRow(b)?rowMid(b):''));
   /* ssOpen에는 이제 대주제 키와 중주제 키가 섞여 있다 — 층마다 통계 판을 따로 만든다 */
   /* 한 행의 자식은 — 대주제면 중주제들(하나뿐이면 그 3층), 중주제면 3층들, 3층이면 없음 */
@@ -7797,7 +7806,9 @@ function renderSession(){
     for(const id of ids){ const c=BYID[id]; if(!c)continue; const kk=keyOf(c);
       if(want.includes(kk)) m[kk]=(m[kk]||0)+1; }
     return m; };
+  let nRows=0;
   for(const k of keys){ if(!rowMeta(k))continue;
+    nRows++;
     const inQ=seen[k]||0;
     const kids=kidsOf(k), subMids = kids.length>1 ? kids : null;
     const row=unitRow(k, stats[k]||{n:0,due:0,nw:0,last:0},
@@ -7840,7 +7851,15 @@ function renderSession(){
       ub.appendChild(box);
     }
   }
-  if(!keys.length)ub.innerHTML='<div class="empty-note" style="padding:16px">아직 내용이 없어요 — 아래에서 단위를 넣으세요</div>';
+  if(!keys.length)ub.innerHTML='<div class="empty-note" style="padding:16px">아직 내용이 없어요 — 위 「＋ 범위 넓히기」로 넣으세요</div>';
+  /* 목록은 기본 접힘 · 편 상태는 기기에 기억한다(renderSession이 자주 다시 그린다 — 펼쳐 놓고 「빼기」를 누르면
+     다시 그려지는데 그때 도로 접히면 못 쓴다). 숫자는 실제로 그린 줄 수다. */
+  const fold=$('ssUnitFold'), sum=$('ssUnitSum');
+  if(fold&&sum){
+    sum.textContent='이 세션의 단위'+(nRows?` ${nRows}개`:'');
+    fold.open = lsGet('cards_ss_unitfold_v1')==='1';
+    fold.ontoggle=()=>lsSet('cards_ss_unitfold_v1', fold.open?'1':'0');
+  }
 }
 /* 🔴 `inScope`의 부정으로 세면 안 된다 — 그 함수는 은퇴·끄기·미룸에도 false를 준다.
    실측(08-28): 총창 6단위 제외인데 **196장**으로 떴다(실제 177 + 딴 데의 19장). 직접 대조한다. */

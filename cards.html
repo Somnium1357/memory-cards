@@ -3703,8 +3703,20 @@ const TERM_TYPES=new Set(['동치','표기','전거','예시','대응','연쇄',
    🔴 범위 = 동하 결정: 각 과목 교육과정 대주제(tags[0]에 「교육과정」) + 통합교과 전체 + 총창 전체. 다른 과목엔 안 붙는다.
    🔴 용어 답에만 — 답면 라벨과 같은 분기(TERM_TYPES · 짧은 답) + 빈칸·원소. 문장 답(지도·이유·특징)엔 초성이 뜻이 없다.
    항목(items·빈칸 ①②③)은 항목마다 따로 연다 — 한꺼번에 열면 어느 항목을 못 꺼냈는지가 뭉개진다. */
-const HINT_TYPES=new Set([...TERM_TYPES, '빈칸','원소']);
-function hintInScope(c){ return c.subj==='13.총창' || c.subj==='11.통합교과' || (((c.tags||[])[0])||'').includes('교육과정'); }
+const HINT_TYPES=new Set([...TERM_TYPES, '빈칸','원소', '개념어']);
+/* 🔴 **개념어(강사 질문표)는 힌트 갈래가 다르다** (동하 09-09 「3으로 ㄱㄱ」 · 「영어는 힌트 눌러도 알맞음을 누를 수 있어야」).
+   ⑴ 범위를 연다 — `typ`으로 잡는다(과목·태그가 아니라). 뒤에 다른 과목 강사 질문표가 와도 그대로 걸린다.
+   ⑵ 길이를 안 잰다 — 답이 영어 낱말이라 `circumlocution`(14자)·`comprehensible input`(20자)이 흔하다.
+      한글 답의 8자 규칙은 「용어냐 서술이냐」를 가르려던 것인데, 여기선 유형이 곧 용어다.
+   ⑶ 🔴 **힌트를 열어도 채점이 안 잠긴다** — 원래 앞면에 박혀 있던 강사 가림판의 `(f )`를 앱 힌트로 **옮긴** 것이라
+      「힌트 = 인출 실패」로 볼 자리가 아니다(다른 과목의 초성은 그대로 「다시」만).
+      ⚠ 「다시 누르면 닫히고 채점이 열린다」는 토글은 **안 만든다** — 본 것을 안 본 것으로 되돌리는 꼴이라
+        나중에 「힌트 보고 맞힌 것」과 「그냥 맞힌 것」을 못 가른다. 대신 **기록은 그대로 남는다**:
+        채점 로그 `extra.h`에 연 항목 번호가 들어가므로 메타가 뒤에 둘을 가를 수 있다. */
+const HINT_FREE_TYPS=new Set(['개념어']);
+function hintLocks(c){ return !(c && HINT_FREE_TYPS.has(c.typ)); }
+function hintInScope(c){ return c.subj==='13.총창' || c.subj==='11.통합교과' || c.typ==='개념어'
+  || (((c.tags||[])[0])||'').includes('교육과정'); }
 /* 🔴 용어인지는 **조각마다** 잰다 — 빈칸 답은 「성취기준」도 있고 「교과 내 또는 교과 간 연계 지도 방법」도 있다
    (동하 09-05 「얘는 서술인데도 붙었네」). 실측(범위 빈칸 조각 720): 공백 뺀 8자 이하가 87%, 9자부터는 구절이 대부분.
    TERM_TYPES(대응·구성·단계…)는 유형이 곧 용어 답이라 길이를 안 잰다. */
@@ -3712,7 +3724,7 @@ const HINT_MAX=8, HINT_MAX_TERM=12;     // 용어 유형(대응·구성·단계�
 const termLike=(s,lim)=>s.replace(/\s/g,'').length<=lim;
 function hintUnits(c){                  // 초성을 낼 답 조각들 [{idx, lab, ans}] — 비면 힌트 없음. idx = 로그 `h`에 남는 항목 번호
   if(!hintInScope(c) || c.table || c.typ==='도식') return [];
-  const lim=TERM_TYPES.has(c.typ)?HINT_MAX_TERM:HINT_MAX;
+  const lim=HINT_FREE_TYPS.has(c.typ)?999:(TERM_TYPES.has(c.typ)?HINT_MAX_TERM:HINT_MAX);   // 개념어는 길이 안 잼
   if(Array.isArray(c.items) && c.items.length>=2){
     if(!HINT_TYPES.has(c.typ)) return [];                          // 문장 항목(특징·지도…)은 제외
     return c.items.map((it,i)=>({idx:i, lab:String(i+1), ans:it})).filter(u=>termLike(u.ans,lim));
@@ -3742,7 +3754,7 @@ function renderHintBox(c){
   units.forEach(u=>{ const i=u.idx;   // 항목 번호는 원래 자리(걸러진 항목이 있어도 로그 번호가 어긋나지 않게)
     const b=document.createElement('button'); b.className='hint-chip'; b.dataset.lab=u.lab?u.lab+' ':'';
     const open=()=>{ b.classList.add('on'); b.textContent=choseong(u.ans); hintUsed.add(i); syncGradeButtons(); };
-    if(hintUsed.has(i)) open(); else b.textContent=(u.lab?u.lab+' ':'')+'초성';
+    if(hintUsed.has(i)) open(); else b.textContent=(u.lab?u.lab+' ':'')+(HINT_FREE_TYPS.has(c.typ)?'첫 글자':'초성');
     b.onclick=(ev)=>{ ev.stopPropagation(); if(revealed||hintUsed.has(i)) return; open(); };
     box.appendChild(b);
   });
@@ -6889,7 +6901,7 @@ function esc(s){ // 속성 자리(data-*="…"·value="…")에도 쓰이므로 
 function noteHtml(s){ return esc(s).replace(/\*\*([^*]+)\*\*/g,
   (m,inner)=>'<strong class="mn">'+inner.split('|').map(x=>'<u>'+x+'</u>').join('')+'</strong>'); }
 function syncGradeButtons(){
-  const hasX=itemMarks.some(Boolean) || hintUsed.size>0;   // 힌트를 열었어도 「다시」만 — 힌트 의존을 막는 값(메타 09-05)
+  const hasX=itemMarks.some(Boolean) || (hintUsed.size>0 && hintLocks(queue[qPos]));   // 힌트를 열었어도 「다시」만 — 힌트 의존을 막는 값(메타 09-05 · 개념어는 예외)
   // disabled로 막지 않는다 — 탭이 rate()까지 가야 「다시만 눌러요」 토스트가 뜬다.
   // disabled면 버튼이 말없이 죽어 왜 안 되는지 알 길이 없다 (감사 U2). 죽은 티는 .dim이 낸다.
   ['gHard','gGood','gEasy'].forEach(id=>{ $(id).classList.toggle('dim',hasX); });
@@ -6921,7 +6933,7 @@ function rate(num){
   const reN=c._re||0;                       // 0 = 그날 첫 대면 · 1,2 = 재출 회차
   const hasItems=itemMarks.length>=2, anyX=itemMarks.some(Boolean);
   if(anyX && num!==1){ toast('빠뜨린 항목이 있어요 — 「다시」만 눌러요'); return; } // X 있으면 Again만
-  if(hintUsed.size && num!==1){ toast('초성 힌트를 열었어요 — 「다시」만 눌러요'); return; } // 힌트 = 다시 (동하·메타 09-05)
+  if(hintUsed.size && num!==1 && hintLocks(c)){ toast('초성 힌트를 열었어요 — 「다시」만 눌러요'); return; } // 힌트 = 다시 (동하·메타 09-05 · 개념어는 예외)
   const firstToday = s.d!==tk;
   undoSnap={ k:'rate', run:undoRun, id:c.id, card:c, entry:null, reIns:null,
              prev:JSON.parse(JSON.stringify(state.cards[c.id]||null)),

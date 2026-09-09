@@ -876,6 +876,10 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
   display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:transparent;}
 .tr-row.on .cbx{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
 .tr-row.part .cbx{border-color:var(--accent);color:var(--accent);}
+/* 이미 세션에 들어 있는 줄 — 고른 것(진한 ✓)과 헷갈리면 안 되므로 흐린 ✓ + 흐린 이름 (동하 09-09) */
+.tr-row.held .cbx{background:var(--surface2);border-color:var(--line);color:var(--faint);}
+.tr-row.held .nm{color:var(--mute);}
+.tr-row.held .ct .in-sess{color:var(--faint);margin-left:6px;}
 .tr-row .nm{flex:1;min-width:0;font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .tr-row .ct{flex:0 0 auto;font-size:12px;font-weight:700;color:var(--mute);}
 .tr-row .ct .due{color:var(--accent);margin-left:6px;}
@@ -7788,6 +7792,7 @@ function renderSession(){
     desc:isFixed(sx)?'고른 범위가 이 세션에 들어오고, 못 푼 잔량은 다음날로 이월됩니다.'
                     :'자동 충전 세션이라 오늘 큐에만 얹습니다 (범위는 그대로).',
     selected:{units:[],mids:[]},
+    have:{units:sx.scope.units||[], mids:sx.scope.mids||[]},   // 🔴 이미 든 것은 표시만 (고른 것과 섞지 않는다)
     onOk:(sel)=>{ if(!sel.units.length&&!sel.mids.length)return;
       const n=addScopeToSess(sx, sel); addToast(n, sx); renderSession(); }});
   const ub=$('ssUnits');
@@ -8093,8 +8098,19 @@ function pkCount(){                       // 고른 범위의 카드 수
   let n=0; for(const c of DATA){ if(inScope(c,sc))n++; }
   return n;
 }
+/* 🔴 「이미 들어 있는 것」을 피커에 보여 준다 (동하 09-09: 「이미 들어가 있는 내용이 내용 추가 쪽 피커에 공유가 안 돼」).
+   무엇이 이미 담겼는지 안 보이면 같은 단위를 또 고르게 된다.
+   🔴 **고른 것(pkSel)과 섞지 않는다** — 섞으면 확인 때 이미 있는 것까지 `addScopeToSess`로 되돌아가고,
+      그건 다 푼 단위의 카드를 오늘 큐에 되살리는 길이다(「도형 추가했다 뺐더니 130장」 계열).
+      그래서 held는 **읽기 전용 표시**다: 흐린 ✓ · 누르면 안내만 · 「확인 (N장)」 셈에도 안 들어간다.
+      빼는 창구는 세션 화면의 「빼기」 하나로 남긴다(범위를 지우는 일을 두 곳에 두지 않는다). */
+let pkHave={units:new Set(), mids:new Set()};
+function pkHeldUnit(u){ return pkHave.units.has(u.key); }
+function pkHeldMid(mk, u){ return pkHave.units.has(u.key) || pkHave.mids.has(mk); }
+function pkHeldSub(sk, mk, u){ return pkHave.units.has(u.key) || pkHave.mids.has(mk) || pkHave.mids.has(sk); }
 function openUnitPick(o){
   pkMode=o.sessions?'sessions':'units';
+  pkHave={units:new Set(((o.have&&o.have.units)||[])), mids:new Set(((o.have&&o.have.mids)||[]))};
   pkSel={units:((o.selected&&o.selected.units)||[]).slice(), mids:((o.selected&&o.selected.mids)||[]).slice()};
   pkOnOk=o.onOk||null; pkOnPick=o.onPick||null;
   $('pkTitle').textContent=o.title||'고르기';
@@ -8108,8 +8124,9 @@ function openUnitPick(o){
      무엇을 골라 뒀는지는 보여야 하니까. */
   pkOpen={};
   if(pkMode!=='sessions') for(const node of buildTree()){
-    if(node.units.some(u=>pkSel.units.includes(u.key)||pkSel.mids.some(m=>m.startsWith(u.key+'||'))))
-      pkOpen[node.subj]=true;
+    if(node.units.some(u=>pkSel.units.includes(u.key)||pkSel.mids.some(m=>m.startsWith(u.key+'||'))
+       || pkHave.units.has(u.key) || [...pkHave.mids].some(m=>m.startsWith(u.key+'||'))))
+      pkOpen[node.subj]=true;   // 이미 들어 있는 과목도 펼친다 — 보이라고 넣은 표시다
   }
   renderPick();
   $('ovlPick').classList.add('show');
@@ -8128,16 +8145,18 @@ function renderPick(){
   }
   const q=$('pkSearch').value.trim().toLowerCase();
   const stats=unitStatsAll();
-  const row=(cls, on, part, tw, name, cnt, due, onPick, onOpen)=>{
+  const row=(cls, on, part, tw, name, cnt, due, onPick, onOpen, held)=>{
     const el=document.createElement('div');
-    el.className='tr-row '+cls+(on?' on':'')+(part?' part':'')+(onOpen?' expandable':'')+(tw==='▾'?' opened':'');
-    el.innerHTML=`<button class="pick"><span class="cbx">${on?'✓':(part?'–':'')}</span></button>
+    /* held = 이미 세션에 들어 있는 줄 — 고름/부분 표시를 덮는다(둘을 같이 칠하면 무엇이 새로 담기는지 흐려진다) */
+    el.className='tr-row '+cls+(held?' held':((on?' on':'')+(part?' part':'')))+(onOpen?' expandable':'')+(tw==='▾'?' opened':'');
+    el.innerHTML=`<button class="pick"><span class="cbx">${held?'✓':(on?'✓':(part?'–':''))}</span></button>
       <button class="open">
         <span class="tw">${tw?'▸':''}</span>
         <span class="nm">${esc(name)}</span>
-        <span class="ct">${cnt}${due?`<span class="due">due ${due}</span>`:''}</span></button>`;
-    el.querySelector('.pick').onclick=(e)=>{ e.stopPropagation(); onPick(); };
-    el.querySelector('.open').onclick=(e)=>{ e.stopPropagation(); (onOpen||onPick)(); };
+        <span class="ct">${cnt}${held?'<span class="in-sess">들어 있음</span>':''}${due?`<span class="due">due ${due}</span>`:''}</span></button>`;
+    const nope=()=>toast('이미 들어 있어요 — 빼려면 세션 화면의 「빼기」');
+    el.querySelector('.pick').onclick=(e)=>{ e.stopPropagation(); held?nope():onPick(); };
+    el.querySelector('.open').onclick=(e)=>{ e.stopPropagation(); (onOpen||(held?nope:onPick))(); };
     box.appendChild(el);
   };
   for(const node of buildTree()){
@@ -8148,7 +8167,7 @@ function renderPick(){
     const sSt=pkSubjState({units});
     const open = q? true : !!pkOpen[node.subj];
     row('tr-lv0', sSt===2, sSt===1, open?'▾':'▸', node.label, node.n, 0,
-      ()=>{ const all=sSt!==2; for(const u of units)pkToggleUnit(u, all); renderPick(); },
+      ()=>{ const all=sSt!==2; for(const u of units) if(!pkHeldUnit(u)) pkToggleUnit(u, all); renderPick(); },   // 이미 든 것은 안 건드린다
       ()=>{ pkOpen[node.subj]=!pkOpen[node.subj]; renderPick(); });   // 이름 쪽 = 펼치기
     if(!open)continue;
     for(const u of units){
@@ -8163,14 +8182,15 @@ function renderPick(){
       const canOpen = mids.length>1 || soloSubs.length>1;
       row('tr-lv1', uSt===2, uSt===1, canOpen?(uOpen?'▾':'▸'):'', u.label.replace(/^[^·]+· /,''), u.n, st2.due,
         ()=>{ pkToggleUnit(u, uSt!==2); renderPick(); },
-        canOpen?()=>{ pkOpen[u.key]=!pkOpen[u.key]; renderPick(); }:null);   // 펼 게 없으면 이름도 선택
+        canOpen?()=>{ pkOpen[u.key]=!pkOpen[u.key]; renderPick(); }:null,   // 펼 게 없으면 이름도 선택
+        pkHeldUnit(u));
       if(!uOpen||!canOpen)continue;
       if(solo){                                  // 중주제 한 개 → 3층을 lv2 자리에 바로
         const mk=midKey(u.key,solo), mSt=pkMidState(u,solo);
         for(const s of soloSubs){
           const on=mSt===2||pkSel.mids.includes(subKey(mk,s));
           row('tr-lv2', on, false, '', s===solo?`${s} (그 자체)`:s, u.subs[solo][s], 0,
-            ()=>{ pkToggleSub(u,solo,s,!on); renderPick(); }, null);
+            ()=>{ pkToggleSub(u,solo,s,!on); renderPick(); }, null, pkHeldSub(subKey(mk,s), mk, u));
         }
         continue;
       }
@@ -8180,13 +8200,13 @@ function renderPick(){
         const mOpen = q? true : !!pkOpen[mk];
         row('tr-lv2', mSt===2, mSt===1, subs.length>1?(mOpen?'▾':'▸'):'', m, u.mids[m], 0,
           ()=>{ pkToggleMid(u,m,mSt!==2); renderPick(); },
-          subs.length>1?()=>{ pkOpen[mk]=!pkOpen[mk]; renderPick(); }:null);
+          subs.length>1?()=>{ pkOpen[mk]=!pkOpen[mk]; renderPick(); }:null, pkHeldMid(mk, u));
         if(!mOpen||subs.length<2)continue;
         for(const s of subs){
           const on=mSt===2||pkSel.mids.includes(subKey(mk,s));
           /* node가 중주제에서 끝나는 카드 — 이름이 부모와 같아서 그대로 두면 같은 줄이 두 번 보인다 */
           row('tr-lv3', on, false, '', s===m?`${s} (그 자체)`:s, u.subs[m][s], 0,
-            ()=>{ pkToggleSub(u,m,s,!on); renderPick(); }, null);
+            ()=>{ pkToggleSub(u,m,s,!on); renderPick(); }, null, pkHeldSub(subKey(mk,s), mk, u));
         }
       }
     }

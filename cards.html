@@ -8464,7 +8464,11 @@ $('tglKbd').onclick=()=>{ kbdOn=!kbdOn; lsSet(K_KBD,kbdOn?'1':'0'); $('tglKbd').
 /* ═══════════════ 키보드 (PC 전용 보조 — 터치 흐름은 그대로) ═══════════════ */
 let kbdOn = lsGet(K_KBD)!=='0';
 document.addEventListener('keydown',e=>{
-  if(!kbdOn || e.metaKey || e.ctrlKey || e.altKey)return;
+  /* 🔴 조합키는 원래 **통째로** 무시한다 — 브라우저 단축키(Cmd+R·Cmd+F…)를 가로채지 않으려고.
+     딱 하나 연다: **Ctrl+1~4 = 플래그 사유 칩 넷** (동하 09-09 · 게임패드 R을 Ctrl로 두고 쥔다).
+     채점 1~4와 손가락 자리가 같고 Ctrl만 얹는 꼴이라 외울 것이 없다. 그 밖의 조합은 여전히 버린다. */
+  if(!kbdOn || e.metaKey || e.altKey)return;
+  if(e.ctrlKey && !(e.key>='1' && e.key<='4'))return;
   /* 🔴 **키를 누르고 있으면 브라우저가 같은 키를 계속 보낸다**(`e.repeat`) — 스페이스를 길게 누르면
      「공개 → 알맞음 → 다음 카드 공개 → 알맞음…」으로 카드가 줄줄이 넘어간다(동하 09-09 지적).
      채점 버튼은 `revealed`가 false로 돌아가 이중 채점이 안 되지만, **연속 전진은 막을 것이 없었다.**
@@ -8494,6 +8498,14 @@ document.addEventListener('keydown',e=>{
   }
   if(k===' '||k==='enter'){ e.preventDefault();
     if(!revealed)reveal(); else if(!itemMarks.some(Boolean))rate(3); return; }
+  /* 🔴 Ctrl+1~4 = 사유 칩 — 채점(1~4)보다 **먼저** 본다. 레일이 닫혀 있어도 먹는다(칩은 레일 안이지만
+     `toggleFlagType`은 화면과 무관하다) — 그래서 무엇이 켜졌는지 토스트로 말해 준다. */
+  if(e.ctrlKey){ e.preventDefault();
+    const c=cur(); if(!c)return;
+    const name=FLAG_TYPES[+k-1]; if(!name)return;
+    toggleFlagType(c,name); syncRail();
+    toast(((st(c.id).ft||[]).includes(name)?'':'해제 · ')+name);
+    return; }
   if(k>='1'&&k<='4'){ if(revealed)rate(+k); return; }
   if(k==='u'){ doUndo(); return; }
   if(k==='b'){ $('rBury').click(); return; }

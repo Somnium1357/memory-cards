@@ -7801,7 +7801,6 @@ function renderSession(){
   const ub=$('ssUnits');
   // 이 세션이 「중주제로」 집어든 것들 — 그 카드는 대주제가 아니라 중주제 행에 모인다
   const midSet=new Set(sx.scope.mids||[]);
-  const stats=rowStats(midSet);
   const seen={};
   for(const id of (live?queue.slice(qPos).map(c=>c.id):sx.q)){ const c=BYID[id];
     if(c)seen[cardRowKey(c,midSet)]=(seen[cardRowKey(c,midSet)]||0)+1; }
@@ -7815,8 +7814,27 @@ function renderSession(){
   if(scoped){
     for(const k of (sx.scope.units||[])) if(!seen[k])keys.push(k);
     for(const mk of (sx.scope.mids||[])) if(!seen[mk]&&!keys.includes(mk))keys.push(mk);
-  } else if(!isFixed(sx)) keys=keys.sort((a,b)=>seen[b]-seen[a]).slice(0,8);
+  }
+  /* 🔴 **상한 8을 없앴다** (동하 09-09 실기: 일일 복습이 「이 세션의 단위 8개」로 떴는데 실제 큐 단위는 79종이었다).
+     수가 거짓말을 하고 있었다. 대신 **접혀 있으면 아예 안 그린다** — 통계판(`rowStats`)과 79줄 조립이
+     `renderSession`마다 도는 것이 원래 상한을 둔 이유였다(실측 8줄 64ms · 79줄 159ms).
+     접힌 상태에서는 그 비용이 0이고, 펴는 순간 한 번만 낸다. 그래서 상한 없이 전부 보여 줄 수 있다. */
   keys.sort((a,b)=>planRank(a)-planRank(b)||(isMidRow(a)?rowMid(a):'').localeCompare(isMidRow(b)?rowMid(b):''));
+  keys=keys.filter(k=>rowMeta(k));
+  const fold=$('ssUnitFold'), sumEl=$('ssUnitSum');
+  const foldOpen = lsGet('cards_ss_unitfold_v1')==='1';
+  if(fold&&sumEl){
+    sumEl.textContent='이 세션의 단위'+(keys.length?` ${keys.length}개`:'');
+    fold.open=foldOpen;
+    /* 🔴 `toggle`은 **비동기로** 뜬다 — 위 `fold.open=` 한 줄도 이벤트를 낸다.
+       그대로 다시 그리면 무한 루프다. 저장된 상태와 같으면 사람이 누른 게 아니므로 나간다. */
+    fold.ontoggle=()=>{ if(fold.open === (lsGet('cards_ss_unitfold_v1')==='1')) return;
+      lsSet('cards_ss_unitfold_v1', fold.open?'1':'0');
+      if(fold.open) renderSession();   // 펴는 순간에 그린다 (접혀 있을 땐 조립 비용 0)
+    };
+  }
+  if(!foldOpen){ ub.innerHTML=''; return; }
+  const stats=rowStats(midSet);
   /* ssOpen에는 이제 대주제 키와 중주제 키가 섞여 있다 — 층마다 통계 판을 따로 만든다 */
   /* 한 행의 자식은 — 대주제면 중주제들(하나뿐이면 그 3층), 중주제면 3층들, 3층이면 없음 */
   const kidsOf=(k)=>{
@@ -7832,9 +7850,7 @@ function renderSession(){
     for(const id of ids){ const c=BYID[id]; if(!c)continue; const kk=keyOf(c);
       if(want.includes(kk)) m[kk]=(m[kk]||0)+1; }
     return m; };
-  let nRows=0;
-  for(const k of keys){ if(!rowMeta(k))continue;
-    nRows++;
+  for(const k of keys){
     const inQ=seen[k]||0;
     const kids=kidsOf(k), subMids = kids.length>1 ? kids : null;
     const row=unitRow(k, stats[k]||{n:0,due:0,nw:0,last:0},
@@ -7878,14 +7894,6 @@ function renderSession(){
     }
   }
   if(!keys.length)ub.innerHTML='<div class="empty-note" style="padding:16px">아직 내용이 없어요 — 위 「＋ 범위 넓히기」로 넣으세요</div>';
-  /* 목록은 기본 접힘 · 편 상태는 기기에 기억한다(renderSession이 자주 다시 그린다 — 펼쳐 놓고 「빼기」를 누르면
-     다시 그려지는데 그때 도로 접히면 못 쓴다). 숫자는 실제로 그린 줄 수다. */
-  const fold=$('ssUnitFold'), sum=$('ssUnitSum');
-  if(fold&&sum){
-    sum.textContent='이 세션의 단위'+(nRows?` ${nRows}개`:'');
-    fold.open = lsGet('cards_ss_unitfold_v1')==='1';
-    fold.ontoggle=()=>lsSet('cards_ss_unitfold_v1', fold.open?'1':'0');
-  }
 }
 /* 🔴 `inScope`의 부정으로 세면 안 된다 — 그 함수는 은퇴·끄기·미룸에도 false를 준다.
    실측(08-28): 총창 6단위 제외인데 **196장**으로 떴다(실제 177 + 딴 데의 19장). 직접 대조한다. */

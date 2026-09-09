@@ -238,9 +238,12 @@ input:focus,select:focus{border-color:var(--accent);}
 #cNote b{color:var(--ink2);font-weight:700;font-size:12px;letter-spacing:.4px;margin-right:6px;}
 /* 니모닉에서 실제 내용이 붙는 토막 — 본문 크기 그대로 진하게만 (동하 09-09) */
 #cNote strong,.cs-note strong{font-weight:800;color:var(--ink2);}
-/* 니모닉 항목 경계 — 밑줄을 항목마다 따로 긋고 2px 띄운다(붙여 놓으면 한 줄로 보여 경계가 죽는다) */
-#cNote .mn u,.cs-note .mn u{text-decoration:none;border-bottom:1.5px solid currentColor;
-  padding-bottom:1px;margin-right:2px;}
+/* 니모닉 항목 — 항목마다 밑줄 하나, 사이는 3px 띄운다(갈린 것이 끊어져 보이게).
+   🔴 `border-bottom`을 쓰면 안 된다 — 인라인 상자 **바닥**에 그어져 글자에서 뚝 떨어져 보인다
+      (동하 09-09 실기: 「글자 밑줄이 아니라 떠 보이고」). 글자에 붙는 밑줄은 `text-decoration`이고,
+      `<u>`가 저마다 따로 그으므로 항목 사이는 그대로 끊어진다. */
+#cNote .mn u,.cs-note .mn u{text-decoration:underline;text-underline-offset:2px;
+  text-decoration-thickness:1.5px;margin-right:3px;}
 #cNote .mn u:last-child,.cs-note .mn u:last-child{margin-right:0;}
 /* 도식 카드(typ=도식, 8장)는 맞춰 볼 답면이 없다 — 회독본 그림과 대조해 스스로 매긴다.
    그 사실이 앞면에서 안 보이면 「넘겼는데 답이 없네」가 된다. 앞면부터 말해 준다. */
@@ -6873,11 +6876,11 @@ function esc(s){ // 속성 자리(data-*="…"·value="…")에도 쓰이므로 
    ⚠ 카드 앞면·답면은 안 건드린다 — 문면 마크업은 이 세션 소관이 아니다(문법·생성기 = QC).
    🔴 굵게만으로는 **한 덩어리 안에 항목이 몇 개 붙었는지** 안 보인다 (동하 09-09: 「자유게 = 자유/게, 공표 = 공/표」).
       그래서 굵은 토막 안의 `|`가 **항목 경계**다 — 항목마다 밑줄을 따로 긋고 사이를 2px 띄운다.
-      🔴 `|`가 없으면 **밑줄을 안 긋는다**(굵게만) — 밑줄의 뜻이 「여기서 갈린다」이므로 하나짜리엔 그을 것이 없고,
-         `note`의 `**…**`는 니모닉 말고 **본문 강조**로도 쓰여(「소수가 맞다」 류) 거기까지 밑줄이 가면 링크처럼 보인다. */
-function noteHtml(s){ return esc(s).replace(/\*\*([^*]+)\*\*/g, (m,inner)=>{
-  const it=inner.split('|');   // 밑줄은 **갈린 토막에만** — 항목이 하나면 굵게로 충분하다
-  return '<strong class="mn">'+(it.length<2?inner:it.map(x=>'<u>'+x+'</u>').join(''))+'</strong>'; }); }
+      🔴 **밑줄은 토막마다 전부 긋는다** — 항목이 하나여도(`**증**`·`**협동**`) 긋는다.
+         09-09에 「갈린 토막에만」으로 줄였다가 동하 실기에서 되돌렸다: 「밑줄이 증에는 안 붙었고, 두 글자들은 밑줄이 안 붙었어」.
+         **항목 = 밑줄 하나**가 규칙이고, 갈린다는 것은 밑줄이 **끊어져** 보인다(사이 3px). */
+function noteHtml(s){ return esc(s).replace(/\*\*([^*]+)\*\*/g,
+  (m,inner)=>'<strong class="mn">'+inner.split('|').map(x=>'<u>'+x+'</u>').join('')+'</strong>'); }
 function syncGradeButtons(){
   const hasX=itemMarks.some(Boolean) || hintUsed.size>0;   // 힌트를 열었어도 「다시」만 — 힌트 의존을 막는 값(메타 09-05)
   // disabled로 막지 않는다 — 탭이 rate()까지 가야 「다시만 눌러요」 토스트가 뜬다.

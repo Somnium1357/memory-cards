@@ -7423,7 +7423,7 @@ function dueTodayCount(){
   return dropSettled(inQ).length + gateIn(restDue, inQ).length;
 }
 function renderToday(){ // 홈 첫 화면 = 오늘 한 일 (통계 탭까지 안 들어가도 보이게)
-  const by=dailyStats(), tk=todayKey(), t=by[tk]||{n:0,nw:0,ms:0};
+  const by=dailyStats(), tk=todayKey(), t=by[tk]||emptyDay();
   const d=new Date(todayKey()+'T12:00:00'), wdays=['일','월','화','수','목','금','토'];   // 논리적 오늘(4시 경계) — 00~03시에 하루 앞서 보였다(F5-2)
   /* 🔴 **「남은 복습」 = 어느 세션엔가 실제로 나오는 것만 센다** (동하 09-02 지시).
      예전에는 전 카드를 셌는데, 세션이 안 담은 카드(빼 둔 주제 등)는 **어차피 안 푼다** —
@@ -9003,11 +9003,15 @@ $('btnSolveList').onclick=()=>{
      같은 카드를 두 번 세면 등급 비율과 평균 응답 시간이 갈린다. 유지율(`retentionSplit`)도 같은 이유로 재출 제외(메타 기준선 64%).
    09-07~09 이력: 처음엔 n에서 재출을 빼 「오늘 채점」이 상단 바(997)와 홈(909)으로 갈렸고, 그다음 정의를 하나로 모았고,
    지금은 동하 지시로 **회 = 포함**으로 뒤집었다. 세는 자리를 늘리지 마라 — 이 함수 하나가 정본이다. */
+/* 🔴 「푼 것이 없는 하루」의 꼴은 여기 하나뿐이다 (09-09 · 하루 시작 때 통계가 `undefined장 · 복습 NaN`).
+   dailyStats가 만드는 줄과 **필드가 같아야 한다** — 옛 폴백은 `cards`·`re`가 빠져 있었고,
+   오늘 로그가 0줄인 아침에만 그 자리가 undefined로 새어 나왔다(NaN은 undefined-0). 새 필드를 더하면 여기도 더해라. */
+function emptyDay(){ return {n:0, nw:0, cards:0, ms:0, msN:0, re:0, r:[0,0,0,0,0]}; }
 function dailyStats(){
   const by={}, firstSeen=new Set(), seenDay={};
   for(const e of state.log){
     const k=dayKey(logDate(e));
-    const d=by[k]||(by[k]={n:0,nw:0,cards:0,ms:0,msN:0,re:0,r:[0,0,0,0,0]});
+    const d=by[k]||(by[k]=emptyDay());
     d.n++;                                   // 회 = 재출 포함
     if(e[3] && e[3].re){ d.re++; continue; } // 아래(장·등급·시간)는 첫 채점만
     const sd=seenDay[k]||(seenDay[k]=new Set());
@@ -9500,7 +9504,7 @@ function renderStats(){
     const HAVE=new Set(logWeeksRange());
     loadWeeks(weeksBack(13).filter(k=>HAVE.has(k))).then(ok=>{ if(ok&&$('scrStats').classList.contains('on'))renderStats(); }); }
   const tk=todayKey(), by=dailyStats();
-  const today=by[tk]||{n:0,nw:0,ms:0,msN:0,r:[0,0,0,0,0]};
+  const today=by[tk]||emptyDay();
   let ret=0,bur=0,learned=0; const bySubj={};
   for(const c of DATA){
     const s=state.cards[c.id];
@@ -9607,7 +9611,7 @@ function renderStats(){
   /* ═══ F. 자세히 — 판단이 안 붙는 수는 전부 접는다 ═══ */
   let adv='';
   const acols=[];
-  for(let i=27;i>=0;i--){ const k=dayKeyOffset(-i); const e=by[k]||{n:0,nw:0};
+  for(let i=27;i>=0;i--){ const k=dayKeyOffset(-i); const e=by[k]||emptyDay();
     acols.push({a:Math.max(0,e.n-e.nw), b:e.nw, cls:i===0?'today':(isRestDay(k)?'rest':''),
       label:(i%7===0)?k.slice(5).replace('-','/'):'', title:k+' · 복습 '+Math.max(0,e.n-e.nw)+' · 신규 '+e.nw}); }
   const tot28=acols.reduce((a,c)=>a+c.a+c.b,0), act=acols.filter(c=>c.a+c.b>0).length;

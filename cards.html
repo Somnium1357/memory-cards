@@ -7472,6 +7472,13 @@ function renderToday(){ // 홈 첫 화면 = 오늘 한 일 (통계 탭까지 안
   const wk=[]; let mx=1;
   for(let i=6;i>=0;i--){ const v=(by[dayKeyOffset(-i)]||{n:0}).n; wk.push(v); if(v>mx)mx=v; }
   const bars=wk.map((v,i)=>`<i class="${i===6?'on':''}" style="height:${Math.max(2,Math.round(v/mx*100))}%" title="${v}회"></i>`).join('');
+  /* 🔴 오늘 복습 = 「오늘 복습일이 된 것」과 **그중 푼 것** (동하 09-09 요청).
+     정의를 새로 만들지 않는다 — 푼 것은 통계 화면의 「복습 N」과 **같은 식**(오늘 채점한 서로 다른 카드 − 그날 처음 본 것),
+     전체는 거기에 `due`(= `dueTodayCount()` · 오늘 실제로 나올 수 있는 남은 것)를 더한 값이다.
+     그래서 「오늘 복습 a / b」와 「남은 복습 b−a」가 **항상 서로 맞는다** — 두 수가 갈리면 그건 결함이다.
+     ⚠ due가 아니었는데 직접 집어 푼 카드도 푼 것에 들어간다(그래서 이름이 「오늘 복습」이지 「오늘 due」가 아니다).
+     ⚠ 신규는 어느 쪽에도 안 들어간다 — 신규 수는 위 큰 줄에 이미 있다. */
+  const revDone=Math.max(0,(t.cards||0)-(t.nw||0)), dueAll=revDone+due;
   const lead = t.n
     ? `<div class="big-num"><b>${t.n}</b><small>회 채점 · ${t.cards}장 (신규 ${t.nw}) · ${fmtMin(t.ms)}</small></div>`
     : `<div class="big-num"><b>0</b><small>회 — 아래 세션을 눌러 시작하세요</small></div>`;
@@ -7482,6 +7489,7 @@ function renderToday(){ // 홈 첫 화면 = 오늘 한 일 (통계 탭까지 안
       <div class="wk">${bars}</div>
     </div>
     <div class="today-grid">
+      <div>오늘 복습<b>${revDone}<span style="font-size:12px;color:var(--mute)"> / ${dueAll}</span></b></div>
       <div>남은 복습<b>${due}</b></div>
       <div>내일 예상<b>~${tomorrowCount(null)}</b></div>
       <div>학습 진입<b>${learned.toLocaleString()}<span style="font-size:12px;color:var(--mute)"> / ${DATA.length.toLocaleString()}</span></b></div>

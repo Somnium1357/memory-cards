@@ -236,6 +236,8 @@ input:focus,select:focus{border-color:var(--accent);}
   font-size:13px;line-height:1.55;color:var(--mute);}
 #cNote.on{display:block;}
 #cNote b{color:var(--ink2);font-weight:700;font-size:12px;letter-spacing:.4px;margin-right:6px;}
+/* 니모닉에서 실제 내용이 붙는 토막 — 본문 크기 그대로 진하게만 (동하 09-09) */
+#cNote strong,.cs-note strong{font-weight:800;color:var(--ink2);}
 /* 도식 카드(typ=도식, 8장)는 맞춰 볼 답면이 없다 — 회독본 그림과 대조해 스스로 매긴다.
    그 사실이 앞면에서 안 보이면 「넘겼는데 답이 없네」가 된다. 앞면부터 말해 준다. */
 #cDiag{display:none;margin-top:14px;padding:10px 14px;border-radius:12px;
@@ -6806,7 +6808,7 @@ function reveal(){
     });
   }
   const n=$('cNote'); n.classList.toggle('on',!!c.note);
-  if(c.note)n.innerHTML='<b>보충</b>'+esc(c.note);
+  if(c.note)n.innerHTML='<b>보충</b>'+noteHtml(c.note);
   const sc=$('cSrc'); sc.classList.toggle('on',!!c.src);      // 출처 (v2.38 `src`)
   sc.textContent = c.src ? '출처 '+c.src : '';
   $('cTyp').textContent=c.typ;
@@ -6856,6 +6858,12 @@ function renderCardTags(c){ // 임의 태그 (사용자 부착 축) — 탭하�
 function esc(s){ // 속성 자리(data-*="…"·value="…")에도 쓰이므로 따옴표까지 막는다 — textContent 방식은 "를 안 막았다
   return s==null?'':String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
+/* 🔴 보충(니모닉)의 `**…**`만 굵게 (동하 09-09 「니모닉, 내용 붙는 부분에 볼드처리」).
+   생성기가 `note`에 「청킹 : **자유게**시판에 **공표**했다 …」 꼴로 넣어 두는데(65장) 앱이 esc만 하니
+   별표가 그대로 보였다. **반드시 esc 뒤에** 치환한다 — esc 결과에는 날 `<`가 없어 안전하다.
+   ⚠ `<b>`가 아니라 `<strong>`이다: `#cNote b`는 「보충」 라벨 전용 스타일(12px·자간)이라 본문에 쓰면 글자가 작아진다.
+   ⚠ 카드 앞면·답면은 안 건드린다 — 문면 마크업은 이 세션 소관이 아니다(문법·생성기 = QC). */
+function noteHtml(s){ return esc(s).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>'); }
 function syncGradeButtons(){
   const hasX=itemMarks.some(Boolean) || hintUsed.size>0;   // 힌트를 열었어도 「다시」만 — 힌트 의존을 막는 값(메타 09-05)
   // disabled로 막지 않는다 — 탭이 rate()까지 가야 「다시만 눌러요」 토스트가 뜬다.
@@ -8676,7 +8684,7 @@ function renderCardSheet(){
          답면이 멀쩡히 있으니 할 말이 없고, 링크 한 줄이면 된다. */
       return u?`<div class="cs-hoedok"><a href="${u.replace(/&/g,'&amp;')}" onclick="event.stopPropagation()">회독본 ↗</a></div>`:'';
     })()}
-    ${c.note?`<div class="cs-note"><b>보충 </b>${esc(c.note)}</div>`:''}
+    ${c.note?`<div class="cs-note"><b>보충 </b>${noteHtml(c.note)}</div>`:''}
     <div class="cs-sec">상태</div>
     <div class="cs-facts">${facts.join('')}</div>
     <div class="cs-sec">태그</div>

@@ -1602,7 +1602,10 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
   <div class="tgl-row"><span>스와이프 채점 (좌 알맞음 · 우 다시)</span><div class="tgl" id="tglSwipe"></div></div>
   <div class="tgl-row"><span>키보드 단축키 (PC)</span><div class="tgl" id="tglKbd"></div></div>
   <div class="kbd-note"><kbd>Space</kbd> 정답 공개 → 알맞음 · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> 채점 ·
-    <kbd>U</kbd> 되돌리기 · <kbd>P</kbd> 일시정지 · <kbd>B</kbd> 내일로 · <kbd>F</kbd> 플래그 · <kbd>H</kbd> 홈 · <kbd>/</kbd> 목록 검색 · <kbd>Esc</kbd> 닫기</div>
+    <kbd>↑</kbd><kbd>↓</kbd> 스크롤 · <kbd>U</kbd> 되돌리기 · <kbd>P</kbd> 일시정지 · <kbd>B</kbd> 내일로 · <kbd>F</kbd> 플래그 ·
+    <kbd>X</kbd> 끄기 · <kbd>H</kbd> 홈 · <kbd>/</kbd> 목록 검색 · <kbd>Esc</kbd> 닫기<br>
+    <kbd>Ctrl</kbd>+<kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> 플래그 사유(단서 과다 · 문면 분리 · 문장 어색 · 사례 추가) ·
+    한글 입력 상태에서도 먹어요(자판 자리로 읽습니다)</div>
   <div class="field" style="margin-top:16px"><label>저장</label>
     <div class="h-tools" style="margin-top:0">
       <button class="h-tool" id="btnSync">지금 저장</button>
@@ -8463,12 +8466,52 @@ $('tglKbd').onclick=()=>{ kbdOn=!kbdOn; lsSet(K_KBD,kbdOn?'1':'0'); $('tglKbd').
 
 /* ═══════════════ 키보드 (PC 전용 보조 — 터치 흐름은 그대로) ═══════════════ */
 let kbdOn = lsGet(K_KBD)!=='0';
+/* 🔴 **한글 입력 상태에서는 `e.key`가 자모로 온다** — `h`가 `ㅗ`, `p`가 `ㅔ`가 되어 단축키가 통째로 죽었다
+   (동하 09-10 실기: 「소프트웨어 키보드가 한글로 맞춰져 있으면 h, p 이런 키가 안 먹혀」).
+   그래서 **물리 키 자리(`e.code`)**로 읽는다 — `KeyH`·`Digit1`·`Space`는 입력기·자판 배열에 안 흔들린다.
+   `e.code`가 없는 기기(일부 가상 키보드)를 위해 `e.key`를 폴백으로 남긴다. */
+function keyOf(e){
+  const c=e.code||'';
+  if(/^Key[A-Z]$/.test(c)) return c.slice(3).toLowerCase();
+  if(/^Digit[0-9]$/.test(c)) return c.slice(5);
+  if(/^Numpad[0-9]$/.test(c)) return c.slice(6);
+  if(c==='Space') return ' ';
+  if(c==='Enter'||c==='NumpadEnter') return 'enter';
+  if(c==='Escape') return 'escape';
+  if(c==='Slash') return '/';
+  return (e.key||'').toLowerCase();
+}
+/* 지금 화면에서 실제로 구르는 상자 하나 — 열린 시트가 있으면 그것이 먼저다(시트가 화면을 덮으므로). */
+function scrollBox(){
+  const ovl=document.querySelector('.ovl.show');
+  if(ovl){ const sh=ovl.querySelector('.sheet, #pkList'); if(sh) return sh; }
+  if($('scrSolve').classList.contains('on')) return $('cardScroll');
+  const scr=document.querySelector('.scr.on');
+  return scr ? (scr.querySelector('.home-wrap, .sub-body') || scr) : null;
+}
 document.addEventListener('keydown',e=>{
   /* 🔴 조합키는 원래 **통째로** 무시한다 — 브라우저 단축키(Cmd+R·Cmd+F…)를 가로채지 않으려고.
      딱 하나 연다: **Ctrl+1~4 = 플래그 사유 칩 넷** (동하 09-09 · 게임패드 R을 Ctrl로 두고 쥔다).
      채점 1~4와 손가락 자리가 같고 Ctrl만 얹는 꼴이라 외울 것이 없다. 그 밖의 조합은 여전히 버린다. */
   if(!kbdOn || e.metaKey || e.altKey)return;
-  if(e.ctrlKey && !(e.key>='1' && e.key<='4'))return;
+  if(e.ctrlKey && !(keyOf(e)>='1' && keyOf(e)<='4'))return;
+  /* 🔴 **화살표 = 지금 보이는 것의 스크롤** (동하 09-10 실기: 게임패드 D패드로 표 카드를 못 굴렸다).
+     카드 본문은 문서가 아니라 `#cardScroll` 안에서 구른다 — 초점이 아무 데도 없으면 브라우저는
+     문서를 굴리려 하고 문서는 넘치지 않으니 **아무 일도 안 일어난다.** 그래서 우리가 직접 굴린다.
+     ⚠ **`e.repeat` 가드보다 먼저** 본다 — 그 가드는 채점 연타(스페이스 길게)를 막으려던 것이고,
+       스크롤은 눌러 두면 계속 굴러야 한다. 여기서 처리하고 나간다. */
+  if(e.key==='ArrowUp'||e.key==='ArrowDown'||e.key==='PageUp'||e.key==='PageDown'){
+    const t0=e.target, tg=t0&&t0.tagName;
+    if(!(tg==='INPUT'||tg==='TEXTAREA'||tg==='SELECT')){
+      const box=scrollBox();
+      if(box && box.scrollHeight>box.clientHeight+2){
+        const big=e.key.startsWith('Page');
+        const step=Math.max(80, Math.round(box.clientHeight*(big?0.9:0.42)));
+        box.scrollBy({top:(e.key==='ArrowUp'||e.key==='PageUp')?-step:step, behavior:'auto'});
+        e.preventDefault(); return;
+      }
+    }
+  }
   /* 🔴 **키를 누르고 있으면 브라우저가 같은 키를 계속 보낸다**(`e.repeat`) — 스페이스를 길게 누르면
      「공개 → 알맞음 → 다음 카드 공개 → 알맞음…」으로 카드가 줄줄이 넘어간다(동하 09-09 지적).
      채점 버튼은 `revealed`가 false로 돌아가 이중 채점이 안 되지만, **연속 전진은 막을 것이 없었다.**
@@ -8478,7 +8521,7 @@ document.addEventListener('keydown',e=>{
   const typing = tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT';
   const ovl=document.querySelector('.ovl.show');
   if(pauseAt){                        // 정지 중엔 Space·Enter·Esc·P로 재개
-    if([' ','enter','escape','p'].includes(e.key.toLowerCase())){ e.preventDefault(); resumeSession(); }
+    if([' ','enter','escape','p'].includes(keyOf(e))){ e.preventDefault(); resumeSession(); }
     return;
   }
   if(e.key==='Escape'){
@@ -8488,7 +8531,7 @@ document.addEventListener('keydown',e=>{
     return;
   }
   if(typing||ovl)return;
-  const k=e.key.toLowerCase();
+  const k=keyOf(e);
   if(k==='/'){ e.preventDefault(); go('scrList'); $('qSearch').focus(); return; }
   if(k==='h'){ e.preventDefault(); push(); go('scrHome'); return; }
   if(!$('scrSolve').classList.contains('on'))return;
@@ -8510,6 +8553,7 @@ document.addEventListener('keydown',e=>{
   if(k==='u'){ doUndo(); return; }
   if(k==='b'){ $('rBury').click(); return; }
   if(k==='f'){ $('rFlag').click(); return; }
+  if(k==='x'){ $('rOff').click(); return; }   // 끄기 = 이 카드 그만 (동하 09-10 요청 · 되돌리기 있음)
   if(k==='p'){ pauseSession(); return; }
 });
 

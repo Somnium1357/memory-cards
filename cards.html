@@ -5852,10 +5852,17 @@ function addScopeToSess(sx, sel){ // 내용 추가 — sel={units:[],mids:[]}
   const fit=pool.filter(c=>matchStatus(c, st));
   lastAddOff=Math.max(0, pool.length-fit.length);                   // 이 세션이 안 받는 상태
   lastAddHeld=Math.max(0, fit.length-add.length);                   // 방향 분산 + 오늘 정리분
-  if(isFixed(sx)){                       // 직접 추가 세션만 범위가 늘어난다 (이월 대상)
+  /* 🔴 기준은 **「넣은 목록이 있나」**다 — 방식(자동/직접)이 아니다 (동하 09-09 「가」).
+     발단: 교육과정(자동 · 넣은 목록 3단위)에 단위를 넣고 「큐 비우기」를 누르면 그 단위가 사라졌다.
+     자동이면 범위를 안 늘려 **오늘 큐에만** 얹혔기 때문이다(큐를 비우면 같이 사라지고, 안 비워도
+     다음 날 `refillSess`가 범위에서 다시 짜면서 빠진다). 사람이 「넣었다」고 한 것이 하루도 못 산다.
+     🔴 그래도 **넣은 목록이 빈 세션(일일 복습)은 예외로 남긴다** — 거기서 빈 목록은 「없음」이 아니라
+        **「전부」**라, 단위를 넣으면 전 범위가 그 단위로 **좁아진다**. 그 세션만 오늘 큐에 얹는다.
+     ⚠ 직접 추가 세션은 넣은 목록이 비어 있어도 늘린다 — 거기서 빈 목록은 진짜 「담은 것 없음」이다. */
+  if(isFixed(sx) || (sx.scope.units||[]).length || (sx.scope.mids||[]).length){
     sx.scope.units=[...new Set([...(sx.scope.units||[]), ...(sel.units||[])])];
     sx.scope.mids=[...new Set([...(sx.scope.mids||[]), ...(sel.mids||[])])];
-  }                                      // 자동 충전 세션은 오늘 큐에만 얹고 범위는 그대로
+  }                                      // 전 범위 자동 세션만 오늘 큐에 얹고 범위는 그대로
   sx.q=[...sx.q, ...add];
   /* 🔴 늘린 시각을 찍는다 — 안 찍으면 **옛 툼스톤이 새 추가를 도로 지운다**(감사 🔴2의 반대 방향 사고).
      툼스톤에 있던 카드를 다시 넣었으면 그 항목은 지운다 — 사람이 마음을 바꾼 것이다. */
@@ -7734,7 +7741,7 @@ function renderSession(){
     <div class="ss-acts">
       ${(refillQ&&refillQ.length)?`<button class="act-btn" id="ssRefill"><span>＋ 이어서 채우기</span><small>${refillQ.length}장${comp}</small></button>`:''}
       ${nt?`<button class="act-btn" id="ssNew"><span>＋ 다음 진도 · ${esc(nt.label)}</span><small>${ntU.fresh.length}장${nt.date?` · ${esc(nt.date)} 수강`:''}</small></button>`:''}
-      <button class="act-btn" id="ssAdd"><span>＋ 범위 넓히기</span><small>${isFixed(sx)?'내가 고른 단위':'오늘 큐에만'}</small></button>
+      <button class="act-btn" id="ssAdd"><span>＋ 범위 넓히기</span><small>${(isFixed(sx)||(sx.scope.units||[]).length||(sx.scope.mids||[]).length)?'내가 고른 단위':'오늘 큐에만'}</small></button>
     </div>
     ${(ntU&&(ntU.held||ntU.skipped))?`<div class="why">${ntU.held?esc(holdNote(ntU.why)):''}${ntU.skipped?`${ntU.held?' · ':''}앞 주제 <b>${ntU.skipped}개</b>는 오늘 푼 카드와 겹쳐 내일`:''}</div>`:''}
     <div class="ss-line"><span>${esc(sessDesc(sx))}</span><span>누적 <b>${sx.done||0}</b>회</span><span>${sx.lastAt?'마지막 '+fmtAgo(sx.lastAt):'아직 안 품'}</span></div>`;
@@ -7791,9 +7798,11 @@ function renderSession(){
       if(curSess&&curSess.id===sx.id){ curPreset=asPreset(sx); requeueLive(sx); counts(); }
       saveSessionsFlush(); renderSession();
       toast(exCount(sx)?`${exCount(sx)}장을 이 세션에서 빼 뒀어요`:'제외를 지웠어요'); }});
+  const growsScope = isFixed(sx) || (sx.scope.units||[]).length || (sx.scope.mids||[]).length;
   $('ssAdd').onclick=()=>openUnitPick({title:'내용 추가',
     desc:isFixed(sx)?'고른 범위가 이 세션에 들어오고, 못 푼 잔량은 다음날로 이월됩니다.'
-                    :'자동 충전 세션이라 오늘 큐에만 얹습니다 (범위는 그대로).',
+        :growsScope?'고른 범위가 이 세션에 들어옵니다 — 날이 바뀌어도 계속 채워져요.'
+                    :'전 범위 세션이라 오늘 큐에만 얹습니다 (범위는 그대로).',
     selected:{units:[],mids:[]},
     have:{units:sx.scope.units||[], mids:sx.scope.mids||[]},   // 🔴 이미 든 것은 표시만 (고른 것과 섞지 않는다)
     onOk:(sel)=>{ if(!sel.units.length&&!sel.mids.length)return;

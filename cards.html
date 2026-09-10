@@ -989,6 +989,12 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
   align-items:center;justify-content:center;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);cursor:zoom-out;}
 #ovlImg.show{display:flex;}
 #ovlImg img{max-width:100%;max-height:100%;object-fit:contain;}
+/* 🔴 **세로로 긴 그림은 높이에 맞추면 손톱만 해진다** (동하 09-10 · 표 카드 그림 1201×3591 = 3:1).
+   확대는 「자세히 보려고」 누르는 것인데 `max-height:100%`가 폭을 120px대로 눌러 버렸다(확대해도 268px).
+   그런 그림만 **폭을 채우고 세로로 굴린다**. 판정은 `openImg`가 화면 비와 견줘서 한다. */
+#ovlImg{overflow:auto;-webkit-overflow-scrolling:touch;}
+#ovlImg.tall{align-items:flex-start;}
+#ovlImg.tall img{max-height:none;width:100%;height:auto;}
 #ovlImg .hint{position:absolute;left:0;right:0;bottom:calc(14px + env(safe-area-inset-bottom));text-align:center;
   font-size:12.5px;font-weight:700;color:rgba(255,255,255,.62);pointer-events:none;}
 .cs-imgs{display:flex;flex-direction:column;gap:8px;margin:10px 0;}
@@ -10846,7 +10852,14 @@ function renderImgs(el, c, side){
 function openImg(src, alt){
   const o=$('ovlImg');
   o.innerHTML='<img alt="'+esc(alt||'')+'">'+'<div class="hint">탭하면 닫혀요</div>';
-  o.querySelector('img').src=src;
+  const im=o.querySelector('img');
+  /* 🔴 그림이 화면보다 **비율상 더 길면** 폭을 채우고 세로로 굴린다(위 CSS `.tall`).
+     자연 크기는 로드 뒤에야 알 수 있으므로 `onload`에서 판정한다 — 캐시된 그림은 즉시 뜨므로 `complete`도 본다. */
+  const fit=()=>{ if(!im.naturalWidth) return;
+    o.classList.toggle('tall', (im.naturalHeight/im.naturalWidth) > (o.clientHeight/o.clientWidth)*1.15); };
+  im.onload=fit; o.classList.remove('tall');
+  im.src=src; if(im.complete) fit();
+  o.scrollTop=0;
   o.classList.add('show');
   navGuard();                      // 기기 뒤로가기로 앱을 벗어나지 않게 — 회독본 오버레이와 같은 칸을 쓴다
 }

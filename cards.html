@@ -6831,9 +6831,16 @@ function showCard(){
   $('cardScroll').scrollTop=0;
   saveResume();                  // 회독본 갔다 돌아올 자리 (앞면 상태)
 }
+/* 🔴 **공개 직후의 채점은 버린다** (동하 09-11 「키보드 실수로 연타하는 거 막는 장치 있어?」).
+   있던 장치 둘 — `e.repeat`(눌러 두기)와 「답을 봐야 채점」(숫자 연타)은 **스페이스 두 번 빠르게**를 못 막았다:
+   첫 번이 공개, 둘째가 곧장 「알맞음」이다. 게임패드 버튼 바운스·더블탭이 딱 그 꼴이다.
+   공개 뒤 `RATE_MIN_MS` 안에 오는 채점(키·버튼·스와이프 전부 `rate()`를 지난다)은 아무 말 없이 버린다 —
+   사람이 답을 읽고 누르는 시간보다 훨씬 짧아서 정상 사용은 안 걸린다. 다시 누르면 그때 먹는다. */
+const RATE_MIN_MS=350;
+let revealAt=0;
 function reveal(){
   const c=cur(); if(!c||revealed)return;
-  revealed=true;
+  revealed=true; revealAt=Date.now();
   $('revealHint').style.display='none';
   $('hintBox').classList.remove('on');      // 답면에서는 힌트 칩을 치운다(연 것은 hintUsed에 남는다)
   const hasItems=Array.isArray(c.items)&&c.items.length>=2;
@@ -6942,6 +6949,7 @@ function intervalsPreview(c){ // 채점 버튼 위 다음 간격 미리보기
 }
 function rate(num){
   const c=cur(); if(!c||!revealed)return;
+  if(Date.now()-revealAt < RATE_MIN_MS) return;   // 공개 직후 연타 — 위 주석
   const ts=Math.round(Date.now()/1000), now=new Date(ts*1000);
   // 🔴 채점 시각을 초로 끊는다 — FSRS fuzz 시드가 밀리초를 쓰기 때문에, 로그(초 단위)로 재계산할 때
   //    같은 결과가 나오려면 처음부터 같은 값을 넣어야 한다 (로그 = 정본 구조의 전제)

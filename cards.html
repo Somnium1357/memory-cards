@@ -6838,6 +6838,10 @@ function showCard(){
    사람이 답을 읽고 누르는 시간보다 훨씬 짧아서 정상 사용은 안 걸린다. 다시 누르면 그때 먹는다. */
 const RATE_MIN_MS=350;
 let revealAt=0;
+/* 🔴 카드가 **바뀐 직후**의 파괴적 동작(끄기·내일로·되돌리기)도 같은 이유로 버린다 (동하 09-11 「끄기가 연속으로 눌려」).
+   X를 누르면 카드가 꺼지고 **다음 카드가 곧장 뜨는데**, 그때 튕긴 두 번째 X가 그 카드까지 껐다.
+   `shownAt`(showCard가 찍는다)에서 350ms 안이면 버린다. 되돌리기도 카드를 바꾸므로 같은 자로 잰다. */
+function tooSoon(){ return shownAt && (Date.now()-shownAt) < RATE_MIN_MS; }
 function reveal(){
   const c=cur(); if(!c||revealed)return;
   revealed=true; revealAt=Date.now();
@@ -7163,6 +7167,7 @@ $('flagMemo').addEventListener('change',()=>{
 });
 function dropFromQueue(id){ for(let i=queue.length-1;i>qPos;i--){ if(queue[i].id===id)queue.splice(i,1); } }
 $('rBury').onclick=()=>{
+  if(tooSoon()) return;                       // 카드 바뀐 직후 더블탭
   const c=cur(); if(!c)return;
   const sn=dropSnap(c);
   buryCard(c); dropFromQueue(c.id); removeCurFromQueue(sn);
@@ -7170,6 +7175,7 @@ $('rBury').onclick=()=>{
 };
 $('rOff').onclick=()=>{ // 끄기 = 이 카드 그만 (2026-08-22 — 은퇴·방향을 여기로 합쳤다)
   const c=cur(); if(!c)return;
+  if(tooSoon()) return;                       // 카드 바뀐 직후 더블탭
   const sn=dropSnap(c);
   offCard(c,true); dropFromQueue(c.id);   // 큐 뒤에 남은 같은 카드도 함께 정리
   removeCurFromQueue(sn);
@@ -7263,7 +7269,7 @@ $('scrSolve').addEventListener('pointerup',e=>{
 $('scrSolve').addEventListener('click',ev=>{ if(Date.now()-zoneUpAt<600)return; zoneTap(ev); });
 $('gAgain').onclick=()=>rate(1); $('gHard').onclick=()=>rate(2);
 $('gGood').onclick=()=>rate(3); $('gEasy').onclick=()=>rate(4);
-$('btnUndo').onclick=doUndo;
+$('btnUndo').onclick=()=>{ if(tooSoon()) return; doUndo(); };   // 카드 바뀐 직후 더블탭
 $('btnHome').onclick=()=>{ push(); go('scrHome'); };
 let swipeOn = lsGet(K_SWIPE)==='1';
 /* 스와이프 채점 — 터치(iPad)·마우스(PC) 입력을 하나의 제스처 로직으로.
@@ -8575,6 +8581,7 @@ document.addEventListener('keydown',e=>{
     toast(((st(c.id).ft||[]).includes(name)?'':'해제 · ')+name);
     return; }
   if(k>='1'&&k<='4'){ if(revealed)rate(+k); return; }
+  if(k==='u'||k==='b'||k==='x'){ if(tooSoon()) return; }   // 카드 바뀐 직후 연타 — tooSoon 주석
   if(k==='u'){ doUndo(); return; }
   if(k==='b'){ $('rBury').click(); return; }
   if(k==='f'){ $('rFlag').click(); return; }

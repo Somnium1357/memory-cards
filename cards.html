@@ -8198,13 +8198,14 @@ function openUnitPick(o){
   $('pkSearch').value='';
   /* 🔴 펼침 상태는 창을 열 때마다 초기화한다 (동하 2026-08-22).
      pkOpen이 모듈 전역이라 예전에는 닫았다 다시 열어도 지난번에 펼친 것이 그대로 남아,
-     아홉 과목이 펼쳐진 채로 열렸다. 다만 **이미 고른 것이 있으면 그 과목만** 펼친다 —
-     무엇을 골라 뒀는지는 보여야 하니까. */
+     아홉 과목이 펼쳐진 채로 열렸다. 다만 **이미 고른 것(pkSel)이 있으면 그 과목만** 펼친다 —
+     무엇을 골라 뒀는지는 보여야 하니까.
+     🔴 「이미 들어 있는 것」(pkHave)은 펼치지 **않는다** (동하 09-12 「내용 추가 피커, 닫았다 열면 다 접혀 있게」) —
+     09-09에 held 표시를 넣으며 같이 펼쳤더니 넓은 세션에선 전 과목이 펼쳐진 채로 열렸다. 흐린 ✓는 펼치면 보인다. */
   pkOpen={};
   if(pkMode!=='sessions') for(const node of buildTree()){
-    if(node.units.some(u=>pkSel.units.includes(u.key)||pkSel.mids.some(m=>m.startsWith(u.key+'||'))
-       || pkHave.units.has(u.key) || [...pkHave.mids].some(m=>m.startsWith(u.key+'||'))))
-      pkOpen[node.subj]=true;   // 이미 들어 있는 과목도 펼친다 — 보이라고 넣은 표시다
+    if(node.units.some(u=>pkSel.units.includes(u.key)||pkSel.mids.some(m=>m.startsWith(u.key+'||'))))
+      pkOpen[node.subj]=true;
   }
   renderPick();
   $('ovlPick').classList.add('show');

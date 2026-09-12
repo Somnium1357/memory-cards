@@ -4059,7 +4059,15 @@ function sessReset(){ sess={r:[0,0,0,0,0], ms:0, streak:0, best:0, re:0}; }
       로그에는 남긴다: `ex.re` = 몇 번째 재출. 메타가 재출 통과율을 이 값으로 잰다.
    🔴 재출 항목은 **저장 큐에 안 넣는다**(`keepIds`) — 그날 그 세션 안에서만 사는 것이다. */
 const RE_GAP_MAX=60, RE_GAP_MIN=15;
-let reshowOn = lsGet(K_RESHOW)==='1';
+/* 🔴 기기 간에 따라간다(동하 09-12 「아이폰이고 꺼져 있었네」 — 아이패드에서 켠 것이 아이폰엔 없었다).
+   ivShow와 같은 규칙: 세션 파일에 {v}+at 을 실어 **더 새것이 이긴다.** 옛 저장('1'/'0' 문자열)은 at=1/0 으로 읽는다 —
+   켜 둔 기기(at=1)가 한 번도 안 만진 기기(at=0)를 이겨 첫 동기화에서 켜진다. */
+let reshow={v:false, at:0};
+{ const r=lsGet(K_RESHOW); if(r==='1'){ reshow={v:true,at:1}; } else if(r&&r!=='0'){ try{ const o=JSON.parse(r); reshow={v:!!o.v, at:o.at||0}; }catch(e){} } }
+let reshowOn = reshow.v;
+function setReshow(v, at, fromRemote){ reshow={v:!!v, at:at}; reshowOn=reshow.v; lsSet(K_RESHOW, JSON.stringify(reshow));
+  const t=document.getElementById('tglReshow'); if(t) t.classList.toggle('on', reshowOn);
+  if(!fromRemote){ cacheState(); markDirty('sess'); } }
 /* 🔴 `ex.gap` = 첫 채점과 재출 사이에 **실제로 낸 카드 수** (메타 09-08 요청).
    꽂을 때 계산한 간격을 그대로 적으면 안 된다 — `showCard`가 그 사이에 오늘 푼 카드·끈 카드를
    건너뛰므로 **실제로 본 장수는 그보다 적을 수 있다.** 채점 일련번호의 차로 재면 그런 왜곡이 없다
@@ -4409,7 +4417,8 @@ function sessFile(){ return {v:1, sessions:[...sessions, ...sessTomb], hoedok:st
   xret:fsrsCfg.xret, xretAt:fsrsCfg.xretAt||0,      // 시험날 목표율 — ret과 같은 「더 새것이 이긴다」 규칙
   fw:fsrsCfg.w||null, fwAt:fsrsCfg.wAt||'',
   rest:{dow:rest.dow, days:rest.days}, restAt:rest.at||0,
-  ivShow:{v:ivShow.v}, ivShowAt:ivShow.at||0}; }
+  ivShow:{v:ivShow.v}, ivShowAt:ivShow.at||0,
+  reshow:{v:reshow.v}, reshowAt:reshow.at||0}; }   // 「다시」 당일 재출 — 기기 간 동기(09-12)
 function applyLogEntry(sx, e){        // rate()와 같은 규칙으로 한 건 반영 (그날 첫 채점만 FSRS)
   /* 🔴 재출(`ex.re`)은 **상태에 아무것도 안 남긴다** — 일정도, 틀림 횟수도.
      `rate()`가 그렇게 하므로 로그 재계산도 똑같아야 한다(로그가 정본 = 두 경로가 같은 값을 내야 한다).
@@ -4797,6 +4806,7 @@ function mergeSessInto(remote){
     rest.dow=remote.rest.dow; rest.days=remote.rest.days||[]; rest.at=remote.restAt; restReset(); }
   if(remote && remote.ivShow && (remote.ivShowAt||0) > (ivShow.at||0)){
     ivShow.v=!!remote.ivShow.v; ivShow.at=remote.ivShowAt; lsSet(K_IVSHOW, JSON.stringify(ivShow)); applyIv(); }
+  if(remote && remote.reshow && (remote.reshowAt||0) > (reshow.at||0)) setReshow(remote.reshow.v, remote.reshowAt, true);
   /* 🔴 `sessions` 배열을 통째로 갈았다 — **지금 보고 있는·풀고 있는 세션을 id로 다시 묶는다**
      (전층 감사 F4-7 · 2026-09-06). 안 묶으면 그 객체는 목록 밖 고아가 되고,
      세션 화면의 「빼기」·「큐 비우기」·「범위 넓히기」가 **토스트만 뜨고 아무 데도 저장되지 않았다**
@@ -5533,6 +5543,7 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
       if(sf.fwAt!==undefined && (sf.fwAt||'') > (fsrsCfg.wAt||'')){ fsrsCfg.w=sf.fw||null; fsrsCfg.wAt=sf.fwAt||''; buildEngine(); }
       if(sf.rest && (sf.restAt||0) > (rest.at||0)){ rest.dow=sf.rest.dow; rest.days=sf.rest.days||[]; rest.at=sf.restAt; restReset(); }
       if(sf.ivShow && (sf.ivShowAt||0) > (ivShow.at||0)){ ivShow.v=!!sf.ivShow.v; ivShow.at=sf.ivShowAt; lsSet(K_IVSHOW, JSON.stringify(ivShow)); applyIv(); }
+      if(sf.reshow && (sf.reshowAt||0) > (reshow.at||0)) setReshow(sf.reshow.v, sf.reshowAt, true);
       /* 🔴 캐시를 밑판으로 깔았으면 **올릴 것으로 표시한다**(전층 감사 F0-6 · 2026-09-06).
          marks·fb·log는 캐시를 병합한 뒤 `markDirty(...)`를 거는데 **세션만 빠져 있었다.**
          재현: 캐시의 「일일 복습」 done +1000·`hoedok` 한 칸을 심고 `cards_dirty_v1='1'`로 부팅 ⇒
@@ -8495,7 +8506,7 @@ $('btnBackup').onclick=()=>{   // 파일이 나뉜 뒤로는 한 덩어리로 �
 };
 $('btnSetup').onclick=openSetup;
 $('tglSwipe').onclick=()=>{ swipeOn=!swipeOn; lsSet(K_SWIPE,swipeOn?'1':'0'); $('tglSwipe').classList.toggle('on',swipeOn); };
-$('tglReshow').onclick=()=>{ reshowOn=!reshowOn; lsSet(K_RESHOW,reshowOn?'1':'0'); $('tglReshow').classList.toggle('on',reshowOn); };
+$('tglReshow').onclick=()=>setReshow(!reshowOn, Date.now(), false);   // 기기 간 동기 — sessFile로 올라간다
 $('tglZtap').onclick=()=>{ zoneTapOn=!zoneTapOn; lsSet(K_ZTAP,zoneTapOn?'1':'0');
   $('tglZtap').classList.toggle('on',zoneTapOn); $('scrSolve').classList.toggle('ztap',zoneTapOn); };
 $('tglKbd').onclick=()=>{ kbdOn=!kbdOn; lsSet(K_KBD,kbdOn?'1':'0'); $('tglKbd').classList.toggle('on',kbdOn); };

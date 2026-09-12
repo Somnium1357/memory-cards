@@ -6965,6 +6965,9 @@ function rate(num){
   const s=st(c.id), tk=dayKey(now);
   const reN=c._re||0;                       // 0 = 그날 첫 대면 · 1,2 = 재출 회차
   const hasItems=itemMarks.length>=2, anyX=itemMarks.some(Boolean);
+  /* 🔴 재출은 「다시 / 통과」 둘뿐이다(동하 09-07) — 버튼은 숨겼는데 키(패드 Y=2·B=4)가 그 문을 우회해
+     어려움·쉬움으로 넘어갔다(동하 09-12 「어려움 탭은 안 되는데 버튼 누르면 넘어감」). 입구 하나에서 막는다. */
+  if(reN && (num===2||num===4)){ toast('재출은 「다시」·「통과」만 눌러요'); return; }
   if(anyX && num!==1){ toast('빠뜨린 항목이 있어요 — 「다시」만 눌러요'); return; } // X 있으면 Again만
   if(hintUsed.size && num!==1 && hintLocks(c)){ toast('초성 힌트를 열었어요 — 「다시」만 눌러요'); return; } // 힌트 = 다시 (동하·메타 09-05 · 개념어는 예외)
   const firstToday = s.d!==tk;

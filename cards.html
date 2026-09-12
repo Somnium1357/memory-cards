@@ -922,6 +922,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 :root.ym[data-theme="c"]{ --accent:#2E7D5B; --accent-ink:#FBF7EC; --accent-dim:rgba(46,125,91,.12); }
 .ym-pill{margin-left:auto;font-size:13px;font-weight:800;color:var(--accent);background:var(--accent-dim);border-radius:99px;padding:8px 14px;
   min-height:40px;display:flex;align-items:center;gap:4px;letter-spacing:.02em;}
+.ym-pill+.ym-pill{margin-left:0}   /* 알약 둘(회독본 · 연문) — 첫째가 오른쪽으로 밀고 둘째는 붙는다 */
 .ym-tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.14em;color:var(--accent);background:var(--accent-dim);
   border-radius:6px;padding:3px 7px;margin-left:8px;vertical-align:middle;}
 .ym-sec{font-size:12px;font-weight:800;letter-spacing:.12em;color:var(--faint);margin:18px 4px 8px;display:flex;align-items:baseline;gap:8px;}
@@ -10146,9 +10147,14 @@ function hdOnLoad(){
   /* 판 안의 「카드앱 ↗」을 누른 경우 — iframe에 앱을 띄우지 말고 오버레이를 닫는다 */
   try{ const p=$('hdFrame').contentWindow.location.pathname;
     if(/cards\.html$/.test(p)){ closeHoedok(); return; } }catch(e){}
+  /* 둘러보기(홈 「회독본」 알약)면 머리 제목이 판을 따라간다 — 「회독본 — 1.국어」에서 과목만 */
+  if(HD_BROWSE){ try{ const t=$('hdFrame').contentDocument.title||'';
+    $('hdTtl').textContent=t.replace(/^회독본\s*[—–-]\s*/,'')||'회독본'; }catch(e){} }
   hdSeek(); setTimeout(hdSeek, 350);
 }
+let HD_BROWSE=false;   // 「회독본」 알약으로 연 둘러보기 — 질문 없음 · 머리 제목이 판의 제목을 따라간다
 function openHoedok(uri, title, qs, readKey, readN, ans){
+  HD_BROWSE=false;
   $('hdTtl').textContent=title||'회독본';
   HD_QS=Array.isArray(qs)?qs.slice():[]; HD_QI=0;
   HD_QA=Array.isArray(ans)?ans.slice():[]; _hdIdx=null;   // 답면 = 글 점프의 표적 (질문과 같은 순서)
@@ -10237,7 +10243,7 @@ function closeHoedok(fromPop){
      오버레이가 떠 있으면 그걸 먼저 닫는 것으로 충분하다. */
   hdNewFrame(null);                    // 요소를 비운다 — src 변경은 히스토리를 더럽힌다
   $('hdQList').classList.remove('on'); $('hdQ').classList.remove('mini');
-  HD_QS=[]; HD_QI=0; HD_KEY=''; HD_N=0;
+  HD_QS=[]; HD_QI=0; HD_KEY=''; HD_N=0; HD_BROWSE=false;
 }
 $('hdClose').onclick=closeHoedok;
 /* 🔴 **프래그먼트 스크롤을 직접 해 준다**(`hdOnLoad`). iframe은 숨은 채로 로드가 끝나는 일이 있어
@@ -10824,10 +10830,13 @@ function ymRenderUnit(id){
 /* ── 배선 ───────────────────────────────────────────────────────────────────── */
 $('ymBack').onclick=ymLeave;
 $('ymUnitBack').onclick=()=>{ go('scrYmToday'); ymRenderToday(); };
-/* 홈 머리의 알약 하나 — 카드 모드 화면에 얹는 유일한 것 */
+/* 홈 머리의 알약 둘 — 「회독본」(둘러보기 · 동하 09-12 「회독본을 그냥 보러 들어갈 수가 없어」) · 「연문 →」 */
 { const hh=document.querySelector('.home-head');
-  if(hh){ const b=document.createElement('button'); b.className='ym-pill'; b.id='ymPill'; b.textContent='연문 →'; b.title='연습문제 모드';
-    b.onclick=ymEnter; hh.insertBefore(b, hh.querySelector('.gear')); } }
+  if(hh){ const g=hh.querySelector('.gear');
+    const h=document.createElement('button'); h.className='ym-pill'; h.id='hdPill'; h.textContent='회독본'; h.title='회독본 둘러보기';
+    h.onclick=()=>{ openHoedok(PAN_DIR+'index.html','회독본'); HD_BROWSE=true; }; hh.insertBefore(h, g);
+    const b=document.createElement('button'); b.className='ym-pill'; b.id='ymPill'; b.textContent='연문 →'; b.title='연습문제 모드';
+    b.onclick=ymEnter; hh.insertBefore(b, g); } }
 /* 마지막 모드가 연문이면 부팅 뒤 그리로. 앱 부팅이 끝난 뒤(로딩 가림막이 내려간 뒤)에만. */
 if(ymMode){ (function waitBoot(n){ const l=$('loading');
   if(typeof DATA!=='undefined' && DATA && DATA.length && l && l.style.display==='none'){ ymEnter(); }

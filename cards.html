@@ -1617,7 +1617,7 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
   <div class="tgl-row"><span>키보드 단축키 (PC)</span><div class="tgl" id="tglKbd"></div></div>
   <div class="kbd-note"><kbd>Space</kbd> 정답 공개 → 알맞음 · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> 채점 ·
     <kbd>↑</kbd><kbd>↓</kbd> 스크롤 · <kbd>U</kbd> 되돌리기 · <kbd>P</kbd> 일시정지 · <kbd>B</kbd> 내일로 · <kbd>F</kbd> 플래그 ·
-    <kbd>X</kbd> 끄기 · <kbd>H</kbd> 홈 · <kbd>/</kbd> 목록 검색 · <kbd>Esc</kbd> 닫기<br>
+    <kbd>X</kbd> 끄기 · <kbd>C</kbd> 초성 힌트(항목 순서대로) · <kbd>H</kbd> 홈 · <kbd>/</kbd> 목록 검색 · <kbd>Esc</kbd> 닫기<br>
     <kbd>Ctrl</kbd>+<kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> 플래그 사유(단서 과다 · 문면 분리 · 문장 어색 · 사례 추가) ·
     한글 입력 상태에서도 먹어요(자판 자리로 읽습니다)</div>
   <div class="field" style="margin-top:16px"><label>저장</label>
@@ -8603,6 +8603,9 @@ document.addEventListener('keydown',e=>{
   if(k==='f'){ $('rFlag').click(); return; }
   if(k==='x'){ $('rOff').click(); return; }   // 끄기 = 이 카드 그만 (동하 09-10 요청 · 되돌리기 있음)
   if(k==='p'){ pauseSession(); return; }
+  /* `C` = 초성 힌트 (동하 09-14 「초성 나타내기 단축키」). 답 보기 전, 아직 안 연 칩 중 첫 것을 연다 —
+     항목이 여럿이면 누를 때마다 다음 칩. 칩이 없는 카드(범위 밖·표·도식)면 아무 일도 없다. 열면 채점이 「다시」로 잠기는 규칙은 칩과 같다. */
+  if(k==='c'){ if(revealed) return; const b=[...document.querySelectorAll('#hintBox.on .hint-chip:not(.on)')][0]; if(b) b.click(); return; }
 });
 
 /* 테마 */

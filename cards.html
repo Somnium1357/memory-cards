@@ -6263,13 +6263,25 @@ let _prMemo=null;
 function prFacts(){    // 로그·데이터 전수라 한 번 만들어 쓴다 (큐 조립이 주제마다 이 문을 부른다)
   const n=(state.log||[]).length, day=todayKey();
   if(_prMemo && _prMemo.n===n && _prMemo.day===day && _prMemo.cards===DATA.length) return _prMemo;
-  const passed=new Set(), hasDef=new Set();
+  const passed=new Set(), hasDef=new Set(), passedIds=new Set();
   for(const c of DATA){ if(c.pr && c.typ==='정의') hasDef.add(c.pr); }
   for(const e of (state.log||[])){
     if(!(e[2]>=2)) continue;                       // 🔴 「다시」(1)는 통과가 아니다
+    passedIds.add(e[0]);                           // 원소 선행 게이트용 — 어려움 이상으로 한 번이라도 넘긴 카드
     const c=BYID[e[0]]; if(c && c.pr && c.typ==='정의') passed.add(c.pr);
   }
-  return (_prMemo={n:n, day:day, cards:DATA.length, passed:passed, hasDef:hasDef});
+  return (_prMemo={n:n, day:day, cards:DATA.length, passed:passed, hasDef:hasDef, passedIds:passedIds});
+}
+/* 🔴 **원소 선행 게이트** (동하 결정 09-15 「각론 열거 카드」 ③ · 메타 인계 · 사례 선행 게이트와 같은 문).
+   QC가 열거 카드(4항+ · 이어서 3항)를 항목별 낱장으로 쪼개 배포하면서 **원 열거 카드에 `elems:[낱장 id…]`**를 단다(앱·QC 계약 09-15).
+   원 열거 카드는 그 낱장이 **전부 어려움 이상(≥2)으로 통과**한 뒤에만 큐에 든다 — 통합 확인용으로 뒤에 나오는 것이 목적.
+   살아 있는 낱장만 센다(사라진·끈·은퇴 낱장은 없는 것으로) — 낱장이 하나도 없으면 게이트 없음. 게이트는 열리면 안 닫힌다(신규 지연일 뿐).
+   메타가 재는 것 = 게이트 뒤 통짜 첫 통과율(지금 56~67%) · 낱장 첫 노출 통과(≥80%) — 나쁘면 이 함수 하나 끄는 것이 되돌림. */
+function elemGated(c){
+  if(!Array.isArray(c.elems) || !c.elems.length) return false;
+  const F=prFacts();
+  for(const id of c.elems){ const e=BYID[id]; if(!e || retired(e) || offed(e)) continue; if(!F.passedIds.has(id)) return true; }
+  return false;
 }
 const PR_GATED_TYPS=['사례','단계서술'];
 /* 🔴 짝 키가 없는 역방 721장(대응 384 · 원소 333 …) — 생성기 v2.34가 pr을 「이름 답 역방 · 같은 노드」로만 찍어
@@ -6286,7 +6298,7 @@ function prIsolate(list, seed){
   for(const c of (seed||[])){ if(c) prKeys(c).forEach(k=>taken.add(k)); }                  // 오늘 큐에 든 것
   const out=[];
   for(const c of list){
-    if(c.pr && PR_GATED_TYPS.includes(c.typ) && F.hasDef.has(c.pr) && !F.passed.has(c.pr)) continue;  // ②
+    if((c.pr && PR_GATED_TYPS.includes(c.typ) && F.hasDef.has(c.pr) && !F.passed.has(c.pr)) || elemGated(c)) continue;  // ② 사례·원소 선행
     const ks=prKeys(c);
     if(!ks.length){ out.push(c); continue; }
     if(ks.some(k=>taken.has(k))) continue;                                                            // ①
@@ -6335,7 +6347,7 @@ function gateIn(cards, seed, raw){
    🔴 선행 게이트는 **내일이 아니다**(같은 짝의 「정의」를 어려움 이상으로 넘긴 뒤에 나온다) —
    그것을 「내일」이라고 말하면 거짓말이 된다. 그래서 갈라 말한다.
    ⚠ 순서는 `gateIn`과 똑같이 유지한다(같은 카드가 두 사유에 겹쳐 세어지지 않게). */
-function preGated(c){ const F=prFacts(); return !!(c.pr && PR_GATED_TYPS.includes(c.typ) && F.hasDef.has(c.pr) && !F.passed.has(c.pr)); }
+function preGated(c){ const F=prFacts(); return !!(c.pr && PR_GATED_TYPS.includes(c.typ) && F.hasDef.has(c.pr) && !F.passed.has(c.pr)) || elemGated(c); }
 function holdReasons(cards, seed){
   const a=dropSettled(cards), preA=a.filter(preGated).length;
   const b=chainIsolate(a, seed), preB=b.filter(preGated).length;
@@ -6346,7 +6358,7 @@ function holdReasons(cards, seed){
 function holdNote(h){                 // 사유를 뭉개지 않는 한 줄 (짧게 — 홈·토스트에 들어간다)
   const t=(h.chain||0)+(h.pr||0)+(h.dir||0), out=[];
   if(t) out.push(t+'장은 오늘 푼 카드와 겹쳐 내일');
-  if(h.pre) out.push(h.pre+'장은 정의를 넘긴 뒤');
+  if(h.pre) out.push(h.pre+'장은 정의·원소를 넘긴 뒤');
   return out.join(' · ');
 }
 function gateOut(list, order, reorder){

@@ -1583,6 +1583,12 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
     <p class="desc" style="margin-top:6px">오른쪽일수록 덜 잊지만 <b>하루 분량이 늘어요</b>. 바꾸면 모든 카드의 복습일이 다시 잡혀요(기록은 그대로).</p>
     <div class="tgl-row" style="margin-top:8px"><span>채점 버튼 밑에 다음 간격(14일·22일…) 보이기</span><div class="tgl" id="cfgIv"></div></div>
   </div>
+  <div class="field"><label>교육과정 카드만 — 복습 강도 따로</label>
+    <div class="rng-row"><span class="rng-v" id="cretVal">95%</span><span class="desc" id="cretLoad"></span></div>
+    <input class="rng" id="cretRange" type="range" min="85" max="98" step="1" value="95">
+    <div class="rng-ends"><span>넓게 (85%)</span><span>촘촘히 (98%)</span></div>
+    <p class="desc" style="margin-top:6px">교육과정(2022 개정·총론·통합교과 등 노드에 「교육과정」이 든 카드)은 각론보다 잘 잊혀서(재복습 통과 69~78% vs 86~96%) 목표를 따로 둡니다. 나머지 카드는 위 값을 써요.</p>
+  </div>
   <div class="field"><label>시험날 목표 — 시험 당일에 얼마나 남아 있게 할까</label>
     <div class="rng-row"><span class="rng-v" id="xretVal">95%</span><span class="desc" id="xretLoad"></span></div>
     <input class="rng" id="xretRange" type="range" min="88" max="99" step="1" value="95">
@@ -3798,16 +3804,28 @@ const RET_DEF=0.90;
    적용 순간 전 카드 due가 한 번에 옮겨진다). `wAt` = 적용한 파라미터 묶음의 시각 = 두 기기가
    같은 값을 쓰는지 가리는 열쇠. */
 const XRET_DEF=0.95;                      // 시험날 목표 기억률 (동하 결정 09-06 · 「시험날 목표율」 클램프)
-let fsrsCfg={ret:RET_DEF, retAt:0, w:null, wAt:'', xret:XRET_DEF, xretAt:0};
-let engine=null;
+/* 🔴 **교육과정 갈래는 목표 기억률을 따로 쓴다** (동하 결정 09-14 · 판정대기 「동하 결정」 줄 · 메타 인계).
+   메타 실측(09-01 이후 재복습 · 통과=다시 아님): 각론 <3일 86% · 3~7일 91% · 7~14일 96% vs 교육과정 69%·72%·78% —
+   파라미터가 각론 채점으로 맞춰져 교육과정 카드 안정도를 과대평가한다. 로그 1,488은 별도 적합엔 부족해 목표율로 먼저 당긴다
+   (로그 5천 넘으면 전용 파라미터 — 메타가 다시 인계). 파라미터 `w`는 한 벌 그대로, `request_retention`만 갈래별.
+   🔴 갈래 판정 = **노드 경로에 「교육과정」**(`isCurric`) — 메타의 「교육과정 로그 1,488」과 정확히 같은 집합(카드 1,551 · 09-14 실측).
+   tags[0] 「2022 개정 …」은 전부 이 안에 든다. 총창·통합교과는 노드에 교육과정이 있는 절만(총창 278/361 · 통합 146/146).
+   시험날 목표율 클램프는 갈래별 due 위에 그대로. 모형(단계) 카드는 대상 아님(간격 문제 아님 · 메타). */
+const CRET_DEF=0.95;
+let fsrsCfg={ret:RET_DEF, retAt:0, w:null, wAt:'', xret:XRET_DEF, xretAt:0, cret:CRET_DEF, cretAt:0};
+let engine=null, engineC=null;
+function isCurric(c){ return !!(c && ((c.node||'').includes('교육과정') || (((c.tags||[])[0])||'').includes('2022 개정'))); }
+function curricRet(){ return fsrsCfg.cret||CRET_DEF; }
+/* 🔴 `next`를 부르는 자리는 전부 이 문을 지난다(rate · replayLog · 간격 미리보기 · 시뮬) — 한 곳이라도 `engine`을 직접 쓰면
+   실시간과 재계산이 갈려 앱을 켤 때마다 due가 바뀐다(등가성). */
+function engFor(id){ return isCurric(BYID[id]) ? engineC : engine; }
 function buildEngine(){
-  const p={
-    request_retention: fsrsCfg.ret,
+  const mk=ret=>{ const p={
+    request_retention: ret,
     enable_fuzz: true,    // 버스트 투입 시 due 뭉침 방지 (동하 승인 2026-08-19)
     enable_short_term: false,   // 당일 재학습 단계를 쓰지 않는다 (당일 재출 없음 — 2026-08-21)
-  };
-  if(Array.isArray(fsrsCfg.w)&&fsrsCfg.w.length) p.w=fsrsCfg.w;
-  engine = FSRS.fsrs(FSRS.generatorParameters(p));
+  }; if(Array.isArray(fsrsCfg.w)&&fsrsCfg.w.length) p.w=fsrsCfg.w; return FSRS.fsrs(FSRS.generatorParameters(p)); };
+  engine = mk(fsrsCfg.ret); engineC = mk(curricRet());
 }
 buildEngine();
 /* ── 개인 맞춤 파라미터 파일 (루틴 소유 · 앱은 **읽기만**) ────────────────────
@@ -4414,6 +4432,7 @@ function sessFile(){ return {v:1, sessions:[...sessions, ...sessTomb], hoedok:st
   fc:state.fc||{},                        // 주간 예측 스냅숏 — 「지난주 예측 vs 실제」의 밑천(메타가 읽는다)
   cap:intake.cap, capAt:intake.capAt||0,
   ret:fsrsCfg.ret, retAt:fsrsCfg.retAt||0,
+  cret:fsrsCfg.cret, cretAt:fsrsCfg.cretAt||0,      // 교육과정 갈래 목표율(09-14) — 같은 규칙
   xret:fsrsCfg.xret, xretAt:fsrsCfg.xretAt||0,      // 시험날 목표율 — ret과 같은 「더 새것이 이긴다」 규칙
   fw:fsrsCfg.w||null, fwAt:fsrsCfg.wAt||'',
   rest:{dow:rest.dow, days:rest.days}, restAt:rest.at||0,
@@ -4428,7 +4447,7 @@ function applyLogEntry(sx, e){        // rate()와 같은 규칙으로 한 건 �
   const ts=logTs(e), num=e[2], day=dayKey(new Date(ts));
   if(sx.d!==day){
     const fc = sx.fsrs?fsrsRevive(sx.fsrs):FSRS.createEmptyCard(new Date(ts));
-    const r=engine.next(fc, new Date(ts), RATING[num]);
+    const r=engFor(e[0]).next(fc, new Date(ts), RATING[num]);   // 갈래별 목표율(교육과정=cret)
     const nc=r.card;
     nc.due=clampDue(nc.due, e[0], nc);       // 시험날 목표율 클램프
     sx.fsrs=fsrsSerialize(nc); sx.d=day;
@@ -4795,6 +4814,8 @@ function mergeSessInto(remote){
      — 안 하면 엔진만 새것이고 일정은 옛것이다(전층 감사 F1-5). `mergedSched`로 알린다. */
   if(remote && remote.ret!==undefined && (remote.retAt||0) > (fsrsCfg.retAt||0)){
     fsrsCfg.ret=remote.ret; fsrsCfg.retAt=remote.retAt; buildEngine(); mergedSched=true; }
+  if(remote && remote.cret!==undefined && (remote.cretAt||0) > (fsrsCfg.cretAt||0)){
+    fsrsCfg.cret=remote.cret; fsrsCfg.cretAt=remote.cretAt; buildEngine(); mergedSched=true; }
   /* 시험날 목표율도 같은 규칙 — 바뀌면 **due가 움직이므로** 재계산 플래그를 세운다(F1-5와 같은 자리) */
   if(remote && remote.xret!==undefined && (remote.xretAt||0) > (fsrsCfg.xretAt||0)){
     fsrsCfg.xret=remote.xret; fsrsCfg.xretAt=remote.xretAt; mergedSched=true; }
@@ -5541,6 +5562,7 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
       state.fc=sf.fc||{};
       if(sf.cap!==undefined){ intake.cap=sf.cap; intake.capAt=sf.capAt||0; }
       if(sf.ret!==undefined && (sf.retAt||0) > (fsrsCfg.retAt||0)){ fsrsCfg.ret=sf.ret; fsrsCfg.retAt=sf.retAt; buildEngine(); }
+      if(sf.cret!==undefined && (sf.cretAt||0) > (fsrsCfg.cretAt||0)){ fsrsCfg.cret=sf.cret; fsrsCfg.cretAt=sf.cretAt; buildEngine(); }
       if(sf.xret!==undefined && (sf.xretAt||0) > (fsrsCfg.xretAt||0)){ fsrsCfg.xret=sf.xret; fsrsCfg.xretAt=sf.xretAt; }
       if(sf.fwAt!==undefined && (sf.fwAt||'') > (fsrsCfg.wAt||'')){ fsrsCfg.w=sf.fw||null; fsrsCfg.wAt=sf.fwAt||''; buildEngine(); }
       if(sf.rest && (sf.restAt||0) > (rest.at||0)){ rest.dow=sf.rest.dow; rest.days=sf.rest.days||[]; rest.at=sf.restAt; restReset(); }
@@ -6958,7 +6980,7 @@ function intervalsPreview(c){ // 채점 버튼 위 다음 간격 미리보기
   for(const [num,lab] of [[1,'giAgain'],[2,'giHard'],[3,'giGood'],[4,'giEasy']]){
     if(!firstToday){ $(lab).textContent='기록만'; continue; }   // 당일 재출이 없어져 사실상 안 뜨는 경로
     try{
-      const r=engine.next(fc, now, RATING[num]);
+      const r=engFor(c.id).next(fc, now, RATING[num]);
       let due=clampDue(r.card.due, c.id);
       const days=Math.max(0,Math.round((due-now)/86400000));
       $(lab).textContent = days<1?'<1일':(days<30?days+'일':(days/30.4).toFixed(1)+'개월');
@@ -6991,7 +7013,7 @@ function rate(num){
   undoPush(undoSnap);
   if(firstToday && !reN){                  // 그날 첫 채점만 FSRS 반영 (재출은 절대 아니다)
     const fc = s.fsrs?fsrsRevive(s.fsrs):FSRS.createEmptyCard(now);
-    const r=engine.next(fc, now, RATING[num]);
+    const r=engFor(c.id).next(fc, now, RATING[num]);   // 갈래별 목표율 — replayLog와 같은 문
     const nc=r.card;
     nc.due=clampDue(nc.due, c.id, nc);      // 시험날 목표율 클램프
     s.fsrs=fsrsSerialize(nc); s.d=tk;
@@ -8332,6 +8354,10 @@ function renderRetUI(){
   const r=$('retRange'); if(r) r.value=pct;
   const v=$('retVal'); if(v) v.textContent=pct+'%';
   const l=$('retLoad'); if(l) l.textContent='오늘 풀 것 '+dueTodayCount().toLocaleString()+'장';
+  const cp=Math.round(curricRet()*100);
+  const cr=$('cretRange'); if(cr) cr.value=cp;
+  const cv=$('cretVal'); if(cv) cv.textContent=cp+'%';
+  const cl=$('cretLoad'); if(cl){ let n=0; for(const c of DATA){ const s0=state.cards[c.id]; if(s0&&s0.fsrs&&!s0.retired&&isCurric(c)) n++; } cl.textContent='교육과정 카드 '+n.toLocaleString()+'장 학습 중'; }
   const xp=Math.round(examRet()*100);
   const xr=$('xretRange'); if(xr) xr.value=xp;
   const xv=$('xretVal'); if(xv) xv.textContent=xp+'%';
@@ -8409,11 +8435,26 @@ function setRetention(v){
   toast(`${Math.round(v*100)}% — 오늘 풀 것 ${before} → ${after}장`
     + (q.add||q.del ? ` · 오늘 목록 ${q.add?`+${q.add}`:''}${q.add&&q.del?' ':''}${q.del?`−${q.del}`:''}` : ''));
 }
+function setCurricRet(v){   // 교육과정 갈래 목표율 — setRetention과 같은 삼종 세트(재계산 → 캐시 버림 → 오늘 큐)
+  if(!(v>0&&v<1)){ toast('값이 이상해요'); return; }
+  if(Math.abs(v-curricRet())<1e-9) return;
+  const before=dueTodayCount();
+  fsrsCfg.cret=v; fsrsCfg.cretAt=Date.now();
+  buildEngine(); replayLog(); restReset(); lastRevIdx=null; firstRevIdx=null;
+  cacheState(); markDirty('sess');
+  const q=resyncQueues(); TRAJ=null; TRAJ_KEY='';
+  renderRetUI(); renderHome();
+  const after=dueTodayCount();
+  toast(`교육과정 ${Math.round(v*100)}% — 오늘 풀 것 ${before} → ${after}장`
+    + (q.add||q.del ? ` · 오늘 목록 ${q.add?`+${q.add}`:''}${q.add&&q.del?' ':''}${q.del?`−${q.del}`:''}` : ''));
+}
 /* 끌 때마다 재계산하면 무겁다(전량 replayLog) — 숫자만 따라가고 **손을 뗄 때** 한 번 적용한다 */
 $('xretRange').addEventListener('input', ()=>{ $('xretVal').textContent=$('xretRange').value+'%'; });
 $('xretRange').addEventListener('change', ()=>{ setExamRet(+$('xretRange').value/100); });
 $('retRange').addEventListener('input', ()=>{ $('retVal').textContent=$('retRange').value+'%'; });
 $('retRange').addEventListener('change', ()=>{ setRetention(+$('retRange').value/100); });
+$('cretRange').addEventListener('input', ()=>{ $('cretVal').textContent=$('cretRange').value+'%'; });
+$('cretRange').addEventListener('change', ()=>{ setCurricRet(+$('cretRange').value/100); });
 
 /* 개인 맞춤 파라미터 — 루틴이 내놓은 값이 **새것일 때만** 「적용」이 뜬다.
    🔴 자동 적용 금지: 누르는 순간 전 카드 due가 한 번에 옮겨진다. 되돌릴 길도 같이 준다. */
@@ -9453,11 +9494,12 @@ function knowledgeSum(){
 const MATURE_IVL=21;                       // 굳음 문턱(일) — 안키 young/mature 경계
 const SIM_SEEDS=[1,2,3];                   // 고정 시드 — 시드 간 폭이 ±5장이라 셋 평균이면 충분(메타 실측)
 let SIM_ENGINE=null;
-function simEngine(){                      // 시뮬 전용 엔진 — **fuzz를 끈다**(예측선이 흔들리면 안 된다)
+function simEngine(){                      // 시뮬 전용 엔진 — **fuzz를 끈다**(예측선이 흔들리면 안 된다) · 갈래별 둘
   if(SIM_ENGINE) return SIM_ENGINE;
-  const p={request_retention:fsrsCfg.ret, enable_fuzz:false, enable_short_term:false};
-  if(Array.isArray(fsrsCfg.w)&&fsrsCfg.w.length) p.w=fsrsCfg.w;
-  SIM_ENGINE=FSRS.fsrs(FSRS.generatorParameters(p));
+  const mk=ret=>{ const p={request_retention:ret, enable_fuzz:false, enable_short_term:false};
+    if(Array.isArray(fsrsCfg.w)&&fsrsCfg.w.length) p.w=fsrsCfg.w; return FSRS.fsrs(FSRS.generatorParameters(p)); };
+  const a=mk(fsrsCfg.ret), b=mk(curricRet());
+  SIM_ENGINE={ for:id=>(isCurric(BYID[id])?b:a), get_retrievability:(f,d,z)=>a.get_retrievability(f,d,z) };   // R 계산은 ret과 무관
   return SIM_ENGINE;
 }
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a);
@@ -9508,7 +9550,7 @@ function simOnce(inp, newPerDay, seed){
     else unseen++; }
   const grade=()=>{ const r=rnd(); return r<inp.mix[0]?RATING[2]:(r<inp.mix[0]+inp.mix[1]?RATING[3]:RATING[4]); };
   const step=(c,now,p)=>{ const rating = rnd()<p ? grade() : RATING[1];
-    const nc=eng.next(c.f, now, rating).card; nc.due=clampDue(nc.due, c.id, nc); c.f=nc; };
+    const nc=eng.for(c.id).next(c.f, now, rating).card; nc.due=clampDue(nc.due, c.id, nc); c.f=nc; };   // 시뮬 신규(sim*)는 각론 엔진
   const out=[]; let doneKey=null;
   for(let k=dkAdd(todayKey(),1); k<=EXAM_DAY; k=dkAdd(k,1)){
     if(!isRestDay(k)){
@@ -9583,7 +9625,7 @@ function trajChart(hist, pred, zero){
 /* 궤적은 무겁다(시뮬 ≈1.4초) — 통계를 열 때마다 다시 돌리지 않는다.
    🔴 렌더 경로에 전수 계산을 넣으면 화면이 죽는다(09-06 F2-1 회귀에서 배운 것). */
 let TRAJ=null, TRAJ_KEY='', TRAJ_BUSY=false;
-function trajKey(){ return state.log.length+'|'+todayKey()+'|'+fsrsCfg.ret+'|'+(fsrsCfg.wAt||'')+'|'+DATA.length; }
+function trajKey(){ return state.log.length+'|'+todayKey()+'|'+fsrsCfg.ret+'|'+curricRet()+'|'+(fsrsCfg.wAt||'')+'|'+DATA.length; }
 /* 🔴 **화면을 막지 않는다.** 시뮬은 1.7초쯤 걸린다 — 그동안 동기로 붙들면 아이패드에서 「뻗은 것」으로 보인다
    (09-06에 그 사고를 한 번 냈다). 캐시가 맞으면 바로 주고, 아니면 **null을 주고 뒤에서 계산한 뒤 다시 그린다.** */
 function trajectory(){
@@ -9617,8 +9659,8 @@ function recordForecast(T){
           hard7:d7?d7.hard:null, hardExam:T.pred[T.pred.length-1].hard, K:T.K,
           cap:T.inp.cap, newPerDay:T.inp.newPerDay,
           pFirst:+T.inp.pFirst.toFixed(4), pRev:+T.inp.pRev.toFixed(4),
-          ret:fsrsCfg.ret, w_at:fsrsCfg.wAt||'',
-          basisChanged: prev ? (prev.ret!==fsrsCfg.ret || prev.w_at!==(fsrsCfg.wAt||'')) : false };
+          ret:fsrsCfg.ret, cret:curricRet(), w_at:fsrsCfg.wAt||'',
+          basisChanged: prev ? (prev.ret!==fsrsCfg.ret || (prev.cret||CRET_DEF)!==curricRet() || prev.w_at!==(fsrsCfg.wAt||'')) : false };
   for(const k of Object.keys(f).sort().slice(0,-FC_KEEP)) delete f[k];
   markDirty('sess'); saveSessionsSoon();
 }

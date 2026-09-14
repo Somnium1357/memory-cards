@@ -5104,7 +5104,9 @@ function cardRowKey(c, midSet){          // 그 카드가 어느 행에 속하�
   return midSet.has(mk)?mk:u;
 }
 function planRank(k){ const r=PLAN_RANK.get(rowUnit(k)); return r===undefined?9999:r; } // 계획에 없는 새 대주제는 맨 뒤
-function newSort(a,b){ return planRank(tagKey(a))-planRank(tagKey(b)) || a._i-b._i; } // 신규 = 수강일 오래된 대주제 → 문서순
+const SCENE_LAST=100000;   // 09-15 동하 「장면 카드 투입은 수강 순서 맨 뒤로」 — 새로 넣은 장면 1,528장이 제 대주제 자리에 끼어 진도를 밀었다. 대주제 순위 뒤에 통째로 붙인다(pr 게이트와는 별개).
+function newRank(c){ return planRank(tagKey(c)) + (c.typ==='장면' ? SCENE_LAST : 0); }
+function newSort(a,b){ return newRank(a)-newRank(b) || a._i-b._i; } // 신규 = 수강일 오래된 대주제 → 문서순 · 장면은 맨 뒤
 function hoedokPending(){ // 회독 대기 = 카드가 진입했는데 아직 읽음 체크 안 된 대주제
   if(!state.hoedok)state.hoedok={};
   const entered=new Set();
@@ -6240,7 +6242,7 @@ function prFacts(){    // 로그·데이터 전수라 한 번 만들어 쓴다 (
   }
   return (_prMemo={n:n, day:day, cards:DATA.length, passed:passed, hasDef:hasDef});
 }
-const PR_GATED_TYPS=['사례','단계서술','장면'];   // 09-15 동하 「장면 투입 시점 뒤로」 — 장면 카드(pr 전부 있음)는 짝 기본 카드를 한 번 통과한 뒤에만 신규로 든다
+const PR_GATED_TYPS=['사례','단계서술'];
 /* 🔴 짝 키가 없는 역방 721장(대응 384 · 원소 333 …) — 생성기 v2.34가 pr을 「이름 답 역방 · 같은 노드」로만 찍어
    열거 변 위의 원소·대응 쌍은 빠졌다(메타 실측 09-05 · 실사고 = 답 「잉크판」 카드 둘이 같은 날). 앱 쪽 임시 대안:
    짧은 답(≤14자) 역방은 **정규화한 답면 문자열**도 열쇠로 쓴다. pr 카드도 그 열쇠를 같이 잡아 pr↔무pr 사이(83장)도 막는다.

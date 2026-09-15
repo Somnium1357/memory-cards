@@ -120,6 +120,34 @@ def main():
         for it in its:
             it["unit"] = uid
 
+    # ── 🔴 구간형 과목(사회·도덕·음악·미술·체육·실과·통합·총창)은 **문항 10개씩** 재절단 (동하 결정 09-15 「절 안 끊긴 애들은 1~10번 이런 식으로 임의로 끊어줘」).
+    #    매핑표 단위(절)는 이 과목들에서 버리고, 과목 안 등장 순으로 10개씩 묶어 「01~10번」 꼴 단위를 만든다(꼬리는 남는 만큼).
+    #    문항 id·키는 그대로(표시·사다리·due는 문항 키 기준이라 살아남는다) · 단위 id만 새로 매긴다. 주제형 넷(국·수·영·과)은 절 단위 그대로.
+    CHUNK = 10
+    for subj, lst in items_by_subj.items():
+        if subj in TOPIC_SUBJ or not lst:
+            continue
+        units = [u for u in units if u["subj"] != subj]
+        seq_by_subj[subj] = 0
+        for k in range(0, len(lst), CHUNK):
+            its = lst[k:k + CHUNK]
+            seq_by_subj[subj] += 1
+            uid = subj + "/" + ("%02d" % seq_by_subj[subj])
+            nodes = []
+            for it in its:
+                for x in it["nodes"]:
+                    if x not in nodes:
+                        nodes.append(x)
+            rng = printed(its[0]["no"]) + ("~" + printed(its[-1]["no"]) if len(its) > 1 else "")   # 꼬리 한 문항이면 「41번」
+            qs = sorted(set(int(it["q"]) for it in its if str(it["q"]).isdigit()))
+            units.append({"id": uid, "subj": subj, "seq": seq_by_subj[subj], "name": rng + "번", "label": rng + "번",
+                          "star": False, "pages": (str(qs[0]) + ("-" + str(qs[-1]) if len(qs) > 1 else "")) if qs else "",
+                          "kind": "range", "range": rng, "nodes": nodes,
+                          "items": [item_id(subj, it["q"], it["no"]) for it in its]})
+            for it in its:
+                it["unit"] = uid
+        units.sort(key=lambda u: (u["subj"], u["seq"]))
+
     # ── 문항 (과목 내 등장 순)
     items = []
     dup = []

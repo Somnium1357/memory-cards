@@ -4922,8 +4922,9 @@ setInterval(()=>{ if(hasPending() && Date.now()-lastPushAt>PUSH_EVERY_MS) push()
   /* 🔴 배경 전환 없이 켜 두면 카드 데이터가 다시 안 받아졌다(전층 감사 F2-2 — 루틴이 지운 카드를 14.5h 뒤까지 채점 7건).
      30분마다, 보이는 상태이고 풀이 화면이 아닐 때 refreshRemote(안에서 1시간·날짜 변경 게이트가 재로드를 정한다). */
   if(document.visibilityState==='visible' && !$('scrSolve').classList.contains('on') && Date.now()-lastRefreshAt>30*60*1000) refreshRemote();
+  if(document.visibilityState==='visible' && Date.now()-lastVerAt>30*60*1000){ lastVerAt=Date.now(); checkNewVersion(); }
 }, 30*1000);
-let lastRefreshAt=Date.now();
+let lastRefreshAt=Date.now(), lastVerAt=Date.now();
 let hiddenAt=0;
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){
@@ -4941,6 +4942,7 @@ let refreshing=false, pendingRefresh=false, refreshFails=0;   // refreshFails = 
 async function refreshRemote(){     // 포그라운드 복귀 시 원격 상태 당겨오기 (새로고침 없이 기기 전환)
   if(refreshing||!cfg||!cfg.token) return;
   lastRefreshAt=Date.now();
+  checkNewVersion();               // 복귀마다 — 풀이 중이어도 띠는 띄운다(다시 열기는 동하가 누른다)
   if($('scrSolve').classList.contains('on') && cur()){ pendingRefresh=true; return; } // 풀이 중엔 미룬다
   refreshing=true;
   try{
@@ -5027,6 +5029,26 @@ function showBanner(msg, isAuth){
   if(rt)rt.onclick=()=>{hideBanner();push(true);};
 }
 function hideBanner(){ document.getElementById('banner').classList.remove('show'); }
+/* 🔴 **「새 버전 있어요」 띠** (2026-09-15 · 동하 08-22 「다시 겪으면 그때 붙인다」 — 그날이 왔다: 아이패드 PWA가 아침 판을 종일 돌려
+   원소 게이트(32f8956b)가 없는 채로 데이터만 새로 받아 원 열거 카드 30장이 신규로 떴다). 서비스워커·버전 번호 없이:
+   부팅 때 자기 HTML을 no-store로 한 번 받아 해시를 기억하고, 복귀(refreshRemote)·30분 타이머마다 다시 받아 다르면 띠를 띄운다.
+   버튼 = 저장 큐·캐시를 먼저 흘려보내고 reload. Pages 반영 지연(1~3분) 중엔 옛 것과 같으니 조용하다. 실패는 조용히(오프라인). */
+let APP_HASH=null;
+function _hstr(t){ let h=5381; for(let i=0;i<t.length;i++) h=((h*33)^t.charCodeAt(i))>>>0; return t.length+':'+h.toString(16); }
+async function fetchAppHash(){
+  try{ const r=await fetch(location.href.split('#')[0].split('?')[0], {cache:'no-store'}); if(!r.ok) return null;
+    return _hstr(await r.text()); }catch(e){ return null; }
+}
+async function checkNewVersion(){
+  const h=await fetchAppHash(); if(!h) return;
+  if(APP_HASH===null){ APP_HASH=h; return; }          // 첫 측정 = 지금 돌고 있는 판
+  if(h===APP_HASH) return;
+  const b=document.getElementById('banner');
+  if(b.classList.contains('show') && b.dataset.newver) return;
+  b.innerHTML='새 버전이 올라왔어요 — 다시 열면 적용돼요<button id="bnReload">다시 열기</button>';
+  b.dataset.newver='1'; b.classList.add('show');
+  document.getElementById('bnReload').onclick=async()=>{ try{ syncSessQueue(); saveSessionsFlush(); cacheFlush(); if(dirty) await push(); }catch(e){} location.reload(); };
+}
 
 /* ═══════════════ 설정 ═══════════════ */
 function loadCfg(){
@@ -10587,6 +10609,7 @@ function fixScopeKeys(){
   go('scrHome');
   try{ tryResume(); }catch(e){ console.warn('[복귀] 실패 — 홈으로', e); }
   loadFsrsParams();          // 맞춤값 파일은 있으면 읽고 없으면 조용히 넘어간다 (설정에서만 쓴다)
+  checkNewVersion();         // 지금 돌고 있는 판의 해시를 기억해 둔다(새 버전 띠의 기준)
   loadIndexes();    // 회독본·판 색인 갱신은 뒤에서 — 실패하면 재시도하고, 올 때마다 보고 있던 화면을 고친다(F6-1)
 })();
 

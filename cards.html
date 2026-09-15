@@ -5156,7 +5156,7 @@ const SCENE_LAST=100000;   // 09-15 동하 「장면 카드 투입은 수강 순
    → ③ 확장 신설(baseline 밖) → ④ 장면(SCENE_LAST 그대로). 층 안은 단위 투입일(planRank) 오래된 순 → 문서순.
    baseline을 못 받았으면(YM_BASE null) ②③이 하나로 합쳐진다(옛 규칙) — 조용히 깨지는 것보다 낫다. */
 const NEW_TIER_STEP=50000, NEW_HOLE_FIRST=-200000;
-function isHole(c){ return /^구멍/.test(String(c.src||'')) || (c.tags||[]).includes('구멍'); }
+function isHole(c){ return /(^|\s)구멍 \d{2}-\d{2}/.test(String(c.src||'')) || (c.tags||[]).includes('구멍'); }   // 루틴 실물 = src 「출처 구멍 09-15」(09-15 · 9f320ff7)
 function newTier(c){ if(isHole(c)) return 0; if(c.typ==='장면') return 3; if(typeof YM_BASE!=='undefined' && YM_BASE) return YM_BASE.has(c.id)?1:2; return 1; }
 function newRank(c){ const t=newTier(c); return planRank(tagKey(c)) + (t===0 ? NEW_HOLE_FIRST : t===3 ? SCENE_LAST : t===2 ? NEW_TIER_STEP : 0); }
 function newSort(a,b){ return newRank(a)-newRank(b) || a._i-b._i; } // 신규 = 수강일 오래된 대주제 → 문서순 · 장면은 맨 뒤

@@ -45,10 +45,26 @@ def due_from(t, days):
 def sort_key(e):
     return (e["t"], e["i"])
 
+YM_MISTAP_MS = 120000   # 앱 YM_MISTAP_MS 와 같은 값
+
+def _ts(iso):
+    """ISO 문자열 → ms (앱 new Date(t) 와 같은 값 · Z/+09:00 모두)"""
+    import datetime as _dt
+    return _dt.datetime.fromisoformat(iso.replace("Z", "+00:00")).timestamp() * 1000
+
 def derive(events):
     """→ {'items': {key: {m, due, closed, n, at}}, 'units': {key: {done}}}  (앱 ymDerive와 동일)"""
     ev = sorted([e for e in events if e and e.get("i") and e.get("t") and e.get("k") and e.get("m")], key=sort_key)
     undone = {e["ref"] for e in ev if e["m"] == "u" and e.get("ref")}
+    # 오탭 ✓ (앱 ymMistaps · 09-15): ✓ 뒤 같은 문항의 다음 표시가 120초 안이면 그 ✓는 n에 안 센다
+    mistap, last_by_k = set(), {}
+    for e in ev:
+        if e["m"] in ("u", "done") or e["i"] in undone:
+            continue
+        p = last_by_k.get(e["k"])
+        if p and p["m"] == "✓" and (_ts(e["t"]) - _ts(p["t"])) < YM_MISTAP_MS:
+            mistap.add(p["i"])
+        last_by_k[e["k"]] = e
     items, units = {}, {}
     for e in ev:
         if e["m"] == "u" or e["i"] in undone:
@@ -68,7 +84,9 @@ def derive(events):
         it["closed"] = False
         it["m"] = None if m == "-" else m
         if m == "✓":
-            it["due"] = due_from(e["t"], 3); it["n"] += 1
+            it["due"] = due_from(e["t"], 3)
+            if e["i"] not in mistap:
+                it["n"] += 1
         elif m == "△":
             it["due"] = due_from(e["t"], 7)
         else:

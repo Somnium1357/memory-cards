@@ -957,7 +957,10 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .ym-prog{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--mute);padding:10px 4px 0;}
 .ym-prog b{color:var(--ink);font-variant-numeric:tabular-nums;}
 .ym-empty{padding:14px 4px;font-size:13.5px;color:var(--mute);}
-.ym-foot{display:flex;gap:8px;padding:14px 0 4px;position:sticky;bottom:0;background:var(--bg);}
+/* 🔴 바닥 띠는 스크롤 영역의 **아래 패딩(24px+safe-area)까지 덮는다** (동하 09-15 「플로팅바가 좀 이상 · 네모칸 배경이 보인다」).
+   sticky bottom:0 은 패딩 위에 멈춰서 그 아래 24px(아이패드는 +홈 인디케이터)로 줄이 비쳐 보였다 — 띠를 그만큼 내려 붙이고 그 높이를 안에 패딩으로 채운다. */
+.ym-foot{display:flex;gap:8px;position:sticky;bottom:calc(-24px - env(safe-area-inset-bottom));margin-bottom:calc(-24px - env(safe-area-inset-bottom));
+  padding:12px 0 calc(28px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--hair);}
 .ym-foot .ym-btn{flex:1;}
 details.ym-subj>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:48px;padding:6px 4px;font-size:15px;font-weight:800;}
 details.ym-subj>summary::-webkit-details-marker{display:none;}
@@ -10672,9 +10675,23 @@ function ymDueFrom(t, days){                   // t = ISO · 표시한 날(04시
    items[key] = {m, due, closed, n, at}   (m = 현재 표시 · at = 마지막 이벤트 시각)
    units[key] = {done}                    (초회 완료 날짜 'YYYY-MM-DD')
    🔴 여기 말고는 아무도 due·n·closed를 정하지 않는다. */
+/* 🔴 **오탭 ✓는 틀림 횟수(n)에 안 센다** (동하 09-15 「체크를 잘못 표시해서 돌아오려고 하면 체크가 계속 누적됨」).
+   탭 순환(없음→✓→△→?→없음)에서 되돌아가려면 ✓를 또 지나므로, ✓마다 n++ 하면 한 번 잘못 누른 것이 「틀림 2회」가 됐다.
+   규칙 = ✓ 뒤 **같은 문항에 다음 표시가 120초 안에** 오면 그 ✓는 순환 중 스친 것 → 표시·due는 그대로 따라가되 n만 안 올린다.
+   파생 규칙이라 yeonmun_derive.py 도 같이 고쳤다(YM_MISTAP_MS). 로그는 그대로(이벤트는 다 남는다 · 되돌리기도 여전히 이벤트). */
+const YM_MISTAP_MS=120000;
+function ymMistaps(ev, undone){
+  const lastByK={}, mis=new Set();
+  for(const e of ev){ if(e.m==='u'||e.m==='done'||undone.has(e.i)) continue;
+    const p=lastByK[e.k];
+    if(p && p.m==='✓' && (new Date(e.t)-new Date(p.t)) < YM_MISTAP_MS) mis.add(p.i);
+    lastByK[e.k]=e; }
+  return mis;
+}
 function ymDerive(){
   const undone=new Set();
   for(const e of YM.ev) if(e.m==='u' && e.ref) undone.add(e.ref);
+  const mistap=ymMistaps(YM.ev, undone);
   const items={}, units={};
   for(const e of YM.ev){
     if(e.m==='u' || undone.has(e.i)) continue;
@@ -10685,7 +10702,7 @@ function ymDerive(){
     if(e.m==='x'){ it.closed=false; it.n++; it.m='✓'; it.due=ymDueFrom(e.t,7); continue; }
     it.closed=false;
     it.m = e.m==='-' ? null : e.m;
-    if(e.m==='✓'){ it.due=ymDueFrom(e.t,3); it.n++; }
+    if(e.m==='✓'){ it.due=ymDueFrom(e.t,3); if(!mistap.has(e.i)) it.n++; }   // 오탭(120초 안에 다음 표시)은 n 제외
     else if(e.m==='△'){ it.due=ymDueFrom(e.t,7); }
     else it.due=null;                          // ? · ○ · -
   }

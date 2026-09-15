@@ -10642,6 +10642,21 @@ const YM_PATH='cards-yeonmun.json', YM_CAT_PATH='yeonmun-catalog.json', YM_V=1;
 const K_YM_PENDING='cards_ym_pending_v1';      // localStorage — 미전송 이벤트 큐만
 const K_YM_LOG='cards_ym_log_v1';              // IDB — 원격 로그 사본(오프라인 읽기용) · 정본 아님
 const K_YM_CAT='cards_ym_cat_v1';              // IDB — 카탈로그 사본
+/* 🔴 **연문 준비도 모집단** (동하 결정 09-15 · 판정대기 「연문 준비도에서 확장 신설·강사 질문 카드 제외」 · 메타 인계):
+   확장(09-13~)이 옛 절마다 장면·낱장·정의를 수백 장 넣어 「안 본 카드」가 불어나 전 과목 준비도가 실제보다 낮게 보였다
+   (연문 절 미노출 4,457 = 신설 2,348 · 강사 질문 193 · 옛 카드 1,916 · 영어 학습자 변인 108장 중 옛 미노출 3장인데 24%).
+   → 모집단 = **배포본 `c947c22f`(11,998장) ID 집합**(`yeonmun-baseline.json` · 앱 소유 · 정적) ∩ `tags[0] !== '강사 질문'`.
+   그 안에서 「안 본 카드 = 0 · 예외 없음」은 그대로. 파일을 못 받으면 옛 규칙(전체)으로 — 조용히 깨지는 것보다 낫다(§2.14).
+   검수 기준(메타) = 영어 「학습자 변인」 ≥80% · 통합교과 0% 유지. */
+const YM_BASE_PATH='yeonmun-baseline.json', K_YM_BASE='cards_ym_base_v1';
+let YM_BASE=null;                              // Set(id) · null = 못 받음(전체 모집단으로 폴백)
+async function ymLoadBase(){
+  try{ const r=await fetch(YM_BASE_PATH+'?t='+Date.now(),{cache:'no-store'}); if(!r.ok) throw 0;
+    const j=await r.json(); YM_BASE=new Set(j.ids||[]); try{ await idbSet(K_YM_BASE, JSON.stringify(j.ids||[])); }catch(e){} }
+  catch(e){ try{ const c=await idbGet(K_YM_BASE); if(c) YM_BASE=new Set(JSON.parse(c)); }catch(e2){} }
+  return !!YM_BASE;
+}
+function ymInPop(c){ return (c.tags||[])[0]!=='강사 질문' && (!YM_BASE || YM_BASE.has(c.id)); }
 const YM_MARKS=['✓','△','?','○','-','▽','x'];
 let YM={cat:null, ev:[], ids:new Set(), pending:[], loaded:false, catOK:false, remoteOK:false,
         st:{units:{}, items:{}}, idx:null, pushing:false, lastErr:null};
@@ -10736,6 +10751,7 @@ async function ymLoadCatalog(){
     try{ const c=await idbGet(K_YM_CAT); if(c){ YM.cat=JSON.parse(c); } }catch(e2){}
     YM.catOK=false;
   }
+  await ymLoadBase();                          // 준비도 모집단(옛 카드 ID 집합) — 카탈로그와 함께 받는다
   YM.idx=null;
   return !!YM.cat;
 }
@@ -10790,6 +10806,7 @@ function ymReadiness(u){                        // {n, ok, pct} · 끄기·은�
   let n=0, ok=0;
   for(const c of ymUnitCards(u)){
     if(retired(c)||offed(c)) continue;
+    if(!ymInPop(c)) continue;                  // 🔴 확장 신설·강사 질문은 모집단 밖(동하 결정 09-15)
     n++;
     const s=state.cards[c.id]; const r=s&&s.fsrs?retrievability(s.fsrs):null;
     if(r!=null && r>=ret) ok++;

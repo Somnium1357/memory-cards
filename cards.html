@@ -6598,9 +6598,10 @@ function usableTopic(qRest){
     const sel=fresh.slice(0,NEW_BATCH);
     if(!sel.length) return {nt:null, fresh:[], rest:rest, held:cand.length?Math.min(W,cand.length):0, why:cand.length?holdReasons(cand.slice(0,W), rest):null, skipped:0};
     const tc=[0,0,0,0]; for(const c of sel) tc[newTier(c)]++;
-    const label=[tc[0]?'구멍 '+tc[0]:'', tc[1]?'옛 미노출 '+tc[1]:'', tc[2]?'신설 '+tc[2]:'', tc[3]?'장면 '+tc[3]:''].filter(Boolean).join(' · ');
+    const names=['구멍','옛 미노출','신설','장면'], on=[0,1,2,3].filter(i=>tc[i]);
+    const label=(on.length===1 ? names[on[0]] : on.map(i=>names[i]+' '+tc[i]).join(' · '));
     const subs=new Set(sel.map(c=>c.subj)).size;
-    return {nt:{key:null, label:label+' ('+subs+'과목 섞음)', date:null, cards:sel, mixed:true}, fresh:sel, rest:rest,
+    return {nt:{key:null, label:label+' · '+subs+'과목 섞음', date:null, cards:sel, mixed:true}, fresh:sel, rest:rest,
             held:Math.max(0, Math.min(W,cand.length)-fresh.length), why:holdReasons(cand.slice(0,W), rest), skipped:0};
   }
   const tried=new Set(); let nt;

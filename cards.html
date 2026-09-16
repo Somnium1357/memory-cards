@@ -10314,11 +10314,16 @@ function hdKey(e){ if(!kbdOn || e.metaKey||e.ctrlKey||e.altKey) return;
   /* 🔴 ↑↓도 본문을 굴린다 (동하 09-16 「오른쪽 사이드바로 한번 넘어가고 나면 그 뒤로 방향키가 안 먹음」) — 목차(사이드바)의 링크에 초점이 가면
      브라우저 기본 스크롤이 그 목차 상자를 굴리려 해 본문은 안 움직였다. 초점이 어디든 판 본문(window)을 굴린다. */
   if(e.key==='ArrowUp'||e.key==='ArrowDown'||e.key==='PageUp'||e.key==='PageDown'){
-    const tg=e.target&&e.target.tagName; if(tg==='INPUT'||tg==='TEXTAREA'||tg==='SELECT') return;
-    try{ const w=$('hdFrame').contentWindow; const big=e.key.startsWith('Page'); const step=Math.max(80, Math.round(w.innerHeight*(big?0.9:0.42)));
+    /* 🔴 판 안에서는 **브라우저 기본 스크롤**을 그대로 둔다(작은 걸음 · 눌러 두면 계속 — 동하 09-16 「왜 페이지업다운이 된 거임」).
+       손대는 경우는 둘뿐: ① 초점이 목차(사이드바) 안이면 초점을 풀고 본문을 굴린다 ② 키가 부모 문서에서 왔으면(오버레이 띠를 탭한 뒤) 판을 대신 굴린다. */
+    try{ const w=$('hdFrame').contentWindow, d=w.document; const inSide=d.activeElement&&d.activeElement.closest&&d.activeElement.closest('aside.sidebar');
+      const fromParent=!!e.target && (e.target===document || e.target.ownerDocument===document);
+      if(!inSide && !fromParent) return;                       // 기본 스크롤에 맡긴다
+      if(inSide) d.activeElement.blur();
+      const big=e.key.startsWith('Page'); const step=big?Math.round(w.innerHeight*0.9):48;
       w.scrollBy({top:(e.key==='ArrowUp'||e.key==='PageUp')?-step:step, behavior:'auto'}); e.preventDefault(); }catch(err){} } }
 function hdOnLoad(){
-  try{ const d=$('hdFrame').contentDocument; d.addEventListener('keydown', hdKey); $('hdFrame').contentWindow.focus(); }catch(e){}
+  try{ const d=$('hdFrame').contentDocument; d.addEventListener('keydown', hdKey); d.addEventListener('click', ev=>{ const a=ev.target&&ev.target.closest&&ev.target.closest('aside.sidebar a'); if(a) setTimeout(()=>{ try{ a.blur(); }catch(e){} },0); }); $('hdFrame').contentWindow.focus(); }catch(e){}
   /* 판 안의 「카드앱 ↗」을 누른 경우 — iframe에 앱을 띄우지 말고 오버레이를 닫는다 */
   try{ const p=$('hdFrame').contentWindow.location.pathname;
     if(/cards\.html$/.test(p)){ closeHoedok(); return; } }catch(e){}

@@ -1195,7 +1195,7 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
         <button class="qnav" id="hdQNext">›</button>
       </div>
       <ol id="hdQList"></ol>
-      <iframe id="hdFrame" title="회독본"></iframe>
+      <!-- 회독본 iframe은 열 때만 만들고 닫으면 지운다(09-16) — 빈 iframe이 남아 있으면 홈 화면 앱에서 하드웨어 키 초점을 물고 있을 수 있다 -->
     </div>
 
     <!-- 읽을거리 -->
@@ -4445,7 +4445,19 @@ function sessFile(){ return {v:1, sessions:[...sessions, ...sessTomb], hoedok:st
   fw:fsrsCfg.w||null, fwAt:fsrsCfg.wAt||'',
   rest:{dow:rest.dow, days:rest.days}, restAt:rest.at||0,
   ivShow:{v:ivShow.v}, ivShowAt:ivShow.at||0,
-  reshow:{v:reshow.v}, reshowAt:reshow.at||0}; }   // 「다시」 당일 재출 — 기기 간 동기(09-12)
+  reshow:{v:reshow.v}, reshowAt:reshow.at||0,
+  kdiag:KDIAG.slice(-12)}; }   // 「다시」 당일 재출 — 기기 간 동기(09-12) · kdiag = 키 초점 진단(09-16 · 원인 잡히면 뺀다)
+/* 🔴 키 초점 진단 (동하 09-16 「화면 전환·앱 전환 뒤 키 안 먹음 · 탭하면 풀림 · 사파리 탭에선 멀쩡 · 홈 화면 앱만」).
+   앞으로 돌아올 때(visible)·화면 전환(go) 순간의 초점 위치·hasFocus·standalone 을 적고, 그 뒤 첫 입력이 키였나 탭이었나를 붙인다. 세션 파일로 올라가 앱 세션이 읽는다. */
+const KDIAG=[]; let _kd=null;
+function kdSnap(why){ try{ const a=document.activeElement; _kd={t:new Date().toISOString().slice(11,19), why, act:(a?a.tagName+(a.id?'#'+a.id:''):'-'), hf:document.hasFocus(), sa:!!navigator.standalone, vis:document.visibilityState, scr:([...document.querySelectorAll('.scr.on')].map(x=>x.id)[0]||'-'), ovl:!!document.querySelector('.ovl.show')||$('ovlHd').classList.contains('show'), first:null};
+  KDIAG.push(_kd); if(KDIAG.length>30) KDIAG.shift(); }catch(e){} }
+function kdFirst(kind, e){ try{ if(!_kd||_kd.first) return; const a=document.activeElement; _kd.first={kind, t:new Date().toISOString().slice(11,19), act:(a?a.tagName+(a.id?'#'+a.id:''):'-'), key:e&&e.code||null, tgt:e&&e.target&&(e.target.tagName+(e.target.id?'#'+e.target.id:''))}; markDirty('sess'); saveSessionsSoon(); }catch(err){} }
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') kdSnap('visible'); });
+window.addEventListener('focus', ()=>kdSnap('winfocus'));
+window.addEventListener('blur', ()=>kdSnap('winblur'));
+document.addEventListener('keydown', e=>kdFirst('key', e), true);
+document.addEventListener('pointerdown', e=>kdFirst('tap', e), true);
 function applyLogEntry(sx, e){        // rate()와 같은 규칙으로 한 건 반영 (그날 첫 채점만 FSRS)
   /* 🔴 재출(`ex.re`)은 **상태에 아무것도 안 남긴다** — 일정도, 틀림 횟수도.
      `rate()`가 그렇게 하므로 로그 재계산도 똑같아야 한다(로그가 정본 = 두 경로가 같은 값을 내야 한다).
@@ -7573,6 +7585,7 @@ function gEnd(x,y){
 
 /* ═══════════════ 화면 전환 ═══════════════ */
 function go(id){
+  kdSnap('go:'+id);
   if(id!=='scrSolve'){ resumeSession(); syncSessQueue();
     if(pendingRefresh){ pendingRefresh=false; setTimeout(refreshRemote,0); } }
   /* 🔴 **홈으로 나가면 복귀 지점을 버린다** (전층 감사 F4-8 · 2026-09-06).
@@ -10301,11 +10314,12 @@ const HD_PREVIEW_MIN=4;
    닫을 때도 `about:blank`로 바꾸지 않고 요소를 통째로 비운다(같은 이유). */
 function hdNewFrame(src){
   const old=$('hdFrame');
+  if(!src){ if(old) old.remove(); return null; }        // 🔴 닫을 때는 iframe을 **없앤다**(빈 프레임을 남기지 않는다 · 09-16 키 초점 회귀 의심)
   const f=document.createElement('iframe');
   f.id='hdFrame'; f.title='회독본';
   f.addEventListener('load', hdOnLoad);
-  if(src) f.src=src;
-  old.replaceWith(f);
+  f.src=src;
+  if(old) old.replaceWith(f); else $('ovlHd').appendChild(f);
   return f;
 }
 /* 🔴 **회독본 창 ← → = 이전/다음 중주제** (동하 09-16 · 패드 D패드 좌우). 판의 h2(「대주제 - 중주제」)를 스크롤 위치로 세어 하나씩 옮긴다.

@@ -4669,16 +4669,20 @@ function mergeShrinkMaps(a, b, key){        // 툼스톤은 합집합·같은 id
 }
 function mergeSessions(remote, local, log){
   // 세션 병합: id별 합집합 · 같은 id면 큐는 「양쪽 합집합 − 오늘 이미 푼 것」, 나머지 필드는 u 최신 우선
-  const tk=todayKey(), solved=new Set();
+  const tk=todayKey();
   /* 🔴 「이미 푼 것 제외」를 **오늘 로그만** 보던 것(전층 감사 F4-1) — 하루 이상 낡은 사본(더러운 채 닫힌 기기 · 오프라인 뒤 409 ·
      04시 경계)이 그 사이 푼 카드(최대 777장)를 큐로 되살려 「미리 보는 중」으로 조기 복습시켰다.
      → 양쪽 사본 중 **가장 오래된 큐 시각(qAt) 이후** 채점 전부를 「푼 것」으로 본다. qAt이 없는 세션은 판단에 안 쓴다(최소한 오늘치는 본다). */
-  let since=Infinity;
-  for(const list of [remote||[], local||[]]) for(const sx of list){ if(!sx||sx.del) continue; const t=Date.parse(sx.qAt||'')||0; if(t && t<since) since=t; }
+  /* 🔴 **기준은 세션마다 · 두 사본 중 오래된 쪽의 마지막 저장 시각(lastAt)** (2026-09-16 동하 「닫았다 열면 교육과정 88 → 3」 · 재현·확정).
+     예전(F4-1 · 09-06)엔 **모든 세션의 qAt 중 가장 오래된 것**을 하나 잡아 전 세션에 썼다 — 안 쓰는 세션(국수영 복습)의 qAt이 09-11이라 기준이 5일 전으로 밀려
+     09-11 이후 채점한 카드 전부가 「그 사이 푼 것」으로 간주돼 **며칠 전에 풀고 오늘 due가 된 복습 카드가 병합마다 큐에서 빠졌다**(88 → 2 · 남는 건 미채점 신규만).
+     맞는 뜻 = 「오래된 사본이 마지막으로 살아 있던 뒤에 푼 카드」만 되살리지 않는다. 그 전에 푼 카드는 그 사본이 알고서 큐에 둔 것(=due). 오늘 채점은 항상 뺀다(dayStart). */
   const dayStart=new Date(tk+'T04:00:00+09:00').getTime();
-  const solvedCut=Math.min(isFinite(since)?since:dayStart, dayStart);
-  for(let i=(log||[]).length-1;i>=0;i--){ const e=log[i];
-    if(logTs(e)<solvedCut)break; solved.add(e[0]); }
+  const solvedSince=(cut)=>{ const set=new Set(); for(let i=(log||[]).length-1;i>=0;i--){ const e=log[i]; if(logTs(e)<cut)break; set.add(e[0]); } return set; };
+  const solvedToday=solvedSince(dayStart), solvedCache=new Map();
+  const solvedFor=(a,b)=>{ const la=a.lastAt||0, lb=b.lastAt||0; const older=Math.min(la||Infinity, lb||Infinity);
+    const cut=Math.min(isFinite(older)?older:dayStart, dayStart); if(cut===dayStart) return solvedToday;
+    if(!solvedCache.has(cut)) solvedCache.set(cut, solvedSince(cut)); return solvedCache.get(cut); };
   const byId={}, tomb={};
   for(const list of [remote||[], local||[]]){
     for(const sx of list){
@@ -4688,6 +4692,7 @@ function mergeSessions(remote, local, log){
       const newer=(sx.lastAt||0)>=(prev.lastAt||0)?sx:prev, older=newer===sx?prev:sx;
       /* 🔴 합집합 → **축소 반영** → 오늘 푼 것 제외 (09-01 감사 🔴2).
          예전엔 합집합이 끝이라 「빼기」·「큐 비우기」가 낡은 사본과 만나면 되살아났다. */
+      const solved=solvedFor(newer, older);   // 이 세션 쌍의 기준(위 주석)
       const q=applyShrink(
         [...new Set([...(newer.q||[]), ...(older.q||[])])],
         newer, older, newer.q, older.q, 'qDel', 'qAt').filter(id=>!solved.has(id));

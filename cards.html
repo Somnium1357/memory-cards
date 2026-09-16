@@ -10311,10 +10311,28 @@ function hdOnLoad(){
     if(/cards\.html$/.test(p)){ closeHoedok(); return; } }catch(e){}
   /* 둘러보기(홈 「회독본」 알약)면 머리 제목이 판을 따라간다 — 「회독본 — 1.국어」에서 과목만 */
   if(HD_BROWSE){ try{ const t=$('hdFrame').contentDocument.title||'';
-    $('hdTtl').textContent=t.replace(/^회독본\s*[—–-]\s*/,'')||'회독본'; }catch(e){} }
+    $('hdTtl').textContent=t.replace(/^회독본\s*[—–-]\s*/,'')||'회독본';
+    const w=$('hdFrame').contentWindow;
+    w.addEventListener('scroll', ()=>{ const n=Date.now(); if(n-_hdSaveT>400){ _hdSaveT=n; hdSaveSpot(); } }, {passive:true});
+    if(HD_RESUME && (w.location.pathname+w.location.hash)===HD_RESUME.p){ const y=HD_RESUME.y; HD_RESUME=null;
+      w.scrollTo(0,y); setTimeout(()=>w.scrollTo(0,y), 350); setTimeout(()=>w.scrollTo(0,y), 900); return; }   // 복원 자리가 앵커 seek보다 우선
+    HD_RESUME=null; hdSaveSpot(); }catch(e){} }
   hdSeek(); setTimeout(hdSeek, 350);
 }
 let HD_BROWSE=false;   // 「회독본」 알약으로 연 둘러보기 — 질문 없음 · 머리 제목이 판의 제목을 따라간다
+/* 🔴 **둘러보기 자리 저장** (동하 09-16 「회독본 보다가 홈 갔다오면 내부 상태가 날아가서 계속 스크롤을 다시」).
+   둘러보기 중엔 (판 경로 · scrollY)를 스크롤마다 기기에 적어 두고(K_HD_LAST · 이 기기만), 알약을 다시 누르면 그 판을 열어 그 자리로 돌아간다.
+   카드에서 여는 「회독본 ↗」은 무관(앵커·질문으로 자리를 잡는다). 저장 자리는 로드 뒤 두 번 맞춘다(글꼴이 늦게 붙어 밀린다 — hdSeek와 같은 이유). */
+const K_HD_LAST='cards_hd_last_v1';
+let HD_RESUME=null, _hdSaveT=0;
+function hdSaveSpot(){ if(!HD_BROWSE) return; try{ const w=$('hdFrame').contentWindow; const p=w.location.pathname+w.location.hash; if(!/\/hoedok\//.test(p)) return;   // 빈 프레임(about:blank)은 안 적는다
+  lsSet(K_HD_LAST, JSON.stringify({p:p, y:Math.round(w.scrollY), at:Date.now()})); }catch(e){} }
+function hdLastSpot(){ try{ const j=JSON.parse(lsGet(K_HD_LAST)||'null'); return (j&&j.p&&/\/hoedok\//.test(j.p))?j:null; }catch(e){ return null; } }
+function hdBrowse(){                            // 홈 알약 — 마지막 자리가 있으면 거기로, 없으면 과목 목록
+  const last=hdLastSpot();
+  HD_RESUME = last ? {p:last.p, y:last.y||0} : null;
+  openHoedok(last ? last.p : PAN_DIR+'index.html', '회독본'); HD_BROWSE=true;
+}
 function openHoedok(uri, title, qs, readKey, readN, ans){
   HD_BROWSE=false;
   $('hdTtl').textContent=title||'회독본';
@@ -10398,6 +10416,7 @@ $('hdQNext').onclick=()=>{
 $('hdQTxt').onclick=()=>{ $('hdQ').classList.toggle('mini'); };
 $('hdQBtn').onclick=()=>{ $('hdQList').classList.toggle('on'); renderHdQ(); };
 function closeHoedok(fromPop){
+  hdSaveSpot();                        // 둘러보기 자리 — 다시 열면 여기로
   $('ovlHd').classList.remove('show');
   /* 🔴 **히스토리를 안 건드린다.** 닫기 버튼이 `back()`을 부르면 그 뒤로가기를 「소비만」 하려고
      플래그가 필요한데, `back()`이 실제로 안 일어나는 경우가 있어 플래그가 남아 **다음 뒤로가기를
@@ -11029,7 +11048,7 @@ $('ymUnitBack').onclick=()=>{ go('scrYmToday'); ymRenderToday(); };
 { const hh=document.querySelector('.home-head');
   if(hh){ const g=hh.querySelector('.gear');
     const h=document.createElement('button'); h.className='ym-pill'; h.id='hdPill'; h.textContent='회독본'; h.title='회독본 둘러보기';
-    h.onclick=()=>{ openHoedok(PAN_DIR+'index.html','회독본'); HD_BROWSE=true; }; hh.insertBefore(h, g);
+    h.onclick=hdBrowse; hh.insertBefore(h, g);
     const b=document.createElement('button'); b.className='ym-pill'; b.id='ymPill'; b.textContent='연문 →'; b.title='연습문제 모드';
     b.onclick=ymEnter; hh.insertBefore(b, g); } }
 /* 마지막 모드가 연문이면 부팅 뒤 그리로. 앱 부팅이 끝난 뒤(로딩 가림막이 내려간 뒤)에만. */

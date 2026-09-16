@@ -1018,7 +1018,7 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
   <div id="main">
     <div id="banner"></div>
     <!-- 키 초점 앵커(09-16): 화면 밖 공용 자리 · 읽기 전용 + inputmode=none 이라 소프트 키보드는 안 뜬다 · iOS는 편집 요소만 하드웨어 키 대상으로 붙든다 -->
-    <input id="kbdAnchor" readonly inputmode="none" aria-hidden="true" tabindex="-1" autocomplete="off" style="position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px">
+    <input id="kbdAnchor" readonly inputmode="none" aria-hidden="true" tabindex="-1" autocomplete="off" style="position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;border:0;padding:0;margin:0;font-size:16px;pointer-events:none;caret-color:transparent;z-index:-1"><!-- 🔴 화면 안(0,0)에 둔다 — 화면 밖(-9999px)에 두면 iOS가 초점 요소를 보이게 하려고 화면 전체를 옆으로 밀어 카드 자리가 비고 사이드바가 떠 보였다(동하 09-16 「UI는 또 왜 이러는데」) -->
     <div id="topbar">
       <button class="tb-btn" id="btnHome" title="홈"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg></button>
       <span id="saveBadge" title="미저장분 있음"></span>

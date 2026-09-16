@@ -5053,7 +5053,9 @@ function updateSaveUI(){
 function renderFoot(){
   const f=document.getElementById('hFoot'); if(!f||!DATA.length) return;
   f.innerHTML=`카드 ${DATA.length.toLocaleString()}장 · 리뷰 로그 ${state.log.length.toLocaleString()}건`
-    +`${hasPending()?' · <b style="color:var(--hard)">미저장분 있음</b>':''}`;
+    /* 🔴 「미저장분 있음」은 오류가 아니라 **5분 배치를 기다리는 중**인 경우가 대부분이다(동하 09-16 「왜 계속 뜨는 거」 · data 브랜치엔 전부 올라가 있었다) —
+       복귀마다 세션을 다시 채워 세션 파일이 바뀜으로 찍히니 홈에 있는 시간 대부분 켜진다. 평소엔 회색 「저장 대기」, 빨강은 상단 배지와 같은 기준(10분 넘게 못 올림)일 때만. */
+    +`${hasPending()?(Date.now()-lastPushAt>STALE_MS?' · <b style="color:var(--hard)">미저장분 있음</b>':' · <span style="opacity:.55">저장 대기</span>'):''}`;
 }
 function showBanner(msg, isAuth){
   const b=document.getElementById('banner');

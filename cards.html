@@ -4466,12 +4466,12 @@ function sessFile(){ return {v:1, sessions:[...sessions, ...sessTomb], hoedok:st
 const KDIAG=[]; let _kd=null;
 function kdSnap(why){ try{ const a=document.activeElement; _kd={t:new Date().toISOString().slice(11,19), why, act:(a?a.tagName+(a.id?'#'+a.id:''):'-'), hf:document.hasFocus(), sa:!!navigator.standalone, vis:document.visibilityState, scr:([...document.querySelectorAll('.scr.on')].map(x=>x.id)[0]||'-'), ovl:!!document.querySelector('.ovl.show')||$('ovlHd').classList.contains('show'), first:null};
   KDIAG.push(_kd); if(KDIAG.length>30) KDIAG.shift(); }catch(e){} }
-function kdFirst(kind, e){ try{ if(!_kd||_kd.first) return; const a=document.activeElement; _kd.first={kind, t:new Date().toISOString().slice(11,19), act:(a?a.tagName+(a.id?'#'+a.id:''):'-'), key:e&&e.code||null, tgt:e&&e.target&&(e.target.tagName+(e.target.id?'#'+e.target.id:''))}; markDirty('sess'); saveSessionsSoon(); }catch(err){} }
+function kdFirst(kind, e){ try{ if(!_kd||_kd.first) return; const a=document.activeElement; _kd.first={kind, t:new Date().toISOString().slice(11,19), act:(a?a.tagName+(a.id?'#'+a.id:''):'-'), key:e&&e.code||null, tgt:e&&e.target&&(e.target.tagName+(e.target.id?'#'+e.target.id:''))}; }catch(err){} }   // 저장은 다음 정기 저장에 묻어 간다(강제 push 금지 — 09-16 「저장 실패」 폭주의 원인이었다)
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible'){ kdSnap('visible');
   /* 게임패드 진단(09-16 「전환은 여전히 안 됨」): 돌아온 뒤 1·3·6초에 페이지가 보는 패드 수·연결·버튼 눌림 상태를 적는다 */
   [1000,3000,6000].forEach(ms=>setTimeout(()=>{ try{ const gps=navigator.getGamepads?[...navigator.getGamepads()]:[]; const g=gps.find(x=>x);
     KDIAG.push({t:new Date().toISOString().slice(11,19), why:'pad+'+(ms/1000)+'s', n:gps.filter(Boolean).length, conn:!!(g&&g.connected), ts:g?Math.round(g.timestamp):null, anyDown:!!(g&&g.buttons.some(b=>b.pressed)), hf:document.hasFocus(), vis:document.visibilityState});
-    if(KDIAG.length>30) KDIAG.shift(); markDirty('sess'); saveSessionsSoon(); }catch(e){} }, ms)); } });
+    if(KDIAG.length>30) KDIAG.shift(); }catch(e){} }, ms)); } });
 window.addEventListener('focus', ()=>kdSnap('winfocus'));
 window.addEventListener('blur', ()=>kdSnap('winblur'));
 document.addEventListener('keydown', e=>kdFirst('key', e), true);
@@ -7931,7 +7931,6 @@ function renderSession(){
   $('ssTitle').textContent=sx.name;
   const body=$('ssBody'); body.innerHTML='';
   if(!isFixed(sx)) refillSess(sx);
-  try{ sessDiag(sx); }catch(e){}   // 🔴 진단(09-16 · 88→3 미재현) — 이 기기가 보는 수를 세션 파일에 실어 앱 세션이 읽는다 · 원인 잡히면 뺀다
   const remain=sessRemain(sx);
   const live=curSess&&curSess.id===sx.id;
   /* 큐가 비면 「이어서 채우기」를 띄운다 — 예전에는 이 자리에서 refillSess가 말없이 채웠다,
@@ -10835,7 +10834,6 @@ function fixScopeKeys(){
   go('scrHome');
   try{ tryResume(); }catch(e){ console.warn('[복귀] 실패 — 홈으로', e); }
   loadFsrsParams();          // 맞춤값 파일은 있으면 읽고 없으면 조용히 넘어간다 (설정에서만 쓴다)
-  setTimeout(diagQueues, 1500);   // 🔴 진단(09-16 · 동하 「닫았다 열면 교육과정 88 → 3」 미재현) — 저장 큐가 반 넘게 줄면 어디서 빠졌는지 띠로 보여 준다
   checkNewVersion();         // 지금 돌고 있는 판의 해시를 기억해 둔다(새 버전 띠의 기준)
   loadIndexes();    // 회독본·판 색인 갱신은 뒤에서 — 실패하면 재시도하고, 올 때마다 보고 있던 화면을 고친다(F6-1)
 })();

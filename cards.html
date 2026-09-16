@@ -1211,6 +1211,24 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
     </div>
 
     <!-- 도움말 -->
+    <!-- 입력 배치 (2026-09-16 · 동하 「키매핑 탭 따로 · 설정이 난잡」) — 키보드 단축키 안내 + 게임패드 버튼 배치 -->
+    <div class="scr" id="scrInput">
+      <div class="sub-head"><button class="tb-btn" id="inputBack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title">입력 배치</div></div>
+      <div class="sub-body"><div class="sub-inner">
+        <div class="h-sec">게임패드</div>
+        <p class="desc" style="margin:0 2px 8px">컨트롤러는 <b>D 모드</b>로 붙여요(설정 &gt; 일반 &gt; 게임 컨트롤러에 뜨면 됨). 키보드 모드와 달리 앱 전환 뒤에도 그대로 먹어요.
+          바꾸려면 「누르기」를 누른 뒤 원하는 버튼을 누르세요. 배치는 이 기기에만 저장돼요.</p>
+        <div class="desc" id="padStatus" style="margin:0 2px 8px"></div>
+        <div id="padMap"></div>
+        <div style="display:flex;gap:8px;margin-top:10px"><button class="ym-btn ghost" id="padReset" style="flex:1">기본 배치로</button></div>
+        <div class="h-sec" style="margin-top:22px">키보드 단축키 (PC · 키보드 모드)</div>
+        <div class="kbd-note"><kbd>Space</kbd> 정답 공개 → 알맞음 · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> 채점 ·
+    <kbd>↑</kbd><kbd>↓</kbd> 스크롤 · <kbd>U</kbd> 되돌리기 · <kbd>P</kbd> 일시정지 · <kbd>B</kbd> 내일로 · <kbd>F</kbd> 플래그 ·
+    <kbd>X</kbd> 끄기 · <kbd>C</kbd> 초성 힌트(항목 순서대로) · <kbd>H</kbd> 홈 · <kbd>/</kbd> 목록 검색 · <kbd>Esc</kbd> 닫기<br>
+    <kbd>Ctrl</kbd>+<kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> 플래그 사유(단서 과다 · 문면 분리 · 문장 어색 · 사례 추가) ·
+    한글 입력 상태에서도 먹어요(자판 자리로 읽습니다)</div>
+      </div></div>
+    </div>
     <div class="scr" id="scrHelp">
       <div class="sub-head"><button class="tb-btn" data-go="scrHome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title">도움말</div></div>
       <div class="sub-body"><div class="sub-inner">
@@ -1629,11 +1647,7 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
   <div class="tgl-row"><span>카드 마당 전체 탭 (여백을 짚어도 공개)</span><div class="tgl" id="tglZtap"></div></div>
   <div class="tgl-row"><span>스와이프 채점 (좌 알맞음 · 우 다시)</span><div class="tgl" id="tglSwipe"></div></div>
   <div class="tgl-row"><span>키보드 단축키 (PC)</span><div class="tgl" id="tglKbd"></div></div>
-  <div class="kbd-note"><kbd>Space</kbd> 정답 공개 → 알맞음 · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> 채점 ·
-    <kbd>↑</kbd><kbd>↓</kbd> 스크롤 · <kbd>U</kbd> 되돌리기 · <kbd>P</kbd> 일시정지 · <kbd>B</kbd> 내일로 · <kbd>F</kbd> 플래그 ·
-    <kbd>X</kbd> 끄기 · <kbd>C</kbd> 초성 힌트(항목 순서대로) · <kbd>H</kbd> 홈 · <kbd>/</kbd> 목록 검색 · <kbd>Esc</kbd> 닫기<br>
-    <kbd>Ctrl</kbd>+<kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> 플래그 사유(단서 과다 · 문면 분리 · 문장 어색 · 사례 추가) ·
-    한글 입력 상태에서도 먹어요(자판 자리로 읽습니다)</div>
+  <button class="act-btn" id="setInput" style="margin-top:6px"><span>입력 배치 — 키보드 · 게임패드</span><small>단축키 안내 · 버튼 배치</small></button>
   <div class="field" style="margin-top:16px"><label>저장</label>
     <div class="h-tools" style="margin-top:0">
       <button class="h-tool" id="btnSync">지금 저장</button>
@@ -8666,6 +8680,60 @@ $('tglKbd').onclick=()=>{ kbdOn=!kbdOn; lsSet(K_KBD,kbdOn?'1':'0'); $('tglKbd').
 
 /* ═══════════════ 키보드 (PC 전용 보조 — 터치 흐름은 그대로) ═══════════════ */
 let kbdOn = lsGet(K_KBD)!=='0';
+/* ═══ 게임패드 (2026-09-16 · 동하 「진짜 방법 없음?」) ═══════════════════════════════════════════════
+   iPadOS 27 홈 화면 웹앱은 앱 전환 뒤 화면을 탭하기 전엔 **하드웨어 키보드** 입력을 웹뷰에 안 넘긴다(우리 앱·판·구글 웹앱 전부 재현 · OS 동작).
+   8BitDo Micro를 K(키보드) 대신 **D 모드**로 붙이면 iPadOS가 게임 컨트롤러로 잡고(설정 > 일반 > 게임 컨트롤러 「8BitDo Micro gamepad」 실물 확인),
+   웹은 Gamepad API로 버튼을 직접 읽는다 — 키보드 포커스 규칙 밖이라 앱 전환 뒤에도 먹는다.
+   구현 = 버튼 눌림 가장자리 → **같은 keydown 이벤트를 합성**해 기존 키 처리 한 곳으로 보낸다(규칙 중복 금지 · e.code 그대로 · e.repeat 없음).
+   배치는 기기별(localStorage) · 「입력 배치」 화면에서 「누르기 → 버튼」으로 바꾼다. 기본 배치 = 표준 매핑 번호 기준으로 동하 K 모드 배치(구조안내 §7.7)를 옮긴 것 —
+   실물 번호가 다르면 화면에서 고친다(#번호가 눌린 버튼을 알려 준다). */
+const K_PAD='cards_pad_v1';
+const PAD_ACTS=[   // [id, 라벨, 합성할 키] — 순서 = 화면 순서
+  ['reveal','답 보기 → 알맞음 (Space)',{code:'Space',key:' '}], ['again','다시 (1)',{code:'Digit1',key:'1'}], ['hard','어려움 (2)',{code:'Digit2',key:'2'}],
+  ['good','알맞음 (3)',{code:'Digit3',key:'3'}], ['easy','쉬움 (4)',{code:'Digit4',key:'4'}], ['undo','되돌리기 (U)',{code:'KeyU',key:'u'}],
+  ['bury','내일로 (B)',{code:'KeyB',key:'b'}], ['off','끄기 (X)',{code:'KeyX',key:'x'}], ['hint','초성 힌트 (C)',{code:'KeyC',key:'c'}],
+  ['home','홈 (H)',{code:'KeyH',key:'h'}], ['pause','일시정지 (P)',{code:'KeyP',key:'p'}], ['mod','사유 칩 보조키 — 누른 채 1~4 (Ctrl)',null],
+  ['up','위로 스크롤 (↑)',{code:'ArrowUp',key:'ArrowUp'}], ['down','아래로 스크롤 (↓)',{code:'ArrowDown',key:'ArrowDown'}],
+  ['left','회독본 이전 절 (←)',{code:'ArrowLeft',key:'ArrowLeft'}], ['right','회독본 다음 절 (→)',{code:'ArrowRight',key:'ArrowRight'}]];
+/* 표준 매핑 버튼 번호: 0 아래 · 1 오른쪽 · 2 왼쪽 · 3 위 · 4 L · 5 R · 6 L2 · 7 R2 · 8 − · 9 + · 12↑ 13↓ 14← 15→ · 16 홈 · 17 그 밖(★ 등) */
+const PAD_DEF={reveal:1, again:3, hard:2, good:17, easy:0, undo:7, bury:16, off:4, mod:5, pause:8, home:9, up:12, down:13, left:14, right:15, hint:6};
+let padMap=Object.assign({}, PAD_DEF); try{ const j=JSON.parse(lsGet(K_PAD)||'null'); if(j&&typeof j==='object') padMap=Object.assign({}, PAD_DEF, j); }catch(e){}
+let padPrev=[], padSeen=false, padLearn=null, padHoldT=0, padLast=null;
+function padSynth(act, ctrl){ const a=PAD_ACTS.find(x=>x[0]===act); if(!a||!a[2]) return;
+  document.dispatchEvent(new KeyboardEvent('keydown', Object.assign({bubbles:true, cancelable:true, ctrlKey:!!ctrl}, a[2]))); }
+function padPoll(){
+  try{ const gps=navigator.getGamepads ? navigator.getGamepads() : []; let gp=null; for(const g of gps){ if(g && g.connected){ gp=g; break; } }
+    if(!gp){ if(padSeen){ padSeen=false; padPrev=[]; renderPadUI(); } return; }
+    if(!padSeen){ padSeen=true; renderPadUI(); }
+    const b=gp.buttons, now=Date.now();
+    const down=i=>!!(b[i]&&(b[i].pressed||b[i].value>0.5));
+    const mod=padMap.mod!=null && down(padMap.mod);
+    for(let i=0;i<b.length;i++){ const was=!!padPrev[i], is=down(i);
+      if(is && !was){
+        padLast=i;
+        if(padLearn){ padMap[padLearn]=i; padLearn=null; lsSet(K_PAD, JSON.stringify(padMap)); renderPadUI(); padPrev[i]=true; continue; }
+        if(i===padMap.mod){ padPrev[i]=true; continue; }
+        const act=Object.keys(padMap).find(k=>padMap[k]===i && k!=='mod');
+        if(act) padSynth(act, mod && ['again','hard','good','easy'].includes(act));
+        if($('scrInput').classList.contains('on')) renderPadUI();   // 배치 화면에선 「마지막 눌린 #」을 보여 준다
+      }
+      padPrev[i]=is; }
+    if(now-padHoldT>120){ for(const k of ['up','down']){ if(padMap[k]!=null && down(padMap[k]) && padPrev[padMap[k]]){ padSynth(k,false); padHoldT=now; } } }   // 눌러 두면 계속 굴림
+  }catch(e){}
+}
+function padLoop(){ padPoll(); requestAnimationFrame(padLoop); }
+if(navigator.getGamepads){ requestAnimationFrame(padLoop);
+  window.addEventListener('gamepadconnected', ()=>{ padSeen=true; renderPadUI(); toast('게임패드 연결됨'); });
+  window.addEventListener('gamepaddisconnected', ()=>{ padSeen=false; padPrev=[]; renderPadUI(); }); }
+function renderPadUI(){ const box=$('padMap'), st=$('padStatus'); if(!box||!$('scrInput').classList.contains('on')) return;
+  const gps=navigator.getGamepads?[...navigator.getGamepads()].filter(g=>g&&g.connected):[];
+  st.innerHTML = gps.length ? ('<b>연결됨</b> — '+esc((gps[0].id||'').slice(0,48))+' · 버튼 '+gps[0].buttons.length+'개'+(padLast!=null?' · 마지막 눌린 버튼 <b>#'+padLast+'</b>':'')) : '컨트롤러 없음 — 연결한 뒤 아무 버튼을 한 번 누르면 잡혀요';
+  box.innerHTML=PAD_ACTS.map(([id,lab])=>'<div class="tgl-row"><span>'+esc(lab)+'</span><span style="display:flex;gap:8px;align-items:center"><b style="min-width:34px;text-align:right">'+(padMap[id]==null?'—':'#'+padMap[id])+'</b><button class="ym-btn ghost" data-padlearn="'+id+'" style="padding:4px 12px;min-height:34px">'+(padLearn===id?'버튼을 누르세요…':'누르기')+'</button></span></div>').join('');
+  box.querySelectorAll('[data-padlearn]').forEach(bt=>bt.onclick=()=>{ padLearn=(padLearn===bt.dataset.padlearn)?null:bt.dataset.padlearn; renderPadUI(); });
+}
+$('padReset').onclick=()=>{ padMap=Object.assign({}, PAD_DEF); lsSet(K_PAD, JSON.stringify(padMap)); padLearn=null; renderPadUI(); toast('기본 배치로'); };
+$('setInput').onclick=()=>{ $('ovlSettings').classList.remove('show'); go('scrInput'); renderPadUI(); };
+$('inputBack').onclick=()=>{ padLearn=null; go('scrHome'); $('btnSettings').click(); };
 /* 키 초점 붙들기(09-16 시도) — 뺐다: iOS가 앱 전환·긴 무입력 뒤 하드웨어 키 대상을 놓는 건 페이지에서 되돌릴 수 없었고(동하 「앱 전환하면 먹통 그대로」),
    화면 밖 앵커는 화면을 옆으로 밀었다. 탭 한 번이면 돌아온다 — 그대로 둔다. */
 /* 🔴 iOS 27 상단 여백 = 안전영역 + 15px (동하 09-16 실측 「블러 문제는 15픽셀 주니까 해결됨」 — 홈 화면 앱에서만 · 브라우저 탭 0).

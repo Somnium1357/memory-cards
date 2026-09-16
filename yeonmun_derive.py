@@ -5,7 +5,7 @@
 등가성 검사 = app_tools 헤드리스에서 같은 이벤트로 JS 파생값을 뽑아 이 모듈 출력과 대조했다(2026-09-09 · 커밋 본문).
 
 파일  {v:1, ev:[{i,t,k,m,ref?}]}   i 이벤트 id · t ISO(UTC 'Z' 또는 오프셋) · k 문항키('과목/p<문제면>/<인쇄번호>') 또는 단위키('과목/NN') · m 아래
-m     ✓ △ ? ○ -   표시(문항 · '-' = 지움)     ▽ 닫힘     x 또 틀림     done 단위 풀었음(단위키)     u 되돌리기(ref = 무르는 이벤트 id)
+m     ✓ △ ? ○ -   표시(문항 · '-' = 지움)     ▽ 닫힘     x 또 틀림     done 단위 풀었음(단위키)     skip/unskip 단위 제외/해제(단위키 · 09-16)     u 되돌리기(ref = 무르는 이벤트 id)
 사다리 ✓ → due = 표시일+3 · n+1 / △ → +7 / x → n+1 · +7 · 표시 ✓ / ? ○ - → due 없음 / ▽ → closed · due 없음 · n 유지
       due가 목요일이면 금요일 · 하루 경계 04시(KST) · 날짜 키 'YYYY-MM-DD'
 
@@ -53,13 +53,13 @@ def _ts(iso):
     return _dt.datetime.fromisoformat(iso.replace("Z", "+00:00")).timestamp() * 1000
 
 def derive(events):
-    """→ {'items': {key: {m, due, closed, n, at}}, 'units': {key: {done}}}  (앱 ymDerive와 동일)"""
+    """→ {'items': {key: {m, due, closed, n, at}}, 'units': {key: {done, skip}}}  (앱 ymDerive와 동일)"""
     ev = sorted([e for e in events if e and e.get("i") and e.get("t") and e.get("k") and e.get("m")], key=sort_key)
     undone = {e["ref"] for e in ev if e["m"] == "u" and e.get("ref")}
     # 오탭 ✓ (앱 ymMistaps · 09-15): ✓ 뒤 같은 문항의 다음 표시가 120초 안이면 그 ✓는 n에 안 센다
     mistap, last_by_k = set(), {}
     for e in ev:
-        if e["m"] in ("u", "done") or e["i"] in undone:
+        if e["m"] in ("u", "done", "skip", "unskip") or e["i"] in undone:
             continue
         p = last_by_k.get(e["k"])
         if p and p["m"] == "✓" and (_ts(e["t"]) - _ts(p["t"])) < YM_MISTAP_MS:
@@ -70,9 +70,13 @@ def derive(events):
         if e["m"] == "u" or e["i"] in undone:
             continue
         if e["m"] == "done":
-            u = units.setdefault(e["k"], {"done": None})
+            u = units.setdefault(e["k"], {"done": None, "skip": None})
             if not u["done"]:
                 u["done"] = day_key(e["t"])
+            continue
+        if e["m"] in ("skip", "unskip"):   # 제외/해제 — 마지막 것이 이긴다 (앱 ymDerive와 동일)
+            u = units.setdefault(e["k"], {"done": None, "skip": None})
+            u["skip"] = day_key(e["t"]) if e["m"] == "skip" else None
             continue
         it = items.setdefault(e["k"], {"m": None, "due": None, "closed": False, "n": 0, "at": None})
         it["at"] = e["t"]

@@ -10842,6 +10842,7 @@ function fixScopeKeys(){
          '▽'                      닫힘 (문항 · 재풀이 통과)  — closed=true · due 없음 · n 유지 · 로그에 남긴다(메타가 「몇 번에 닫혔나」를 센다)
          'x'                      또 틀림 (문항 · 재풀이)   — n+1 · due = 그날+7 · △였으면 ✓로
          'done'                   이 단위 풀었음 (단위)     — 초회 완료 날짜 · 그때 미표시 문항 전부에 '○'를 **실제 이벤트로** 같이 남긴다
+         'skip' / 'unskip'        이 단위 제외 / 제외 해제 (단위 · 09-16 동하 「제외도 있어야」) — 제외된 단위는 「다음 차례」·진도 분모에서 빠진다 · 문항 표시는 그대로
          '-'                      표시 지움 (문항 · 순환의 「없음」)
          'u'                      되돌리기 — ref = 무르는 이벤트 id (파생에서 그 이벤트를 없는 셈 친다)
    사다리(§4): ✓ → due = 표시일 + 3일 · △ → +7일 · ? · ○ · - → due 없음 · x → +7일 · ▽ → 없음. due가 목요일이면 금요일로. 하루 경계 04시(dayKey).
@@ -10905,7 +10906,7 @@ function ymDueFrom(t, days){                   // t = ISO · 표시한 날(04시
 const YM_MISTAP_MS=120000;
 function ymMistaps(ev, undone){
   const lastByK={}, mis=new Set();
-  for(const e of ev){ if(e.m==='u'||e.m==='done'||undone.has(e.i)) continue;
+  for(const e of ev){ if(e.m==='u'||e.m==='done'||e.m==='skip'||e.m==='unskip'||undone.has(e.i)) continue;
     const p=lastByK[e.k];
     if(p && p.m==='✓' && (new Date(e.t)-new Date(p.t)) < YM_MISTAP_MS) mis.add(p.i);
     lastByK[e.k]=e; }
@@ -10918,7 +10919,8 @@ function ymDerive(){
   const items={}, units={};
   for(const e of YM.ev){
     if(e.m==='u' || undone.has(e.i)) continue;
-    if(e.m==='done'){ const u=units[e.k]||(units[e.k]={done:null}); if(!u.done) u.done=dayKey(new Date(e.t)); continue; }
+    if(e.m==='done'){ const u=units[e.k]||(units[e.k]={done:null,skip:null}); if(!u.done) u.done=dayKey(new Date(e.t)); continue; }
+    if(e.m==='skip'||e.m==='unskip'){ const u=units[e.k]||(units[e.k]={done:null,skip:null}); u.skip = e.m==='skip' ? dayKey(new Date(e.t)) : null; continue; }   // 마지막 것이 이긴다
     const it=items[e.k]||(items[e.k]={m:null, due:null, closed:false, n:0, at:null});
     it.at=e.t;
     if(e.m==='▽'){ it.closed=true; it.due=null; continue; }
@@ -10934,7 +10936,7 @@ function ymDerive(){
 }
 /* ── 이벤트 남기기 (화면이 부르는 유일한 창구) ─────────────────────────────────── */
 function ymEvent(k, m, extra){
-  if(!k || YM_MARKS.indexOf(m)<0 && m!=='done' && m!=='u') return null;
+  if(!k || YM_MARKS.indexOf(m)<0 && m!=='done' && m!=='skip' && m!=='unskip' && m!=='u') return null;
   const e=Object.assign({i:ymNonce(), t:new Date().toISOString(), k:k, m:m}, extra||{});
   ymAdd([e]); YM.pending.push(e); ymSavePending();
   ymDerive(); ymPushSoon();
@@ -11029,12 +11031,13 @@ function ymDueToday(){                          // due ≤ 오늘 · 안 닫힌 
   out.sort((a,b)=> a.s.due<b.s.due?-1: a.s.due>b.s.due?1: (a.it.subj+a.it.seq).localeCompare(b.it.subj+b.it.seq));
   return out;
 }
+function ymSkipped(id){ const u=YM.st.units[id]; return !!(u&&u.skip); }   // 「제외」 — 다음 차례·진도 분모에서 뺀다(재풀이 due는 그대로)
 function ymProgress(){
   const units=(YM.cat&&YM.cat.units)||[], items=(YM.cat&&YM.cat.items)||[];
-  let ud=0, id=0, re=0;
-  for(const u of units) if(YM.st.units[u.id]&&YM.st.units[u.id].done) ud++;
-  for(const it of items){ const s=YM.st.items[it.id]; if(s&&(s.m||s.closed)) id++; if(s&&!s.closed&&s.due) re++; }
-  return {units:ud, unitsN:units.length, items:id, itemsN:items.length, redo:re};
+  let ud=0, id=0, re=0, un=0, itn=0;
+  const skipped=new Set(); for(const u of units){ if(ymSkipped(u.id)){ skipped.add(u.id); continue; } un++; if(YM.st.units[u.id]&&YM.st.units[u.id].done) ud++; }
+  for(const it of items){ const s=YM.st.items[it.id]; if(!skipped.has(it.unit)){ itn++; if(s&&(s.m||s.closed)) id++; } if(s&&!s.closed&&s.due) re++; }
+  return {units:ud, unitsN:un, items:id, itemsN:itn, redo:re, skipped:skipped.size};
 }
 
 
@@ -11099,12 +11102,12 @@ function ymRenderToday(){
   /* 🔴 **정렬 = 합본 책 순서**(동하 결정 09-15 「순서 그냥 절 순서, 문제 순으로」 · 판정대기 「연문 순서 = 책 순서」).
      과목마다 「안 끝낸 첫 단위」(seq 순)를 내고, 펼침도 seq 순. 준비도(%)는 **표시만** 남긴다 — 정렬에 안 쓴다(09-09 준비도순 폐지). */
   const bySubj={};
-  for(const u of YM.cat.units){ if(YM.st.units[u.id]&&YM.st.units[u.id].done) continue;
+  for(const u of YM.cat.units){ if((YM.st.units[u.id]&&YM.st.units[u.id].done)||ymSkipped(u.id)) continue;
     const cur=bySubj[u.subj];
     if(!cur || u.seq<cur.seq) bySubj[u.subj]=u; }
   /* 과목 순이 아니라 **준비도 높은 순**(동하 09-09 실기: 「준비도순으로 나오는 것 같지가 않은데」). 과목당 하나는 그대로. 동률 = 과목 순. */
   /* 「과목마다 하나」가 보이게 — 과목 배지를 앞에 세우고 「이 과목 준비도 1위 · 남은 N단위」를 적는다(동하 09-09: 「아무 단위나 뽑아온 것처럼 생겼다」). */
-  const leftBySubj={}; for(const u of YM.cat.units){ if(YM.st.units[u.id]&&YM.st.units[u.id].done) continue; leftBySubj[u.subj]=(leftBySubj[u.subj]||0)+1; }
+  const leftBySubj={}; for(const u of YM.cat.units){ if((YM.st.units[u.id]&&YM.st.units[u.id].done)||ymSkipped(u.id)) continue; leftBySubj[u.subj]=(leftBySubj[u.subj]||0)+1; }
   const subjOrd={}; YM.cat.subjects.forEach((sj,i)=>{ const k=SUBJECTS.indexOf(sj); subjOrd[sj]=k>=0?k:100+i; });   // 과목 번호 순(카탈로그는 문자열 순이라 10·11·13이 2 앞에 왔다)
   const nextUnits=YM.cat.subjects.map(sj=>bySubj[sj]).filter(Boolean)
     .sort((a,b)=>(subjOrd[a.subj]-subjOrd[b.subj]));                 // 과목 순 · 준비도로 안 섞는다(09-15)
@@ -11113,10 +11116,10 @@ function ymRenderToday(){
      동선이 넷(오늘 → ☰ → 과목 접기 → 단위)에서 둘(오늘 → 펼침 → 단위)로 준다. 발주 §3-2의 별도 화면은 이걸로 갈음(메타 통보). */
   let openS={}; try{ openS=JSON.parse(lsGet(K_YM_OPEN)||'{}'); }catch(e){}
   const unitRow=(u,sub)=>{ const r=ymReady(u); const [l1,l2]=ymLabel(u); const left=leftBySubj[u.subj]||0;
-    const done=YM.st.units[u.id]&&YM.st.units[u.id].done;
-    return '<div class="ym-row'+(done?' done':'')+(sub?' sub':'')+'" data-ym-unit="'+esc(u.id)+'">'
+    const done=YM.st.units[u.id]&&YM.st.units[u.id].done, skip=ymSkipped(u.id);
+    return '<div class="ym-row'+(done||skip?' done':'')+(sub?' sub':'')+'" data-ym-unit="'+esc(u.id)+'">'
       +(sub?'':'<span class="ym-subj">'+esc(ymSubj(u.subj))+'</span>')
-      +'<div class="t"><b>'+esc(l1)+'</b><small>'+(sub? (done?'풀었음 '+done.slice(5): (bySubj[u.subj]&&bySubj[u.subj].id===u.id?'▶ 다음 차례':'아직')) : '이 과목 다음 차례 · 남은 '+left+'단위')
+      +'<div class="t"><b>'+esc(l1)+'</b><small>'+(sub? (skip?'제외':done?'풀었음 '+done.slice(5): (bySubj[u.subj]&&bySubj[u.subj].id===u.id?'▶ 다음 차례':'아직')) : '이 과목 다음 차례 · 남은 '+left+'단위')
       +' · '+u.items.length+'문항'+(l2!==l1?' · '+esc(l2):'')+(r.n?'':' · 카드 없음')+'</small></div>'
       +'<div class="ym-bar"><i style="width:'+(r.pct||0)+'%"></i></div><span class="ym-pct'+(r.pct==null?' none':'')+'">'+(r.pct==null?'—':r.pct+'%')+'</span>'
       +(sub?'':'<button class="ym-fold'+(openS[u.subj]?' on':'')+'" data-ym-fold="'+esc(u.subj)+'" title="이 과목 단위 전부">▾</button>')+'</div>'; };
@@ -11130,7 +11133,7 @@ function ymRenderToday(){
     return out; }).join('')+'</div>';
   // 3) 진도 한 줄
   const p=ymProgress(); const daysLeft=Math.max(1, dkDiff(YM_DEADLINE, todayKey())); const need=Math.ceil((p.unitsN-p.units)/daysLeft);
-  h+='<div class="ym-prog"><span>단위 <b>'+p.units+'</b>/'+p.unitsN+'</span><span>문항 <b>'+p.items+'</b>/'+p.itemsN+'</span>'
+  h+='<div class="ym-prog"><span>단위 <b>'+p.units+'</b>/'+p.unitsN+(p.skipped?' <small>(제외 '+p.skipped+')</small>':'')+'</span><span>문항 <b>'+p.items+'</b>/'+p.itemsN+'</span>'
     +'<span>'+YM_DEADLINE.slice(5).replace('-','/')+'까지 하루 <b>'+need+'</b>단위</span><span>재풀이 잔여 <b>'+p.redo+'</b></span></div>';
   body.innerHTML=h;
   body.querySelectorAll('[data-ym-close]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); ymEvent(b.dataset.ymClose,'▽'); toast('닫았어요'); ymRenderToday(); });
@@ -11153,18 +11156,20 @@ function ymCycle(it){                             // 탭 순환: 없음→✓→
 }
 function ymRenderUnit(id){
   const u=ymUnitById(id); const body=$('ymUnitBody'); if(!u){ body.innerHTML=''; return; }
-  const [l1,l2]=ymLabel(u); const r=ymReady(u); const done=YM.st.units[u.id]&&YM.st.units[u.id].done;
+  const [l1,l2]=ymLabel(u); const r=ymReady(u); const done=YM.st.units[u.id]&&YM.st.units[u.id].done, skip=ymSkipped(u.id);
   $('ymUnitTitle').innerHTML=esc(ymSubj(u.subj))+' · '+esc(l1)+'<span class="ym-tag">연문</span>';
   const its=ymItemsOf(u);
   let h='<div class="ym-prog" style="padding-top:0"><span>'+esc(l2)+'</span><span>문항 <b>'+its.length+'</b></span><span>면 '+esc(u.pages||'')+'</span>'
-    +'<span>준비도 <b>'+(r.pct==null?'—':r.pct+'%')+'</b>'+(r.n?' <small>(카드 '+r.n+')</small>':'')+'</span>'+(done?'<span>풀었음 <b>'+done.slice(5)+'</b></span>':'')+'</div>';
+    +'<span>준비도 <b>'+(r.pct==null?'—':r.pct+'%')+'</b>'+(r.n?' <small>(카드 '+r.n+')</small>':'')+'</span>'+(done?'<span>풀었음 <b>'+done.slice(5)+'</b></span>':'')+(skip?'<span>제외 <b>'+YM.st.units[u.id].skip.slice(5)+'</b></span>':'')+'</div>';
   h+='<div class="ym-sec">문항 <small>줄을 탭하면 없음 → ✓ → △ → ? 순으로 바뀌어요'+(done?' (풀었음 뒤에는 ○로 돌아와요)':'')+'</small></div>';
   h+='<div class="ym-list">'+its.map(it=>{ const s=YM.st.items[it.id]; const [cls,txt]=ymMarkChip(s);
     return '<div class="ym-row" data-ym-tap="'+esc(it.id)+'"><span class="ym-mark '+cls+'">'+esc(txt)+'</span><div class="t"><b>'+esc(it.no)+'번</b><small>문제 p'+it.q+' · 해설 p'+it.a+(s&&s.due&&!s.closed?' · 다시 '+s.due.slice(5).replace('-','/'):'')+'</small></div></div>'; }).join('')+'</div>';
-  h+='<div class="ym-foot"><button class="ym-btn ghost" id="ymUndoBtn">되돌리기</button><button class="ym-btn primary" id="ymDoneBtn"'+(done?' disabled':'')+'>'+(done?'풀었음 '+done.slice(5):'이 단위 풀었음')+'</button></div>';
+  h+='<div class="ym-foot"><button class="ym-btn ghost" id="ymUndoBtn">되돌리기</button><button class="ym-btn ghost" id="ymSkipBtn">'+(skip?'제외 해제':'제외')+'</button><button class="ym-btn primary" id="ymDoneBtn"'+(done?' disabled':'')+'>'+(done?'풀었음 '+done.slice(5):'이 단위 풀었음')+'</button></div>';
   body.innerHTML=h;
   body.querySelectorAll('[data-ym-tap]').forEach(row=>row.onclick=()=>{ const it=its.find(x=>x.id===row.dataset.ymTap); if(it){ ymCycle(it); ymRenderUnit(id); } });
   $('ymUndoBtn').onclick=()=>{ if(ymUndoLast()){ toast('되돌렸어요'); ymRenderUnit(id); } else toast('되돌릴 것이 없어요'); };
+  /* 「제외」(동하 09-16) = 이 단위는 안 푼다 — 다음 차례·진도 분모에서 빠진다. 문항 표시·재풀이 due는 안 건드린다. 해제도 이벤트(마지막 것이 이긴다). */
+  $('ymSkipBtn').onclick=()=>{ ymEvent(u.id, skip?'unskip':'skip'); toast(skip?'제외를 풀었어요':'제외했어요 — 다음 차례에서 빠져요'); ymRenderUnit(id); };
   $('ymDoneBtn').onclick=()=>{
     if(done) return;
     /* 「이 단위 풀었음」 = 초회 완료 날짜 + 그때 표시 없는 문항 전부에 ○를 **실제 이벤트로** 저장(§3-2 · 해석 규칙이 아니라 데이터) */

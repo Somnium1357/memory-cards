@@ -4467,7 +4467,11 @@ const KDIAG=[]; let _kd=null;
 function kdSnap(why){ try{ const a=document.activeElement; _kd={t:new Date().toISOString().slice(11,19), why, act:(a?a.tagName+(a.id?'#'+a.id:''):'-'), hf:document.hasFocus(), sa:!!navigator.standalone, vis:document.visibilityState, scr:([...document.querySelectorAll('.scr.on')].map(x=>x.id)[0]||'-'), ovl:!!document.querySelector('.ovl.show')||$('ovlHd').classList.contains('show'), first:null};
   KDIAG.push(_kd); if(KDIAG.length>30) KDIAG.shift(); }catch(e){} }
 function kdFirst(kind, e){ try{ if(!_kd||_kd.first) return; const a=document.activeElement; _kd.first={kind, t:new Date().toISOString().slice(11,19), act:(a?a.tagName+(a.id?'#'+a.id:''):'-'), key:e&&e.code||null, tgt:e&&e.target&&(e.target.tagName+(e.target.id?'#'+e.target.id:''))}; markDirty('sess'); saveSessionsSoon(); }catch(err){} }
-document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') kdSnap('visible'); });
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible'){ kdSnap('visible');
+  /* 게임패드 진단(09-16 「전환은 여전히 안 됨」): 돌아온 뒤 1·3·6초에 페이지가 보는 패드 수·연결·버튼 눌림 상태를 적는다 */
+  [1000,3000,6000].forEach(ms=>setTimeout(()=>{ try{ const gps=navigator.getGamepads?[...navigator.getGamepads()]:[]; const g=gps.find(x=>x);
+    KDIAG.push({t:new Date().toISOString().slice(11,19), why:'pad+'+(ms/1000)+'s', n:gps.filter(Boolean).length, conn:!!(g&&g.connected), ts:g?Math.round(g.timestamp):null, anyDown:!!(g&&g.buttons.some(b=>b.pressed)), hf:document.hasFocus(), vis:document.visibilityState});
+    if(KDIAG.length>30) KDIAG.shift(); markDirty('sess'); saveSessionsSoon(); }catch(e){} }, ms)); } });
 window.addEventListener('focus', ()=>kdSnap('winfocus'));
 window.addEventListener('blur', ()=>kdSnap('winblur'));
 document.addEventListener('keydown', e=>kdFirst('key', e), true);

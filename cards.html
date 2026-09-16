@@ -1017,8 +1017,6 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 <div id="app">
   <div id="main">
     <div id="banner"></div>
-    <!-- 키 초점 앵커(09-16): 화면 밖 공용 자리 · 읽기 전용 + inputmode=none 이라 소프트 키보드는 안 뜬다 · iOS는 편집 요소만 하드웨어 키 대상으로 붙든다 -->
-    <input id="kbdAnchor" readonly inputmode="none" aria-hidden="true" tabindex="-1" autocomplete="off" style="position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;border:0;padding:0;margin:0;font-size:16px;pointer-events:none;caret-color:transparent;z-index:-1"><!-- 🔴 화면 안(0,0)에 둔다 — 화면 밖(-9999px)에 두면 iOS가 초점 요소를 보이게 하려고 화면 전체를 옆으로 밀어 카드 자리가 비고 사이드바가 떠 보였다(동하 09-16 「UI는 또 왜 이러는데」) -->
     <div id="topbar">
       <button class="tb-btn" id="btnHome" title="홈"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg></button>
       <span id="saveBadge" title="미저장분 있음"></span>
@@ -6929,7 +6927,6 @@ function showCard(){
   const c=cur();
   if(!c){ showSummaryOrNew(); return; }
   revealed=false; itemMarks=(c.items||[]).map(()=>false); shownAt=Date.now(); pausedMs=0;
-  keepKbdFocus();                                  // 카드가 바뀔 때마다 키 초점을 웹 화면에 붙든다(09-16)
   hintUsed=new Set(); renderHintBox(c);
   $('summary').style.display='none'; $('cardZone').style.display='flex';
   $('revealHint').style.display='block';
@@ -7565,7 +7562,6 @@ function gEnd(x,y){
 
 /* ═══════════════ 화면 전환 ═══════════════ */
 function go(id){
-  keepKbdFocus(); setTimeout(keepKbdFocus, 0);     // 화면 전환 탭(사용자 동작) 안에서 동기로 + 전환 뒤 한 번 더(동하 09-16 「화면 전환했다 와도 그럼」)
   if(id!=='scrSolve'){ resumeSession(); syncSessQueue();
     if(pendingRefresh){ pendingRefresh=false; setTimeout(refreshRemote,0); } }
   /* 🔴 **홈으로 나가면 복귀 지점을 버린다** (전층 감사 F4-8 · 2026-09-06).
@@ -8641,19 +8637,8 @@ $('tglKbd').onclick=()=>{ kbdOn=!kbdOn; lsSet(K_KBD,kbdOn?'1':'0'); $('tglKbd').
 
 /* ═══════════════ 키보드 (PC 전용 보조 — 터치 흐름은 그대로) ═══════════════ */
 let kbdOn = lsGet(K_KBD)!=='0';
-/* 🔴 **키 초점 붙들기** (동하 09-16 「카드 하나에서 오래 고민하면 단축키가 안 먹음 · 화면 전환했다 와도 그럼 · 탭은 됨 · 탭 한 번 하면 단축키도 됨」).
-   앱엔 시간으로 키를 막는 논리가 없다 — 증상은 iPadOS가 긴 무입력·알림·화면 전환 뒤에 웹 화면에서 하드웨어 키 입력 대상을 놓는 꼴이다(탭이 되돌린다).
-   처방: 보이지 않는 초점 요소(#kbdAnchor)를 두고, 카드가 뜰 때·화면을 바꿀 때·창이 초점을 잃거나 얻을 때·5초마다 초점이 딴 데(입력 칸·시트·회독본 창 제외) 가 있으면 도로 잡는다.
-   원인 규명이 아니라 값싼 처방 — 재발하면 그때 계측. */
-function keepKbdFocus(){ try{ const a=document.activeElement, tg=a&&a.tagName;
-  if(tg==='INPUT'||tg==='TEXTAREA'||tg==='SELECT'||(a&&a.isContentEditable)) return;
-  if(document.querySelector('.ovl.show')||$('ovlHd').classList.contains('show')) return;
-  const k=$('kbdAnchor'); if(k && a!==k) k.focus({preventScroll:true}); }catch(e){} }
-window.addEventListener('blur', ()=>setTimeout(keepKbdFocus, 50));
-window.addEventListener('focus', ()=>setTimeout(keepKbdFocus, 50));
-document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') setTimeout(keepKbdFocus, 100); });
-setInterval(keepKbdFocus, 5000);
-document.addEventListener('pointerup', ()=>setTimeout(keepKbdFocus, 0), {passive:true});   // 탭마다 — 버튼이 초점을 가져갔다 숨겨지는 자리를 막는다
+/* 키 초점 붙들기(09-16 시도) — 뺐다: iOS가 앱 전환·긴 무입력 뒤 하드웨어 키 대상을 놓는 건 페이지에서 되돌릴 수 없었고(동하 「앱 전환하면 먹통 그대로」),
+   화면 밖 앵커는 화면을 옆으로 밀었다. 탭 한 번이면 돌아온다 — 그대로 둔다. */
 /* 🔴 iOS 27 상단 여백 = 안전영역 + 15px (동하 09-16 실측 「블러 문제는 15픽셀 주니까 해결됨」 — 홈 화면 앱에서만 · 브라우저 탭 0).
    iOS 27이 상태바 밑으로 상태바보다 긴 블러 띠를 깔아 env(safe-area-inset-top)만으론 홈 버튼이 그 밑에 들어갔다.
    🔴 판정은 **JS**로(navigator.standalone ∨ matchMedia) — CSS `@media (display-mode: standalone)`만으로는 동하 아이패드(iOS 27)에서 안 맞았다
@@ -8699,7 +8684,7 @@ document.addEventListener('keydown',e=>{
   if(/^(Arrow(Left|Right|Up|Down)|Page(Up|Down))$/.test(e.key) && $('ovlHd').classList.contains('show')){ hdKey(e); return; }   // 회독본 창이 떠 있으면 방향키는 전부 판 몫
   if(e.key==='ArrowUp'||e.key==='ArrowDown'||e.key==='PageUp'||e.key==='PageDown'){
     const t0=e.target, tg=t0&&t0.tagName;
-    if(!(tg==='INPUT'||tg==='TEXTAREA'||tg==='SELECT') || t0.id==='kbdAnchor'){
+    if(!(tg==='INPUT'||tg==='TEXTAREA'||tg==='SELECT')){
       const box=scrollBox();
       if(box && box.scrollHeight>box.clientHeight+2){
         const big=e.key.startsWith('Page');
@@ -8715,7 +8700,7 @@ document.addEventListener('keydown',e=>{
      한 번 누름 = 한 번 처리 — 반복 입력은 통째로 버린다. 손을 떼고 다시 누르면 그때 먹는다. */
   if(e.repeat) return;
   const t=e.target, tag=t&&t.tagName;
-  const typing = (tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT') && t.id!=='kbdAnchor';   // 초점 앵커는 입력 칸이 아니다
+  const typing = tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT';
   const ovl=document.querySelector('.ovl.show');
   if(pauseAt){                        // 정지 중엔 Space·Enter·Esc·P로 재개
     if([' ','enter','escape','p'].includes(keyOf(e))){ e.preventDefault(); resumeSession(); }

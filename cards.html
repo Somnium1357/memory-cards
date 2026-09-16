@@ -11114,7 +11114,7 @@ function ymRenderToday(){
     const done=YM.st.units[u.id]&&YM.st.units[u.id].done;
     return '<div class="ym-row'+(done?' done':'')+(sub?' sub':'')+'" data-ym-unit="'+esc(u.id)+'">'
       +(sub?'':'<span class="ym-subj">'+esc(ymSubj(u.subj))+'</span>')
-      +'<div class="t"><b>'+esc(l1)+'</b><small>'+(sub? (done?'풀었음 '+done.slice(5):'아직') : '이 과목 다음 차례 · 남은 '+left+'단위')
+      +'<div class="t"><b>'+esc(l1)+'</b><small>'+(sub? (done?'풀었음 '+done.slice(5): (bySubj[u.subj]&&bySubj[u.subj].id===u.id?'▶ 다음 차례':'아직')) : '이 과목 다음 차례 · 남은 '+left+'단위')
       +' · '+u.items.length+'문항'+(l2!==l1?' · '+esc(l2):'')+(r.n?'':' · 카드 없음')+'</small></div>'
       +'<div class="ym-bar"><i style="width:'+(r.pct||0)+'%"></i></div><span class="ym-pct'+(r.pct==null?' none':'')+'">'+(r.pct==null?'—':r.pct+'%')+'</span>'
       +(sub?'':'<button class="ym-fold'+(openS[u.subj]?' on':'')+'" data-ym-fold="'+esc(u.subj)+'" title="이 과목 단위 전부">▾</button>')+'</div>'; };
@@ -11122,7 +11122,7 @@ function ymRenderToday(){
   else h+='<div class="ym-list">'+nextUnits.map(u=>{
     let out=unitRow(u,false);
     if(openS[u.subj]){
-      const rest=YM.cat.units.filter(x=>x.subj===u.subj&&x.id!==u.id).sort((a,b)=>a.seq-b.seq);   // 책 순서(09-15)
+      const rest=YM.cat.units.filter(x=>x.subj===u.subj).sort((a,b)=>a.seq-b.seq);   // 책 순서(09-15) · 🔴 현재 차례도 목록에 넣는다 — 빠지면 구멍처럼 보였다(동하 09-16 「비직관적」)
       out+='<div class="ym-sub">'+(rest.length?rest.map(x=>unitRow(x,true)).join(''):'<div class="ym-empty" style="padding:8px 4px">다른 단위가 없어요</div>')+'</div>';
     }
     return out; }).join('')+'</div>';

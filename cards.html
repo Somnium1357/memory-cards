@@ -1028,6 +1028,7 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
     <!-- 풀이 -->
     <div class="scr on" id="scrSolve">
       <div id="phaseLine"></div>
+      <div id="kbdAnchor" tabindex="-1" aria-hidden="true" style="position:fixed;width:0;height:0;opacity:0;outline:none;pointer-events:none"></div>
       <div id="cardZone">
         <!-- 스와이프 피드백은 이 마당의 배경(::before)이 전부다 — CSS 「스와이프 채점 피드백」 절.
              왼쪽 = 알맞음, 오른쪽 = 다시. -->
@@ -6922,6 +6923,7 @@ function showCard(){
   const c=cur();
   if(!c){ showSummaryOrNew(); return; }
   revealed=false; itemMarks=(c.items||[]).map(()=>false); shownAt=Date.now(); pausedMs=0;
+  keepKbdFocus();                                  // 카드가 바뀔 때마다 키 초점을 웹 화면에 붙든다(09-16)
   hintUsed=new Set(); renderHintBox(c);
   $('summary').style.display='none'; $('cardZone').style.display='flex';
   $('revealHint').style.display='block';
@@ -7557,6 +7559,7 @@ function gEnd(x,y){
 
 /* ═══════════════ 화면 전환 ═══════════════ */
 function go(id){
+  setTimeout(keepKbdFocus, 0);                     // 화면 전환 뒤에도 키 초점(동하 09-16 「화면 전환했다 와도 그럼」)
   if(id!=='scrSolve'){ resumeSession(); syncSessQueue();
     if(pendingRefresh){ pendingRefresh=false; setTimeout(refreshRemote,0); } }
   /* 🔴 **홈으로 나가면 복귀 지점을 버린다** (전층 감사 F4-8 · 2026-09-06).
@@ -8631,6 +8634,18 @@ $('tglKbd').onclick=()=>{ kbdOn=!kbdOn; lsSet(K_KBD,kbdOn?'1':'0'); $('tglKbd').
 
 /* ═══════════════ 키보드 (PC 전용 보조 — 터치 흐름은 그대로) ═══════════════ */
 let kbdOn = lsGet(K_KBD)!=='0';
+/* 🔴 **키 초점 붙들기** (동하 09-16 「카드 하나에서 오래 고민하면 단축키가 안 먹음 · 화면 전환했다 와도 그럼 · 탭은 됨 · 탭 한 번 하면 단축키도 됨」).
+   앱엔 시간으로 키를 막는 논리가 없다 — 증상은 iPadOS가 긴 무입력·알림·화면 전환 뒤에 웹 화면에서 하드웨어 키 입력 대상을 놓는 꼴이다(탭이 되돌린다).
+   처방: 보이지 않는 초점 요소(#kbdAnchor)를 두고, 카드가 뜰 때·화면을 바꿀 때·창이 초점을 잃거나 얻을 때·5초마다 초점이 딴 데(입력 칸·시트·회독본 창 제외) 가 있으면 도로 잡는다.
+   원인 규명이 아니라 값싼 처방 — 재발하면 그때 계측. */
+function keepKbdFocus(){ try{ const a=document.activeElement, tg=a&&a.tagName;
+  if(tg==='INPUT'||tg==='TEXTAREA'||tg==='SELECT'||(a&&a.isContentEditable)) return;
+  if(document.querySelector('.ovl.show')||$('ovlHd').classList.contains('show')) return;
+  const k=$('kbdAnchor'); if(k && a!==k) k.focus({preventScroll:true}); }catch(e){} }
+window.addEventListener('blur', ()=>setTimeout(keepKbdFocus, 50));
+window.addEventListener('focus', ()=>setTimeout(keepKbdFocus, 50));
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') setTimeout(keepKbdFocus, 100); });
+setInterval(keepKbdFocus, 5000);
 /* 🔴 iOS 27 상단 여백 = 안전영역 + 15px (동하 09-16 실측 「블러 문제는 15픽셀 주니까 해결됨」 — 홈 화면 앱에서만 · 브라우저 탭 0).
    iOS 27이 상태바 밑으로 상태바보다 긴 블러 띠를 깔아 env(safe-area-inset-top)만으론 홈 버튼이 그 밑에 들어갔다.
    🔴 판정은 **JS**로(navigator.standalone ∨ matchMedia) — CSS `@media (display-mode: standalone)`만으로는 동하 아이패드(iOS 27)에서 안 맞았다

@@ -7395,16 +7395,8 @@ const ZT_SLOP=30;
    (#card는 제 리스너 몫 · #gradeBar는 채점 · 그 밖 button/a/input은 칩·링크·태그 입력.) */
 const ZT_SKIP='#card,#gradeBar,button,a,input,textarea,select,label';
 let zoneUpAt=0, zDown=null;
-/* 🔴 **깨우는 탭** (동하 09-16 · iPadOS 27 홈 화면 웹앱은 앱 전환 뒤 화면을 한 번 탭하기 전엔 하드웨어 키를 안 넘긴다 — 우리 앱·판·구글 웹앱 전부 재현 · OS 동작).
-   그 첫 탭이 카드 마당에 떨어지면 답이 공개돼 버린다 → 복귀 뒤 키가 한 번도 안 왔으면 첫 마당 탭은 「깨우기」로 먹고 공개하지 않는다.
-   홈 화면 앱에서만 · 복귀 90초 안 · 풀이 화면. 키가 먼저 왔으면(사파리·정상 상황) 평소대로. */
-let wakeAt=0, wakeKeyed=true;
-document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && isStandalone()){ wakeAt=Date.now(); wakeKeyed=false; } });
-document.addEventListener('keydown', ()=>{ wakeKeyed=true; }, true);
-function wakeTapPending(){ return !wakeKeyed && isStandalone() && (Date.now()-wakeAt)<90000 && $('scrSolve').classList.contains('on'); }
 function zoneTap(ev){
   if(!zoneTapOn)return;
-  if(wakeTapPending()){ wakeKeyed=true; toast('키 입력 깨움 — 이제 단축키 돼요'); return; }   // 깨우는 탭은 공개하지 않는다
   if(ev.target&&ev.target.closest&&ev.target.closest(ZT_SKIP))return;
   if(Date.now()-lastSwipeAt<450)return;
   if(selecting())return;

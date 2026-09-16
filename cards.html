@@ -6001,7 +6001,12 @@ let lastPlaySid=null;   // 마지막으로 playSess한 세션 id — curSess가 
    ⚠ 「오늘 정리된 것」은 종전대로 뺀다(`dropSettled`와 같은 술어) · 죽은 ID는 이 참에 턴다.
    ⚠ 사람이 뺀 것(`qDel` 툼스톤)은 애초에 `q`에 없으므로 되살아나지 않는다. */
 function keepIds(tgt){
-  const rest=queue.slice(qPos).filter(c=>!c._re).map(c=>c.id);   // 🔴 재출은 그 세션 안에서만 산다 — 저장하면 다음 부팅에 진짜 카드로 되살아난다
+  /* 🔴 재출 대기분은 **q 밖 별도 칸 `rq`**에 적는다 (동하 09-16 「닫았다 열면 재출 날아가는 건 어캄」). q에 섞으면 다음 부팅에 일반 카드로 되살아나
+     오늘 이미 푼 카드가 다시 나오므로(그래서 09-07엔 안 저장했다) 칸을 따로 둔다: [id, 회차, rest 안 자리]. 그날 것만 산다(day). playSess가 같은 자리에 끼운다. */
+  const rq=[]; let k=0;
+  for(const c of queue.slice(qPos)){ if(c._re){ rq.push([c.id, c._re, k]); } else k++; }
+  if(tgt){ if(rq.length) tgt.rq=rq; else delete tgt.rq; }
+  const rest=queue.slice(qPos).filter(c=>!c._re).map(c=>c.id);   // 저장 큐 자체엔 재출을 안 넣는다(위 이유)
   const seen=new Set(queue.map(c=>c.id));               // 화면에 올랐던 것(푼 것 포함)은 위에서 다뤘다
   const held=dropSettled((tgt&&tgt.q||[]).filter(id=>!seen.has(id)).map(id=>BYID[id]).filter(Boolean)).map(c=>c.id);
   return [...rest, ...held];
@@ -6513,6 +6518,12 @@ function playSess(sx){          // 세션 화면의 [이어가기] — 남은 �
   const all=sessCards(sx);
   // 다른 세션에서 오늘 푼 것은 빼고 이어간다 — 단 지목 세션(pick)은 그대로 푼다
   queue=gateOut(gateIn(all, null, sx.pick), sx.how.order, false); qPos=0;   // 🔴 두 문 · 저장 순서는 지킨다
+  /* 재출 대기분 복원(09-16) — 그날 것만 · 카드가 살아 있고 오늘 첫 채점이 있는 것만(재출은 「아까 다시 한 카드」다) · 자리는 저장 때 rest 안 위치 */
+  if(Array.isArray(sx.rq) && sx.rq.length && sx.day===todayKey()){
+    const ins=[]; for(const [id,re,at] of sx.rq){ const c=BYID[id]; if(!c||!settledToday(c)||retired(c)||offed(c)) continue;
+      const rc=Object.create(c); rc._re=Math.max(1,Math.min(2,+re||1)); rc._at=gradeSeq; ins.push([Math.min(queue.length, +at||0), rc]); }
+    ins.sort((a,b)=>b[0]-a[0]); for(const [at,rc] of ins) queue.splice(at,0,rc);   // 뒤에서부터 끼워 자리가 안 밀린다
+  }
   // 🔴 저장된 큐를 이어 풀 때도 한 번 더 건다 — 큐는 조립 뒤에도 「내용 추가」로 뒤에 붙는다
   phase = stOnly(sx.how.status,'new') ? 'new' : 'review';
   sessionDone=0; doneCredited=0; newServed=0; undoSnap=null; undoRun++; updateUndo(); sessReset();

@@ -10641,6 +10641,19 @@ document.addEventListener('click', (e)=>{
 
 /* ═══════════════ 토스트 ═══════════════ */
 let toastT=null;
+/* 🔴 부팅 진단 — 저장 큐 대비 남은 장수가 반 아래면 단계별로 어디서 빠졌는지 띠에 적는다(동하가 스크린샷으로 준다 · 원인 잡히면 뺀다). */
+function diagQueues(){
+  try{ const tk=todayKey(); const out=[];
+    for(const sx of sessions){ if(!sx||!sx.q||sx.q.length<20 || sx.day!==tk) continue;
+      const saved=sx.q.length, raw=sx.q.map(id=>BYID[id]).filter(Boolean), cards=sessCards(sx);
+      const why=holdReasons(cards,null), remain=gateIn(cards,null).length;
+      if(remain < saved*0.5){
+        const off=cards.filter(c=>offed(c)).length, ret=cards.filter(c=>retired(c)).length, bur=cards.filter(c=>buried(c)).length;
+        out.push(`${sx.name}: 저장 ${saved} → 남음 ${remain} · 카드없음 ${saved-raw.length} · 장면보류 ${raw.length-cards.length} · 오늘푼 ${why.settled}(끔 ${off} 은퇴 ${ret} 미룸 ${bur}) · 사슬 ${why.chain} · 짝키 ${why.pr} · 방향 ${why.dir} · 선행 ${why.pre} · 오늘로그 ${Object.keys(todayRatings()).length}`);
+      } }
+    if(out.length){ console.warn('[큐 진단]', out.join(' | ')); showBanner('큐 진단 — '+out.join(' | '), false); }
+  }catch(e){ console.warn('[큐 진단] 실패', e); }
+}
 function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show');
   clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1800); }
 
@@ -10716,6 +10729,7 @@ function fixScopeKeys(){
   go('scrHome');
   try{ tryResume(); }catch(e){ console.warn('[복귀] 실패 — 홈으로', e); }
   loadFsrsParams();          // 맞춤값 파일은 있으면 읽고 없으면 조용히 넘어간다 (설정에서만 쓴다)
+  setTimeout(diagQueues, 1500);   // 🔴 진단(09-16 · 동하 「닫았다 열면 교육과정 88 → 3」 미재현) — 저장 큐가 반 넘게 줄면 어디서 빠졌는지 띠로 보여 준다
   checkNewVersion();         // 지금 돌고 있는 판의 해시를 기억해 둔다(새 버전 띠의 기준)
   loadIndexes();    // 회독본·판 색인 갱신은 뒤에서 — 실패하면 재시도하고, 올 때마다 보고 있던 화면을 고친다(F6-1)
 })();

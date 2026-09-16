@@ -92,7 +92,7 @@ input:focus,select:focus{border-color:var(--accent);}
 @media (min-width:1120px) and (orientation:landscape){
   #rail{position:fixed;width:196px;flex:none;border-left:none;border-radius:20px;
     right:calc(14px + env(safe-area-inset-right));
-    top:calc(58px + env(safe-area-inset-top) + var(--sat-extra));
+    top:calc(58px + env(safe-area-inset-top) + var(--sat-extra) + var(--banner-h, 0px));   /* 띠(저장 실패·새 버전)가 뜨면 그만큼 내려온다 — 09-16 동하 「UI 좀 한번에」: 패널이 ⏸·↶를 덮었다 */
     bottom:calc(14px + env(safe-area-inset-bottom));
     box-shadow:var(--shadow);padding:12px 10px;z-index:20;}
 }
@@ -5062,12 +5062,15 @@ function renderFoot(){
 function showBanner(msg, isAuth){
   const b=document.getElementById('banner');
   b.innerHTML=msg+(isAuth?'<button id="bnFix">연결</button>':'<button id="bnRetry">재시도</button>');
-  b.classList.add('show');
+  b.classList.add('show'); syncBannerH();
   const f=document.getElementById('bnFix'), rt=document.getElementById('bnRetry');
   if(f)f.onclick=()=>{openSetup();};
   if(rt)rt.onclick=()=>{hideBanner();push(true);};
 }
-function hideBanner(){ document.getElementById('banner').classList.remove('show'); }
+function hideBanner(){ document.getElementById('banner').classList.remove('show'); syncBannerH(); }
+/* 🔴 띠 높이를 CSS 변수로 — 고정 배치된 사이드바(#rail · 넓은 가로)가 띠 밑으로 내려오게(09-16). 띠가 두 줄로 접혀도 실측 높이를 쓴다. */
+function syncBannerH(){ try{ const b=document.getElementById('banner'); const h=b.classList.contains('show')?b.offsetHeight:0; document.documentElement.style.setProperty('--banner-h', h+'px'); }catch(e){} }
+window.addEventListener('resize', syncBannerH);
 /* 🔴 **「새 버전 있어요」 띠** (2026-09-15 · 동하 08-22 「다시 겪으면 그때 붙인다」 — 그날이 왔다: 아이패드 PWA가 아침 판을 종일 돌려
    원소 게이트(32f8956b)가 없는 채로 데이터만 새로 받아 원 열거 카드 30장이 신규로 떴다). 서비스워커·버전 번호 없이:
    부팅 때 자기 HTML을 no-store로 한 번 받아 해시를 기억하고, 복귀(refreshRemote)·30분 타이머마다 다시 받아 다르면 띠를 띄운다.
@@ -5085,7 +5088,7 @@ async function checkNewVersion(){
   const b=document.getElementById('banner');
   if(b.classList.contains('show') && b.dataset.newver) return;
   b.innerHTML='새 버전이 올라왔어요 — 다시 열면 적용돼요<button id="bnReload">다시 열기</button>';
-  b.dataset.newver='1'; b.classList.add('show');
+  b.dataset.newver='1'; b.classList.add('show'); syncBannerH();
   document.getElementById('bnReload').onclick=async()=>{ try{ syncSessQueue(); saveSessionsFlush(); cacheFlush(); if(dirty) await push(); }catch(e){} location.reload(); };
 }
 
@@ -8727,7 +8730,7 @@ if(navigator.getGamepads){ requestAnimationFrame(padLoop);
   window.addEventListener('gamepaddisconnected', ()=>{ padSeen=false; padPrev=[]; renderPadUI(); }); }
 function renderPadUI(){ const box=$('padMap'), st=$('padStatus'); if(!box||!$('scrInput').classList.contains('on')) return;
   const gps=navigator.getGamepads?[...navigator.getGamepads()].filter(g=>g&&g.connected):[];
-  st.innerHTML = gps.length ? ('<b>연결됨</b> — '+esc((gps[0].id||'').slice(0,48))+' · 버튼 '+gps[0].buttons.length+'개'+(padLast!=null?' · 마지막 눌린 버튼 <b>#'+padLast+'</b>':'')) : '컨트롤러 없음 — 연결한 뒤 아무 버튼을 한 번 누르면 잡혀요';
+  st.innerHTML = gps.length ? ('<b>연결됨</b> — '+esc((gps[0].id||'').slice(0,48))+' · 버튼 '+gps[0].buttons.length+'개'+(padLast!=null?' · 마지막 눌린 버튼 <b>#'+padLast+'</b>':'')) : ('컨트롤러 없음 — 연결한 뒤 아무 버튼을 한 번 누르면 잡혀요 <small>(API '+(navigator.getGamepads?'있음':'없음')+' · '+(isStandalone()?'홈 화면 앱':'브라우저 탭')+')</small>');
   box.innerHTML=PAD_ACTS.map(([id,lab])=>'<div class="tgl-row"><span>'+esc(lab)+'</span><span style="display:flex;gap:8px;align-items:center"><b style="min-width:34px;text-align:right">'+(padMap[id]==null?'—':'#'+padMap[id])+'</b><button class="ym-btn ghost" data-padlearn="'+id+'" style="padding:4px 12px;min-height:34px">'+(padLearn===id?'버튼을 누르세요…':'누르기')+'</button></span></div>').join('');
   box.querySelectorAll('[data-padlearn]').forEach(bt=>bt.onclick=()=>{ padLearn=(padLearn===bt.dataset.padlearn)?null:bt.dataset.padlearn; renderPadUI(); });
 }

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default"><!-- 09-16 동하 「iOS 27 상단 블러가 네비게이션을 침범」 — 반투명(black-translucent)이면 콘텐츠가 상태바 밑까지 깔려 유리 블러가 겹친다. default = 상태바를 theme-color(테마 배경색)로 불투명하게 그리고 화면은 그 아래부터. 안전영역 env()는 그대로 둔다(0이 되면 그만) -->
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="카드">
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="theme-color" content="#13151A">
@@ -54,11 +54,16 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
 html,body{height:100%;}
+:root{--sat-extra:0px;}
+/* 🔴 iOS 27 안전영역 (동하 09-16 「위쪽 블러가 우리 네비게이션을 살짝 침범 · 27 안전영역에 맞춰서 빌드」 · 상태바는 반투명 그대로).
+   iOS 27 상태바(유리)가 env(safe-area-inset-top)보다 몇 px 더 내려와 블러 가장자리가 상단바에 겹친다 → 홈 화면 앱(standalone)에서만
+   위 안전영역에 --sat-extra 를 더한다. 값 하나만 만지면 된다(기기에서 실측해 올리거나 내린다). PC·브라우저 탭은 0. */
+@media (display-mode: standalone){ :root{--sat-extra:10px;} }
 body{
   background:var(--bg); color:var(--ink); overflow:hidden;
   font-family:"NotoMusic",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Malgun Gothic",sans-serif;
   -webkit-user-select:none; user-select:none; -webkit-text-size-adjust:100%;
-  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  padding:calc(env(safe-area-inset-top) + var(--sat-extra)) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 button{font-family:inherit;color:inherit;background:none;border:none;cursor:pointer;font-size:inherit;}
 input,select{font-family:inherit;font-size:16px;color:var(--ink);background:var(--surface);
@@ -87,7 +92,7 @@ input:focus,select:focus{border-color:var(--accent);}
 @media (min-width:1120px) and (orientation:landscape){
   #rail{position:fixed;width:196px;flex:none;border-left:none;border-radius:20px;
     right:calc(14px + env(safe-area-inset-right));
-    top:calc(58px + env(safe-area-inset-top));
+    top:calc(58px + env(safe-area-inset-top) + var(--sat-extra));
     bottom:calc(14px + env(safe-area-inset-bottom));
     box-shadow:var(--shadow);padding:12px 10px;z-index:20;}
 }
@@ -455,7 +460,7 @@ details.rd-sec[open]>summary::before{transform:rotate(90deg);}
    ⚠ 바의 여백·높이는 `#topbar`와 같은 값이다(4px 12px 2px · min-height 46px) —
    닫기 버튼이 **홈 버튼과 같은 자리**에 오도록 맞춘 것이라 한쪽만 고치면 어긋난다. */
 #ovlHd{position:fixed;inset:0;z-index:80;background:var(--bg);display:none;flex-direction:column;
-  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);}
+  padding:calc(env(safe-area-inset-top) + var(--sat-extra)) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);}
 #ovlHd.show{display:flex;}
 #ovlHd .hd-bar{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:4px 12px 2px;min-height:46px;
   border-bottom:1px solid var(--line);background:var(--surface);}
@@ -8660,6 +8665,7 @@ document.addEventListener('keydown',e=>{
      문서를 굴리려 하고 문서는 넘치지 않으니 **아무 일도 안 일어난다.** 그래서 우리가 직접 굴린다.
      ⚠ **`e.repeat` 가드보다 먼저** 본다 — 그 가드는 채점 연타(스페이스 길게)를 막으려던 것이고,
        스크롤은 눌러 두면 계속 굴러야 한다. 여기서 처리하고 나간다. */
+  if((e.key==='ArrowLeft'||e.key==='ArrowRight') && $('ovlHd').classList.contains('show')){ hdKey(e); return; }
   if(e.key==='ArrowUp'||e.key==='ArrowDown'||e.key==='PageUp'||e.key==='PageDown'){
     const t0=e.target, tg=t0&&t0.tagName;
     if(!(tg==='INPUT'||tg==='TEXTAREA'||tg==='SELECT')){
@@ -10275,7 +10281,17 @@ function hdNewFrame(src){
   old.replaceWith(f);
   return f;
 }
+/* 🔴 **회독본 창 ← → = 이전/다음 중주제** (동하 09-16 · 패드 D패드 좌우). 판의 h2(「대주제 - 중주제」)를 스크롤 위치로 세어 하나씩 옮긴다.
+   키는 iframe 문서가 받으므로 로드 때 그 문서에 리스너를 심고(같은 오리진), 부모 쪽 keydown에서도 오버레이가 떠 있으면 같은 함수로 보낸다. */
+function hdStep(dir){
+  try{ const w=$('hdFrame').contentWindow, d=w.document; const hs=[...d.querySelectorAll('h2')]; if(!hs.length) return false;
+    const y=w.scrollY+4; let cur=-1; for(let i=0;i<hs.length;i++){ if(hs[i].getBoundingClientRect().top+w.scrollY<=y) cur=i; }
+    const nx=Math.max(0, Math.min(hs.length-1, cur+dir)); if(nx===cur && dir<0 && cur===0){ w.scrollTo({top:0}); return true; }
+    if(nx===cur) return false; hs[nx].scrollIntoView({block:'start'}); return true; }catch(e){ return false; }
+}
+function hdKey(e){ if(!kbdOn || e.metaKey||e.ctrlKey||e.altKey) return; if(e.key==='ArrowLeft'||e.key==='ArrowRight'){ if(hdStep(e.key==='ArrowRight'?1:-1)) e.preventDefault(); } }
 function hdOnLoad(){
+  try{ const d=$('hdFrame').contentDocument; d.addEventListener('keydown', hdKey); $('hdFrame').contentWindow.focus(); }catch(e){}
   /* 판 안의 「카드앱 ↗」을 누른 경우 — iframe에 앱을 띄우지 말고 오버레이를 닫는다 */
   try{ const p=$('hdFrame').contentWindow.location.pathname;
     if(/cards\.html$/.test(p)){ closeHoedok(); return; } }catch(e){}

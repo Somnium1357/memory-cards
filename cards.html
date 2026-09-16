@@ -7885,6 +7885,7 @@ function renderSession(){
   $('ssTitle').textContent=sx.name;
   const body=$('ssBody'); body.innerHTML='';
   if(!isFixed(sx)) refillSess(sx);
+  try{ sessDiag(sx); }catch(e){}   // 🔴 진단(09-16 · 88→3 미재현) — 이 기기가 보는 수를 세션 파일에 실어 앱 세션이 읽는다 · 원인 잡히면 뺀다
   const remain=sessRemain(sx);
   const live=curSess&&curSess.id===sx.id;
   /* 큐가 비면 「이어서 채우기」를 띄운다 — 예전에는 이 자리에서 refillSess가 말없이 채웠다,
@@ -10653,6 +10654,20 @@ function diagQueues(){
       } }
     if(out.length){ console.warn('[큐 진단]', out.join(' | ')); showBanner('큐 진단 — '+out.join(' | '), false); }
   }catch(e){ console.warn('[큐 진단] 실패', e); }
+}
+/* 🔴 세션 진단 — 세션 화면을 열 때 **이 기기가 보는 수**를 sx._diag 에 적어 세션 파일로 올린다(동하 09-16 「닫았다 열면 교육과정 88 → 3」 —
+   서버 데이터로는 88이 그대로라 기기 쪽 수가 필요하다). 작다(숫자 열 몇 개) · 원인 잡히면 뺀다. */
+function sessDiag(sx){
+  if(!sx || isFixed(sx)) return;
+  const p=asPreset(sx), st=sx.how.status;
+  const scopeAll=DATA.filter(c=>inScope(c,p.scope)), pool=scopePool(p.scope, st);
+  const bp=backlogPlan(); const cards=sessCards(sx); const why=holdReasons(cards,null);
+  const now=Date.now();
+  sx._diag={at:new Date(now).toISOString().slice(5,16), ver:String(APP_HASH||'').slice(0,6), cards:DATA.length, data:dataFresh?'fresh':'cache',
+    scope:scopeAll.length, due:scopeAll.filter(c=>isDue(c)).length, nw:scopeAll.filter(c=>isNew(c)).length, settled:scopeAll.filter(c=>settledToday(c)).length,
+    pool:pool.length, build:buildQueue(p, st).length, q:(sx.q||[]).length, alive:cards.length, remain:gateIn(cards,null).length,
+    hold:[why.settled,why.chain,why.pr,why.dir,why.pre].join('/'), over:bp.over, bkN:bp.n, norm:bp.norm, ret:fsrsCfg.ret, cret:curricRet(), logToday:Object.keys(todayRatings()).length, logN:state.log.length};
+  markDirty('sess'); saveSessionsSoon();
 }
 function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show');
   clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1800); }

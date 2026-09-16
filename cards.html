@@ -7339,7 +7339,12 @@ $('rOff').onclick=()=>{ // 끄기 = 이 카드 그만 (2026-08-22 — 은퇴·�
 /* 🔴 **형제 끄기** (동하 09-16 「열거형을 낱장으로 쪼갰잖아, 그 형제들 한번에 전부 끌 방법 없어?」). 낱장은 같은 열거에서 나온 것끼리 `pr` 「bl:…」 무리를
    공유한다(QC 09-15) → 그 무리 전부를 ID-off. 끄기 규칙은 그대로(카드 한 장 = ID-off · spec 마커 아님)이고 장수만 N이다. 되돌리기 한 번에 전부 되살린다(sn.also).
    원 열거 카드(elems 보유)는 무리에 안 든다 — 낱장이 전부 꺼지면 게이트가 열려 원 카드가 나온다(살아 있는 낱장 0 = 게이트 없음). */
-function blSiblings(c){ if(!c||!c.pr||!/^bl:/.test(String(c.pr))) return []; return DATA.filter(x=>x.pr===c.pr && x.id!==c.id && !offed(x) && !retired(x)); }
+function blSiblings(c){   // 형제 = 같은 bl: 무리 ∪ 나를 elems에 든 원 카드의 다른 낱장 (pr 없는 낱장 7묶음 · 두 무리로 갈린 1묶음도 덮는다 · 09-16)
+  if(!c) return []; const ids=new Set();
+  if(c.pr && /^bl:/.test(String(c.pr))) for(const x of DATA){ if(x.pr===c.pr) ids.add(x.id); }
+  for(const p of DATA){ if(Array.isArray(p.elems) && p.elems.includes(c.id)) for(const id of p.elems) ids.add(id); }
+  ids.delete(c.id);
+  return [...ids].map(id=>BYID[id]).filter(x=>x && !offed(x) && !retired(x) && !x.elems); }
 $('rOffAll').onclick=()=>{
   const c=cur(); if(!c)return; if(tooSoon()) return;
   const sib=blSiblings(c); if(!sib.length){ toast('형제 낱장이 없어요'); return; }

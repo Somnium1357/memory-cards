@@ -4891,6 +4891,7 @@ async function pushAll(force){        // 바뀐 파일만 올린다 (로그 우�
   }
 }
 function hasPending(){ return dirty || dirtyFiles.size>0 || dirtyLogs.size>0; }
+let pushFromHidden=false, netFails=0;
 async function push(force){ // 배치 push — 옵티미스틱: 실패해도 로컬은 이미 저장됨
   if(!cfg||!cfg.token){
     /* 토큰은 기기별이다. 조용히 리턴하면 저장 배지만 켜진 채로 영원히 남아
@@ -4915,7 +4916,7 @@ async function push(force){ // 배치 push — 옵티미스틱: 실패해도 로
   const pushStartedAt=new Date().toISOString();
   try{
     mergedSched=false;                 // 이 push의 충돌 병합만 센다 (F1-5)
-    await pushAll(force);
+    await pushAll(force); netFails=0;   // 성공 — 네트워크 연속 실패 카운터 리셋
     /* 🔴 충돌 병합이 기억률·파라미터·base를 바꿨으면 **여기서 재계산한다.** 다른 경로와 같은 삼종 세트다.
        (`refreshRemote` 꼬리와 같은 순서 — 재계산 → 실효 due 캐시 버리기 → 오늘 큐 맞추기 → 보던 화면 다시 그리기) */
     if(mergedSched){ mergedSched=false;
@@ -4937,8 +4938,14 @@ async function push(force){ // 배치 push — 옵티미스틱: 실패해도 로
       : e&&e.code==='perm' ? '토큰에 이 레포 쓰기 권한이 없어요 — github.com 토큰 설정에서 memory-cards 접근 + Contents 쓰기 추가 후 재시도'
       : e&&e.code==='http' ? `저장 실패 (GitHub ${e.status}) — 다음 채점 때 다시 시도해요`   // 원인이 보여야 「네트워크」로 오진하지 않는다(09-05 실기)
       : '저장 실패 — 네트워크 확인 · 다음 채점 때 다시 시도해요';
-    showBanner(msg, e&&e.code==='auth');
-  }finally{ pushing=false; updateSaveUI(); }
+    /* 🔴 백그라운드로 가는 순간 시작한 저장이 끊긴 것(코드 없는 네트워크 오류 · 숨겨진 상태)은 띠를 띄우지 않는다 — 돌아오면 다음 저장에 그대로 올라간다
+       (동하 09-16 「저장 실패가 계속 떠」 · 앱 전환마다 떴는데 저장은 전부 반영돼 있었다). 보이는 상태의 네트워크 오류도 **두 번 연속**부터. 토큰·권한·GitHub 상태코드는 즉시. */
+    const netErr = !(e&&e.code);
+    if(netErr && (document.visibilityState==='hidden' || pushFromHidden)){ console.warn('[저장] 숨겨질 때 끊김 — 다음 저장에서', e); }
+    else if(netErr && ++netFails<2){ console.warn('[저장] 네트워크 오류 1회 — 다음 저장에서', e); }
+    else showBanner(msg, e&&e.code==='auth');
+    if(!netErr) netFails=0;
+  }finally{ pushing=false; pushFromHidden=false; updateSaveUI(); }
 }
 function afterRate(){ // 채점 후 배치 훅
   cacheState(); setDirty(true); ratedSincePush++;
@@ -4958,7 +4965,7 @@ document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){
     hiddenAt=Date.now();
     syncSessQueue(); saveSessionsFlush();
-    cacheFlush(); if(dirty) push();
+    cacheFlush(); if(dirty){ pushFromHidden=true; push(); }
     return;
   }
   if(!hiddenAt) return;              // 앱을 내려둔 시간은 응답 시간에서 조용히 뺀다 (정지 화면은 안 띄움 —

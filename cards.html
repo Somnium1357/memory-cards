@@ -1017,6 +1017,8 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 <div id="app">
   <div id="main">
     <div id="banner"></div>
+    <!-- 키 초점 앵커(09-16): 화면 밖 공용 자리 · 읽기 전용 + inputmode=none 이라 소프트 키보드는 안 뜬다 · iOS는 편집 요소만 하드웨어 키 대상으로 붙든다 -->
+    <input id="kbdAnchor" readonly inputmode="none" aria-hidden="true" tabindex="-1" autocomplete="off" style="position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px">
     <div id="topbar">
       <button class="tb-btn" id="btnHome" title="홈"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg></button>
       <span id="saveBadge" title="미저장분 있음"></span>
@@ -1028,7 +1030,6 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
     <!-- 풀이 -->
     <div class="scr on" id="scrSolve">
       <div id="phaseLine"></div>
-      <div id="kbdAnchor" tabindex="-1" aria-hidden="true" style="position:fixed;width:0;height:0;opacity:0;outline:none;pointer-events:none"></div>
       <div id="cardZone">
         <!-- 스와이프 피드백은 이 마당의 배경(::before)이 전부다 — CSS 「스와이프 채점 피드백」 절.
              왼쪽 = 알맞음, 오른쪽 = 다시. -->
@@ -7559,7 +7560,7 @@ function gEnd(x,y){
 
 /* ═══════════════ 화면 전환 ═══════════════ */
 function go(id){
-  setTimeout(keepKbdFocus, 0);                     // 화면 전환 뒤에도 키 초점(동하 09-16 「화면 전환했다 와도 그럼」)
+  keepKbdFocus(); setTimeout(keepKbdFocus, 0);     // 화면 전환 탭(사용자 동작) 안에서 동기로 + 전환 뒤 한 번 더(동하 09-16 「화면 전환했다 와도 그럼」)
   if(id!=='scrSolve'){ resumeSession(); syncSessQueue();
     if(pendingRefresh){ pendingRefresh=false; setTimeout(refreshRemote,0); } }
   /* 🔴 **홈으로 나가면 복귀 지점을 버린다** (전층 감사 F4-8 · 2026-09-06).
@@ -8646,6 +8647,7 @@ window.addEventListener('blur', ()=>setTimeout(keepKbdFocus, 50));
 window.addEventListener('focus', ()=>setTimeout(keepKbdFocus, 50));
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') setTimeout(keepKbdFocus, 100); });
 setInterval(keepKbdFocus, 5000);
+document.addEventListener('pointerup', ()=>setTimeout(keepKbdFocus, 0), {passive:true});   // 탭마다 — 버튼이 초점을 가져갔다 숨겨지는 자리를 막는다
 /* 🔴 iOS 27 상단 여백 = 안전영역 + 15px (동하 09-16 실측 「블러 문제는 15픽셀 주니까 해결됨」 — 홈 화면 앱에서만 · 브라우저 탭 0).
    iOS 27이 상태바 밑으로 상태바보다 긴 블러 띠를 깔아 env(safe-area-inset-top)만으론 홈 버튼이 그 밑에 들어갔다.
    🔴 판정은 **JS**로(navigator.standalone ∨ matchMedia) — CSS `@media (display-mode: standalone)`만으로는 동하 아이패드(iOS 27)에서 안 맞았다
@@ -8691,7 +8693,7 @@ document.addEventListener('keydown',e=>{
   if(/^(Arrow(Left|Right|Up|Down)|Page(Up|Down))$/.test(e.key) && $('ovlHd').classList.contains('show')){ hdKey(e); return; }   // 회독본 창이 떠 있으면 방향키는 전부 판 몫
   if(e.key==='ArrowUp'||e.key==='ArrowDown'||e.key==='PageUp'||e.key==='PageDown'){
     const t0=e.target, tg=t0&&t0.tagName;
-    if(!(tg==='INPUT'||tg==='TEXTAREA'||tg==='SELECT')){
+    if(!(tg==='INPUT'||tg==='TEXTAREA'||tg==='SELECT') || t0.id==='kbdAnchor'){
       const box=scrollBox();
       if(box && box.scrollHeight>box.clientHeight+2){
         const big=e.key.startsWith('Page');
@@ -8707,7 +8709,7 @@ document.addEventListener('keydown',e=>{
      한 번 누름 = 한 번 처리 — 반복 입력은 통째로 버린다. 손을 떼고 다시 누르면 그때 먹는다. */
   if(e.repeat) return;
   const t=e.target, tag=t&&t.tagName;
-  const typing = tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT';
+  const typing = (tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT') && t.id!=='kbdAnchor';   // 초점 앵커는 입력 칸이 아니다
   const ovl=document.querySelector('.ovl.show');
   if(pauseAt){                        // 정지 중엔 Space·Enter·Esc·P로 재개
     if([' ','enter','escape','p'].includes(keyOf(e))){ e.preventDefault(); resumeSession(); }

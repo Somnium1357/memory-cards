@@ -4459,23 +4459,7 @@ function sessFile(){ return {v:1, sessions:[...sessions, ...sessTomb], hoedok:st
   fw:fsrsCfg.w||null, fwAt:fsrsCfg.wAt||'',
   rest:{dow:rest.dow, days:rest.days}, restAt:rest.at||0,
   ivShow:{v:ivShow.v}, ivShowAt:ivShow.at||0,
-  reshow:{v:reshow.v}, reshowAt:reshow.at||0,
-  kdiag:KDIAG.slice(-12)}; }   // 「다시」 당일 재출 — 기기 간 동기(09-12) · kdiag = 키 초점 진단(09-16 · 원인 잡히면 뺀다)
-/* 🔴 키 초점 진단 (동하 09-16 「화면 전환·앱 전환 뒤 키 안 먹음 · 탭하면 풀림 · 사파리 탭에선 멀쩡 · 홈 화면 앱만」).
-   앞으로 돌아올 때(visible)·화면 전환(go) 순간의 초점 위치·hasFocus·standalone 을 적고, 그 뒤 첫 입력이 키였나 탭이었나를 붙인다. 세션 파일로 올라가 앱 세션이 읽는다. */
-const KDIAG=[]; let _kd=null;
-function kdSnap(why){ try{ const a=document.activeElement; _kd={t:new Date().toISOString().slice(11,19), why, act:(a?a.tagName+(a.id?'#'+a.id:''):'-'), hf:document.hasFocus(), sa:!!navigator.standalone, vis:document.visibilityState, scr:([...document.querySelectorAll('.scr.on')].map(x=>x.id)[0]||'-'), ovl:!!document.querySelector('.ovl.show')||$('ovlHd').classList.contains('show'), first:null};
-  KDIAG.push(_kd); if(KDIAG.length>30) KDIAG.shift(); }catch(e){} }
-function kdFirst(kind, e){ try{ if(!_kd||_kd.first) return; const a=document.activeElement; _kd.first={kind, t:new Date().toISOString().slice(11,19), act:(a?a.tagName+(a.id?'#'+a.id:''):'-'), key:e&&e.code||null, tgt:e&&e.target&&(e.target.tagName+(e.target.id?'#'+e.target.id:''))}; }catch(err){} }   // 저장은 다음 정기 저장에 묻어 간다(강제 push 금지 — 09-16 「저장 실패」 폭주의 원인이었다)
-document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible'){ kdSnap('visible');
-  /* 게임패드 진단(09-16 「전환은 여전히 안 됨」): 돌아온 뒤 1·3·6초에 페이지가 보는 패드 수·연결·버튼 눌림 상태를 적는다 */
-  [1000,3000,6000].forEach(ms=>setTimeout(()=>{ try{ const gps=navigator.getGamepads?[...navigator.getGamepads()]:[]; const g=gps.find(x=>x);
-    KDIAG.push({t:new Date().toISOString().slice(11,19), why:'pad+'+(ms/1000)+'s', n:gps.filter(Boolean).length, conn:!!(g&&g.connected), ts:g?Math.round(g.timestamp):null, anyDown:!!(g&&g.buttons.some(b=>b.pressed)), hf:document.hasFocus(), vis:document.visibilityState});
-    if(KDIAG.length>30) KDIAG.shift(); }catch(e){} }, ms)); } });
-window.addEventListener('focus', ()=>kdSnap('winfocus'));
-window.addEventListener('blur', ()=>kdSnap('winblur'));
-document.addEventListener('keydown', e=>kdFirst('key', e), true);
-document.addEventListener('pointerdown', e=>kdFirst('tap', e), true);
+  reshow:{v:reshow.v}, reshowAt:reshow.at||0}; }   // 「다시」 당일 재출 — 기기 간 동기(09-12)
 function applyLogEntry(sx, e){        // rate()와 같은 규칙으로 한 건 반영 (그날 첫 채점만 FSRS)
   /* 🔴 재출(`ex.re`)은 **상태에 아무것도 안 남긴다** — 일정도, 틀림 횟수도.
      `rate()`가 그렇게 하므로 로그 재계산도 똑같아야 한다(로그가 정본 = 두 경로가 같은 값을 내야 한다).
@@ -7611,7 +7595,6 @@ function gEnd(x,y){
 
 /* ═══════════════ 화면 전환 ═══════════════ */
 function go(id){
-  kdSnap('go:'+id);
   if(id!=='scrSolve'){ resumeSession(); syncSessQueue();
     if(pendingRefresh){ pendingRefresh=false; setTimeout(refreshRemote,0); } }
   /* 🔴 **홈으로 나가면 복귀 지점을 버린다** (전층 감사 F4-8 · 2026-09-06).
@@ -10732,33 +10715,6 @@ document.addEventListener('click', (e)=>{
 
 /* ═══════════════ 토스트 ═══════════════ */
 let toastT=null;
-/* 🔴 부팅 진단 — 저장 큐 대비 남은 장수가 반 아래면 단계별로 어디서 빠졌는지 띠에 적는다(동하가 스크린샷으로 준다 · 원인 잡히면 뺀다). */
-function diagQueues(){
-  try{ const tk=todayKey(); const out=[];
-    for(const sx of sessions){ if(!sx||!sx.q||sx.q.length<20 || sx.day!==tk) continue;
-      const saved=sx.q.length, raw=sx.q.map(id=>BYID[id]).filter(Boolean), cards=sessCards(sx);
-      const why=holdReasons(cards,null), remain=gateIn(cards,null).length;
-      if(remain < saved*0.5){
-        const off=cards.filter(c=>offed(c)).length, ret=cards.filter(c=>retired(c)).length, bur=cards.filter(c=>buried(c)).length;
-        out.push(`${sx.name}: 저장 ${saved} → 남음 ${remain} · 카드없음 ${saved-raw.length} · 장면보류 ${raw.length-cards.length} · 오늘푼 ${why.settled}(끔 ${off} 은퇴 ${ret} 미룸 ${bur}) · 사슬 ${why.chain} · 짝키 ${why.pr} · 방향 ${why.dir} · 선행 ${why.pre} · 오늘로그 ${Object.keys(todayRatings()).length}`);
-      } }
-    if(out.length){ console.warn('[큐 진단]', out.join(' | ')); showBanner('큐 진단 — '+out.join(' | '), false); }
-  }catch(e){ console.warn('[큐 진단] 실패', e); }
-}
-/* 🔴 세션 진단 — 세션 화면을 열 때 **이 기기가 보는 수**를 sx._diag 에 적어 세션 파일로 올린다(동하 09-16 「닫았다 열면 교육과정 88 → 3」 —
-   서버 데이터로는 88이 그대로라 기기 쪽 수가 필요하다). 작다(숫자 열 몇 개) · 원인 잡히면 뺀다. */
-function sessDiag(sx){
-  if(!sx || isFixed(sx)) return;
-  const p=asPreset(sx), st=sx.how.status;
-  const scopeAll=DATA.filter(c=>inScope(c,p.scope)), pool=scopePool(p.scope, st);
-  const bp=backlogPlan(); const cards=sessCards(sx); const why=holdReasons(cards,null);
-  const now=Date.now();
-  sx._diag={at:new Date(now).toISOString().slice(5,16), ver:String(APP_HASH||'').slice(0,6), cards:DATA.length, data:dataFresh?'fresh':'cache',
-    scope:scopeAll.length, due:scopeAll.filter(c=>isDue(c)).length, nw:scopeAll.filter(c=>isNew(c)).length, settled:scopeAll.filter(c=>settledToday(c)).length,
-    pool:pool.length, build:buildQueue(p, st).length, q:(sx.q||[]).length, alive:cards.length, remain:gateIn(cards,null).length,
-    hold:[why.settled,why.chain,why.pr,why.dir,why.pre].join('/'), over:bp.over, bkN:bp.n, norm:bp.norm, ret:fsrsCfg.ret, cret:curricRet(), logToday:Object.keys(todayRatings()).length, logN:state.log.length};
-  markDirty('sess'); saveSessionsSoon();
-}
 function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show');
   clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1800); }
 

@@ -8632,7 +8632,13 @@ $('tglKbd').onclick=()=>{ kbdOn=!kbdOn; lsSet(K_KBD,kbdOn?'1':'0'); $('tglKbd').
 /* ═══════════════ 키보드 (PC 전용 보조 — 터치 흐름은 그대로) ═══════════════ */
 let kbdOn = lsGet(K_KBD)!=='0';
 /* 🔴 iOS 27 상단 여백 = 안전영역 + 15px (동하 09-16 실측 「블러 문제는 15픽셀 주니까 해결됨」 — 홈 화면 앱에서만 · 브라우저 탭 0).
-   iOS 27이 상태바 밑으로 상태바보다 긴 블러 띠를 깔아 env(safe-area-inset-top)만으론 홈 버튼이 그 밑에 들어갔다. CSS --sat-extra 하나(위 :root) · 슬라이더는 실측 뒤 뺐다. */
+   iOS 27이 상태바 밑으로 상태바보다 긴 블러 띠를 깔아 env(safe-area-inset-top)만으론 홈 버튼이 그 밑에 들어갔다.
+   🔴 판정은 **JS**로(navigator.standalone ∨ matchMedia) — CSS `@media (display-mode: standalone)`만으로는 동하 아이패드(iOS 27)에서 안 맞았다
+   (00887f5c에서 CSS만 남겼더니 블러가 되돌아왔다 · 09-16). 값은 SAT_EXTRA 하나. */
+const SAT_EXTRA=15;
+const isStandalone=()=>!!(navigator.standalone || (window.matchMedia&&matchMedia('(display-mode: standalone)').matches));
+function applySat(){ document.documentElement.style.setProperty('--sat-extra', (isStandalone()?SAT_EXTRA:0)+'px'); }
+applySat();
 /* 🔴 **한글 입력 상태에서는 `e.key`가 자모로 온다** — `h`가 `ㅗ`, `p`가 `ㅔ`가 되어 단축키가 통째로 죽었다
    (동하 09-10 실기: 「소프트웨어 키보드가 한글로 맞춰져 있으면 h, p 이런 키가 안 먹혀」).
    그래서 **물리 키 자리(`e.code`)**로 읽는다 — `KeyH`·`Digit1`·`Space`는 입력기·자판 배열에 안 흔들린다.

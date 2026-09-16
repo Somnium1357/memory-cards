@@ -10319,7 +10319,7 @@ function hdKey(e){ if(!kbdOn || e.metaKey||e.ctrlKey||e.altKey) return;
       const big=e.key.startsWith('Page'); const step=big?Math.round(w.innerHeight*0.9):48;
       w.scrollBy({top:(e.key==='ArrowUp'||e.key==='PageUp')?-step:step, behavior:'auto'}); e.preventDefault(); }catch(err){} } }
 function hdOnLoad(){
-  try{ const d=$('hdFrame').contentDocument; d.addEventListener('keydown', hdKey); d.addEventListener('click', ev=>{ const a=ev.target&&ev.target.closest&&ev.target.closest('aside.sidebar a'); if(a) setTimeout(()=>{ try{ a.blur(); }catch(e){} },0); }); $('hdFrame').contentWindow.focus(); }catch(e){}
+  try{ const d=$('hdFrame').contentDocument; d.addEventListener('keydown', hdKey); d.addEventListener('click', ev=>{ const a=ev.target&&ev.target.closest&&ev.target.closest('aside.sidebar a'); if(a) setTimeout(()=>{ try{ a.blur(); }catch(e){} },0); }); }catch(e){}   // 🔴 iframe에 focus()를 주지 않는다(09-16 회귀 — 빈 프레임이 부팅 때 초점을 가져가 앱 전환 뒤 키가 거기로 갔다 · 화살표는 부모 keydown이 hdKey로 보낸다)
   /* 판 안의 「카드앱 ↗」을 누른 경우 — iframe에 앱을 띄우지 말고 오버레이를 닫는다 */
   try{ const p=$('hdFrame').contentWindow.location.pathname;
     if(/cards\.html$/.test(p)){ closeHoedok(); return; } }catch(e){}
@@ -10431,6 +10431,7 @@ $('hdQTxt').onclick=()=>{ $('hdQ').classList.toggle('mini'); };
 $('hdQBtn').onclick=()=>{ $('hdQList').classList.toggle('on'); renderHdQ(); };
 function closeHoedok(fromPop){
   hdSaveSpot();                        // 둘러보기 자리 — 다시 열면 여기로
+  try{ if(document.activeElement && document.activeElement.tagName==='IFRAME') document.activeElement.blur(); window.focus(); }catch(e){}   // 초점을 본 화면으로(09-16)
   $('ovlHd').classList.remove('show');
   /* 🔴 **히스토리를 안 건드린다.** 닫기 버튼이 `back()`을 부르면 그 뒤로가기를 「소비만」 하려고
      플래그가 필요한데, `back()`이 실제로 안 일어나는 경우가 있어 플래그가 남아 **다음 뒤로가기를

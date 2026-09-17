@@ -1610,11 +1610,12 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
     <p class="desc" style="margin-top:6px">오른쪽일수록 덜 잊지만 <b>하루 분량이 늘어요</b>. 바꾸면 모든 카드의 복습일이 다시 잡혀요(기록은 그대로).</p>
     <div class="tgl-row" style="margin-top:8px"><span>채점 버튼 밑에 다음 간격(14일·22일…) 보이기</span><div class="tgl" id="cfgIv"></div></div>
   </div>
-  <div class="field"><label>교육과정 카드만 — 복습 강도 따로</label>
+  <div class="field"><label>집중 암기 — 고른 카드만 복습 강도 따로</label>
     <div class="rng-row"><span class="rng-v" id="cretVal">95%</span><span class="desc" id="cretLoad"></span></div>
+    <button class="act-btn" id="focusPick" style="margin:4px 0 8px"><span>집중 암기 카드 고르기</span><small id="focusPickSub"></small></button>
     <input class="rng" id="cretRange" type="range" min="85" max="98" step="1" value="95">
     <div class="rng-ends"><span>넓게 (85%)</span><span>촘촘히 (98%)</span></div>
-    <p class="desc" style="margin-top:6px">교육과정(2022 개정·총론·통합교과 등 노드에 「교육과정」이 든 카드)은 각론보다 잘 잊혀서(재복습 통과 69~78% vs 86~96%) 목표를 따로 둡니다. 나머지 카드는 위 값을 써요.</p>
+    <p class="desc" style="margin-top:6px">고른 단위·중주제의 카드만 이 목표로 돌려요(나머지는 위 복습 강도). 처음엔 각 과목 「2022 개정 교육과정」이 골라져 있어요 — 총창·통합교과는 넣고 싶으면 고르세요. 바꾸면 그 카드들의 복습일이 다시 잡혀요(기록은 그대로).</p>
   </div>
   <div class="field"><label>시험날 목표 — 시험 당일에 얼마나 남아 있게 할까</label>
     <div class="rng-row"><span class="rng-v" id="xretVal">95%</span><span class="desc" id="xretLoad"></span></div>
@@ -3835,9 +3836,27 @@ const XRET_DEF=0.95;                      // 시험날 목표 기억률 (동하 
    tags[0] 「2022 개정 …」은 전부 이 안에 든다. 총창·통합교과는 노드에 교육과정이 있는 절만(총창 278/361 · 통합 146/146).
    시험날 목표율 클램프는 갈래별 due 위에 그대로. 모형(단계) 카드는 대상 아님(간격 문제 아님 · 메타). */
 const CRET_DEF=0.95;
-let fsrsCfg={ret:RET_DEF, retAt:0, w:null, wAt:'', xret:XRET_DEF, xretAt:0, cret:CRET_DEF, cretAt:0};
+let fsrsCfg={ret:RET_DEF, retAt:0, w:null, wAt:'', xret:XRET_DEF, xretAt:0, cret:CRET_DEF, cretAt:0, focus:null, focusAt:0};
 let engine=null, engineC=null;
-function isCurric(c){ return !!(c && ((c.node||'').includes('교육과정') || (((c.tags||[])[0])||'').includes('2022 개정'))); }
+/* 🔴 **집중 암기** (동하 결정 09-17 · 메타 목요일 묶음 ② 「집중 암기 슬라이더 만들어서 태그 지정해 줄 수 있도록」).
+   09-14~16엔 앱이 교육과정 갈래를 스스로 판정했다(노드 「교육과정」 ∨ tags[0] 「2022 개정」 → cret 0.95). 이제 **어느 카드를 그 목표율로 돌릴지는 동하가 고른다** —
+   범위 피커와 같은 단위(tagKey)·중주제(midKey) 키를 `fsrsCfg.focus={units,mids}`에 두고, 더 새것이 이기는 규칙(focusAt)으로 기기 간 따라간다.
+   고른 적이 없으면(focusAt 0) 기본 = 각 과목의 대주제 「2022 개정 교육과정」 전부. 총창·통합교과는 기본에서 **뺀다**(동하 09-17 「총창이랑 통교는 그냥 디폴트로 돌리고 싶은데」 — 넣고 싶으면 피커에서 고른다).
+   ⚠ 매칭은 scopeMatch의 포함 규칙과 같다(단위 통째 ∨ 중주제 ∨ 3층). retired/off는 안 본다 — 재계산(replayLog)은 은퇴 카드도 지나가므로 판정이 흔들리면 안 된다(등가성). */
+const FOCUS_DEF_T0='2022 개정 교육과정';
+let _focusSel=null, _focusKey='';
+function focusSel(){                       // 실효 선택 — 기본이면 카드 데이터에서 뽑는다(과목마다 단위 키가 다르다 · 분할 #g 포함)
+  const key=(fsrsCfg.focusAt||0)+'|'+DATA.length;
+  if(_focusSel && _focusKey===key) return _focusSel;
+  let sel;
+  if(fsrsCfg.focusAt && fsrsCfg.focus) sel={units:(fsrsCfg.focus.units||[]).slice(), mids:(fsrsCfg.focus.mids||[]).slice()};
+  else { const u=new Set(); for(const c of DATA){ if(((c.tags||[])[0]||'')===FOCUS_DEF_T0) u.add(tagKey(c)); } sel={units:[...u], mids:[]}; }
+  _focusSel={units:sel.units, mids:sel.mids, uSet:new Set(sel.units), mSet:new Set(sel.mids)}; _focusKey=key; return _focusSel;
+}
+function isFocus(c){ if(!c) return false; const f=focusSel(); if(!f.uSet.size&&!f.mSet.size) return false;
+  const k=tagKey(c); if(f.uSet.has(k)) return true; if(!f.mSet.size) return false;
+  const mk=k+'||'+((c.tags||[])[1]||''); return f.mSet.has(mk)||f.mSet.has(mk+'||'+subOf(c)); }
+const isCurric=isFocus;                    // 옛 이름(09-14) — 호출처 호환
 function curricRet(){ return fsrsCfg.cret||CRET_DEF; }
 /* 🔴 `next`를 부르는 자리는 전부 이 문을 지난다(rate · replayLog · 간격 미리보기 · 시뮬) — 한 곳이라도 `engine`을 직접 쓰면
    실시간과 재계산이 갈려 앱을 켤 때마다 due가 바뀐다(등가성). */
@@ -4455,7 +4474,8 @@ function sessFile(){ return {v:1, sessions:[...sessions, ...sessTomb], hoedok:st
   fc:state.fc||{},                        // 주간 예측 스냅숏 — 「지난주 예측 vs 실제」의 밑천(메타가 읽는다)
   cap:intake.cap, capAt:intake.capAt||0,
   ret:fsrsCfg.ret, retAt:fsrsCfg.retAt||0,
-  cret:fsrsCfg.cret, cretAt:fsrsCfg.cretAt||0,      // 교육과정 갈래 목표율(09-14) — 같은 규칙
+  cret:fsrsCfg.cret, cretAt:fsrsCfg.cretAt||0,      // 집중 암기 목표율(09-14 교육과정 → 09-17 집중 암기) — 같은 규칙
+  focus:fsrsCfg.focus||null, focusAt:fsrsCfg.focusAt||0,   // 집중 암기 대상 {units,mids} — 더 새것이 이긴다 · null = 기본(2022 개정 교육과정)
   xret:fsrsCfg.xret, xretAt:fsrsCfg.xretAt||0,      // 시험날 목표율 — ret과 같은 「더 새것이 이긴다」 규칙
   fw:fsrsCfg.w||null, fwAt:fsrsCfg.wAt||'',
   rest:{dow:rest.dow, days:rest.days}, restAt:rest.at||0,
@@ -4844,6 +4864,8 @@ function mergeSessInto(remote){
     fsrsCfg.ret=remote.ret; fsrsCfg.retAt=remote.retAt; buildEngine(); mergedSched=true; }
   if(remote && remote.cret!==undefined && (remote.cretAt||0) > (fsrsCfg.cretAt||0)){
     fsrsCfg.cret=remote.cret; fsrsCfg.cretAt=remote.cretAt; buildEngine(); mergedSched=true; }
+  if(remote && remote.focusAt!==undefined && (remote.focusAt||0) > (fsrsCfg.focusAt||0)){   // 집중 암기 대상 — 같은 규칙 · 대상이 바뀌면 due가 움직인다
+    fsrsCfg.focus=remote.focus||null; fsrsCfg.focusAt=remote.focusAt; _focusSel=null; mergedSched=true; }
   /* 시험날 목표율도 같은 규칙 — 바뀌면 **due가 움직이므로** 재계산 플래그를 세운다(F1-5와 같은 자리) */
   if(remote && remote.xret!==undefined && (remote.xretAt||0) > (fsrsCfg.xretAt||0)){
     fsrsCfg.xret=remote.xret; fsrsCfg.xretAt=remote.xretAt; mergedSched=true; }
@@ -5632,6 +5654,7 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
       if(sf.cap!==undefined){ intake.cap=sf.cap; intake.capAt=sf.capAt||0; }
       if(sf.ret!==undefined && (sf.retAt||0) > (fsrsCfg.retAt||0)){ fsrsCfg.ret=sf.ret; fsrsCfg.retAt=sf.retAt; buildEngine(); }
       if(sf.cret!==undefined && (sf.cretAt||0) > (fsrsCfg.cretAt||0)){ fsrsCfg.cret=sf.cret; fsrsCfg.cretAt=sf.cretAt; buildEngine(); }
+      if(sf.focusAt!==undefined && (sf.focusAt||0) > (fsrsCfg.focusAt||0)){ fsrsCfg.focus=sf.focus||null; fsrsCfg.focusAt=sf.focusAt; _focusSel=null; }
       if(sf.xret!==undefined && (sf.xretAt||0) > (fsrsCfg.xretAt||0)){ fsrsCfg.xret=sf.xret; fsrsCfg.xretAt=sf.xretAt; }
       if(sf.fwAt!==undefined && (sf.fwAt||'') > (fsrsCfg.wAt||'')){ fsrsCfg.w=sf.fw||null; fsrsCfg.wAt=sf.fwAt||''; buildEngine(); }
       if(sf.rest && (sf.restAt||0) > (rest.at||0)){ rest.dow=sf.rest.dow; rest.days=sf.rest.days||[]; rest.at=sf.restAt; restReset(); }
@@ -8500,7 +8523,8 @@ function renderRetUI(){
   const cp=Math.round(curricRet()*100);
   const cr=$('cretRange'); if(cr) cr.value=cp;
   const cv=$('cretVal'); if(cv) cv.textContent=cp+'%';
-  const cl=$('cretLoad'); if(cl){ let n=0; for(const c of DATA){ const s0=state.cards[c.id]; if(s0&&s0.fsrs&&!s0.retired&&isCurric(c)) n++; } cl.textContent='교육과정 카드 '+n.toLocaleString()+'장 학습 중'; }
+  const cl=$('cretLoad'); if(cl){ let n=0, t=0; for(const c of DATA){ if(!isFocus(c)) continue; t++; const s0=state.cards[c.id]; if(s0&&s0.fsrs&&!s0.retired) n++; } cl.textContent='집중 암기 '+t.toLocaleString()+'장 · 학습 중 '+n.toLocaleString()+'장'; }
+  const fp=$('focusPickSub'); if(fp){ const f=focusSel(); fp.textContent=(fsrsCfg.focusAt?'':'기본 · ')+'단위 '+f.units.length+'개'+(f.mids.length?' · 중주제 '+f.mids.length+'개':''); }
   const xp=Math.round(examRet()*100);
   const xr=$('xretRange'); if(xr) xr.value=xp;
   const xv=$('xretVal'); if(xv) xv.textContent=xp+'%';
@@ -8598,6 +8622,20 @@ $('retRange').addEventListener('input', ()=>{ $('retVal').textContent=$('retRang
 $('retRange').addEventListener('change', ()=>{ setRetention(+$('retRange').value/100); });
 $('cretRange').addEventListener('input', ()=>{ $('cretVal').textContent=$('cretRange').value+'%'; });
 $('cretRange').addEventListener('change', ()=>{ setCurricRet(+$('cretRange').value/100); });
+function setFocus(sel){    // 집중 암기 대상 바꾸기 — 목표율 바꿀 때와 같은 삼종 세트(엔진은 그대로 · 배정만 바뀌므로 replayLog부터)
+  const before=dueTodayCount();
+  fsrsCfg.focus={units:(sel.units||[]).slice(), mids:(sel.mids||[]).slice()}; fsrsCfg.focusAt=Date.now(); _focusSel=null;
+  replayLog(); restReset(); lastRevIdx=null; firstRevIdx=null;
+  cacheState(); markDirty('sess');
+  const q=resyncQueues(); TRAJ=null; TRAJ_KEY='';
+  renderRetUI(); renderHome();
+  const after=dueTodayCount(); const f=focusSel();
+  toast('집중 암기 단위 '+f.units.length+'개'+(f.mids.length?' · 중주제 '+f.mids.length+'개':'')+' — 오늘 풀 것 '+before+' → '+after+'장'
+    + (q.add||q.del ? ` · 오늘 목록 ${q.add?`+${q.add}`:''}${q.add&&q.del?' ':''}${q.del?`−${q.del}`:''}` : ''));
+}
+$('focusPick').onclick=()=>{ const f=focusSel(); $('ovlSettings').classList.remove('show');
+  openUnitPick({title:'집중 암기 카드 고르기', desc:'고른 단위·중주제만 집중 암기 목표율('+Math.round(curricRet()*100)+'%)로 돌아가요', selected:{units:f.units, mids:f.mids},
+    onOk:(sel)=>{ setFocus(sel); $('btnSettings').click(); }}); };
 
 /* 개인 맞춤 파라미터 — 루틴이 내놓은 값이 **새것일 때만** 「적용」이 뜬다.
    🔴 자동 적용 금지: 누르는 순간 전 카드 due가 한 번에 옮겨진다. 되돌릴 길도 같이 준다. */

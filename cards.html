@@ -948,6 +948,9 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .ym-mark.q{background:var(--surface2);color:var(--ink2);}         /* ? */
 .ym-mark.pass{background:var(--good-dim);color:var(--good);}      /* ○ */
 .ym-mark.closed{background:var(--easy-dim);color:var(--easy);}    /* ▽ */
+.ym-mark.skip{background:var(--surface2);color:var(--ink2);opacity:.7;}   /* ⊘ 문항 제외 (09-18) */
+.ym-row.skip{opacity:.5;}
+.ym-row .ym-skip{min-height:34px;padding:0 10px;border-radius:9px;font-size:12px;font-weight:800;background:none;border:1.5px solid var(--line);color:var(--ink2);flex:0 0 auto;}
 .ym-bar{flex:0 0 auto;width:64px;height:8px;border-radius:99px;background:var(--sunken);overflow:hidden;}
 .ym-bar i{display:block;height:100%;background:var(--accent);border-radius:99px;}
 .ym-pct{flex:0 0 auto;width:42px;text-align:right;font-size:13px;font-weight:800;color:var(--ink2);font-variant-numeric:tabular-nums;}
@@ -10880,7 +10883,8 @@ function fixScopeKeys(){
          '▽'                      닫힘 (문항 · 재풀이 통과)  — closed=true · due 없음 · n 유지 · 로그에 남긴다(메타가 「몇 번에 닫혔나」를 센다)
          'x'                      또 틀림 (문항 · 재풀이)   — n+1 · due = 그날+7 · △였으면 ✓로
          'done'                   이 단위 풀었음 (단위)     — 초회 완료 날짜 · 그때 미표시 문항 전부에 '○'를 **실제 이벤트로** 같이 남긴다
-         'skip' / 'unskip'        이 단위 제외 / 제외 해제 (단위 · 09-16 동하 「제외도 있어야」) — 제외된 단위는 「다음 차례」·진도 분모에서 빠진다 · 문항 표시는 그대로
+         'skip' / 'unskip'        제외 / 제외 해제 — k가 **문항**이면(키에 /p<면>/ 가 있다) 그 문항: due·진도 분모·재풀이에서 빠진다(표시는 남는다 · 09-18 동하 「단위 제외가 아니라 문항 제외」)
+                                  k가 단위면 그 단위: 「다음 차례」·진도 분모에서 빠진다(09-16). 마지막 것이 이긴다.
          '-'                      표시 지움 (문항 · 순환의 「없음」)
          'u'                      되돌리기 — ref = 무르는 이벤트 id (파생에서 그 이벤트를 없는 셈 친다)
    사다리(§4): ✓ → due = 표시일 + 3일 · △ → +7일 · ? · ○ · - → due 없음 · x → +7일 · ▽ → 없음. due가 목요일이면 금요일로. 하루 경계 04시(dayKey).
@@ -10942,6 +10946,7 @@ function ymDueFrom(t, days){                   // t = ISO · 표시한 날(04시
    규칙 = ✓ 뒤 **같은 문항에 다음 표시가 120초 안에** 오면 그 ✓는 순환 중 스친 것 → 표시·due는 그대로 따라가되 n만 안 올린다.
    파생 규칙이라 yeonmun_derive.py 도 같이 고쳤다(YM_MISTAP_MS). 로그는 그대로(이벤트는 다 남는다 · 되돌리기도 여전히 이벤트). */
 const YM_MISTAP_MS=120000;
+const YM_ITEM_KEY=/\/p\d+\//;               // 문항 키 꼴 '1.국어/p1/01' (단위는 '1.국어/01')
 function ymMistaps(ev, undone){
   const lastByK={}, mis=new Set();
   for(const e of ev){ if(e.m==='u'||e.m==='done'||e.m==='skip'||e.m==='unskip'||undone.has(e.i)) continue;
@@ -10958,7 +10963,9 @@ function ymDerive(){
   for(const e of YM.ev){
     if(e.m==='u' || undone.has(e.i)) continue;
     if(e.m==='done'){ const u=units[e.k]||(units[e.k]={done:null,skip:null}); if(!u.done) u.done=dayKey(new Date(e.t)); continue; }
-    if(e.m==='skip'||e.m==='unskip'){ const u=units[e.k]||(units[e.k]={done:null,skip:null}); u.skip = e.m==='skip' ? dayKey(new Date(e.t)) : null; continue; }   // 마지막 것이 이긴다
+    if(e.m==='skip'||e.m==='unskip'){                                    // 마지막 것이 이긴다 · 문항 키(/p<면>/)와 단위 키를 가른다 — yeonmun_derive.py 와 동일
+      if(YM_ITEM_KEY.test(e.k)){ const it=items[e.k]||(items[e.k]={m:null, due:null, closed:false, n:0, at:null}); it.skip = e.m==='skip'; continue; }
+      const u=units[e.k]||(units[e.k]={done:null,skip:null}); u.skip = e.m==='skip' ? dayKey(new Date(e.t)) : null; continue; }
     const it=items[e.k]||(items[e.k]={m:null, due:null, closed:false, n:0, at:null});
     it.at=e.t;
     if(e.m==='▽'){ it.closed=true; it.due=null; continue; }
@@ -11065,7 +11072,7 @@ function ymReadiness(u){                        // {n, ok, pct} · 끄기·은�
 function ymItemsOf(u){ const m={}; for(const it of (YM.cat&&YM.cat.items)||[]) m[it.id]=it; return (u.items||[]).map(id=>m[id]).filter(Boolean); }
 function ymDueToday(){                          // due ≤ 오늘 · 안 닫힌 것
   const tk=todayKey(), out=[]; const byId={}; for(const it of (YM.cat&&YM.cat.items)||[]) byId[it.id]=it;
-  for(const k in YM.st.items){ const s=YM.st.items[k]; if(s.closed||!s.due||s.due>tk) continue; const it=byId[k]; if(it) out.push({it:it, s:s}); }
+  for(const k in YM.st.items){ const s=YM.st.items[k]; if(s.closed||s.skip||!s.due||s.due>tk) continue; const it=byId[k]; if(it) out.push({it:it, s:s}); }
   out.sort((a,b)=> a.s.due<b.s.due?-1: a.s.due>b.s.due?1: (a.it.subj+a.it.seq).localeCompare(b.it.subj+b.it.seq));
   return out;
 }
@@ -11074,8 +11081,9 @@ function ymProgress(){
   const units=(YM.cat&&YM.cat.units)||[], items=(YM.cat&&YM.cat.items)||[];
   let ud=0, id=0, re=0, un=0, itn=0;
   const skipped=new Set(); for(const u of units){ if(ymSkipped(u.id)){ skipped.add(u.id); continue; } un++; if(YM.st.units[u.id]&&YM.st.units[u.id].done) ud++; }
-  for(const it of items){ const s=YM.st.items[it.id]; if(!skipped.has(it.unit)){ itn++; if(s&&(s.m||s.closed)) id++; } if(s&&!s.closed&&s.due) re++; }
-  return {units:ud, unitsN:un, items:id, itemsN:itn, redo:re, skipped:skipped.size};
+  let isk=0;
+  for(const it of items){ const s=YM.st.items[it.id]; if(s&&s.skip){ isk++; continue; } if(!skipped.has(it.unit)){ itn++; if(s&&(s.m||s.closed)) id++; } if(s&&!s.closed&&s.due) re++; }
+  return {units:ud, unitsN:un, items:id, itemsN:itn, redo:re, skipped:skipped.size, itemsSkipped:isk};
 }
 
 
@@ -11100,6 +11108,7 @@ function ymLabel(u){                             // 1차 라벨 · 2차 라벨 (
 function ymUnitById(id){ return ((YM.cat&&YM.cat.units)||[]).find(u=>u.id===id)||null; }
 function ymMarkChip(s){                          // 현재 상태 → 칩 (클래스, 글자)
   if(!s) return ['', '·'];
+  if(s.skip) return ['skip','⊘'];
   if(s.closed) return ['closed','▽'];
   if(s.m==='✓') return ['ok', s.n>1 ? '✓'+s.n : '✓'];
   if(s.m==='△') return ['hard','△'];
@@ -11171,7 +11180,7 @@ function ymRenderToday(){
     return out; }).join('')+'</div>';
   // 3) 진도 한 줄
   const p=ymProgress(); const daysLeft=Math.max(1, dkDiff(YM_DEADLINE, todayKey())); const need=Math.ceil((p.unitsN-p.units)/daysLeft);
-  h+='<div class="ym-prog"><span>단위 <b>'+p.units+'</b>/'+p.unitsN+(p.skipped?' <small>(제외 '+p.skipped+')</small>':'')+'</span><span>문항 <b>'+p.items+'</b>/'+p.itemsN+'</span>'
+  h+='<div class="ym-prog"><span>단위 <b>'+p.units+'</b>/'+p.unitsN+(p.skipped?' <small>(제외 '+p.skipped+')</small>':'')+'</span><span>문항 <b>'+p.items+'</b>/'+p.itemsN+(p.itemsSkipped?' <small>(제외 '+p.itemsSkipped+')</small>':'')+'</span>'
     +'<span>'+YM_DEADLINE.slice(5).replace('-','/')+'까지 하루 <b>'+need+'</b>단위</span><span>재풀이 잔여 <b>'+p.redo+'</b></span></div>';
   body.innerHTML=h;
   body.querySelectorAll('[data-ym-close]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); ymEvent(b.dataset.ymClose,'▽'); toast('닫았어요'); ymRenderToday(); });
@@ -11200,11 +11209,16 @@ function ymRenderUnit(id){
   let h='<div class="ym-prog" style="padding-top:0"><span>'+esc(l2)+'</span><span>문항 <b>'+its.length+'</b></span><span>면 '+esc(u.pages||'')+'</span>'
     +'<span>준비도 <b>'+(r.pct==null?'—':r.pct+'%')+'</b>'+(r.n?' <small>(카드 '+r.n+')</small>':'')+'</span>'+(done?'<span>풀었음 <b>'+done.slice(5)+'</b></span>':'')+(skip?'<span>제외 <b>'+YM.st.units[u.id].skip.slice(5)+'</b></span>':'')+'</div>';
   h+='<div class="ym-sec">문항 <small>줄을 탭하면 없음 → ✓ → △ → ? 순으로 바뀌어요'+(done?' (풀었음 뒤에는 ○로 돌아와요)':'')+'</small></div>';
-  h+='<div class="ym-list">'+its.map(it=>{ const s=YM.st.items[it.id]; const [cls,txt]=ymMarkChip(s);
-    return '<div class="ym-row" data-ym-tap="'+esc(it.id)+'"><span class="ym-mark '+cls+'">'+esc(txt)+'</span><div class="t"><b>'+esc(it.no)+'번</b><small>문제 p'+it.q+' · 해설 p'+it.a+(s&&s.due&&!s.closed?' · 다시 '+s.due.slice(5).replace('-','/'):'')+'</small></div></div>'; }).join('')+'</div>';
+  h+='<div class="ym-list">'+its.map(it=>{ const s=YM.st.items[it.id]; const [cls,txt]=ymMarkChip(s); const sk=!!(s&&s.skip);
+    return '<div class="ym-row'+(sk?' skip':'')+'" data-ym-tap="'+esc(it.id)+'"><span class="ym-mark '+cls+'">'+esc(txt)+'</span><div class="t"><b>'+esc(it.no)+'번</b><small>'+(sk?'제외 · ':'')+'문제 p'+it.q+' · 해설 p'+it.a+(s&&s.due&&!s.closed&&!sk?' · 다시 '+s.due.slice(5).replace('-','/'):'')+'</small></div>'
+      +'<button class="ym-skip" data-ym-skip="'+esc(it.id)+'">'+(sk?'해제':'제외')+'</button></div>'; }).join('')+'</div>';
   h+='<div class="ym-foot"><button class="ym-btn ghost" id="ymUndoBtn">되돌리기</button><button class="ym-btn ghost" id="ymSkipBtn">'+(skip?'제외 해제':'제외')+'</button><button class="ym-btn primary" id="ymDoneBtn"'+(done?' disabled':'')+'>'+(done?'풀었음 '+done.slice(5):'이 단위 풀었음')+'</button></div>';
   body.innerHTML=h;
-  body.querySelectorAll('[data-ym-tap]').forEach(row=>row.onclick=()=>{ const it=its.find(x=>x.id===row.dataset.ymTap); if(it){ ymCycle(it); ymRenderUnit(id); } });
+  body.querySelectorAll('[data-ym-tap]').forEach(row=>row.onclick=()=>{ const it=its.find(x=>x.id===row.dataset.ymTap); if(!it) return;
+    const s=YM.st.items[it.id]; if(s&&s.skip){ toast('제외된 문항 — 「해제」를 누르면 다시 셈'); return; } ymCycle(it); ymRenderUnit(id); });
+  /* 문항 「제외」(동하 09-18 「단위 제외가 아니라 문항 제외」) — 이 문항은 안 푼다: 오늘 다시 풀 목록·진도 분모·재풀이 잔여에서 빠진다. 표시(✓△…)는 남고, 해제하면 그대로 돌아온다. */
+  body.querySelectorAll('[data-ym-skip]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); const k=b.dataset.ymSkip; const s=YM.st.items[k]; const sk=!!(s&&s.skip);
+    ymEvent(k, sk?'unskip':'skip'); toast(sk?'제외를 풀었어요':'이 문항을 제외했어요'); ymRenderUnit(id); });
   $('ymUndoBtn').onclick=()=>{ if(ymUndoLast()){ toast('되돌렸어요'); ymRenderUnit(id); } else toast('되돌릴 것이 없어요'); };
   /* 「제외」(동하 09-16) = 이 단위는 안 푼다 — 다음 차례·진도 분모에서 빠진다. 문항 표시·재풀이 due는 안 건드린다. 해제도 이벤트(마지막 것이 이긴다). */
   $('ymSkipBtn').onclick=()=>{ ymEvent(u.id, skip?'unskip':'skip'); toast(skip?'제외를 풀었어요':'제외했어요 — 다음 차례에서 빠져요'); ymRenderUnit(id); };
@@ -11212,7 +11226,7 @@ function ymRenderUnit(id){
     if(done) return;
     /* 「이 단위 풀었음」 = 초회 완료 날짜 + 그때 표시 없는 문항 전부에 ○를 **실제 이벤트로** 저장(§3-2 · 해석 규칙이 아니라 데이터) */
     ymEvent(u.id,'done');
-    let n=0; for(const it of its){ const s=YM.st.items[it.id]; if(!s||(!s.m&&!s.closed)){ ymEvent(it.id,'○'); n++; } }
+    let n=0; for(const it of its){ const s=YM.st.items[it.id]; if(s&&s.skip) continue; if(!s||(!s.m&&!s.closed)){ ymEvent(it.id,'○'); n++; } }
     toast('풀었음 — 표시 없던 '+n+'문항에 ○'); _ymReady=null; ymRenderUnit(id);
   };
 }

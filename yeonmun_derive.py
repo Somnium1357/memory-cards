@@ -5,14 +5,15 @@
 등가성 검사 = app_tools 헤드리스에서 같은 이벤트로 JS 파생값을 뽑아 이 모듈 출력과 대조했다(2026-09-09 · 커밋 본문).
 
 파일  {v:1, ev:[{i,t,k,m,ref?}]}   i 이벤트 id · t ISO(UTC 'Z' 또는 오프셋) · k 문항키('과목/p<문제면>/<인쇄번호>') 또는 단위키('과목/NN') · m 아래
-m     ✓ △ ? ○ -   표시(문항 · '-' = 지움)     ▽ 닫힘     x 또 틀림     done 단위 풀었음(단위키)     skip/unskip 단위 제외/해제(단위키 · 09-16)     u 되돌리기(ref = 무르는 이벤트 id)
+m     ✓ △ ? ○ -   표시(문항 · '-' = 지움)     ▽ 닫힘     x 또 틀림     done 단위 풀었음(단위키)     skip/unskip 제외/해제(문항키 '…/p<면>/…' 면 문항 · 아니면 단위 · 09-16/18)     u 되돌리기(ref = 무르는 이벤트 id)
 사다리 ✓ → due = 표시일+3 · n+1 / △ → +7 / x → n+1 · +7 · 표시 ✓ / ? ○ - → due 없음 / ▽ → closed · due 없음 · n 유지
       due가 목요일이면 금요일 · 하루 경계 04시(KST) · 날짜 키 'YYYY-MM-DD'
 
 사용  python yeonmun_derive.py cards-yeonmun.json [--today YYYY-MM-DD]   → 오늘 due 문항과 상태를 JSON으로 찍는다
-      import yeonmun_derive as yd; st = yd.derive(events); due = yd.due_today(st, today)
+      import re
+import yeonmun_derive as yd; st = yd.derive(events); due = yd.due_today(st, today)
 """
-import sys, json, io, datetime
+import sys, json, io, datetime, re
 
 KST = datetime.timezone(datetime.timedelta(hours=9))
 DAY_CUT = 4                       # 앱 DAY_CUT — 04시 경계
@@ -52,8 +53,10 @@ def _ts(iso):
     import datetime as _dt
     return _dt.datetime.fromisoformat(iso.replace("Z", "+00:00")).timestamp() * 1000
 
+ITEM_KEY = re.compile(r"/p\d+/")   # 문항 키 꼴 '1.국어/p1/01' (단위는 '1.국어/01') — 앱 YM_ITEM_KEY 와 동일
+
 def derive(events):
-    """→ {'items': {key: {m, due, closed, n, at}}, 'units': {key: {done, skip}}}  (앱 ymDerive와 동일)"""
+    """→ {'items': {key: {m, due, closed, n, at}}, 'units': {key: {done, skip}}}  (앱 ymDerive와 동일 · items[k].skip = 문항 제외)"""
     ev = sorted([e for e in events if e and e.get("i") and e.get("t") and e.get("k") and e.get("m")], key=sort_key)
     undone = {e["ref"] for e in ev if e["m"] == "u" and e.get("ref")}
     # 오탭 ✓ (앱 ymMistaps · 09-15): ✓ 뒤 같은 문항의 다음 표시가 120초 안이면 그 ✓는 n에 안 센다
@@ -74,7 +77,11 @@ def derive(events):
             if not u["done"]:
                 u["done"] = day_key(e["t"])
             continue
-        if e["m"] in ("skip", "unskip"):   # 제외/해제 — 마지막 것이 이긴다 (앱 ymDerive와 동일)
+        if e["m"] in ("skip", "unskip"):   # 제외/해제 — 마지막 것이 이긴다 (앱 ymDerive와 동일 · 문항 키는 /p<면>/ 로 가른다)
+            if ITEM_KEY.search(e["k"]):
+                it = items.setdefault(e["k"], {"m": None, "due": None, "closed": False, "n": 0, "at": None})
+                it["skip"] = e["m"] == "skip"
+                continue
             u = units.setdefault(e["k"], {"done": None, "skip": None})
             u["skip"] = day_key(e["t"]) if e["m"] == "skip" else None
             continue

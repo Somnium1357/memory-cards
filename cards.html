@@ -6279,9 +6279,12 @@ function todayRatings(){          // 카드 → 오늘 마지막 채점 등급
    「무엇을 분류로 보여줄 것인가」뿐이고, 카드 데이터·문법은 안 건드린다. */
 function scopeOf(c){
   const p=(c.node||'').split('/').filter(Boolean);
-  if(p.length>=2) return p[0]+' · '+p[1];
-  const m=(c.front||'').match(/^〔([^〕]*)〕/);   // node가 얕으면(현재 0장) 옛 방식으로 떨어진다
-  return m?m[1]:(c.subj||'');
+  const m=(c.front||'').match(/^〔([^〕]*)〕/);
+  if(p.length>=2){ const s2=p[0]+' · '+p[1];
+    /* 🔴 front 접두가 node 2단보다 **길면 접두가 정본**(동하 결정 09-17 ④ 헤더 = 절 좌표 · QC 880a7500 교육과정 갈래 확장 · 메타 09-19 「7.체육 · 2022 개정 교육과정」만 뜸).
+       접두가 없거나 모자란 카드(08-30 189장 케이스)는 그대로 node 2단이 채운다. */
+    return (m && m[1].startsWith(s2) && m[1].length>s2.length) ? m[1] : s2; }
+  return m?m[1]:(c.subj||'');   // node가 얕으면 옛 방식
 }
 function settledToday(c){         // 오늘 처리 끝난 카드 = 오늘 한 번이라도 채점됐다
   /* 2026-08-21 이전에는 「마지막 채점이 다시가 아님」이었다. 「다시」를 누르면 그날 10장 뒤에

@@ -5,7 +5,7 @@
 등가성 검사 = app_tools 헤드리스에서 같은 이벤트로 JS 파생값을 뽑아 이 모듈 출력과 대조했다(2026-09-09 · 커밋 본문).
 
 파일  {v:1, ev:[{i,t,k,m,ref?}]}   i 이벤트 id · t ISO(UTC 'Z' 또는 오프셋) · k 문항키('과목/p<문제면>/<인쇄번호>') 또는 단위키('과목/NN') · m 아래
-m     ✓ △ ? ○ -   표시(문항 · '-' = 지움)     ▽ 닫힘     x 또 틀림     done 단위 풀었음(단위키)     skip/unskip 제외/해제(문항키 '…/p<면>/…' 면 문항 · 아니면 단위 · 09-16/18)     u 되돌리기(ref = 무르는 이벤트 id)
+m     ✓ △ ? ○ -   표시(문항 · '-' = 지움)     ▽ 닫힘     x 또 틀림     done 단위 풀었음(단위키)     skip/unskip 제외/해제(키 세그먼트 3개면 문항 · 2개면 단위 · 09-16/18/19)     u 되돌리기(ref = 무르는 이벤트 id)
 사다리 ✓ → due = 표시일+3 · n+1 / △ → +7 / x → n+1 · +7 · 표시 ✓ / ? ○ - → due 없음 / ▽ → closed · due 없음 · n 유지
       due가 목요일이면 금요일 · 하루 경계 04시(KST) · 날짜 키 'YYYY-MM-DD'
 
@@ -53,7 +53,7 @@ def _ts(iso):
     import datetime as _dt
     return _dt.datetime.fromisoformat(iso.replace("Z", "+00:00")).timestamp() * 1000
 
-ITEM_KEY = re.compile(r"/p\d+/")   # 문항 키 꼴 '1.국어/p1/01' (단위는 '1.국어/01') — 앱 YM_ITEM_KEY 와 동일
+ITEM_KEY = re.compile(r"^[^/]+/[^/]+/[^/]+$")   # 문항 키 = 세그먼트 3개 '1.국어/p1/01' · '1.국어/중기뽀/07' (단위는 2개 '1.국어/01' · '1.국어/중기뽀-01') — 앱 YM_ITEM_KEY 와 동일 (09-19 중기뽀)
 
 def derive(events):
     """→ {'items': {key: {m, due, closed, n, at}}, 'units': {key: {done, skip}}}  (앱 ymDerive와 동일 · items[k].skip = 문항 제외)"""
@@ -77,7 +77,7 @@ def derive(events):
             if not u["done"]:
                 u["done"] = day_key(e["t"])
             continue
-        if e["m"] in ("skip", "unskip"):   # 제외/해제 — 마지막 것이 이긴다 (앱 ymDerive와 동일 · 문항 키는 /p<면>/ 로 가른다)
+        if e["m"] in ("skip", "unskip"):   # 제외/해제 — 마지막 것이 이긴다 (앱 ymDerive와 동일 · 문항 키는 세그먼트 3개로 가른다)
             if ITEM_KEY.search(e["k"]):
                 it = items.setdefault(e["k"], {"m": None, "due": None, "closed": False, "n": 0, "at": None})
                 it["skip"] = e["m"] == "skip"

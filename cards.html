@@ -950,6 +950,15 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .ym-mark.closed{background:var(--easy-dim);color:var(--easy);}    /* ▽ */
 .ym-mark.skip{background:var(--surface2);color:var(--ink2);opacity:.7;}   /* ⊘ 문항 제외 (09-18) */
 .ym-row.skip{opacity:.5;}
+.ym-subtog{min-height:34px;padding:0 10px;border-radius:9px;font-size:12px;font-weight:800;background:var(--sunken);color:var(--mute);flex:0 0 auto;}
+.ym-subtog.has{color:var(--accent);background:var(--accent-dim);}
+.ym-subtog.on{outline:1.5px solid var(--accent);}
+.ym-subs{display:flex;flex-direction:column;gap:6px;margin:-2px 0 6px 58px;padding:8px 10px;border-radius:12px;background:var(--sunken);}
+.ym-subrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.ym-sublab{font-size:13px;font-weight:800;color:var(--ink2);min-width:22px;}
+.ym-sublab.dim{color:var(--mute);font-weight:700;min-width:0;margin-left:4px;}
+.ym-mark.sm{min-width:38px;height:34px;font-size:14px;border-radius:10px;}
+.ym-subadd{min-height:34px;padding:0 10px;border-radius:9px;font-size:12px;font-weight:800;background:none;border:1.5px dashed var(--line);color:var(--mute);}
 .ym-row .ym-skip{min-height:34px;padding:0 10px;border-radius:9px;font-size:12px;font-weight:800;background:none;border:1.5px solid var(--line);color:var(--ink2);flex:0 0 auto;}
 .ym-bar{flex:0 0 auto;width:64px;height:8px;border-radius:99px;background:var(--sunken);overflow:hidden;}
 .ym-bar i{display:block;height:100%;background:var(--accent);border-radius:99px;}
@@ -10894,6 +10903,9 @@ function fixScopeKeys(){
          '▽'                      닫힘 (문항 · 재풀이 통과)  — closed=true · due 없음 · n 유지 · 로그에 남긴다(메타가 「몇 번에 닫혔나」를 센다)
          'x'                      또 틀림 (문항 · 재풀이)   — n+1 · due = 그날+7 · △였으면 ✓로
          'done'                   이 단위 풀었음 (단위)     — 초회 완료 날짜 · 그때 미표시 문항 전부에 '○'를 **실제 이벤트로** 같이 남긴다
+         (소문항 · 09-20)          k = `<문항키>.<n>`(소문항 · 라벨 1) 2)) · `<문항키>.<n>.<m>`(불릿 · 라벨 •) 에 ✓ △ ? ○ - 만 찍는다(연문\규칙.md · 동하 「2단」).
+                                  파생: 불릿 → 소문항 → 대문항으로 **최악**을 올린다(✓ > △ > ? > ○ · 상위에 직접 찍은 표시가 더 최근이면 그것) · 사다리(due)·▽·x·n 은 대문항 키에서만 —
+                                  올라온 표시가 대문항을 바꾸면 그 시각으로 due 를 다시 잡는다(✓ +3 · △ +7). 소문항 수 = 이벤트에 찍힌 최대 번호(카탈로그 무변 · 화면 ＋로 늘린다).
          'skip' / 'unskip'        제외 / 제외 해제 — k가 **문항**이면(세그먼트 3개 · /p<면>/ 또는 /중기뽀/) 그 문항: due·진도 분모·재풀이에서 빠진다(표시는 남는다 · 09-18 동하 「단위 제외가 아니라 문항 제외」)
                                   k가 단위면 그 단위: 「다음 차례」·진도 분모에서 빠진다(09-16). 마지막 것이 이긴다.
          '-'                      표시 지움 (문항 · 순환의 「없음」)
@@ -10966,13 +10978,26 @@ function ymMistaps(ev, undone){
     lastByK[e.k]=e; }
   return mis;
 }
+/* 소문항 키 분해 — '6.과학/p14/07.2.1' → {base:'6.과학/p14/07', n:2, b:1, depth:2}. 꼬리 토막(마지막 '/' 뒤)만 '.'로 가른다(과목 '6.과학'의 점은 무관). */
+function ymKeyParts(k){ const i=k.lastIndexOf('/'); const p=k.slice(i+1).split('.'); return {base:k.slice(0,i+1)+p[0], depth:p.length-1, n:+p[1]||0, b:+p[2]||0}; }
+const YM_RANK={'✓':3,'△':2,'?':1,'○':0};
+/* 한 층 접기: direct={m,t}|null · kids=[{m,t}] → {m,t}. 아이 중 최악(✓>△>?>○)이 올라오되, 직접 표시가 아이들의 마지막 표시보다 **더 최근**이면 직접 표시. 표시 지움(-)도 시각은 센다. */
+function ymFoldLevel(direct, kids){
+  let worst=null, kt=null; for(const c of kids){ if(!c) continue; if(!kt||c.t>kt) kt=c.t; if(c.m!=null && (worst==null||YM_RANK[c.m]>YM_RANK[worst])) worst=c.m; }
+  if(direct && direct.t && (!kt || direct.t>kt)) return {m:direct.m, t:direct.t, from:'direct'};
+  if(kt) return {m:worst, t:kt, from:'kids'};
+  return direct ? {m:direct.m, t:direct.t, from:'direct'} : null;
+}
 function ymDerive(){
   const undone=new Set();
   for(const e of YM.ev) if(e.m==='u' && e.ref) undone.add(e.ref);
   const mistap=ymMistaps(YM.ev, undone);
-  const items={}, units={};
+  const items={}, units={}, subs={};        // subs[base] = { '<key>': {m,t} } — 소문항·불릿의 마지막 표시(화면·접기용)
   for(const e of YM.ev){
     if(e.m==='u' || undone.has(e.i)) continue;
+    if(YM_ITEM_KEY.test(e.k)){ const kp=ymKeyParts(e.k);
+      if(kp.depth>0){ if(['✓','△','?','○','-'].indexOf(e.m)<0) continue;            // 소문항·불릿엔 표시만(▽·x·skip 없음)
+        (subs[kp.base]||(subs[kp.base]={}))[e.k]={m:e.m==='-'?null:e.m, t:e.t}; continue; } }
     if(e.m==='done'){ const u=units[e.k]||(units[e.k]={done:null,skip:null}); if(!u.done) u.done=dayKey(new Date(e.t)); continue; }
     if(e.m==='skip'||e.m==='unskip'){                                    // 마지막 것이 이긴다 · 문항 키(/p<면>/)와 단위 키를 가른다 — yeonmun_derive.py 와 동일
       if(YM_ITEM_KEY.test(e.k)){ const it=items[e.k]||(items[e.k]={m:null, due:null, closed:false, n:0, at:null}); it.skip = e.m==='skip'; continue; }
@@ -10987,7 +11012,15 @@ function ymDerive(){
     else if(e.m==='△'){ it.due=ymDueFrom(e.t,7); }
     else it.due=null;                          // ? · ○ · -
   }
-  YM.st={items:items, units:units};
+  /* 소문항 → 대문항 접기(09-20 · yeonmun_derive.py fold_subs 와 동일). 올라온 표시가 대문항 표시를 갈아치우면 due 도 그 시각으로(✓ +3 · △ +7 · 그 밖 없음) · 닫힘은 풀린다 · n 은 안 센다. */
+  for(const base in subs){
+    const it=items[base]||(items[base]={m:null, due:null, closed:false, n:0, at:null});
+    const byN={}; for(const k in subs[base]){ const kp=ymKeyParts(k); const g=byN[kp.n]||(byN[kp.n]={direct:null, bullets:[]}); if(kp.depth===1) g.direct=subs[base][k]; else g.bullets.push(subs[base][k]); }
+    const folded=[]; for(const n in byN){ const f=ymFoldLevel(byN[n].direct, byN[n].bullets); if(f) folded.push(f); }
+    const top=ymFoldLevel(it.at?{m:it.m,t:it.at}:null, folded);
+    if(top && top.from==='kids'){ it.m=top.m; it.at=top.t; it.closed=false; it.due = top.m==='✓' ? ymDueFrom(top.t,3) : top.m==='△' ? ymDueFrom(top.t,7) : null; }
+  }
+  YM.st={items:items, units:units, subs:subs};
   return YM.st;
 }
 /* ── 이벤트 남기기 (화면이 부르는 유일한 창구) ─────────────────────────────────── */
@@ -11183,7 +11216,8 @@ function ymRenderToday(){
       return '<div class="ym-row" data-ym-item="'+esc(it.id)+'">'
         +'<span class="ym-mark '+cls+'">'+esc(txt)+'</span>'
         +'<div class="t"><b>'+esc(src+ymSubj(it.subj))+' '+esc(it.no)+'번</b><small>'+esc(u?ymLabel(u)[0]:it.unit)+' · '+ymWhere(it)+(s.due<tk?' · '+dkDiff(tk,s.due)+'일 지남':'')+'</small></div>'
-        +'<div class="ym-btns"><button class="ym-btn close" data-ym-close="'+esc(it.id)+'">▽ 닫힘</button><button class="ym-btn again" data-ym-x="'+esc(it.id)+'">또 틀림</button></div></div>'; }).join('')+'</div>';
+        +'<div class="ym-btns">'+ymSubToggleBtn(it.id)+'<button class="ym-btn close" data-ym-close="'+esc(it.id)+'">▽ 닫힘</button><button class="ym-btn again" data-ym-x="'+esc(it.id)+'">또 틀림</button></div></div>'
+        +(_ymSubOpen.has(it.id)?ymSubPanel(it.id):''); }).join('')+'</div>';
     else h+='<div class="ym-empty">오늘 다시 풀 문항이 없어요</div>';
     h+='</div>';
   }
@@ -11230,6 +11264,8 @@ function ymRenderToday(){
   const tog=(key)=>{ ymFoldToggle(key); const y=body.parentElement.scrollTop; ymRenderToday(); body.parentElement.scrollTop=y; };   // 펼쳐도 보던 자리를 지킨다
   body.querySelectorAll('[data-ym-fold]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); tog(b.dataset.ymFold); });
   body.querySelectorAll('[data-ym-fold-row]').forEach(r=>r.onclick=()=>tog(r.dataset.ymFoldRow));
+  ymBindSubs(body, ()=>{ const y=body.parentElement.scrollTop; ymRenderToday(); body.parentElement.scrollTop=y; });
+  body.querySelectorAll('.ym-subs').forEach(p=>p.onclick=ev=>ev.stopPropagation());
 }
 /* ── 단위 화면 ───────────────────────────────────────────────────────────────── */
 let _ymUnit=null;
@@ -11240,6 +11276,34 @@ function ymCycle(it){                             // 탭 순환: 없음→✓→
   const next = m==null||m==='-'||m==='○'||m==='▽' ? '✓' : m==='✓' ? '△' : m==='△' ? '?' : base;
   ymEvent(it.id, next);
 }
+/* ── 소문항 판 (09-20 · 동하 ⓑ 두 단) — 문항 행 아래에 「1) 2) …」 칩, 각 소문항 뒤에 「㉠ ㉡ …」 불릿 칩 · ＋로 늘린다.
+   수 = 이벤트에 찍힌 최대 번호(＋로 늘린 빈 칸은 이 화면에서만 · 저장 없음). 기본 접힘 · 펼침 상태는 세션 안에서만(_ymSubOpen). */
+const _ymSubOpen=new Set(), _ymSubExtra={};      // _ymSubExtra[key] = ＋로 늘린 임시 개수
+// 불릿 라벨은 그냥 • (동하 09-20 「꼭 ㄱㄴ는 아니라 · 그냥 불릿만」)
+function ymSubMax(base, n){ const m=YM.st.subs&&YM.st.subs[base]||{}; let mx=0; for(const k in m){ const kp=ymKeyParts(k); if(n==null){ if(kp.n>mx) mx=kp.n; } else if(kp.n===n && kp.depth===2 && kp.b>mx) mx=kp.b; } return mx; }
+function ymSubHas(base){ const m=YM.st.subs&&YM.st.subs[base]; return !!(m&&Object.keys(m).length); }
+function ymSubCycle(key){ const m=YM.st.subs; const cur=m&&m[ymKeyParts(key).base]&&m[ymKeyParts(key).base][key]; const c=cur?cur.m:null;
+  ymEvent(key, c==null||c==='○' ? '✓' : c==='✓' ? '△' : c==='△' ? '?' : '-'); }
+function ymSubPanel(base){                       // HTML — 소문항 줄들
+  const m=YM.st.subs&&YM.st.subs[base]||{};
+  const nSub=Math.max(ymSubMax(base,null), _ymSubExtra[base]||0, 2);
+  let h='<div class="ym-subs">';
+  for(let n=1;n<=nSub;n++){ const sk=base+'.'+n; const st=m[sk]; const [cls,txt]=ymMarkChip(st?{m:st.m}:null);
+    const nb=Math.max(ymSubMax(base,n), _ymSubExtra[sk]||0);
+    h+='<div class="ym-subrow"><span class="ym-sublab">'+n+')</span><button class="ym-mark sm '+cls+'" data-ym-sub="'+esc(sk)+'">'+esc(txt)+'</button>';
+    for(let b=1;b<=nb;b++){ const bk=sk+'.'+b; const bs=m[bk]; const [c2,t2]=ymMarkChip(bs?{m:bs.m}:null);
+      h+='<span class="ym-sublab dim">•</span><button class="ym-mark sm '+c2+'" data-ym-sub="'+esc(bk)+'">'+esc(t2)+'</button>'; }
+    h+='<button class="ym-subadd" data-ym-subadd="'+esc(sk)+'" title="불릿 추가">'+(nb?'＋':'＋ 불릿')+'</button></div>'; }
+  h+='<div class="ym-subrow"><button class="ym-subadd" data-ym-subadd="'+esc(base)+'">＋ 소문항</button></div></div>';
+  return h;
+}
+function ymBindSubs(body, rerender){
+  body.querySelectorAll('[data-ym-sub]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); ymSubCycle(b.dataset.ymSub); rerender(); });
+  body.querySelectorAll('[data-ym-subadd]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); const k=b.dataset.ymSubadd; const kp=ymKeyParts(k);
+    const cur=Math.max(kp.depth===0?ymSubMax(k,null):ymSubMax(kp.base,kp.n), _ymSubExtra[k]||0, kp.depth===0?2:0); _ymSubExtra[k]=cur+1; rerender(); });
+  body.querySelectorAll('[data-ym-subtog]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); const k=b.dataset.ymSubtog; _ymSubOpen.has(k)?_ymSubOpen.delete(k):_ymSubOpen.add(k); rerender(); });
+}
+function ymSubToggleBtn(key){ const has=ymSubHas(key); return '<button class="ym-subtog'+(_ymSubOpen.has(key)?' on':'')+(has?' has':'')+'" data-ym-subtog="'+esc(key)+'" title="소문항">'+(has?'소문항 '+ymSubMax(key,null):'소문항')+'</button>'; }
 function ymRenderUnit(id){
   const u=ymUnitById(id); const body=$('ymUnitBody'); if(!u){ body.innerHTML=''; return; }
   const [l1,l2]=ymLabel(u); const r=ymReady(u); const done=YM.st.units[u.id]&&YM.st.units[u.id].done, skip=ymSkipped(u.id);
@@ -11250,14 +11314,17 @@ function ymRenderUnit(id){
   h+='<div class="ym-sec">문항 <small>줄을 탭하면 없음 → ✓ → △ → ? 순으로 바뀌어요'+(done?' (풀었음 뒤에는 ○로 돌아와요)':'')+'</small></div>';
   h+='<div class="ym-list">'+its.map(it=>{ const s=YM.st.items[it.id]; const [cls,txt]=ymMarkChip(s); const sk=!!(s&&s.skip);
     return '<div class="ym-row'+(sk?' skip':'')+'" data-ym-tap="'+esc(it.id)+'"><span class="ym-mark '+cls+'">'+esc(txt)+'</span><div class="t"><b>'+esc(it.no)+'번</b><small>'+(sk?'제외 · ':'')+ymWhere(it)+(s&&s.due&&!s.closed&&!sk?' · 다시 '+s.due.slice(5).replace('-','/'):'')+'</small></div>'
-      +'<button class="ym-skip" data-ym-skip="'+esc(it.id)+'">'+(sk?'해제':'제외')+'</button></div>'; }).join('')+'</div>';
+      +(sk?'':ymSubToggleBtn(it.id))+'<button class="ym-skip" data-ym-skip="'+esc(it.id)+'">'+(sk?'해제':'제외')+'</button></div>'
+      +(!sk&&_ymSubOpen.has(it.id)?ymSubPanel(it.id):''); }).join('')+'</div>';
   h+='<div class="ym-foot"><button class="ym-btn ghost" id="ymUndoBtn">되돌리기</button><button class="ym-btn ghost" id="ymSkipBtn">'+(skip?'제외 해제':'제외')+'</button><button class="ym-btn primary" id="ymDoneBtn"'+(done?' disabled':'')+'>'+(done?'풀었음 '+done.slice(5):'이 단위 풀었음')+'</button></div>';
   body.innerHTML=h;
+  body.querySelectorAll('.ym-subs').forEach(p=>p.onclick=ev=>ev.stopPropagation());
   body.querySelectorAll('[data-ym-tap]').forEach(row=>row.onclick=()=>{ const it=its.find(x=>x.id===row.dataset.ymTap); if(!it) return;
     const s=YM.st.items[it.id]; if(s&&s.skip){ toast('제외된 문항 — 「해제」를 누르면 다시 셈'); return; } ymCycle(it); ymRenderUnit(id); });
   /* 문항 「제외」(동하 09-18 「단위 제외가 아니라 문항 제외」) — 이 문항은 안 푼다: 오늘 다시 풀 목록·진도 분모·재풀이 잔여에서 빠진다. 표시(✓△…)는 남고, 해제하면 그대로 돌아온다. */
   body.querySelectorAll('[data-ym-skip]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); const k=b.dataset.ymSkip; const s=YM.st.items[k]; const sk=!!(s&&s.skip);
     ymEvent(k, sk?'unskip':'skip'); toast(sk?'제외를 풀었어요':'이 문항을 제외했어요'); ymRenderUnit(id); });
+  ymBindSubs(body, ()=>ymRenderUnit(id));
   $('ymUndoBtn').onclick=()=>{ if(ymUndoLast()){ toast('되돌렸어요'); ymRenderUnit(id); } else toast('되돌릴 것이 없어요'); };
   /* 「제외」(동하 09-16) = 이 단위는 안 푼다 — 다음 차례·진도 분모에서 빠진다. 문항 표시·재풀이 due는 안 건드린다. 해제도 이벤트(마지막 것이 이긴다). */
   $('ymSkipBtn').onclick=()=>{ ymEvent(u.id, skip?'unskip':'skip'); toast(skip?'제외를 풀었어요':'제외했어요 — 다음 차례에서 빠져요'); ymRenderUnit(id); };

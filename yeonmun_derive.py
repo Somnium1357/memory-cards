@@ -55,6 +55,30 @@ def _ts(iso):
 
 ITEM_KEY = re.compile(r"^[^/]+/[^/]+/[^/]+$")   # 문항 키 = 세그먼트 3개 '1.국어/p1/01' · '1.국어/중기뽀/07' (단위는 2개 '1.국어/01' · '1.국어/중기뽀-01') — 앱 YM_ITEM_KEY 와 동일 (09-19 중기뽀)
 
+RANK = {"✓": 3, "△": 2, "?": 1, "○": 0}
+SUB_MARKS = ("✓", "△", "?", "○", "-")
+
+def key_parts(k):
+    """'6.과학/p14/07.2.1' → (base '6.과학/p14/07', depth 2, n 2, b 1) — 꼬리 토막만 '.'로 가른다 (앱 ymKeyParts)"""
+    i = k.rfind("/"); p = k[i + 1:].split(".")
+    def num(x):
+        try: return int(x)
+        except ValueError: return 0
+    return k[:i + 1] + p[0], len(p) - 1, (num(p[1]) if len(p) > 1 else 0), (num(p[2]) if len(p) > 2 else 0)
+
+def fold_level(direct, kids):
+    """한 층 접기 (앱 ymFoldLevel): 아이 중 최악이 올라오되 직접 표시가 아이들 마지막 표시보다 더 최근이면 직접 표시."""
+    worst, kt = None, None
+    for c in kids:
+        if not c: continue
+        if kt is None or c["t"] > kt: kt = c["t"]
+        if c["m"] is not None and (worst is None or RANK[c["m"]] > RANK[worst]): worst = c["m"]
+    if direct and direct.get("t") and (kt is None or direct["t"] > kt):
+        return {"m": direct["m"], "t": direct["t"], "from": "direct"}
+    if kt is not None:
+        return {"m": worst, "t": kt, "from": "kids"}
+    return {"m": direct["m"], "t": direct["t"], "from": "direct"} if direct else None
+
 def derive(events):
     """→ {'items': {key: {m, due, closed, n, at}}, 'units': {key: {done, skip}}}  (앱 ymDerive와 동일 · items[k].skip = 문항 제외)"""
     ev = sorted([e for e in events if e and e.get("i") and e.get("t") and e.get("k") and e.get("m")], key=sort_key)
@@ -68,10 +92,16 @@ def derive(events):
         if p and p["m"] == "✓" and (_ts(e["t"]) - _ts(p["t"])) < YM_MISTAP_MS:
             mistap.add(p["i"])
         last_by_k[e["k"]] = e
-    items, units = {}, {}
+    items, units, subs = {}, {}, {}
     for e in ev:
         if e["m"] == "u" or e["i"] in undone:
             continue
+        if ITEM_KEY.search(e["k"]):
+            base, depth, _n, _b = key_parts(e["k"])
+            if depth > 0:                                   # 소문항·불릿(09-20) — 표시만 · 마지막 것
+                if e["m"] not in SUB_MARKS: continue
+                subs.setdefault(base, {})[e["k"]] = {"m": None if e["m"] == "-" else e["m"], "t": e["t"]}
+                continue
         if e["m"] == "done":
             u = units.setdefault(e["k"], {"done": None, "skip": None})
             if not u["done"]:
@@ -102,12 +132,26 @@ def derive(events):
             it["due"] = due_from(e["t"], 7)
         else:
             it["due"] = None
-    return {"items": items, "units": units}
+    # 소문항 → 대문항 접기 (앱 ymDerive 와 동일): 올라온 표시가 대문항을 바꾸면 due 도 그 시각으로 · 닫힘 풀림 · n 안 셈
+    for base, marks in subs.items():
+        it = items.setdefault(base, {"m": None, "due": None, "closed": False, "n": 0, "at": None})
+        by_n = {}
+        for k, v in marks.items():
+            _, depth, n, _b = key_parts(k)
+            g = by_n.setdefault(n, {"direct": None, "bullets": []})
+            if depth == 1: g["direct"] = v
+            else: g["bullets"].append(v)
+        folded = [f for f in (fold_level(g["direct"], g["bullets"]) for g in by_n.values()) if f]
+        top = fold_level({"m": it["m"], "t": it["at"]} if it["at"] else None, folded)
+        if top and top["from"] == "kids":
+            it["m"] = top["m"]; it["at"] = top["t"]; it["closed"] = False
+            it["due"] = due_from(top["t"], 3) if top["m"] == "✓" else due_from(top["t"], 7) if top["m"] == "△" else None
+    return {"items": items, "units": units, "subs": subs}
 
 def due_today(state, today=None):
     """오늘 다시 풀 문항 = due ≤ 오늘 · 안 닫힌 것 (앱 ymDueToday · 정렬은 due, 키)."""
     today = today or day_key(datetime.datetime.now(KST).isoformat())
-    out = [(k, s) for k, s in state["items"].items() if not s["closed"] and s["due"] and s["due"] <= today]
+    out = [(k, s) for k, s in state["items"].items() if not s["closed"] and not s.get("skip") and s["due"] and s["due"] <= today]
     out.sort(key=lambda x: (x[1]["due"], x[0]))
     return out
 

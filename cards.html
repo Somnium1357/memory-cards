@@ -11282,7 +11282,7 @@ function ymCycle(it){                             // 탭 순환: 없음→✓→
 /* ── 소문항 판 (09-20 · 동하 ⓑ 두 단) — 문항 행 아래에 「1) 2) …」 칩, 각 소문항 뒤에 「㉠ ㉡ …」 불릿 칩 · ＋로 늘린다.
    수 = 이벤트에 찍힌 최대 번호(＋로 늘린 빈 칸은 이 화면에서만 · 저장 없음). 기본 접힘 · 펼침 상태는 세션 안에서만(_ymSubOpen). */
 const _ymSubOpen=new Set(), _ymSubExtra={};      // _ymSubExtra[key] = ＋로 늘린 임시 개수
-const YM_SUB_N=3, YM_BUL_N=5;                    // 기본으로 깔아 두는 칸 — 소문항 3 · 불릿 5 (빈 칸은 저장 안 됨 · 표시만)
+const YM_SUB_N=2, YM_BUL_N=2;                    // 기본으로 깔아 두는 칸 — 소문항 2 · 불릿 2 (동하 09-20 「5개 너무 많아 · 2개씩」 · 빈 칸은 저장 안 됨 · 표시만) · ＋/− 로 늘리고 줄인다
 // 불릿 라벨은 그냥 • (동하 09-20 「꼭 ㄱㄴ는 아니라 · 그냥 불릿만」)
 function ymSubMax(base, n){ const m=YM.st.subs&&YM.st.subs[base]||{}; let mx=0; for(const k in m){ const kp=ymKeyParts(k); if(n==null){ if(kp.n>mx) mx=kp.n; } else if(kp.n===n && kp.depth===2 && kp.b>mx) mx=kp.b; } return mx; }
 function ymSubHas(base){ const m=YM.st.subs&&YM.st.subs[base]; return !!(m&&Object.keys(m).length); }
@@ -11300,14 +11300,16 @@ function ymSubPanel(base){                       // HTML — 소문항 줄: 「n
     h+='<div class="ym-subrow"><span class="ym-sublab">'+n+')</span><button class="ym-mark sm '+cls+'" data-ym-sub="'+esc(sk)+'">'+esc(txt)+'</button><span class="ym-sublab dim">•</span>';
     for(let b=1;b<=nb;b++){ const bk=sk+'.'+b; const bs=m[bk]; const [c2,t2]=ymMarkChip(bs&&bs.m?{m:bs.m}:null);
       h+='<button class="ym-mark sm bul '+(bs&&bs.m?c2:(done?'pass':''))+'" data-ym-sub="'+esc(bk)+'">'+(bs&&bs.m?esc(t2):b)+'</button>'; }
-    h+='<button class="ym-subadd" data-ym-subadd="'+esc(sk)+'" title="불릿 칸 더">＋</button></div>'; }
-  h+='<div class="ym-subrow"><button class="ym-subadd" data-ym-subadd="'+esc(base)+'">＋ 소문항</button></div></div>';
+    h+='<button class="ym-subadd" data-ym-subadd="'+esc(sk)+'" title="불릿 칸 더">＋</button>'+(nb>Math.max(ymSubMax(base,n),YM_BUL_N)?'<button class="ym-subadd" data-ym-subdel="'+esc(sk)+'" title="빈 불릿 칸 지우기">−</button>':'')+'</div>'; }
+  h+='<div class="ym-subrow"><button class="ym-subadd" data-ym-subadd="'+esc(base)+'">＋ 소문항</button>'+(nSub>Math.max(ymSubMax(base,null),YM_SUB_N)?'<button class="ym-subadd" data-ym-subdel="'+esc(base)+'">− 소문항</button>':'')+'</div></div>';
   return h;
 }
 function ymBindSubs(body, rerender){
   body.querySelectorAll('[data-ym-sub]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); ymSubCycle(b.dataset.ymSub); rerender(); });
   body.querySelectorAll('[data-ym-subadd]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); const k=b.dataset.ymSubadd; const kp=ymKeyParts(k);
     const cur=Math.max(kp.depth===0?ymSubMax(k,null):ymSubMax(kp.base,kp.n), _ymSubExtra[k]||0, kp.depth===0?YM_SUB_N:YM_BUL_N); _ymSubExtra[k]=cur+1; rerender(); });
+  body.querySelectorAll('[data-ym-subdel]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); const k=b.dataset.ymSubdel; const kp=ymKeyParts(k);   // 빈 꼬리 칸만 줄인다(표시 있는 칸·기본 칸 아래로는 안 내려감)
+    const floor=kp.depth===0?Math.max(ymSubMax(k,null),YM_SUB_N):Math.max(ymSubMax(kp.base,kp.n),YM_BUL_N); _ymSubExtra[k]=Math.max(floor,(_ymSubExtra[k]||floor+1)-1); rerender(); });
   body.querySelectorAll('[data-ym-subtog]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); const k=b.dataset.ymSubtog; _ymSubOpen.has(k)?_ymSubOpen.delete(k):_ymSubOpen.add(k); rerender(); });
 }
 function ymSubToggleBtn(key){ const has=ymSubHas(key); return '<button class="ym-subtog'+(_ymSubOpen.has(key)?' on':'')+(has?' has':'')+'" data-ym-subtog="'+esc(key)+'" title="소문항 채점 펼치기">'+(has?'소문항 '+ymSubMax(key,null):'소문항')+(_ymSubOpen.has(key)?' ▴':' ▾')+'</button>'; }

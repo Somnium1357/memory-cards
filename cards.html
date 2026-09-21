@@ -11241,6 +11241,8 @@ function ymRenderToday(){
         +'<div class="ym-btns">'+ymSubToggleBtn(it.id)+'<button class="ym-btn close" data-ym-close="'+esc(it.id)+'">▽ 닫힘</button><button class="ym-btn again" data-ym-x="'+esc(it.id)+'">또 틀림</button></div></div>'
         +(_ymSubOpen.has(it.id)?ymSubPanel(it.id):''); }).join('')+'</div>';
     else h+='<div class="ym-empty">오늘 다시 풀 문항이 없어요</div>';
+    /* 되돌리기 — 오늘 화면에서 ▽·또 틀림을 잘못 눌러도 무를 수 있게(동하 09-21 「잘못 누르면 되돌릴 수가 없음」). 단위 화면의 되돌리기와 같은 이벤트(u). */
+    h+='<div style="display:flex;justify-content:flex-end;margin-top:6px"><button class="ym-btn ghost" id="ymTodayUndo" style="min-height:38px;padding:0 12px;font-size:13px">되돌리기</button></div>';
     h+='</div>';
   }
 
@@ -11279,8 +11281,9 @@ function ymRenderToday(){
   h+='<div class="ym-prog"><span>단위 <b>'+p.units+'</b>/'+p.unitsN+(p.skipped?' <small>(제외 '+p.skipped+')</small>':'')+'</span><span>문항 <b>'+p.items+'</b>/'+p.itemsN+(p.itemsSkipped?' <small>(제외 '+p.itemsSkipped+')</small>':'')+'</span>'
     +'<span>'+YM_DEADLINE.slice(5).replace('-','/')+'까지 하루 <b>'+need+'</b>단위</span><span>재풀이 잔여 <b>'+p.redo+'</b></span></div>';
   body.innerHTML=h;
-  body.querySelectorAll('[data-ym-close]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); ymEvent(b.dataset.ymClose,'▽'); toast('닫았어요'); ymRenderToday(); });
-  body.querySelectorAll('[data-ym-x]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); ymEvent(b.dataset.ymX,'x'); toast('또 틀림 — 7일 뒤'); ymRenderToday(); });
+  body.querySelectorAll('[data-ym-close]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); ymEvent(b.dataset.ymClose,'▽'); toast('닫았어요 — 잘못 눌렀으면 되돌리기'); ymRenderToday(); });
+  body.querySelectorAll('[data-ym-x]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); ymEvent(b.dataset.ymX,'x'); toast('또 틀림 — 7일 뒤 · 잘못 눌렀으면 되돌리기'); ymRenderToday(); });
+  const ub=$('ymTodayUndo'); if(ub) ub.onclick=ev=>{ ev.stopPropagation(); if(ymUndoLast()){ toast('되돌렸어요'); ymRenderToday(); } else toast('되돌릴 것이 없어요'); };
   body.querySelectorAll('[data-ym-unit]').forEach(r=>r.onclick=()=>ymOpenUnit(r.dataset.ymUnit));
   body.querySelectorAll('[data-ym-item]').forEach(r=>r.onclick=()=>{ const it=YM.cat.items.find(x=>x.id===r.dataset.ymItem); if(it) ymOpenUnit(it.unit); });
   const tog=(key)=>{ ymFoldToggle(key); const y=body.parentElement.scrollTop; ymRenderToday(); body.parentElement.scrollTop=y; };   // 펼쳐도 보던 자리를 지킨다

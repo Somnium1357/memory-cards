@@ -8725,7 +8725,7 @@ function renderRestUI(){
   [...document.querySelectorAll('.rest-chip')].forEach(b=>b.onclick=()=>{
     if(b.dataset.d){ rest.days=rest.days.filter(x=>x!==b.dataset.d); toast('휴식일에서 뺐어요'); }
     else { rest.skip=(rest.skip||[]).filter(x=>x!==b.dataset.s); toast('예외를 지웠어요 — 다시 휴식일'); }
-    saveRest(); renderRestUI(); renderHome(); });
+    saveRest(); resyncQueues(); renderRestUI(); renderHome(); });
   const cost=restLoadCost();
   $('restList').insertAdjacentHTML('beforeend',
     `<p class="desc" style="margin-top:8px">이 설정이면 앞으로 4주, <b>푸는 날 하루 약 ${cost}장</b>이에요.</p>`);
@@ -8752,7 +8752,10 @@ $('restSkip').onclick=()=>{ const d=$('restDate').value; if(!d) return;
   rest.skip=[...(rest.skip||[]), d]; saveRest();
   /* 오늘을 공부일로 돌렸으면 자동 충전 세션이 오늘 큐를 다시 채우게 day를 비운다(휴식일 가드로 비워 둔 상태였다) */
   if(d===todayKey()){ for(const sx of sessions){ if(!isFixed(sx)) sx.day=''; } saveSessionsFlush(); }
-  renderRestUI(); renderHome(); toast(d+' 은 공부하는 날 — '+RDOW[rest.dow]+'요일 휴식 예외'); };
+  /* 🔴 일정 반영(동하 09-21 「휴식일 빼면 카드 일정에도 반영해 줘야지」) — 그 목요일 몫으로 앞 3일에 미리 나와 있던 카드는 실효 due가 도로 목요일로(effDueKey가 isRestDay를 보고 계산 · 캐시는 saveRest→restReset이 비움).
+     오늘 큐에 이미 담긴 그 카드들은 resyncQueues가 빼 주고, 그날이 오면 그날 몫으로 나온다. */
+  const q=resyncQueues();
+  renderRestUI(); renderHome(); toast(d+' 은 공부하는 날 — '+RDOW[rest.dow]+'요일 휴식 예외'+(q.add||q.del?` · 오늘 목록 ${q.add?`+${q.add}`:''}${q.add&&q.del?' ':''}${q.del?`−${q.del}`:''}`:'')); };
 $('restToday').onclick=()=>addRestDay(todayKey());
 $('setClose').onclick=()=>$('ovlSettings').classList.remove('show');
 $('ovlSettings').onclick=(e)=>{ if(e.target===$('ovlSettings'))$('ovlSettings').classList.remove('show'); };

@@ -11005,7 +11005,7 @@ function ymKeyParts(k){ const i=k.lastIndexOf('/'); const p=k.slice(i+1).split('
 const YM_RANK={'✓':3,'△':2,'?':1,'○':0};
 /* 한 층 접기: direct={m,t}|null · kids=[{m,t}] → {m,t}. 아이 중 최악(✓>△>?>○)이 올라오되, 직접 표시가 아이들의 마지막 표시보다 **더 최근**이면 직접 표시. 표시 지움(-)도 시각은 센다. */
 function ymFoldLevel(direct, kids){
-  let worst=null, kt=null; for(const c of kids){ if(!c) continue; if(!kt||c.t>kt) kt=c.t; if(c.m!=null && (worst==null||YM_RANK[c.m]>YM_RANK[worst])) worst=c.m; }
+  let worst=null, kt=null; for(const c of kids){ if(!c||c.m==null) continue; if(!kt||c.t>kt) kt=c.t; if(worst==null||YM_RANK[c.m]>YM_RANK[worst]) worst=c.m; }   // 🔴 표시 없는 아이(＋로 만든 빈 칸·지움)는 안 센다 — 세면 ✓ 대문항이 소문항 하나 만드는 순간 사라졌다(동하 09-21)
   if(direct && direct.t && (!kt || direct.t>kt)) return {m:direct.m, t:direct.t, from:'direct'};
   if(kt) return {m:worst, t:kt, from:'kids'};
   return direct ? {m:direct.m, t:direct.t, from:'direct'} : null;

@@ -70,9 +70,9 @@ def fold_level(direct, kids):
     """한 층 접기 (앱 ymFoldLevel): 아이 중 최악이 올라오되 직접 표시가 아이들 마지막 표시보다 더 최근이면 직접 표시."""
     worst, kt = None, None
     for c in kids:
-        if not c: continue
+        if not c or c["m"] is None: continue          # 표시 없는 아이(빈 칸·지움)는 안 센다 (앱 ymFoldLevel 과 동일 · 09-21)
         if kt is None or c["t"] > kt: kt = c["t"]
-        if c["m"] is not None and (worst is None or RANK[c["m"]] > RANK[worst]): worst = c["m"]
+        if worst is None or RANK[c["m"]] > RANK[worst]: worst = c["m"]
     if direct and direct.get("t") and (kt is None or direct["t"] > kt):
         return {"m": direct["m"], "t": direct["t"], "from": "direct"}
     if kt is not None:

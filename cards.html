@@ -7812,7 +7812,7 @@ function deadScopeKeys(){
      3층 키 집합은 같은 한 바퀴에서 만들 수 있다 — `subsOfMid`의 「쪼갤 게 없으면 빈 배열」 규칙(1개짜리는 제외)까지 그대로. */
   const live=new Set(), byMid={};
   for(const c of DATA){ const k=tagKey(c); live.add(k);
-    const m=(c.tags||[])[1]; if(!m) continue;
+    const m=(c.tags||[])[1]||'(기타)';          // 🔴 중주제 없는 카드도 「(기타)」 통(키 `단위||`)으로 살아 있다 — 피커가 고를 수 있는 키라 빼면 오탐(동하 09-21 「이거 머임」 · 체육 5~6 스포츠 1장)
     const mk=midKey(k,m); live.add(mk);
     (byMid[mk]||(byMid[mk]=new Set())).add(cardSubKey(c)); }
   for(const mk in byMid){ const set=byMid[mk]; if(set.size>1) for(const sk of set) live.add(sk); }

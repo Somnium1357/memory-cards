@@ -7181,7 +7181,7 @@ function rate(num){
   if(anyX && num!==1){ toast('빠뜨린 항목이 있어요 — 「다시」만 눌러요'); return; } // X 있으면 Again만
   if(hintUsed.size && num!==1 && hintLocks(c)){ toast('초성 힌트를 열었어요 — 「다시」만 눌러요'); return; } // 힌트 = 다시 (동하·메타 09-05 · 개념어는 예외)
   const firstToday = s.d!==tk;
-  undoSnap={ k:'rate', run:undoRun, id:c.id, card:c, entry:null, reIns:null,
+  undoSnap={ k:'rate', run:undoRun, id:c.id, card:c, entry:null, reIns:null, shownAt:shownAt, pausedMs:pausedMs,   // 되돌리면 처음 본 시각을 되살린다(아래 doUndo)
              prev:JSON.parse(JSON.stringify(state.cards[c.id]||null)),
              sid:curSess?curSess.id:null, phase, sessionDone, newServed,
              sess:{r:sess.r.slice(), ms:sess.ms, streak:sess.streak, best:sess.best, re:sess.re} };
@@ -7329,6 +7329,9 @@ function doUndo(){
   cacheState(); setDirty(true); updateUndo();
   if(!$('scrSolve').classList.contains('on')) go('scrSolve');  // 세션·홈에서 눌러도 그 카드로 돌아간다
   showCard();
+  /* 🔴 되돌린 채점을 다시 매길 때 **처음 카드를 본 시각부터** 센다(동하 09-21 「시간이 좀 적게 나온다」 실측 — 다시·어려움 카드마다 평균 4초가 빠졌다 =
+     되돌리기 뒤 showCard가 shownAt을 지금으로 갈아 첫 시도 시간이 버려진 몫). 같은 런의 그 카드일 때만. */
+  if(sn.k==='rate' && sameRun && sn.shownAt && cur() && cur().id===sn.id){ shownAt=sn.shownAt; pausedMs=sn.pausedMs||0; }
   syncSessQueue();                 // 되돌린 카드가 저장된 세션 큐에도 돌아오게
   toast(undoStack.length?`되돌렸어요 (${undoStack.length}단계 더)`:'되돌렸어요');
 }

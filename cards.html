@@ -11193,11 +11193,12 @@ function ymRenderCurrent(){
   else if($('scrYmUnit').classList.contains('on') && _ymUnit) ymRenderUnit(_ymUnit);
 }
 async function ymEnter(){
+  _ymSubOpen.clear();                        // 펼쳐 둔 소문항 판은 화면을 새로 들어올 때 접는다(오늘 목록의 고정 행도 그때 빠진다)
   if(!YM.loaded || !YM.cat){ $('ymTodayBody').innerHTML='<div class="ym-empty">문풀 카탈로그 여는 중…</div>'; go('scrYmToday'); await ymLoad(); }
   else go('scrYmToday');
   _ymReady=null; ymRenderToday();
 }
-function ymLeave(){ go('scrHome'); renderHome(); }
+function ymLeave(){ _ymSubOpen.clear(); go('scrHome'); renderHome(); }
 /* ── 오늘 ────────────────────────────────────────────────────────────────────── */
 /* ── 「오늘」 화면 = 세 층 접기 트리 (동하 09-19 확정 · 발주 §3 「오늘 블록 접을 수 있게 · 그 아래 연문/과목… · 중등기출/과목…」)
    ① 「오늘」 블록 — 재풀이 due 문항만(「다음 진도」 칸은 동하 09-19 「다음 진도는 빼줘」로 뺐다 · 다음 차례는 과목 행을 펼치면 ▶ 표시)
@@ -11230,14 +11231,18 @@ function ymRenderToday(){
   const foldBtn=(key)=>'<button class="ym-fold'+(ymFoldOpen(key)?' on':'')+'" data-ym-fold="'+esc(key)+'">▾</button>';
 
   // ① 오늘
-  const due=ymDueToday();
+  /* 🔴 소문항을 펼쳐 둔 행은 표시를 찍어 due가 오늘을 벗어나도 **이 화면에 있는 동안은 그대로 둔다**(동하 09-21 「소문항 채점 탭하자마자 사라져 버림」 — 나머지 소문항을 못 찍는다).
+     화면을 나가면(ymEnter·ymLeave가 _ymSubOpen을 비움) 다음 렌더에서 빠진다. */
+  const dueNow=ymDueToday(); const dueIds=new Set(dueNow.map(x=>x.it.id));
+  const pinned=[..._ymSubOpen].filter(k=>!dueIds.has(k)).map(k=>{ const it=YM.cat.items.find(x=>x.id===k); const st=YM.st.items[k]; return it&&st?{it:it, s:st}:null; }).filter(Boolean);
+  const due=dueNow.concat(pinned);
   h+='<div class="ym-tree-head" data-ym-fold-row="today"><b>오늘</b><small>다시 풀 문항 '+due.length+'</small>'+foldBtn('today')+'</div>';
   if(ymFoldOpen('today')){
     h+='<div class="ym-tree-body">';
     if(due.length) h+='<div class="ym-list">'+due.map(({it,s})=>{ const u=ymUnitById(it.unit); const [cls,txt]=ymMarkChip(s); const src=u&&u.kind==='paper'?'중등기출 ':'';
       return '<div class="ym-row" data-ym-item="'+esc(it.id)+'">'
         +'<span class="ym-mark '+cls+'">'+esc(txt)+'</span>'
-        +'<div class="t"><b>'+esc(src+ymSubj(it.subj))+' '+esc(it.no)+'번</b><small>'+esc(u?ymLabel(u)[0]:it.unit)+' · '+ymWhere(it)+(s.due<tk?' · '+dkDiff(tk,s.due)+'일 지남':'')+'</small></div>'
+        +'<div class="t"><b>'+esc(src+ymSubj(it.subj))+' '+esc(it.no)+'번</b><small>'+esc(u?ymLabel(u)[0]:it.unit)+' · '+ymWhere(it)+(s.due&&s.due<tk?' · '+dkDiff(tk,s.due)+'일 지남':'')+(s.due&&s.due>tk?' · 다시 '+s.due.slice(5).replace('-','/'):'')+(s.closed?' · 닫힘':'')+'</small></div>'
         +'<div class="ym-btns">'+ymSubToggleBtn(it.id)+'<button class="ym-btn close" data-ym-close="'+esc(it.id)+'">▽ 닫힘</button><button class="ym-btn again" data-ym-x="'+esc(it.id)+'">또 틀림</button></div></div>'
         +(_ymSubOpen.has(it.id)?ymSubPanel(it.id):''); }).join('')+'</div>';
     else h+='<div class="ym-empty">오늘 다시 풀 문항이 없어요</div>';

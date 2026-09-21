@@ -11193,12 +11193,12 @@ function ymRenderCurrent(){
   else if($('scrYmUnit').classList.contains('on') && _ymUnit) ymRenderUnit(_ymUnit);
 }
 async function ymEnter(){
-  _ymSubOpen.clear(); _ymRowPos.clear();     // 펼쳐 둔 소문항 판·행 자리는 화면을 새로 들어올 때 비운다(오늘 목록의 고정 행도 그때 빠진다)
+  _ymSubOpen.clear(); _ymRowPos.clear(); _ymTodayPin.clear();     // 펼쳐 둔 소문항 판·행 자리는 화면을 새로 들어올 때 비운다(오늘 목록의 고정 행도 그때 빠진다)
   if(!YM.loaded || !YM.cat){ $('ymTodayBody').innerHTML='<div class="ym-empty">문풀 카탈로그 여는 중…</div>'; go('scrYmToday'); await ymLoad(); }
   else go('scrYmToday');
   _ymReady=null; ymRenderToday();
 }
-function ymLeave(){ _ymSubOpen.clear(); _ymRowPos.clear(); go('scrHome'); renderHome(); }
+function ymLeave(){ _ymSubOpen.clear(); _ymRowPos.clear(); _ymTodayPin.clear(); go('scrHome'); renderHome(); }
 /* ── 오늘 ────────────────────────────────────────────────────────────────────── */
 /* ── 「오늘」 화면 = 세 층 접기 트리 (동하 09-19 확정 · 발주 §3 「오늘 블록 접을 수 있게 · 그 아래 연문/과목… · 중등기출/과목…」)
    ① 「오늘」 블록 — 재풀이 due 문항만(「다음 진도」 칸은 동하 09-19 「다음 진도는 빼줘」로 뺐다 · 다음 차례는 과목 행을 펼치면 ▶ 표시)
@@ -11234,7 +11234,8 @@ function ymRenderToday(){
   /* 🔴 소문항을 펼쳐 둔 행은 표시를 찍어 due가 오늘을 벗어나도 **이 화면에 있는 동안은 그대로 둔다**(동하 09-21 「소문항 채점 탭하자마자 사라져 버림」 — 나머지 소문항을 못 찍는다).
      화면을 나가면(ymEnter·ymLeave가 _ymSubOpen을 비움) 다음 렌더에서 빠진다. */
   const dueNow=ymDueToday(); const dueIds=new Set(dueNow.map(x=>x.it.id));
-  const pinned=[..._ymSubOpen].filter(k=>!dueIds.has(k)).map(k=>{ const it=YM.cat.items.find(x=>x.id===k); const st=YM.st.items[k]; return it&&st?{it:it, s:st}:null; }).filter(Boolean);
+  for(const id of dueIds) if(_ymSubOpen.has(id)) _ymTodayPin.add(id);   // 🔴 이 화면에서 due였던 채로 펼친 행만 고정한다 — 단위 화면에서 펼친 것(_ymSubOpen 공용)이 여기로 새면 오늘 채점한 문항이 「다시 풀 문항」에 떴다(동하 09-21)
+  const pinned=[..._ymTodayPin].filter(k=>!dueIds.has(k)).map(k=>{ const it=YM.cat.items.find(x=>x.id===k); const st=YM.st.items[k]; return it&&st?{it:it, s:st}:null; }).filter(Boolean);
   /* 자리 고정 — 한 번 그린 행은 이 화면에 있는 동안 같은 자리(동하 09-21 「탭하면 순서가 바뀜」). 처음 본 순서를 _ymRowPos에 적어 두고 그걸로 정렬한다. */
   const due=dueNow.concat(pinned); for(const x of due){ if(!_ymRowPos.has(x.it.id)) _ymRowPos.set(x.it.id, _ymRowPos.size); } due.sort((a,b)=>_ymRowPos.get(a.it.id)-_ymRowPos.get(b.it.id));
   h+='<div class="ym-tree-head" data-ym-fold-row="today"><b>오늘</b><small>다시 풀 문항 '+due.length+'</small>'+foldBtn('today')+'</div>';
@@ -11309,7 +11310,7 @@ function ymCycle(it){                             // 탭 순환: 없음→✓→
 }
 /* ── 소문항 판 (09-20 · 동하 ⓑ 두 단) — 문항 행 아래에 「1) 2) …」 칩, 각 소문항 뒤에 「㉠ ㉡ …」 불릿 칩 · ＋로 늘린다.
    수 = 이벤트에 찍힌 최대 번호(＋로 늘린 빈 칸은 이 화면에서만 · 저장 없음). 기본 접힘 · 펼침 상태는 세션 안에서만(_ymSubOpen). */
-const _ymSubOpen=new Set(), _ymRowPos=new Map();   // 펼친 문항 · 오늘 목록 행 자리(둘 다 화면에 있는 동안만)
+const _ymSubOpen=new Set(), _ymRowPos=new Map(), _ymTodayPin=new Set();   // 펼친 문항 · 오늘 목록 행 자리 · 오늘 목록 고정 행(셋 다 화면에 있는 동안만)
 /* 🔴 소문항·불릿은 **동하가 ＋로 추가한 것만** 있다 — 칸을 미리 깔지 않는다(동하 09-20 「루틴이 이거 보고 복습본 만들어야 되는데 소문항 개수가 꼬인다 · 깔아두는 거 빼고」).
    ＋ = 그 키에 '-'(표시 없음) 이벤트를 찍어 **존재를 저장**한다 → 파일(cards-yeonmun.json)에 남고 루틴·파이썬이 같은 수를 본다. 지우기 = 되돌리기(이벤트 u). */
 function ymSubMax(base, n){ const m=YM.st.subs&&YM.st.subs[base]||{}; let mx=0; for(const k in m){ const kp=ymKeyParts(k); if(n==null){ if(kp.n>mx) mx=kp.n; } else if(kp.n===n && kp.depth===2 && kp.b>mx) mx=kp.b; } return mx; }

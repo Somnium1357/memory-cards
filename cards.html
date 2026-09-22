@@ -7823,6 +7823,7 @@ function deadScopeKeys(){
   for(const sx of sessions){ if(!sx||!sx.scope) continue;
     for(const kk of [...(sx.scope.units||[]), ...(sx.scope.mids||[])]){
       if(live.has(kk)) continue;
+      if(/\|\|$/.test(kk) && live.has(kk.slice(0,-2))) continue;   // 「(기타)」 통(단위||)이 비어 있는 건 정상 — 단위가 살아 있으면 고아가 아니다(동하 09-22 「이거 또 뜸」 · 루틴이 마지막 무태그 카드를 지운 뒤)
       if(!out.has(kk)) out.set(kk, new Set());
       out.get(kk).add(sx.name||'이름 없음'); } }
   return [...out].map(([k,names])=>({k, names:[...names]}));

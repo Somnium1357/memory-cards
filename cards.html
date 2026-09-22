@@ -11208,8 +11208,9 @@ function ymLeave(){ _ymSubOpen.clear(); _ymRowPos.clear(); _ymTodayPin.clear(); 
    ③ 과목 행 — 단위 n/N · ✓ n · 준비도 → 펼치면 단위 행(끝난 단위는 「완료 n」 아래로 숨김) → 문항 화면.
    접힘 상태는 이 기기 localStorage(K_YM_FOLD) · 기본 = 오늘 펼침 · 소스 펼침 · 과목 접힘. 09-09~15의 「과목별 다음 단위 + ▾ 펼침」은 이 트리로 갈음. */
 const K_YM_FOLD='cards_ym_fold_v1';
-const YM_SRC=[['lect','연문'],['paper','중등기출']];                 // 소스 = 카탈로그 unit.kind==='paper' 여부 · 표시 이름만 여기
-function ymSrcOf(u){ return u.kind==='paper' ? 'paper' : 'lect'; }
+const YM_SRC=[['lect','연문'],['p:중기뽀','중등기출'],['p:강사중등','중등기출(강사)']];   // 소스 행 = 강사 연문 · 종이 소스마다 하나(unit.src) · 표시 이름만 여기 (강사중등 = 09-22 발주)
+function ymSrcOf(u){ return u.kind==='paper' ? 'p:'+(u.src||'') : 'lect'; }
+function ymSrcName(u){ const k=ymSrcOf(u); const f=YM_SRC.find(x=>x[0]===k); return f?f[1]:(u.src||'종이책'); }
 function ymFold(){ try{ return JSON.parse(lsGet(K_YM_FOLD)||'{}')||{}; }catch(e){ return {}; } }
 function ymFoldOpen(key){ const f=ymFold(); if(key in f) return !!f[key]; return key==='today' || key.startsWith('src:'); }   // 기본값
 function ymFoldToggle(key){ const f=ymFold(); f[key]=!ymFoldOpen(key); try{ lsSet(K_YM_FOLD, JSON.stringify(f)); }catch(e){} }
@@ -11243,7 +11244,7 @@ function ymRenderToday(){
   h+='<div class="ym-tree-head" data-ym-fold-row="today"><b>오늘</b><small>다시 풀 문항 '+due.length+'</small>'+foldBtn('today')+'</div>';
   if(ymFoldOpen('today')){
     h+='<div class="ym-tree-body">';
-    if(due.length) h+='<div class="ym-list">'+due.map(({it,s})=>{ const u=ymUnitById(it.unit); const [cls,txt]=ymMarkChip(s); const src=u&&u.kind==='paper'?'중등기출 ':'';
+    if(due.length) h+='<div class="ym-list">'+due.map(({it,s})=>{ const u=ymUnitById(it.unit); const [cls,txt]=ymMarkChip(s); const src=u&&u.kind==='paper'?ymSrcName(u)+' ':'';
       return '<div class="ym-row" data-ym-item="'+esc(it.id)+'">'
         +'<span class="ym-mark '+cls+'">'+esc(txt)+'</span>'
         +'<div class="t"><b>'+esc(src+ymSubj(it.subj))+' '+esc(it.no)+'번</b><small>'+esc(u?ymLabel(u)[0]:it.unit)+' · '+ymWhere(it)+(s.due&&s.due<tk?' · '+dkDiff(tk,s.due)+'일 지남':'')+(s.due&&s.due>tk?' · 다시 '+s.due.slice(5).replace('-','/'):'')+(s.closed?' · 닫힘':'')+'</small></div>'

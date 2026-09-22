@@ -39,8 +39,11 @@ TOPIC_SUBJ = {"1.국어", "2.수학", "3.영어", "6.과학"}   # 주제로 갈�
 # 🔴 종이책 소스 「중기뽀」(발주 skills\card\중기뽀_연문소스_앱과업_2026-09-19.md · 동하 09-19 「문항 번호만 쭉 빼주면」) — PDF·면·노드 없음 · 번호만.
 #    문항 키 = <과목>/중기뽀/<번호 두 자리> · 단위 = 10문항씩 <과목>/중기뽀-NN(「중기뽀 01~10번」) · 기존 강사 연문 뒤(과목 안 seq 이어서) · kind "paper" · q/a None · nodes [].
 #    과목 안 번호는 1~N 연속 가정(책이 절마다 번호를 다시 시작하면 동하가 한 줄 → 그때 절/번호 키).
-PAPER_SRC = "중기뽀"
-PAPER_N = {"9.미술": 61, "8.음악": 78, "7.체육": 39, "6.과학": 81, "2.수학": 20, "5.도덕": 85, "4.사회": 67, "1.국어": 76}   # 동하 09-19 · 합 507
+PAPER_SOURCES = [   # (소스명, 과목별 문항 수) — 과목 안 순서 = 강사 연문 → 여기 순서대로
+    ("중기뽀", {"9.미술": 61, "8.음악": 78, "7.체육": 39, "6.과학": 81, "2.수학": 20, "5.도덕": 85, "4.사회": 67, "1.국어": 76}),   # 동하 09-19 · 합 507
+    ("강사중등", {"1.국어": 49, "3.영어": 41}),   # 강사 중등기출 선별집(발주 09-22 · 국어 01.~49. · 영어 = 답안지 01~41 정본 · 문제지 등장 순과 첫 5문항 대조 일치) · 합 90
+]
+PAPER_SRC = PAPER_SOURCES[0][0]
 
 def rows(path):
     txt = io.open(path, encoding="utf-8").read().split(chr(10))
@@ -155,22 +158,29 @@ def main():
 
     # ── 종이책 소스 「중기뽀」 — 과목마다 기존 단위·문항 뒤에 붙인다 (id 불변 · 기존 1,100 키에 손대지 않는다)
     paper_units, paper_items = [], []
+    paper_stats = {}
     for subj in items_by_subj.keys():
-        n = PAPER_N.get(subj)
-        if not n:
-            continue
         base_seq = len(items_by_subj[subj])
-        for k in range(0, n, CHUNK):
-            nos = list(range(k + 1, min(k + CHUNK, n) + 1))
-            seq_by_subj[subj] += 1
-            uid = subj + "/" + PAPER_SRC + "-" + ("%02d" % (k // CHUNK + 1))
-            rng = "%02d" % nos[0] + ("~%02d" % nos[-1] if len(nos) > 1 else "")
-            ids = [subj + "/" + PAPER_SRC + "/" + ("%02d" % no) for no in nos]
-            paper_units.append({"id": uid, "subj": subj, "seq": seq_by_subj[subj], "name": PAPER_SRC + " " + rng + "번", "label": PAPER_SRC + " " + rng + "번",
-                                "star": False, "pages": "", "kind": "paper", "src": PAPER_SRC, "range": rng, "nodes": [], "items": ids})
-            for no, iid in zip(nos, ids):
-                paper_items.append({"id": iid, "subj": subj, "unit": uid, "no": "%02d" % no, "key": "%02d" % no, "seq": base_seq + no,
-                                    "q": None, "a": None, "nodes": [], "src": PAPER_SRC})
+        for src, per in PAPER_SOURCES:
+            n = per.get(subj)
+            if not n:
+                continue
+            st = paper_stats.setdefault(src, {"items": 0, "units": 0, "per_subject": {}})
+            st["per_subject"][subj] = n
+            for k in range(0, n, CHUNK):
+                nos = list(range(k + 1, min(k + CHUNK, n) + 1))
+                seq_by_subj[subj] += 1
+                uid = subj + "/" + src + "-" + ("%02d" % (k // CHUNK + 1))
+                rng = "%02d" % nos[0] + ("~%02d" % nos[-1] if len(nos) > 1 else "")
+                ids = [subj + "/" + src + "/" + ("%02d" % no) for no in nos]
+                paper_units.append({"id": uid, "subj": subj, "seq": seq_by_subj[subj], "name": src + " " + rng + "번", "label": src + " " + rng + "번",
+                                    "star": False, "pages": "", "kind": "paper", "src": src, "range": rng, "nodes": [], "items": ids})
+                st["units"] += 1
+                for no, iid in zip(nos, ids):
+                    paper_items.append({"id": iid, "subj": subj, "unit": uid, "no": "%02d" % no, "key": "%02d" % no, "seq": base_seq + no,
+                                        "q": None, "a": None, "nodes": [], "src": src})
+                    st["items"] += 1
+            base_seq += n
     units.extend(paper_units)
     units.sort(key=lambda u: (u["subj"], u["seq"]))
 
@@ -197,7 +207,7 @@ def main():
     node_names, node_hit = set(), set()
     item_hit = 0
     for it in items:
-        if it.get("src") == PAPER_SRC:
+        if it.get("src"):
             continue
         hit = 0
         for nd in it["nodes"]:
@@ -222,7 +232,7 @@ def main():
         "item_match": item_hit, "node_names": len(node_names), "node_match": len(node_hit),
         "node_fail": len(node_fail), "dup_item_ids": len(dup), "holes": holes,
         "per_subject": {s: {"items": len(l), "units": seq_by_subj[s]} for s, l in items_by_subj.items()},
-        "paper": {"src": PAPER_SRC, "items": len(paper_items), "units": len(paper_units), "per_subject": dict(PAPER_N)},
+        "paper": paper_stats, "paper_total": {"items": len(paper_items), "units": len(paper_units)},
         "lecture_items": n_lect,
     }
     cat = {"v": 1, "built": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
@@ -232,7 +242,7 @@ def main():
 
     # ── 보고
     print("yeonmun-catalog.json  v%d  built %s" % (cat["v"], cat["built"]))
-    print("문항 %d (강사 연문 %d + %s %d) · 단위 %d (중기뽀 %d) · 문항 0 단위 %d (뺌)" % (len(items), n_lect, PAPER_SRC, len(paper_items), len(units), len(paper_units), len(empty_units)))
+    print("문항 %d (강사 연문 %d + 종이 %d) · 단위 %d (종이 %d) · 문항 0 단위 %d (뺌) · 종이 소스 %s" % (len(items), n_lect, len(paper_items), len(units), len(paper_units), len(empty_units), json.dumps({k: (v["items"], v["units"]) for k, v in paper_stats.items()}, ensure_ascii=False)))
     for e in empty_units:
         print("   뺀 단위:", e)
     print("문항 매칭(카드 ≥1) %d/%d (중기뽀 제외) · 고유 노드 %d 중 매칭 %d · 실패 %d" %

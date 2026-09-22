@@ -6075,6 +6075,7 @@ function addToast(n, sx){
   toast(n ? `${n}장 추가${tail}` : (why.length?`지금 넣을 건 없어요${tail}`:'추가할 카드가 없어요'));
 }
 let lastPlaySid=null;   // 마지막으로 playSess한 세션 id — curSess가 끊겨도 화면 큐의 주인을 되찾는 열쇠
+let rqRun=null;         // 이 런에서 재출 대기분(rq)을 떠맡은 세션 id — 빈 rq 덮어쓰기는 여기서만 허용(09-22)
 /* 🔴 세션에 저장할 「남은 큐」 = **화면 잔량 + 문 ①이 오늘 못 낸 것** (전층 감사 F3-2 · 2026-09-06).
    예전에는 화면 잔량만 썼다. 그런데 짝 키·방향·이웃 격리로 **오늘 안 나온 카드는 화면 큐에 아예 없다** —
    첫 채점의 `syncSessQueue` 한 번에 저장 큐에서 **툼스톤도 없이** 사라졌다.
@@ -6089,7 +6090,7 @@ function keepIds(tgt){
      오늘 이미 푼 카드가 다시 나오므로(그래서 09-07엔 안 저장했다) 칸을 따로 둔다: [id, 회차, rest 안 자리]. 그날 것만 산다(day). playSess가 같은 자리에 끼운다. */
   const rq=[]; let k=0;
   for(const c of queue.slice(qPos)){ if(c._re){ rq.push([c.id, c._re, k]); } else k++; }
-  if(tgt){ if(rq.length) tgt.rq=rq; else delete tgt.rq; }
+  if(tgt){ if(rq.length) tgt.rq=rq; else if(rqRun===tgt.id) delete tgt.rq; }   // 🔴 빈 rq로 덮어쓰지 않는다(동하 09-22 「닫았다 다시 여니까 재출 다 날아갔는데」) — 화면 큐가 빈 채로 이 함수가 돌면(부팅 직후 go() 등) 재출 대기분이 통째로 지워졌다. 이 런에서 실제로 재생한 세션일 때만 「비었다」를 사실로 받아들인다.
   const rest=queue.slice(qPos).filter(c=>!c._re).map(c=>c.id);   // 저장 큐 자체엔 재출을 안 넣는다(위 이유)
   const seen=new Set(queue.map(c=>c.id));               // 화면에 올랐던 것(푼 것 포함)은 위에서 다뤘다
   const held=dropSettled((tgt&&tgt.q||[]).filter(id=>!seen.has(id)).map(id=>BYID[id]).filter(Boolean)).map(c=>c.id);
@@ -6600,7 +6601,7 @@ function unleak(list, spread){
 function playSess(sx){          // 세션 화면의 [이어가기] — 남은 큐를 그대로 이어 푼다
   creditDone();                 // 🔴 옮기기 전에 **떠나는 세션**의 누적을 맞춘다 (F4-6 ②)
   curSess=sx; viewSess=sx; curPreset=asPreset(sx);
-  lastPlaySid=sx.id;   // curSess가 끊겨도 이 id로 큐의 주인을 되찾는다 (syncSessQueue 참고)
+  lastPlaySid=sx.id; rqRun=sx.id;   // curSess가 끊겨도 이 id로 큐의 주인을 되찾는다 (syncSessQueue 참고) · rqRun = 이 런이 이 세션의 재출 대기분을 떠맡는다(09-22)
   refillSess(sx);
   const all=sessCards(sx);
   // 다른 세션에서 오늘 푼 것은 빼고 이어간다 — 단 지목 세션(pick)은 그대로 푼다
@@ -6608,7 +6609,7 @@ function playSess(sx){          // 세션 화면의 [이어가기] — 남은 �
   /* 재출 대기분 복원(09-16) — 그날 것만 · 카드가 살아 있고 오늘 첫 채점이 있는 것만(재출은 「아까 다시 한 카드」다) · 자리는 저장 때 rest 안 위치 */
   if(Array.isArray(sx.rq) && sx.rq.length && sx.day===todayKey()){
     const ins=[]; for(const [id,re,at] of sx.rq){ const c=BYID[id]; if(!c||!settledToday(c)||retired(c)||offed(c)) continue;
-      const rc=Object.create(c); rc._re=Math.max(1,Math.min(2,+re||1)); rc._at=gradeSeq; ins.push([Math.min(queue.length, +at||0), rc]); }
+      const rc=Object.create(c); rc._re=Math.max(1,+re||1); rc._at=gradeSeq; ins.push([Math.min(queue.length, +at||0), rc]); }   // 회차 상한 없음(09-22)
     ins.sort((a,b)=>b[0]-a[0]); for(const [at,rc] of ins) queue.splice(at,0,rc);   // 뒤에서부터 끼워 자리가 안 밀린다
   }
   // 🔴 저장된 큐를 이어 풀 때도 한 번 더 건다 — 큐는 조립 뒤에도 「내용 추가」로 뒤에 붙는다

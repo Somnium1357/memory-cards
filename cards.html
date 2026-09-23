@@ -1774,7 +1774,7 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
               <tr><td><b>다음 진도</b></td><td>그 줄에서 <b>아직 안 푼 카드가 남은 첫 대주제</b>를 통째로 시작. 세션 화면의 「＋ 다음 진도」 버튼</td></tr>
               <tr><td><b>범위 넓히기</b></td><td>계획을 무시하고 <b>내가 고른</b> 대주제·중주제를 얹기. 「＋ 범위 넓히기」 버튼</td></tr>
               <tr><td><b>주제 빼 두기</b></td><td>반대쪽. 고른 주제를 <b>이 세션에서만 계속</b> 빼요 — 신규·복습 둘 다.
-                「－ 주제 빼 두기」 버튼. 단위 행의 <b>「빼기」는 오늘 큐에서만</b> 빼는 것이라 다릅니다.
+                「－ 주제 빼 두기」 버튼. 단위 행의 <b>「빼기」도 같은 곳에 쌓여요</b>(09-24 통일 — 오늘만 줄이려면 「큐 비우기」·「내일로」).
                 <b>「끄기」와도 달라요</b> — 끄기는 카드를 은퇴시켜 <b>모든 세션에서</b> 사라져요</td></tr>
             </table>
             <p class="hp-key">둘의 차이는 <b>누가 고르느냐</b> 하나예요. 다음 진도 = 계획이 고름 / 범위 넓히기 = 내가 고름.</p>
@@ -8773,7 +8773,7 @@ function renderSession(){
   h+=`<button class="more-btn" id="ssEx">－ 주제 빼 두기${exN?` (${exN}개 · ${exCards.toLocaleString()}장)`:''}</button>
       <div class="why">${exN
         ? `제외 중 — <b>${esc(exNames.slice(0,2).join(' / '))}</b>${exN>2?` 외 ${exN-2}`:''}. 신규·복습 <b>둘 다</b> 이 세션엔 안 나와요 (다른 세션엔 그대로)`
-        : '고른 주제를 <b>이 세션에서만</b> 계속 빼 둬요 — 신규·복습 둘 다. 위 「빼기」는 오늘 큐에서만 빼는 것이고, 이건 <b>계속</b> 빠집니다'}</div>
+        : '고른 주제를 <b>이 세션에서만</b> 계속 빼 둬요 — 신규·복습 둘 다. 단위 줄의 「빼기」도 같은 곳에 쌓여요(오늘만 줄이려면 「큐 비우기」·「내일로」)'}</div>
       ${remain?`<button class="more-btn dim" id="ssClear">큐 비우기 (${remain}장)</button>
       <div class="why">오늘 <b>큐만</b> 비워요 — 범위·누적 횟수·성적은 그대로예요. 「빼기」와 달리 범위를 안 건드립니다</div>`:''}
       <details class="fold" id="ssUnitFold"><summary id="ssUnitSum">이 세션의 단위</summary>
@@ -8931,11 +8931,27 @@ function exCount(sx){
        (ex.mids||[]).some(x=>x===mk||x===mk+'||'+subOf(c))) n++; }
   return n;
 }
-function removeUnitFromSess(sx, k){ // 세션에서 단위 빼기 — 큐에서 빼고, 직접 추가 세션이면 범위에서도 뺀다
+function removeUnitFromSess(sx, k){ // 세션에서 단위 빼기 — 어느 세션이든 **계속** 빠진다(09-24 통일 · UX §5)
   const isMid=isMidRow(k), u=rowUnit(k);
   const hit = isSubRow(k) ? (c=>tagKey(c)===u && cardSubKey(c)===k)
             : isMid       ? (c=>tagKey(c)===u && midKey(u,(c.tags||[])[1]||'(기타)')===k)
                           : (c=>tagKey(c)===u);
+  /* 🔴 **「빼기」 통일** (동하 09-24 · UX 정리안 §5): 매일 자동 세션은 `scope.ex`(「주제 빼 두기」와 같은 자리)에 넣는다 → 다음 날 재충전에도 안 나온다.
+     예전엔 자동 세션에서 **오늘 큐만** 뺐다(범위가 빈 일일 복습). 범위가 있는 자동 세션은 범위를 고쳐 이미 「계속」이었는데 토스트만 「오늘 큐에서만」이라고 말했다.
+     범위를 고치는 대신 ex에 넣는 이유: 범위의 마지막 단위를 빼면 빈 범위 = 「전부」가 되는 함정이 자동 세션에 있다(scopeMatch — 빈 범위는 fixed만 「없음」).
+     직접 담음 세션은 종전대로 범위에서 지운다. 되살리기 = 세션 화면 「빼 둔 주제」. */
+  if(!isFixed(sx)){
+    const ex=sx.scope.ex||{units:[],mids:[]}; ex.units=ex.units||[]; ex.mids=ex.mids||[];
+    if(isMid||isSubRow(k)){ if(!ex.mids.includes(k)) ex.mids.push(k); } else if(!ex.units.includes(k)) ex.units.push(k);
+    sx.scope.ex=ex;
+    const beforeQ=sx.q.slice(); sx.q=sx.q.filter(id=>{ const c=BYID[id]; return c && !hit(c); });
+    const gone=beforeQ.length-sx.q.length;
+    qShrink(sx, beforeQ.filter(id=>!sx.q.includes(id)));
+    if(curSess&&curSess.id===sx.id){ curPreset=asPreset(sx); const head=queue.slice(0,qPos); queue=[...head, ...queue.slice(qPos).filter(c=>!hit(c))]; counts(); }
+    saveSessionsFlush();
+    toast(`${rowLabel(k)} 뺐어요${gone?` (${gone}장)`:''} — 이 세션에서 계속 빠져요 · 되살리기는 「주제 빼 두기」에서`);
+    renderSession(); return;
+  }
   const beforeQ=sx.q.slice(), beforeU=(sx.scope.units||[]).slice(), beforeM=(sx.scope.mids||[]).slice();
   const before=sx.q.length;
   sx.q=sx.q.filter(id=>{ const c=BYID[id]; return c && !hit(c); });
@@ -8966,8 +8982,7 @@ function removeUnitFromSess(sx, k){ // 세션에서 단위 빼기 — 큐에서 
     counts();
   }
   saveSessionsFlush();
-  const auto=!isFixed(sx);
-  toast(gone? `${rowLabel(k)} 뺐어요 (${gone}장${auto?' · 오늘 큐에서만':''})` : '큐에 남은 카드가 없었어요');
+  toast(gone? `${rowLabel(k)} 뺐어요 (${gone}장) — 이 세션에서 계속 빠져요` : '큐에 남은 카드가 없었어요');
   renderSession();
 }
 function playUnitFirst(sx, k){   // 세션 큐에서 그 단위를 앞으로 끌어와 바로 푼다

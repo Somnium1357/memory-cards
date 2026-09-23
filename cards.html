@@ -1230,6 +1230,187 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 /* A8 아이패드 넓은 화면 — 통계·목록·읽기 폭 900 */
 @media (min-width:1000px){ #scrStats .sub-inner, #scrList .sub-inner, #scrRead .sub-inner{ max-width:900px; } }
 
+
+/* ═══════════════ 디자인 이식 B — 풀이 화면 (09-24 · 정본 = 디자인_언어.md §7.1 · 픽셀 = 캔버스 「풀이 화면 (확정)」) ═══════════════
+   🔴 원칙: 앞면↔답면에서 질문·선·카드·채점 자리가 1px도 안 움직인다 — 답 칸은 늘 깔려 있고 visibility로만 가린다.
+   🔴 카드 면엔 강조색을 쓰지 않는다(정답 라벨·회독본 링크 = sec). 끄기는 회색. 초점 고리 없음. */
+[data-screen="solve"]{ --accent:var(--c-acc); --accent-fill:var(--c-acc-fill); --accent-dim:var(--c-acc-tint); --danger:var(--c-danger); }   /* 호환층은 :root에서 계산돼 내려온다 — 풀이 화면에서 다시 잇는다 */
+.keycap{display:none;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;border-radius:6px;
+  box-shadow:inset 0 0 0 1px currentColor;font-size:11px;font-weight:600;line-height:1;opacity:.6;letter-spacing:0;}
+@media (hover:hover) and (pointer:fine){ .keycap{display:inline-flex;} }
+:root[data-keys="on"] .keycap{display:inline-flex;}
+.glass-c,#tbProg,.tb-r,#ohBar{background:var(--c-glass);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);
+  box-shadow:0 0 0 .5px var(--c-glass-ring),0 8px 28px var(--c-glass-shadow);}
+
+/* 윗줄 = ‹ | 진행 캡슐 | ⏸ ↶ — 캡슐은 카드 칸의 가운데(grid 1fr auto 1fr · 레일 칸은 따로) */
+#topbar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:10px;
+  padding:16px var(--sp-m) 0;min-height:0;height:60px;}
+
+.tb-l{display:flex;align-items:center;gap:8px;}
+.tb-r{justify-self:end;display:flex;align-items:center;border-radius:22px;height:44px;}
+@media (min-width:1120px) and (orientation:landscape){   /* 레일이 떠 있는 폭에서만 — 좁은 화면은 서랍 */
+  #main.railed #topbar{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) calc(var(--insp-w) + var(--sp-m));}
+  #main.railed .tb-r{grid-column:4;}
+  #main.railed #btnMore{display:none;}
+  #main.railed #scrSolve{padding-right:calc(var(--sp-m) + var(--insp-w) + var(--sp-m));}
+}
+.tb-btn{width:44px;height:44px;border-radius:22px;color:var(--c-label);}
+.tb-btn svg{width:20px;height:20px;stroke-width:2.1;}
+#btnPause svg,#ohPause svg{width:17px;height:17px;}
+.glass-c{border-radius:22px;}
+#tbProg{height:44px;border-radius:22px;display:flex;align-items:center;gap:14px;padding:0 20px;min-width:0;max-width:100%;}
+#tbSess{font-size:15px;font-weight:600;white-space:nowrap;color:var(--c-label);overflow:hidden;text-overflow:ellipsis;}
+.tb-pbar{display:block;width:180px;height:5px;border-radius:3px;background:var(--c-fill);flex:0 1 180px;min-width:60px;}
+#tbBar{display:block;height:5px;border-radius:3px;background:var(--c-acc);width:0;transition:width .2s ease;}
+#tbCounts{flex:0 0 auto;margin:0;font-size:13px;font-weight:400;color:var(--c-sec);text-align:left;letter-spacing:0;}
+@media (min-width:600px){ #tbCounts{margin-left:0;} }
+#saveBadge{background:var(--c-orange);}
+
+/* 풀이 칸 — 바깥 여백 M · 윗줄 → 카드 16 · 카드 → 채점 20 · 아래 = 안전영역 + 8 */
+#scrSolve{padding:16px var(--sp-m) 8px;}
+#cardZone{flex:1;min-height:0;padding:0;align-items:stretch;justify-content:stretch;}
+#cardZone::before{inset:-10px;border-radius:36px;}
+#card{flex:1 1 auto;width:100%;max-width:none;max-height:none;min-height:0;margin:0 auto;
+  background:var(--c-card);border-radius:var(--r-card);box-shadow:var(--sh-big);padding:24px 32px 16px;}
+#card.tblwide{max-width:none;}
+#cHead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:0 0 auto;font-size:13px;line-height:18px;}
+#cScope{display:flex;align-items:center;gap:6px;margin:0;font-size:13px;font-weight:500;color:var(--c-sec);letter-spacing:0;min-width:0;overflow:hidden;white-space:nowrap;}
+#cScope .sc-p{overflow:hidden;text-overflow:ellipsis;}
+#cScope .sc-chev{width:6px;height:10px;flex:0 0 auto;color:var(--c-ter);}
+#phaseLine{flex:0 1 auto;min-width:0;padding:0;min-height:0;font-size:13px;font-weight:400;color:var(--c-sec);text-align:right;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#cardScroll{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+#cSplit{min-height:100%;display:flex;flex-direction:column;}
+#cUpper{flex:42 1 0;display:flex;flex-direction:column;justify-content:center;padding:12px 0;}
+#cFront{font-family:var(--font);font-size:var(--t-q);font-weight:500;line-height:1.55;letter-spacing:-.012em;color:var(--c-label);}
+#cFront.is-long{font-size:var(--t-q-long);letter-spacing:0;max-width:72ch;hyphens:auto;}
+#cLine{flex:0 0 auto;height:1px;transform:scaleY(.5);background:var(--c-sep);margin-bottom:8px;}
+#cLower{flex:58 1 0;position:relative;display:flex;flex-direction:column;}
+#cBackWrap,#cBackWrap.on{display:flex;flex-direction:column;flex:1 1 auto;margin:0;border:0;padding:0;visibility:hidden;}
+#cBackWrap.on{visibility:visible;}
+#cAnsBody{position:relative;flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;gap:8px;padding:8px 0;}
+#cAnsLab{font-size:13px;font-weight:600;line-height:18px;color:var(--c-sec);}
+#cBack{color:var(--c-label);}
+#cBack.ans-s{font-size:var(--t-ans-short);font-weight:700;line-height:1.2;letter-spacing:-.025em;}
+#cBack.ans-m{font-size:var(--t-ans-mid);font-weight:700;line-height:1.3;letter-spacing:-.02em;}
+#cBack.ans-l{font-size:var(--t-ans-body);font-weight:500;line-height:1.5;}
+#cBack.ans-struct{font-size:var(--t-ans-body);font-weight:500;line-height:1.45;}
+#cBack .as-row{padding:10px 0;}
+#cBack .as-row+.as-row{box-shadow:inset 0 .5px 0 var(--c-sep);}
+#cBack .as-k{font-size:13px;font-weight:600;line-height:18px;color:var(--c-sec);margin-bottom:2px;}
+/* 가림 면 — 앞면에서만. 부모가 visibility:hidden이어도 이 면은 visible로 되살린다(답 글자는 계속 숨음) */
+#cCover{position:absolute;inset:0;visibility:visible;background:var(--c-fill);border-radius:20px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;cursor:pointer;}
+#card.rev #cCover,#card.tbl #cCover{display:none;}
+#revealHint{margin:0;font-size:15px;font-weight:400;color:var(--c-sec);text-align:center;}
+#hintBox{margin:0;max-width:none;gap:8px;}
+.hint-chip{min-height:44px;padding:0 16px;border:0;border-radius:22px;background:transparent;color:var(--c-label);
+  font-size:17px;font-weight:500;gap:8px;}
+.hint-chip .hc-ic{width:20px;height:20px;color:var(--c-orange);flex:0 0 auto;}
+.hint-chip.on{background:var(--c-card);color:var(--c-label);border:0;font-family:var(--font);font-size:17px;letter-spacing:.06em;}
+/* 메타 줄 — 유형 칩 · 한 줄 설명 · 태그 · 「회독본 ↗」(오른쪽) */
+#cMeta,#cMeta.on{display:flex;flex:0 0 auto;align-items:center;gap:10px;min-height:36px;margin:0;flex-wrap:wrap;}
+.typ-tag{font-size:13px;font-weight:500;color:var(--c-label);background:var(--c-fill);padding:0 12px;line-height:28px;border-radius:999px;}
+#cDir{color:var(--c-label);background:var(--c-fill);}
+#cHint{font-size:13px;color:var(--c-sec);font-weight:400;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#cTags .utag{color:var(--c-label);background:var(--c-fill);font-weight:500;font-size:13px;padding:0 12px;line-height:28px;}
+#cTagAdd{color:var(--c-sec);padding:0 12px;background:transparent;}
+#cHoedok,#cHoedok.on{margin:0 0 0 auto;}
+#cHoedok{display:none;} #cHoedok.on{display:flex;}
+#cHoedok a{font-size:15px;font-weight:500;color:var(--c-sec);min-height:44px;display:flex;align-items:center;gap:4px;padding:0;margin:0;}
+#cDiag{background:var(--c-fill);color:var(--c-label);}
+#cDiag b,#cDiag a{color:var(--c-sec);}
+#cNote{background:var(--c-fill);color:var(--c-sec);font-size:13px;}
+#cNote b,#cNote strong{color:var(--c-label);}
+#cSrc{color:var(--c-sec);font-size:12px;}
+/* 항목 카드 — 한 열 · 줄 44 · 최대 560 · 빠뜨림 = 빨간 면 + 취소선 + 채운 ✕ */
+#cItems{max-width:560px;gap:6px;}
+.it-row{min-height:44px;padding:8px 14px;border-radius:12px;background:var(--c-fill);font-size:var(--t-ans-body);font-weight:500;color:var(--c-label);}
+.it-row.x{background:var(--c-again-bg);color:var(--c-again);text-decoration:line-through;}
+.it-row.x .xm{background:var(--c-again);border-color:var(--c-again);color:#fff;}
+.it-ord{color:var(--c-sec);}
+/* 표 — 공개 칸만 강조색 알파 .07 · 가린 칸 = fill */
+#cTable{font-family:var(--font);margin:8px 0 0;}
+#cTable th,#cTable td{border-color:var(--c-sep);font-size:var(--t-cell);}
+#cTable th{background:var(--c-fill);color:var(--c-sec);font-size:13px;font-weight:600;}
+#cTable td{color:var(--c-label);font-weight:500;}
+#cTable td.tm .mk{background:var(--c-fill);}
+#cTable td.tm.on{background:rgba(42,106,216,.07);}
+#cTable td.tm.on .mk{color:var(--c-label);}
+#cTable td.mus{font-size:var(--t-cell-sym);}
+
+/* 채점 자리 — 앞면 = 「정답 보기」(acc 채움 56 · glow 없음) · 답면 = 채점 넷(같은 자리 · 같은 높이) */
+#gradeBar,#gradeBar.on{visibility:visible;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;
+  margin:20px auto 0;padding:0;width:100%;max-width:none;flex:0 0 auto;}
+#gradeBar:not(.on) .gbtn{display:none;}
+#gradeBar.on #revealBtn{display:none;}
+#revealBtn{grid-column:1/-1;height:var(--grade-h);border-radius:999px;background:var(--c-acc-fill);color:#fff;
+  font-size:17px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px;}
+#revealBtn:active{opacity:.85;}
+#revealBtn .keycap{opacity:.75;}
+.gbtn{height:var(--grade-h);border-radius:16px;position:relative;gap:1px;}
+.gbtn .gl{font-size:17px;font-weight:700;letter-spacing:0;}
+.gbtn .keycap{position:absolute;right:12px;top:50%;transform:translateY(-50%);}
+#gAgain{background:var(--c-again-bg);color:var(--c-again);}
+#gHard{background:var(--c-hard-bg);color:var(--c-hard);}
+#gGood{background:var(--c-good-bg);color:var(--c-good);}
+#gEasy{background:var(--c-easy-bg);color:var(--c-easy);}
+#gradeBar.re{grid-template-columns:1fr 3fr;}
+#gradeBar.re #gGood{flex:none;}
+
+/* 되짚기(레일) — 유리 패널 236 · 위아래 끝 = 카드·채점 막대와 같다 */
+#rail{background:var(--c-glass);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);
+  box-shadow:0 0 0 .5px var(--c-glass-ring),0 8px 28px var(--c-glass-shadow);border:0;gap:2px;padding:12px;}
+@media (min-width:1120px) and (orientation:landscape){
+  #rail{width:var(--insp-w);border-radius:var(--r-panel);right:calc(var(--sp-m) + env(safe-area-inset-right));
+    top:calc(76px + env(safe-area-inset-top) + var(--sat-extra) + var(--banner-h, 0px));bottom:calc(8px + env(safe-area-inset-bottom));padding:12px;}
+}
+@media (max-width:1119px), (orientation:portrait){
+  #rail{background:var(--c-card);-webkit-backdrop-filter:none;backdrop-filter:none;width:280px;border-radius:var(--r-panel) 0 0 var(--r-panel);}
+}
+#railFab,#railFab.show{display:none;}
+.rail-grp,.rail-grp:first-child{font-size:13px;font-weight:600;line-height:18px;color:var(--c-sec);margin:0;padding:4px 12px;letter-spacing:0;}
+.rbtn{min-height:44px;padding:0 12px;gap:12px;border-radius:12px;font-size:17px;font-weight:400;color:var(--c-label);}
+.rbtn svg,.tb-btn svg.rb{width:22px;height:22px;stroke-width:1.9;color:var(--c-label);}
+.rbtn:active{background:var(--c-fill);}
+#rFlag svg{color:var(--c-orange);}
+#rBury svg,#rInfo svg{color:var(--c-acc);}
+#rOff,#rOffAll,#rOff svg,#rOffAll svg{color:var(--c-sec);}
+.rbtn.on{background:var(--c-acc-tint);color:var(--c-label);}
+.rbtn.on svg{color:inherit;}
+#rFlag.on svg{color:var(--c-orange);}
+#flagTypes{gap:6px;padding:2px 12px 6px;}
+.ft-chip{min-height:34px;padding:0 12px;border:0;border-radius:17px;background:var(--c-fill);color:var(--c-label);font-size:13px;font-weight:400;}
+.ft-chip.on{background:var(--c-acc-tint);color:var(--c-acc);font-weight:600;border:0;}
+#flagMemoRow,#flagMemoRow.on{display:block;padding:0;margin:2px 12px 6px;}
+#flagMemo{min-height:36px;border-radius:10px;background:var(--c-fill);border:0;padding:0 12px;font-size:16px;color:var(--c-label);}
+.rail-sep{height:1px;transform:scaleY(.5);background:var(--c-sep);margin:8px 12px;}
+
+/* 아이폰 한 손 막대(⏸ · 왜 지금 · ↶ · ⋯) — 채점 바로 위 · 가로 화면엔 없다 */
+#ohBar{display:none;}
+#ohWhy{min-width:0;text-align:center;font-size:13px;color:var(--c-sec);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* 데스크탑 — 카드 칸 안에서 카드 최대 900 가운데 */
+@media (hover:hover) and (pointer:fine) and (min-width:1300px){ #card,#gradeBar{max-width:900px;margin-left:auto;margin-right:auto;} }
+
+/* 아이폰(≤500) — 반경 26 · 안쪽 18/18/12 · 윗줄엔 ‹ + 진행만 · 한 손 막대 · 채점 54/8/16 */
+@media (max-width:500px){
+  #topbar{grid-template-columns:44px minmax(0,1fr) 44px;padding-top:4px;height:48px;gap:8px;}
+  #topbar .tb-r{display:none;}
+  #tbProg{background:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;height:44px;padding:0;gap:4px 8px;
+    flex-wrap:wrap;justify-content:center;align-content:center;}
+  #tbSess,#tbCounts{font-size:15px;font-weight:600;color:var(--c-label);}
+  #tbSess::after{content:" ·";}
+  .tb-pbar{flex:0 0 100%;width:auto;max-width:240px;height:5px;order:2;}
+  #scrSolve{padding:10px var(--sp-m) 8px;}
+  #card{border-radius:26px;padding:18px 18px 12px;}
+  #phaseLine{display:none;}
+  #cScope .sc-p:not(.sc-first):not(.sc-last),#cScope .sc-p:not(.sc-first):not(.sc-last)+.sc-chev{display:none;}
+  #ohBar{display:grid;grid-template-columns:44px minmax(0,1fr) 44px 44px;align-items:center;height:48px;border-radius:24px;margin-top:10px;padding:0 6px;flex:0 0 auto;}
+  #gradeBar,#gradeBar.on{margin-top:10px;gap:8px;}
+  .gbtn .gl,#revealBtn{font-size:16px;}
+}
+
 </style>
 </head>
 <body>
@@ -1238,45 +1419,51 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
   <div id="main">
     <div id="banner"></div>
     <div id="topbar">
-      <button class="tb-btn" id="btnHome" title="홈"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg></button>
-      <span id="saveBadge" title="미저장분 있음"></span>
-      <div id="tbCounts"></div>
-      <button class="tb-btn" id="btnPause" title="일시정지"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5v14M15 5v14"/></svg></button>
-      <button class="tb-btn" id="btnUndo" title="되돌리기" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+      <div class="tb-l"><button class="tb-btn glass-c" id="btnHome" title="홈" aria-label="홈으로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button><span id="saveBadge" title="미저장분 있음"></span></div>
+      <div id="tbProg"><span id="tbSess"></span><span class="tb-pbar"><span id="tbBar"></span></span><span id="tbCounts"></span></div>
+      <div class="tb-r"><button class="tb-btn" id="btnPause" title="잠시 멈춤" aria-label="잠시 멈춤"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4.5" width="4" height="15" rx="1.2"/><rect x="14" y="4.5" width="4" height="15" rx="1.2"/></svg></button><button class="tb-btn" id="btnUndo" title="되돌리기" aria-label="되돌리기" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button class="tb-btn" id="btnMore" title="피드백 · 이 카드" aria-label="피드백 · 이 카드"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="18.5" cy="12" r="1.8"/></svg></button></div>
     </div>
 
     <!-- 풀이 -->
     <div class="scr on" id="scrSolve">
-      <div id="phaseLine"></div>
       <div id="cardZone">
-        <!-- 스와이프 피드백은 이 마당의 배경(::before)이 전부다 — CSS 「스와이프 채점 피드백」 절.
-             왼쪽 = 알맞음, 오른쪽 = 다시. -->
+        <!-- 스와이프 피드백은 이 마당의 배경(::before)이 전부다 — CSS 「스와이프 채점 피드백」 절. 왼쪽 = 알맞음, 오른쪽 = 다시. -->
+        <!-- 🔴 디자인 이식 09-24: 카드 = 위아래 반반. 답면 내용은 **앞면에서도 미리 채워 visibility:hidden**으로 깔고 가림 면으로 덮는다 →
+             앞면↔답면에서 질문·선·버튼이 1px도 안 움직인다(디자인_언어 §1-1 · §7.1). 가림은 visibility라 글자가 선택·낭독되지 않는다. -->
         <div id="card">
-          <div id="cScope"></div>
-          <div id="cardScroll">
-            <div class="c-imgs front" id="cImgF"></div>
-            <div id="cFront"></div>
-            <div id="cTable"></div>
-            <div id="cDiag"></div>
-            <div id="cBackWrap">
-              <div id="cBack"></div>
-              <div class="c-imgs back" id="cImgB"></div>
-              <div id="cItems"></div>
-              <div id="cNote"></div>
-              <div id="cHoedok"></div>
-              <div id="cSrc"></div>
-              <div id="cMeta"><span class="typ-tag" id="cTyp"></span><span class="typ-tag" id="cDir">역방향</span><span id="cHint"></span><span id="cTags"></span><button class="typ-tag" id="cTagAdd">＋태그</button><input id="cTagInput" type="text" maxlength="16" placeholder="태그"><span id="annMarks"></span></div>
+          <div id="cHead"><div id="cScope"></div><div id="phaseLine"></div></div>
+          <div id="cardScroll"><div id="cSplit">
+            <div id="cUpper">
+              <div class="c-imgs front" id="cImgF"></div>
+              <div id="cFront"></div>
+              <div id="cDiag"></div>
             </div>
-          </div>
+            <div id="cLine"></div>
+            <div id="cLower">
+              <div id="cTable"></div>
+              <div id="cBackWrap">
+                <div id="cAnsBody">
+                  <div id="cAnsLab">정답</div>
+                  <div id="cBack"></div>
+                  <div class="c-imgs back" id="cImgB"></div>
+                  <div id="cItems"></div>
+                  <div id="cNote"></div>
+                  <div id="cSrc"></div>
+                  <div id="cCover"><div id="revealHint">카드를 누르면 정답이 보여요</div><div id="hintBox"></div></div>
+                </div>
+                <div id="cMeta"><span class="typ-tag" id="cTyp"></span><span class="typ-tag" id="cDir">역방향</span><span id="cHint"></span><span id="cTags"></span><button class="typ-tag" id="cTagAdd">＋태그</button><input id="cTagInput" type="text" maxlength="16" placeholder="태그"><div id="cHoedok"></div></div>
+              </div>
+            </div>
+          </div></div>
         </div>
-        <div id="hintBox"></div>
-        <div id="revealHint">카드를 탭하면 정답</div>
       </div>
+      <div id="ohBar"><button class="tb-btn" id="ohPause" aria-label="잠시 멈춤"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4.5" width="4" height="15" rx="1.2"/><rect x="14" y="4.5" width="4" height="15" rx="1.2"/></svg></button><div id="ohWhy"></div><button class="tb-btn" id="ohUndo" aria-label="되돌리기" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button class="tb-btn" id="ohMore" aria-label="피드백 · 이 카드"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="18.5" cy="12" r="1.8"/></svg></button></div>
       <div id="gradeBar">
-        <button class="gbtn" id="gAgain"><span class="gl">다시</span><span class="gi" id="giAgain"></span></button>
-        <button class="gbtn" id="gHard"><span class="gl">어려움</span><span class="gi" id="giHard"></span></button>
-        <button class="gbtn" id="gGood"><span class="gl">알맞음</span><span class="gi" id="giGood"></span></button>
-        <button class="gbtn" id="gEasy"><span class="gl">쉬움</span><span class="gi" id="giEasy"></span></button>
+        <button id="revealBtn">정답 보기<span class="keycap">Space</span></button>
+        <button class="gbtn" id="gAgain"><span class="gl">다시</span><span class="gi" id="giAgain"></span><span class="keycap">Z</span></button>
+        <button class="gbtn" id="gHard"><span class="gl">어려움</span><span class="gi" id="giHard"></span><span class="keycap">X</span></button>
+        <button class="gbtn" id="gGood"><span class="gl">알맞음</span><span class="gi" id="giGood"></span><span class="keycap">C</span></button>
+        <button class="gbtn" id="gEasy"><span class="gl">쉬움</span><span class="gi" id="giEasy"></span><span class="keycap">V</span></button>
       </div>
       <div id="summary" style="display:none"></div>
     </div>
@@ -1744,19 +1931,19 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 
   <!-- 사이드바 -->
   <div id="rail">
-    <div class="rail-grp">되짚기</div>
-    <button class="rbtn" id="rFlag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4a1 1 0 0 1 1-1h11l-2 4 2 4H5"/></svg>플래그<span class="st">●</span></button>
+    <div class="rail-grp">피드백</div>
+    <button class="rbtn" id="rFlag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 21V6h11l-2 4 2 4h-11"/></svg>플래그<span class="st">●</span></button>
     <div id="flagTypes"></div>
     <div id="flagMemoRow"><input id="flagMemo" type="text" placeholder="메모 (선택)" maxlength="120"></div>
-    <button class="rbtn" id="rBury"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="9"/></svg>내일로</button>
-    <div class="rail-grp">추가</div>
-    <button class="rbtn ann" data-ann="지도"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 8l10 5 10-5-10-5z"/><path d="M6 10.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-5.5"/></svg>지도<span class="st">●</span></button>
-    <button class="rbtn ann" data-ann="사례"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>사례<span class="st">●</span></button>
-    <button class="rbtn ann" data-ann="정의"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>정의<span class="st">●</span></button>
-    <button class="rbtn ann" data-ann="이름"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8h10M7 12h6"/><rect x="3" y="4" width="18" height="16" rx="2"/></svg>이름<span class="st">●</span></button>
+    <div class="rail-sep"></div>
+    <div class="rail-grp">이 카드</div>
+    <button class="rbtn" id="rBury"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2"/></svg>내일로</button>
+    <button class="rbtn" id="rInfo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg>카드 정보</button>
+    <!-- @주석 「추가」(지도·사례·정의·이름) 버튼은 09-24 동하 결정으로 뺐다 — 지도·이름 사용 0 · 사례 = 칩 「사례 추가」 · 정의 = 메모.
+         이미 달린 @주석은 「플래그 · @주석」 목록과 is:ann 검색에서 그대로 읽힌다(쓰기만 없앴다). -->
     <div class="rail-bottom">
-      <button class="rbtn" id="rOffAll" style="color:var(--mute);display:none" title="같은 열거에서 쪼개진 낱장 전부 끄기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="7" height="6" rx="1.5"/><rect x="14" y="5" width="7" height="6" rx="1.5"/><rect x="3" y="14" width="7" height="6" rx="1.5"/><path d="M15 17l2 2 4-4"/></svg><span id="rOffAllLab">형제 끄기</span></button>
-      <button class="rbtn" id="rOff" style="color:var(--mute)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.4 5.6a9 9 0 1 1-12.8 0"/><path d="M12 2v8"/></svg>끄기</button>
+      <button class="rbtn" id="rOffAll" style="display:none" title="같은 열거에서 쪼개진 낱장 전부 끄기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="7" height="6" rx="1.5"/><rect x="14" y="5" width="7" height="6" rx="1.5"/><rect x="3" y="14" width="7" height="6" rx="1.5"/><path d="M15 17l2 2 4-4"/></svg><span id="rOffAllLab">형제 끄기</span></button>
+      <button class="rbtn" id="rOff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v8"/><path d="M6.4 7.2a7.5 7.5 0 1 0 11.2 0"/></svg>끄기</button>
     </div>
   </div>
   <button id="railFab">☰</button>
@@ -4026,7 +4213,7 @@ function renderHintBox(c){
   units.forEach(u=>{ const i=u.idx;   // 항목 번호는 원래 자리(걸러진 항목이 있어도 로그 번호가 어긋나지 않게)
     const b=document.createElement('button'); b.className='hint-chip'; b.dataset.lab=u.lab?u.lab+' ':'';
     const open=()=>{ b.classList.add('on'); b.textContent=choseong(u.ans); hintUsed.add(i); syncGradeButtons(); };
-    if(hintUsed.has(i)) open(); else b.textContent=(u.lab?u.lab+' ':'')+(HINT_FREE_TYPS.has(c.typ)?'첫 글자':'초성');
+    if(hintUsed.has(i)) open(); else b.innerHTML='<svg class="hc-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>'+esc((u.lab?u.lab+' ':'')+'첫 글자 힌트');
     b.onclick=(ev)=>{ ev.stopPropagation(); if(revealed||hintUsed.has(i)) return; open(); };
     box.appendChild(b);
   });
@@ -7058,10 +7245,13 @@ function counts(){ // 상단 바 — 남은 수는 현재 세션 큐 · 「내�
      🔴 전 범위로 통일한다 — 「내일 예상」은 **계획하는 숫자**고, 내일은 어느 세션을 열지 정해져 있지 않다.
      같은 줄의 「남음」이 세션 큐인 것과 결이 다르다(그건 지금 눈앞의 큐, 이건 내일의 부하).
      ▸ U3의 나머지 절반(「남은 복습」이 화면마다 달랐던 것)은 F5-1·F3-5로 이미 닫혔다. */
-  const tmr=tomorrowCount(null);
-  $('tbCounts').innerHTML = curPreset
-    ? `${label} <b>${rest.length}</b> · 오늘 ${todayRated()} · 내일 ~<b>${tmr}</b>`
-    : `내일 ~<b>${tmr}</b>`;
+  /* 09-24 디자인 이식: 윗줄 = 진행 캡슐(세션 이름 · 막대 · n장 남음 — 디자인 §7.1). 「오늘 n · 내일 ~n」은 홈 타일이 말한다.
+     라벨(신규·복습·남음)은 캡슐 title에 남긴다(길게 누르면·마우스 올리면 보인다). */
+  const tot=queue.length, done=Math.max(0,tot-rest.length);
+  $('tbSess').textContent = curSess ? curSess.name : (curPreset ? '풀이' : '');
+  $('tbCounts').textContent = curPreset ? `${rest.length.toLocaleString()}장 남음` : '';
+  $('tbBar').style.width = tot ? Math.round(done/tot*100)+'%' : '0%';
+  $('tbProg').title = curPreset ? `${label} ${rest.length} · 오늘 ${todayRated()} · 내일 ~${tomorrowCount(null)}` : '';
 }
 /* ═══ 표 카드 (동하 2026-08-29 · QC `table` 규약) ═══════════════════════════════
    카드 하나가 표 하나를 싣는다. 앞면 = 값 칸만 가림(탭하면 하나씩 드러남) · 뒷면 = 전량 공개.
@@ -7294,13 +7484,14 @@ function showCard(){
   revealed=false; itemMarks=(c.items||[]).map(()=>false); shownAt=Date.now(); pausedMs=0; guardAt=shownAt;
   hintUsed=new Set(); renderHintBox(c);
   $('summary').style.display='none'; $('cardZone').style.display='flex';
-  $('revealHint').style.display='block';
   const reN=c._re||0;
   $('gradeBar').classList.toggle('re', reN>0);
   { const gl=$('gGood').querySelector('.gl'); if(gl) gl.textContent = reN>0?'통과':'알맞음'; }
-  $('revealHint').textContent = (c.typ==='도식' ? '다 그렸으면 탭하세요' : '카드를 탭하면 정답') + (reN>0?' · 재출':'');
+  $('revealHint').textContent = (c.typ==='도식' ? '다 그렸으면 카드를 눌러요' : '카드를 누르면 정답이 보여요') + (reN>0?' · 재출':'');
   const m=c.front.match(/^〔([^〕]*)〕\s*(.*)$/s);
-  $('cScope').textContent=scopeOf(c); $('cFront').textContent=m?m[2]:c.front;
+  $('cScope').innerHTML=scopeHtml(c); $('cFront').textContent=m?m[2]:c.front;
+  $('cFront').classList.toggle('is-long', (m?m[2]:c.front).length>200);   // 긴 문면 = 질문 20(폰 16) · 디자인 §4
+  $('card').classList.toggle('tbl', !!c.table);                           // 표 카드는 표가 곧 답 칸 — 가림 면 없음
   $('cBackWrap').classList.remove('on');
   $('gradeBar').classList.remove('on');
   renderTable(c,false);
@@ -7308,6 +7499,8 @@ function showCard(){
   renderImgs($('cImgF'), c, 'f'); renderImgs($('cImgB'), c, 'b');   // 앞면 그림은 바로 · 뒷면 그림은 #cBackWrap 안이라 공개 전엔 부모가 숨긴다
   phase = isNew(c) ? 'new' : 'review';   // 신규 묶음을 다 풀고 잔량으로 넘어가면 라벨도 따라간다
   $('phaseLine').textContent = whyNow(c);   // 이 카드가 왜 지금 나왔는지 (동하 2026-08-21)
+  $('ohWhy').textContent = whyNow(c);       // 아이폰 = 한 손 막대 가운데(디자인 §7.1)
+  fillBack(c);                              // 답면을 미리 깔아 둔다(가려진 채) — 공개해도 선·버튼이 안 움직인다
   syncRail(); counts();
   $('cardScroll').scrollTop=0;
   saveResume();                  // 회독본 갔다 돌아올 자리 (앞면 상태)
@@ -7342,10 +7535,51 @@ function fadeCard(){ const sc=$('cardScroll'); if(!sc) return; const over=sc.scr
 $('cardScroll').addEventListener('scroll', fadeCard, {passive:true});
 $('cardScroll').addEventListener('load', e=>{ if(e.target.tagName==='IMG') requestAnimationFrame(fitCard); }, true);
 window.addEventListener('resize', ()=>requestAnimationFrame(fitCard));
+/* ═══ 답 칸 (디자인 이식 09-24 · 디자인_언어 §4 · §7.2) ═══
+   답 크기 = 12자 이하 38/700 · 30자 이하 28/700 · 그 이상 본문 19/500(폰 30 · 22 · 17).
+   구조형 답 = 「／」로 나뉘고 조각마다 「라벨: 내용」 → 라벨 13/600 sec 위 + 내용 본문 · 줄 사이 0.5px 선. */
+function backParts(back){
+  const segs=String(back||'').split('／').map(x=>x.trim()).filter(Boolean);
+  if(segs.length<2) return null;
+  const rows=[];
+  for(const s of segs){ const m=s.match(/^([^:：]{1,24})[:：]\s*(.+)$/s); if(!m) return null; rows.push([m[1].trim(), m[2].trim()]); }
+  return rows;
+}
+function fillBackText(c, hide){
+  const el=$('cBack'); el.classList.remove('short','ans-s','ans-m','ans-l','ans-struct');
+  if(hide){ el.textContent=''; el.style.display='none'; $('cAnsLab').style.display='none'; return; }
+  el.style.display='block'; $('cAnsLab').style.display='';
+  const b=String(c.back||''), rows=backParts(b);
+  if(rows){ el.classList.add('ans-struct');
+    el.innerHTML=rows.map(([k,v])=>`<div class="as-row"><div class="as-k">${esc(k)}</div><div class="as-v">${esc(v)}</div></div>`).join(''); return; }
+  el.textContent=b;
+  el.classList.add(b.length<=12?'ans-s':b.length<=30?'ans-m':'ans-l');
+}
+function fillBack(c){   // 앞면에서 답면을 미리 깐다 — 보이는 건 가림 면뿐(#cBackWrap visibility:hidden)
+  const hasItems=Array.isArray(c.items)&&c.items.length>=2, isDiag=c.typ==='도식', isTbl=!!c.table;
+  fillBackText(c, hasItems||isDiag||isTbl);
+  const box=$('cItems'); box.innerHTML=''; box.classList.toggle('on',hasItems);
+  if(hasItems){ const ordered=c.typ==='단계'||c.typ==='연쇄';
+    box.innerHTML=c.items.map((it,i)=>`<div class="it-row">${ordered?`<span class="it-ord">${i+1}</span>`:''}<span class="xm">✕</span><span>${esc(it)}</span></div>`).join(''); }
+  const n=$('cNote'); n.classList.toggle('on',!!c.note); n.innerHTML=c.note?'<b>보충</b>'+noteHtml(c.note):'';
+  const sc=$('cSrc'); sc.classList.toggle('on',!!c.src); sc.textContent=c.src?'출처 '+c.src:'';
+  $('cTyp').textContent=c.typ||'';
+  $('cDir').style.display = isRev(c)?'inline-block':'none';
+  $('cHint').textContent = isTbl ? '표 답 — 위 표를 채워 보고 대조해요'
+    : isDiag ? '그림 답 — 회독본과 대조해 스스로 채점'
+    : TERM_TYPES.has(c.typ)||((c.back||'').length<=14&&!String(c.back||'').includes('·'))
+    ? '용어 답 — 표기까지 정확히' : '서술 답 — 요지 재현이면 정답';
+  showHoedokLink(c); renderCardTags(c);
+}
+function scopeHtml(c){   // 경로 = 과목 › 갈래 › 주제 (과목 번호 접두는 뗀다 · 아이폰은 과목 › 마지막 갈래 둘만 — CSS)
+  const parts=String(scopeOf(c)||'').split(/\s+·\s+/).filter(Boolean);
+  if(parts.length) parts[0]=parts[0].replace(/^\d+\./,'');
+  const chev='<svg class="sc-chev" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m1.5 1.5 6 6-6 6"/></svg>';
+  return parts.map((p,i)=>`<span class="sc-p${i===0?' sc-first':''}${i===parts.length-1?' sc-last':''}">${esc(p)}</span>`).join(chev);
+}
 function reveal(){
   const c=cur(); if(!c||revealed)return;
   revealed=true; revealAt=Date.now();
-  $('revealHint').style.display='none';
   $('hintBox').classList.remove('on');      // 답면에서는 힌트 칩을 치운다(연 것은 hintUsed에 남는다)
   const hasItems=Array.isArray(c.items)&&c.items.length>=2;
   const isDiag=c.typ==='도식';   // 답면이 "(도식 — 회독본…)" 한 줄뿐 — cDiag가 같은 말을 링크까지 붙여 한다
@@ -7353,9 +7587,7 @@ function reveal(){
      같은 답을 두 번 말하거나 "(표)" 같은 자리표시가 그대로 노출된다. 그래서 숨긴다 —
      생성기 쪽에 back을 안 쓰는 것으로 약속돼 있고, 혹 채워 오더라도 화면은 안 흔들린다. */
   const isTbl=!!c.table;
-  $('cBack').textContent = (hasItems||isDiag||isTbl)?'':c.back;
-  $('cBack').style.display = (hasItems||isDiag||isTbl)?'none':'block';
-  $('cBack').classList.toggle('short', !(hasItems||isDiag||isTbl) && String(c.back||'').length<=20); $('card').classList.add('rev');
+  fillBackText(c, hasItems||isDiag||isTbl); $('card').classList.add('rev');
   const box=$('cItems'); box.innerHTML=''; box.classList.toggle('on',hasItems);
   if(hasItems){
     const ordered = c.typ==='단계'||c.typ==='연쇄';
@@ -7402,7 +7634,7 @@ function unreveal(){   // 뒷면 → 앞면. 항목 체크(itemMarks)와 응답 
   $('cBackWrap').classList.remove('on');
   $('gradeBar').classList.remove('on');
   $('cMeta').classList.remove('on');
-  $('revealHint').style.display='block';
+  $('card').classList.remove('rev');
   renderHintBox(c);                          // 앞면으로 돌아오면 칩도 돌아온다(연 것은 연 채로)
   showDiag(c,false);
   $('cardScroll').scrollTop=0;
@@ -7563,7 +7795,7 @@ const UNDO_MAX=30;                 // 되돌리기 깊이 (동하 요청 2026-08
 let undoStack=[], undoRun=0;       // undoRun = 풀이 런 일련번호. 이어가기·신규 투입으로 큐가
                                    // 새로 짜이면 올라간다. 스택은 그때도 살아남는다(2026-08-21).
 function undoPush(sn){ undoStack.push(sn); if(undoStack.length>UNDO_MAX) undoStack.shift(); }
-function updateUndo(){ $('btnUndo').toggleAttribute('disabled', !undoStack.length);
+function updateUndo(){ $('btnUndo').toggleAttribute('disabled', !undoStack.length); $('ohUndo').toggleAttribute('disabled', !undoStack.length);
   $('btnUndo').title = undoStack.length>1?`되돌리기 (${undoStack.length}단계)`:'되돌리기'; }
 function dropSnap(c){              // 큐에서 빼는 조작(내일로·은퇴·끄기)의 되돌리기 스냅샷 — 조작 전에 떠야 한다
   return { k:'drop', run:undoRun, id:c.id, card:c,
@@ -7675,7 +7907,9 @@ $('rFlag').onclick=()=>{
 };
 $('flagMemo').addEventListener('change',()=>{
   const c=cur(); if(!c)return; const s=st(c.id);
-  if(s.flag!=null){ s.flag=$('flagMemo').value; touchFb(s); cacheState(); }
+  const v=$('flagMemo').value;
+  if(s.flag!=null){ s.flag=v; touchFb(s); cacheState(); }
+  else if(v.trim()){ s.flag=v; touchFb(s); cacheState(); syncRail(); }   // 메모 칸이 늘 보인다(09-24) — 플래그 없이 쓰면 그 메모로 플래그
 });
 function dropFromQueue(id){ for(let i=queue.length-1;i>qPos;i--){ if(queue[i].id===id)queue.splice(i,1); } }
 $('rBury').onclick=()=>{
@@ -7725,7 +7959,13 @@ $('cTagInput').addEventListener('change',()=>{
 function removeCurFromQueue(sn){ // sn을 주면 되돌리기 스택에 쌓는다 (내일로·은퇴·끄기)
   queue.splice(qPos,1); undoSnap=null; if(sn)undoPush(sn);
   updateUndo(); showCard(); syncSessQueue(); }
-$('railFab').onclick=()=>{ $('rail').classList.add('open'); $('railScrim').classList.add('show'); };
+function openRailDrawer(){ $('rail').classList.add('open'); $('railScrim').classList.add('show'); }
+$('railFab').onclick=openRailDrawer; $('btnMore').onclick=openRailDrawer; $('ohMore').onclick=openRailDrawer;
+$('ohPause').onclick=()=>pauseSession();
+$('ohUndo').onclick=()=>$('btnUndo').click();
+$('revealBtn').onclick=(ev)=>{ ev.stopPropagation(); reveal(); };
+$('rInfo').onclick=()=>{ const c=cur(); if(!c) return;
+  openCardSheet(c, ()=>{ const k=cur(); if(k && (offed(k)||buried(k)||retired(k))) showCard(); else syncRail(); }); };
 $('railScrim').onclick=()=>{ $('rail').classList.remove('open'); $('railScrim').classList.remove('show'); };
 
 /* ═══════════════ 카드 탭·스와이프 ═══════════════ */
@@ -7991,7 +8231,8 @@ function go(id){
   $('btnPause').style.display = railShow?'':'none';   // 풀이 중에만 의미 있는 버튼
   $('btnUndo').style.display  = railShow?'':'none';   // 홈·세션 화면에 떠 있으면 무엇을 되돌리는지 모호하다
   $('rail').style.display=railShow?'flex':'none';
-  $('railFab').classList.toggle('show',railShow);
+  $('app').dataset.screen = railShow ? 'solve' : '';   // 풀이 화면 = 중간 톤 강조색(tokens [data-screen="solve"] · 디자인_언어 §2.2)
+  $('railFab').classList.remove('show');               // ☰ 떠 있는 버튼은 은퇴 — 윗줄 ⋯ · 아이폰 한 손 막대 ⋯가 서랍을 연다(09-24)
   if(id!=='scrHome') navGuard();          // 홈이 아니면 뒤로가기용 칸을 물고 있는다
   if(id==='scrHome')renderHome();
   if(id==='scrSession')renderSession();
@@ -9189,6 +9430,7 @@ document.addEventListener('keydown',e=>{
      딱 하나 연다: **Ctrl+1~4 = 플래그 사유 칩 넷** (동하 09-09 · 게임패드 R을 Ctrl로 두고 쥔다).
      채점 1~4와 손가락 자리가 같고 Ctrl만 얹는 꼴이라 외울 것이 없다. 그 밖의 조합은 여전히 버린다. */
   if((!kbdOn && !_padEv) || e.metaKey || e.altKey)return;
+  { const tg=e.target&&e.target.tagName; if(!(tg==='INPUT'||tg==='TEXTAREA'||tg==='SELECT')) document.documentElement.dataset.keys='on'; }   // 키 표시(09-24)
   if(e.ctrlKey && !/^[1-4]$/.test(keyOf(e)))return;   // 🔴 Ctrl+숫자만(사유 칩) — Ctrl+Z·X·C·V는 브라우저 몫(리뷰 09-23 R10 · ca8a31f4 회귀: 복사·되돌리기가 플래그를 붙였다)
   /* 🔴 **화살표 = 지금 보이는 것의 스크롤** (동하 09-10 실기: 게임패드 D패드로 표 카드를 못 굴렸다).
      카드 본문은 문서가 아니라 `#cardScroll` 안에서 구른다 — 초점이 아무 데도 없으면 브라우저는

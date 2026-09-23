@@ -6451,17 +6451,21 @@ function normAns(s){ return String(s||'').toLowerCase().replace(/[\s·,.()\[\]�
 function prKeys(c){ const k=[]; if(c.pr) k.push(c.pr);
   if(isRev(c)){ const b=(c.back||'').trim(); if(b && b.length<=14 && !b.includes('·')) k.push('b:'+normAns(b)); }
   return k; }
+/* 🔴 짝 키(같은 답) 무리는 **하루 3장까지**(동하 09-23 「어차피 문면이 다른 거 아님? 하루 3장까지는 푸는 걸로」 · 예전 1장 —
+   「탐구학습모형」 11장이 11일에 걸쳐 나와 옛 카드가 밀렸다 · 리뷰 09-23 추가 조사). 오늘 푼 것·오늘 큐에 든 것·이 큐 순서로 센다. */
+const PR_DAY_MAX=3;
 function prIsolate(list, seed){
-  const F=prFacts(), taken=new Set(), rated=todayRatings();
-  for(const id in rated){ const c=BYID[id]; if(c) prKeys(c).forEach(k=>taken.add(k)); }   // 오늘 푼 것
-  for(const c of (seed||[])){ if(c) prKeys(c).forEach(k=>taken.add(k)); }                  // 오늘 큐에 든 것
+  const F=prFacts(), taken=new Map(), rated=todayRatings();
+  const add=c=>prKeys(c).forEach(k=>taken.set(k,(taken.get(k)||0)+1));
+  for(const id in rated){ const c=BYID[id]; if(c) add(c); }   // 오늘 푼 것
+  for(const c of (seed||[])){ if(c) add(c); }                  // 오늘 큐에 든 것
   const out=[];
   for(const c of list){
     if((c.pr && PR_GATED_TYPS.includes(c.typ) && F.hasDef.has(c.pr) && !F.passed.has(c.pr)) || elemGated(c)) continue;  // ② 사례·원소 선행
     const ks=prKeys(c);
     if(!ks.length){ out.push(c); continue; }
-    if(ks.some(k=>taken.has(k))) continue;                                                            // ①
-    out.push(c); ks.forEach(k=>taken.add(k));
+    if(ks.some(k=>(taken.get(k)||0)>=PR_DAY_MAX)) continue;                                           // ① 그 답이 오늘 이미 3장
+    out.push(c); add(c);
   }
   return out;
 }

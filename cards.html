@@ -1532,6 +1532,27 @@ input,select{border-radius:10px;}
 /* 토글 = 켜짐 초록 · 꺼짐 fill (§6) */
 .tgl.on{background:var(--c-green);}
 
+
+/* ═══════════════ 디자인 이식 D — 통계 (09-24 · 디자인_언어 §7 신호·막대 차트) ═══════════════ */
+.st-pair{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-bottom:12px;}
+.st-pair>.card-box{margin:0;}
+@media (min-width:1000px){ .st-pair{grid-template-columns:minmax(0,1fr) 320px;} }
+.sig-box{display:flex;flex-direction:column;}
+.sig-list{flex:1;display:flex;flex-direction:column;}
+.sig-row{flex:1;min-height:60px;display:flex;align-items:center;gap:12px;cursor:pointer;position:relative;}
+.sig-row+.sig-row::before{content:"";position:absolute;left:44px;right:0;top:0;height:1px;transform:scaleY(.5);background:var(--c-sep);}
+.sg-ic{width:32px;height:32px;border-radius:9px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;}
+.sg-ic svg{width:17px;height:17px;}
+.sg-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;}
+.sg-t{font-size:15px;font-weight:600;line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sg-d{font-size:13px;color:var(--c-sec);line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sig-x{color:var(--c-sec);}
+.chart-wrap{position:relative;}
+.chart .col.rest{justify-content:flex-end;align-items:center;}
+.chart .col .rest-l{font-size:10px;color:var(--c-sec);white-space:nowrap;line-height:12px;margin-bottom:2px;}
+.cap-line{position:absolute;left:0;right:0;height:0;border-top:1px dashed var(--c-sec);opacity:.8;pointer-events:none;}
+.cap-line span{position:absolute;right:0;top:3px;font-size:11px;color:var(--c-sec);background:var(--c-card);padding:0 2px;line-height:14px;}
+
 </style>
 </head>
 <body>
@@ -8565,7 +8586,7 @@ function ymTodayN(){
   try{ if(typeof YM!=='undefined' && YM.cat && YM.loaded) return ymDueToday().length;
     /* 문풀 타일 수 — 카탈로그·로그를 홈에서 한 번 조용히 받는다(문풀에 들어갈 때 받던 것과 같은 ymLoad · 합집합이라 몇 번 받아도 안전) */
     if(!_ymHomeLoad && typeof ymLoad==='function'){ _ymHomeLoad=true;
-      ymLoad().then(()=>{ if($('scrHome').classList.contains('on')) renderHomeHead(dueTodayCount(), isRestDay(todayKey())); }).catch(()=>{ _ymHomeLoad=false; }); }
+      ymLoad().then(()=>{ renderHomeHead(dueTodayCount(), isRestDay(todayKey())); })   // 사이드바 타일은 어느 화면에서나 보인다.catch(()=>{ _ymHomeLoad=false; }); }
   }catch(e){}
   return null; }
 function openListCond(k){ go('scrList'); listCond=k; if(k==='today') $('qSort').value='recent'; renderList(true); }
@@ -10453,21 +10474,24 @@ function watchCharts(){
     document.querySelectorAll('.sub-body, #todayBox').forEach(el=>{ try{ _snapRO.observe(el); }catch(e){} });
   }
 }
-function barChart(cols, opt){ // cols=[{a,b,label,title,cls}] a=주(아래)·b=부(위)
-  const mx=Math.max(1,...cols.map(c=>(c.a||0)+(c.b||0)));
+function barChart(cols, opt){ // cols=[{a,b,label,title,cls}] a=주(아래)·b=부(위) · opt.cap = 기준선(하루 처리) · 빈 휴식일 = 가로 라벨 「휴식」(09-24)
+  const mx=Math.max(1,...cols.map(c=>(c.a||0)+(c.b||0)), (opt&&opt.cap)||0);
   /* 🔴 **값이 0인 단은 그리지 않는다** (동하 09-09). 예전엔 a가 0이어도 막대를 하나 깔아서,
      min-height를 세우자 복습 부하 차트(a=이월=0인 날이 많다)에 **주황 띠가 줄줄이 생겼다.**
      총합이 0인 칸만 `.zero`로 바닥선을 남긴다 — 그래야 막대 리듬이 안 끊긴다(그것이 「간격이 다르다」의 진짜 원인이었다). */
   const bars=cols.map(c=>{
     const a=c.a||0, b=c.b||0;
     const ha=Math.round(a/mx*100), hb=Math.round(b/mx*100);
+    if(!(a+b) && /\brest\b/.test(c.cls||'')) return `<div class="col rest zero" title="${esc(c.title||'')}"><span class="rest-l">휴식</span></div>`;
     return `<div class="col ${c.cls||''} ${a+b?'':'zero'}" title="${esc(c.title||'')}">
       ${opt&&opt.val&&c.a!=null?`<em>${esc(String(c.a))}${opt.unit||''}</em>`:''}
       ${b?`<i class="b2" style="height:${Math.max(hb,1)}%"></i>`:''}
       ${a?`<i style="height:${Math.max(ha,1)}%"></i>`:(a+b?'':'<i></i>')}</div>`;
   }).join('');
   const ax=cols.map(c=>`<span>${esc(c.label||'')}</span>`).join('');
-  return `<div class="chart" style="${opt&&opt.h?`height:${opt.h}px`:''}">${bars}</div><div class="xaxis">${ax}</div>`;
+  const capL = opt&&opt.cap ? `<div class="cap-line" style="bottom:${Math.min(100,Math.round(opt.cap/mx*100))}%"><span>${esc(opt.capLab||'')}</span></div>` : '';
+  const ch=`<div class="chart" style="${opt&&opt.h?`height:${opt.h}px`:''}">${bars}</div>`;   // 기준선은 차트 밖 겹침 층 — snapChart가 .chart 자식 폭을 박는다
+  return (capL?`<div class="chart-wrap">${ch}${capL}</div>`:ch)+`<div class="xaxis">${ax}</div>`;
 }
 let statsLoaded=false;
 /* ═══════════════ 통계 계산 도우미 (2026-09-01 재편) ═══════════════ */
@@ -10848,7 +10872,7 @@ function statSignals(){
     if(a7-a30>=SIG_AGAIN_GAP) out.push({k:'again', t:'이번 주 「다시」 '+Math.round(a7)+'% (30일 '+Math.round(a30)+'%) — 간격이 긴가? 복습 강도를 보세요', go:'scrHome'});
   }
   let leech=0; for(const c of DATA) if(isLeech(c)) leech++;
-  if(leech>=SIG_LEECH) out.push({k:'leech', t:'누수 <b>'+leech+'장</b> — 약점에서 손보세요', go:'scrWeak'});
+  if(leech>=SIG_LEECH) out.push({k:'leech', t:'누수 <b>'+leech+'장</b> — 라이브러리에서 보기', go:'scrWeak'});
   return out.slice(0,3);
 }
 function renderStats(){
@@ -10927,13 +10951,22 @@ function renderStats(){
   /* 🔴 신호는 ✕로 **7일 숨긴다**(동하 09-23 「총창이랑 나머지 하나도 계속 뜸」 — 알고 있는 신호가 며칠째 같은 자리에 붙어 있었다). 기기별 · 7일 뒤 조건이 그대로면 다시 뜬다. */
   const K_SIGMUTE='cards_sig_mute_v1'; let mute={}; try{ mute=JSON.parse(lsGet(K_SIGMUTE)||'{}')||{}; }catch(e){}
   const SIG=statSignals().filter(x=>!(x.k && mute[x.k] && mute[x.k]>=todayKey()));
-  h+='<div class="card-box"><h3>신호</h3>';
-  if(!SIG.length) h+='<div class="cap">신호 없음 — 하던 대로 가면 돼요</div>';
-  else h+='<div class="bar-list" style="background:none;padding:2px 0;margin:0">'
-    +SIG.map(x=>'<div class="bl-row sig-row" data-go="'+x.go+'" style="cursor:pointer">'
-      +'<span class="m" style="text-align:left;flex:1">'+x.t+'</span>'+(x.k?'<button class="sig-x" data-sigmute="'+esc(x.k)+'" title="7일 숨기기">✕</button>':'')+'<span class="c">›</span></div>').join('')
+  /* 09-24 디자인 이식 D: 신호 = 아이콘 + 제목 + 한 줄 설명(nowrap 말줄임) · 줄 높이 같게(flex:1) · 예보 옆 320 칸(디자인_언어 §7 신호·요약 목록) */
+  const SIG_IC={subj:['var(--c-red)','<path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5z"/><path d="M12 6.5v13"/>'],
+    overdue:['var(--c-orange)','<circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2"/>'], again:['var(--c-orange)','<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>'],
+    leech:['var(--c-purple)','<path d="M12 7v6"/><path d="M12 17h.01"/>']};
+  let sigH='<div class="card-box sig-box"><h3>신호</h3>';
+  if(!SIG.length) sigH+='<div class="cap">신호 없음 — 하던 대로 가면 돼요</div>';
+  else sigH+='<div class="sig-list">'
+    +SIG.map(x=>{ const kk=String(x.k||'').split(':')[0], ic=SIG_IC[kk]||['var(--c-acc)','<circle cx="12" cy="12" r="8"/>'];
+      const parts=String(x.t).split(' — '); let t1=parts[0], t2=parts.slice(1).join(' — ');
+      const pm=t1.match(/^(.*?)\s*(\([^)]*\))\s*$/); if(pm){ t1=pm[1]; t2=pm[2].slice(1,-1)+(t2?' · '+t2:''); }   // 「(전체 86%)」는 설명 줄로
+      return '<div class="sig-row" data-go="'+x.go+'" data-sk="'+esc(kk)+'"><span class="sg-ic" style="background:'+ic[0]+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ic[1]+'</svg></span>'
+      +'<span class="sg-b"><span class="sg-t">'+t1+'</span>'+(t2?'<span class="sg-d">'+t2+'</span>':'')+'</span>'
+      +(x.k?'<button class="sig-x" data-sigmute="'+esc(x.k)+'" title="7일 숨기기" aria-label="7일 숨기기">✕</button>':'')
+      +'<svg class="s2-chev" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m1.5 1.5 6 6-6 6"/></svg></div>'; }).join('')
     +'</div>';
-  h+='</div>';
+  sigH+='</div>';
 
   /* ═══ D. 부하 예보 (14일) — 「지금 밀린 것」 문구는 뺐다(정의가 밀림이 아니다 · C 참조) ═══ */
   const F=forecastCarry(14);
@@ -10942,10 +10975,11 @@ function renderStats(){
       title:k+' · 쌓임 '+c.load+'장 (이월 '+c.carry+' + 새로 '+c.fresh+')'}; });
   const peak=F.cols.reduce((m,c)=>Math.max(m,c.load),0);
   const wk1=F.cols.slice(0,7).reduce((a,c)=>a+c.fresh,0);
-  h+='<div class="card-box"><h3>복습 부하 예보 (14일)</h3>'
-    +'<div class="cap">막대 = 그날 쌓일 양(이월 + 새 due) · 하루 처리량 '+cap+'장(최근 실측) · 휴식일 0장</div>'
-    +barChart(fcols,{h:110})
-    +'<div class="cap" style="margin-top:8px">앞 7일에 <b>새로</b> due가 되는 건 '+wk1.toLocaleString()+'장 · 가장 몰리는 날 <b>'+peak.toLocaleString()+'장</b></div></div>';
+  h+='<div class="st-pair"><div class="card-box"><h3>복습 부하 예보 (14일)</h3>'
+    +'<div class="cap">막대 = 그날 쌓일 양(이월 + 새 due) · 선 = 하루 처리(최근 실측)</div>'
+    +barChart(fcols,{h:110, cap:cap, capLab:'하루 처리 '+Number(cap).toLocaleString()})
+    +'<div class="cap" style="margin-top:8px">앞 7일에 <b>새로</b> due가 되는 건 '+wk1.toLocaleString()+'장 · 가장 몰리는 날 <b>'+peak.toLocaleString()+'장</b></div></div>'
+    +sigH+'</div>';
 
   /* ═══ E. 과목별 — 유지율 오름차순(나쁜 과목이 위) ═══ */
   const sr=retentionSplit(0, (e,c)=>c.subj);
@@ -11011,7 +11045,8 @@ function renderStats(){
 
   $('statsBody').innerHTML=h;
   watchCharts();   // 🔴 그리고 나서 폭을 정수로 못 박는다(간격 들쭉날쭉 방지) · 창 크기가 바뀌면 ResizeObserver가 다시 잰다
-  $('statsBody').querySelectorAll('.sig-row').forEach(el=>{ el.onclick=()=>go(el.dataset.go); });
+  $('statsBody').querySelectorAll('.sig-row').forEach(el=>{ el.onclick=(ev)=>{ if(ev.target.closest('.sig-x')) return;
+    if(el.dataset.sk==='leech') openListCond('leech'); else go(el.dataset.go); }; });   // 누수 = 라이브러리 「누수」 목록(약점 화면은 UX §1 정리 대상)
   $('statsBody').querySelectorAll('[data-sigmute]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation();
     let m={}; try{ m=JSON.parse(lsGet('cards_sig_mute_v1')||'{}')||{}; }catch(e){} m[b.dataset.sigmute]=dkAdd(todayKey(),6); lsSet('cards_sig_mute_v1', JSON.stringify(m));
     toast('이 신호는 7일 동안 숨겨요'); renderStats(); });

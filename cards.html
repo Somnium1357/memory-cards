@@ -11219,6 +11219,15 @@ function ymProgress(){
    🔴 어느 모드인지는 <html class="ym"> 하나로 정해진다 — 악센트 색·알약 라벨이 거기서 갈린다. 마지막 모드를 기억한다(K_MODE).
    ═══════════════════════════════════════════════════════════════════════════════════════ */
 const K_MODE='cards_mode_v1', K_YM_OPEN='cards_ym_open_v1', YM_DEADLINE='2026-10-08';
+/* 🔴 소스별 마감(메타 결정 09-23 · 동하 「일정은 메타에 물어봐」) — 한 줄에 섞으면 종이 소스가 강사 연문 속도를 부풀렸다(리뷰 09-23 S1: 9단위/일 vs 5).
+   연문(강사) 10-01 · 중등기출(중기뽀) 10-08(1회독 끝에 「1일 1모의」로 가면 D 구간으로 밀림 — 메타가 다시 통보) · 중등기출(강사) 10-22.
+   분모 = 오늘부터 마감일까지(둘 다 포함) 중 **쉬는 날 뺀 날**(isRestDay — 매주 목 · 사람이 뺀 예외일은 공부일로 셈). */
+const YM_DUE={'lect':'2026-10-01', 'p:중기뽀':'2026-10-08', 'p:강사중등':'2026-10-22'};
+function ymPace(src){ const dl=YM_DUE[src]; if(!dl) return null; const tk=todayKey(); let days=0, d=tk, g=0;
+  while(d<=dl && g++<400){ if(!isRestDay(d)) days++; d=dkAdd(d,1); }
+  let left=0; for(const u of (YM.cat&&YM.cat.units)||[]){ if(ymSrcOf(u)===src && !ymUnitFinished(u)) left++; }
+  return {dl, days, left, per: left ? Math.ceil(left/Math.max(1,days)) : 0}; }
+function ymPaceText(src){ const p=ymPace(src); if(!p) return ''; return p.left ? p.dl.slice(5).replace('-','/')+'까지 하루 '+p.per : '끝'; }
 let ymMode = lsGet(K_MODE)==='ym';
 function ymSetMode(on){ ymMode=!!on; lsSet(K_MODE, ymMode?'ym':'card'); document.documentElement.classList.toggle('ym', ymMode); }
 /* 화면 전환은 앱의 go() 하나를 그대로 쓴다. 연문 화면으로 가면 모드가 켜지고, 카드 화면으로 가면 꺼진다 —
@@ -11324,7 +11333,7 @@ function ymRenderToday(){
     const live=units.filter(u=>!ymSkipped(u.id)); const finN=live.filter(ymUnitFinished).length;
     const wrong=wrongN(it=>{ const u=ymUnitById(it.unit); return u&&ymSrcOf(u)===src; });
     const sk='src:'+src;
-    h+='<div class="ym-tree-head" data-ym-fold-row="'+sk+'"><b>'+srcName+'</b><small>단위 '+finN+'/'+live.length+' · ✓ '+wrong+'</small>'+foldBtn(sk)+'</div>';
+    h+='<div class="ym-tree-head" data-ym-fold-row="'+sk+'"><b>'+srcName+'</b><small>단위 '+finN+'/'+live.length+' · ✓ '+wrong+(YM_DUE[src]?' · '+ymPaceText(src):'')+'</small>'+foldBtn(sk)+'</div>';
     if(!ymFoldOpen(sk)) continue;
     h+='<div class="ym-tree-body">';
     for(const sj of subjSorted){
@@ -11345,9 +11354,10 @@ function ymRenderToday(){
   }
 
   // 진도 한 줄
-  const p=ymProgress(); const daysLeft=Math.max(1, dkDiff(YM_DEADLINE, tk)); const need=Math.ceil((p.unitsN-p.units)/daysLeft);
+  const p=ymProgress();
+  const paceSpans=YM_SRC.filter(([k])=>YM_DUE[k] && YM.cat.units.some(u=>ymSrcOf(u)===k)).map(([k,nm])=>{ const q=ymPace(k); return '<span>'+nm+' '+(q.left?q.dl.slice(5).replace('-','/')+'까지 하루 <b>'+q.per+'</b>':'<b>끝</b>')+'</span>'; }).join('');   // 소스별(메타 09-23)
   h+='<div class="ym-prog"><span>단위 <b>'+p.units+'</b>/'+p.unitsN+(p.skipped?' <small>(제외 '+p.skipped+')</small>':'')+'</span><span>문항 <b>'+p.items+'</b>/'+p.itemsN+(p.itemsSkipped?' <small>(제외 '+p.itemsSkipped+')</small>':'')+'</span>'
-    +'<span>'+YM_DEADLINE.slice(5).replace('-','/')+'까지 하루 <b>'+need+'</b>단위</span><span>재풀이 잔여 <b>'+p.redo+'</b></span></div>';
+    +paceSpans+'<span>재풀이 잔여 <b>'+p.redo+'</b></span></div>';
   body.innerHTML=h;
   /* 🔴 연타 가드 350ms(리뷰 09-23 R9) — 누르면 곧바로 다시 그려 다음 행이 같은 자리로 올라와, 더블탭이 **다음 문항까지 닫았다.** 카드 채점 가드와 같은 값. */
   const ymTapOk=()=>{ const n=Date.now(); if(n-(window._ymTapAt||0)<350) return false; window._ymTapAt=n; return true; };

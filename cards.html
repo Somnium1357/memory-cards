@@ -1664,10 +1664,19 @@ input,select{border-radius:10px;}
 
 /* UX §1 (09-24): 단위 줄 「읽음 표시」는 화면에서 뺀다(사용 9번 · 마지막 8/22) — 기록(state.hoedok)은 그대로 둔다 */
 .u-row .rd{display:none;}
+
+/* 불러오는 중 (§7.3) — 앱 아이콘 96 + 「카드」 28/700 + 막대 180×4 + 한 줄 · 스피너 없음 */
+#loading{flex-direction:column;gap:14px;background:var(--c-bg);color:var(--c-sec);font-weight:400;}
+#loading .ld-ic{width:96px;height:96px;border-radius:24px;box-shadow:var(--sh-card);}
+#loading .ld-t{font-size:28px;font-weight:700;color:var(--c-label);letter-spacing:-.02em;}
+#loading .ld-bar{width:180px;height:4px;border-radius:2px;background:var(--c-fill);overflow:hidden;}
+#loading .ld-bar i{display:block;width:40%;height:100%;border-radius:2px;background:var(--c-acc);animation:ldmove 1.4s ease-in-out infinite;}
+@keyframes ldmove{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+#loading .ld-s{font-size:15px;color:var(--c-sec);text-align:center;padding:0 24px;}
 </style>
 </head>
 <body>
-<div id="loading">여는 중…</div>
+<div id="loading"><img class="ld-ic" src="icon-180.png" alt=""><div class="ld-t">카드</div><div class="ld-bar"><i></i></div><div class="ld-s">여는 중…</div></div>
 <div id="app">
   <aside id="hSide">
     <div class="hs-head"><span class="hs-title">카드</span><span class="hs-dday" id="hDday"></span></div>
@@ -11889,7 +11898,7 @@ function fixScopeKeys(){
   await ymLoadBase();        // 옛 카드 ID 집합 — 신규 순서 네 층(newTier)·연문 준비도가 쓴다(09-15)
   await loadData();
   if(!DATA.length){
-    $('loading').textContent='카드 데이터를 못 불러왔어요 — 네트워크 확인 후 새로고침';
+    { const s=document.querySelector('#loading .ld-s'); if(s) s.textContent='카드 데이터를 못 불러왔어요 — 네트워크 확인 후 새로고침'; else $('loading').textContent='카드 데이터를 못 불러왔어요 — 네트워크 확인 후 새로고침'; }
     return;
   }
   await loadAll();

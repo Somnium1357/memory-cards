@@ -1588,6 +1588,43 @@ input,select{border-radius:10px;}
 .ss-panel details.ss-score summary{font-size:15px;color:var(--c-acc);}
 #ssUnitFold{margin-top:0;}
 
+
+/* ═══════════════ 디자인 이식 E(3) — 시트 · 설정 · 토스트 · 잠시 멈춤 (09-24 · 디자인_언어 §6 · §7 · §7.3) ═══════════════ */
+.ovl{background:var(--c-dim);}
+.sheet{background:var(--c-bg);border-radius:var(--r-panel);box-shadow:var(--sh-big);}
+.sheet h2{font-family:var(--font);font-size:22px;font-weight:700;letter-spacing:-.015em;}
+.sheet .desc{font-size:13px;color:var(--c-sec);}
+.sheet .btn-row button{border-radius:999px;min-height:50px;font-size:17px;font-weight:600;}
+.btn-primary{background:var(--c-acc-fill);color:#fff;}
+.btn-ghost{border:0;background:var(--c-fill);color:var(--c-label);}
+/* 설정 = inset grouped — 필드 = 그룹 카드 · 머리 = 13/600 sec · 토글 51×31 초록 · 슬라이더 acc */
+#ovlSettings .field{background:var(--c-card);border-radius:var(--r-group);box-shadow:var(--sh-card);padding:14px 20px 16px;margin-bottom:16px;}
+#ovlSettings .field>label{font-size:13px;font-weight:600;color:var(--c-sec);margin:0 0 8px;}
+#ovlSettings .desc{font-size:13px;color:var(--c-sec);line-height:18px;}
+.rng::-webkit-slider-runnable-track{height:4px;background:var(--c-fill);}
+.rng::-webkit-slider-thumb{width:28px;height:28px;margin-top:-12px;background:#fff;box-shadow:0 0 0 .5px rgba(0,0,0,.08),0 3px 8px rgba(0,0,0,.15);}
+.rng::-moz-range-thumb{width:28px;height:28px;background:#fff;box-shadow:0 0 0 .5px rgba(0,0,0,.08),0 3px 8px rgba(0,0,0,.15);}
+.rng-v{font-size:17px;font-weight:600;color:var(--c-acc);}
+.rng-ends{font-size:13px;font-weight:400;color:var(--c-sec);}
+.tgl-row{font-size:17px;font-weight:400;min-height:44px;}
+.tgl{width:51px;height:31px;background:var(--c-fill);flex:0 0 auto;}
+.tgl::after{top:2px;left:2px;width:27px;height:27px;background:#fff;box-shadow:0 3px 8px rgba(0,0,0,.15),0 0 0 .5px rgba(0,0,0,.04);}
+.tgl.on::after{transform:translateX(20px);}
+.act-btn{border:0;background:var(--c-fill);border-radius:var(--r-cell);min-height:52px;}
+#themeSeg,.seg{background:var(--c-fill);border-radius:10px;padding:2px;gap:2px;}
+#themeSeg button,.seg button{border-radius:8px;min-height:36px;font-size:15px;font-weight:500;color:var(--c-label);}
+#themeSeg button.on,.seg button.on{background:var(--c-card);color:var(--c-label);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12);}
+/* 토스트 = 어두운 캡슐 · 풀이 화면에선 채점 막대 위 12 · 카드 칸 가운데 */
+#toast{background:var(--c-toast);color:#fff;border-radius:999px;}
+#toast.hi{bottom:calc(8px + var(--grade-h) + 12px + env(safe-area-inset-bottom));}
+@media (min-width:1120px) and (orientation:landscape){ body:has(#main.railed) #toast.hi{left:calc((100% - var(--insp-w) - var(--sp-m)) / 2);} }
+@media (max-width:500px){ #toast.hi{bottom:calc(8px + var(--grade-h) + 10px + 48px + 12px + env(safe-area-inset-bottom));} }
+/* 잠시 멈춤 = 전체 흐림 18 + 어둡게 · 가운데 패널 420(반경 30) · 「계속 풀기」 채움 52 */
+#ovlPause{background:var(--c-dim);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);}
+.pause-card{background:var(--c-card);border-radius:30px;max-width:420px;width:calc(100% - 32px);padding:28px;box-shadow:var(--sh-big);}
+.pause-card h2{font-family:var(--font);font-size:22px;font-weight:700;}
+.pause-card button{border-radius:999px;min-height:52px;font-size:17px;font-weight:600;}
+
 </style>
 </head>
 <body>

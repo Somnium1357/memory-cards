@@ -8969,8 +8969,9 @@ const PAD_ACTS=[   // [id, 라벨, 합성할 키] — 순서 = 화면 순서
 const PAD_DEF={reveal:1, again:3, hard:2, good:17, easy:0, undo:7, bury:16, off:4, mod:5, pause:8, home:9, up:12, down:13, left:14, right:15, hint:6};
 let padMap=Object.assign({}, PAD_DEF); try{ const j=JSON.parse(lsGet(K_PAD)||'null'); if(j&&typeof j==='object') padMap=Object.assign({}, PAD_DEF, j); }catch(e){}
 let padPrev=[], padSeen=false, padLearn=null, padHoldT=0, padLast=null;
+let _padEv=false;
 function padSynth(act, ctrl){ const a=PAD_ACTS.find(x=>x[0]===act); if(!a||!a[2]) return;
-  document.dispatchEvent(new KeyboardEvent('keydown', Object.assign({bubbles:true, cancelable:true, ctrlKey:!!ctrl}, a[2]))); }
+  _padEv=true; try{ document.dispatchEvent(new KeyboardEvent('keydown', Object.assign({bubbles:true, cancelable:true, ctrlKey:!!ctrl}, a[2]))); } finally{ _padEv=false; } }   // _padEv — 「키보드 단축키」 토글이 게임패드까지 끄지 않게(리뷰 09-23 UX 정리안 결함)
 function padPoll(){
   try{ const gps=navigator.getGamepads ? navigator.getGamepads() : []; let gp=null; for(const g of gps){ if(g && g.connected){ gp=g; break; } }
     if(!gp){ if(padSeen){ padSeen=false; padPrev=[]; renderPadUI(); } return; }
@@ -9044,7 +9045,7 @@ document.addEventListener('keydown',e=>{
   /* 🔴 조합키는 원래 **통째로** 무시한다 — 브라우저 단축키(Cmd+R·Cmd+F…)를 가로채지 않으려고.
      딱 하나 연다: **Ctrl+1~4 = 플래그 사유 칩 넷** (동하 09-09 · 게임패드 R을 Ctrl로 두고 쥔다).
      채점 1~4와 손가락 자리가 같고 Ctrl만 얹는 꼴이라 외울 것이 없다. 그 밖의 조합은 여전히 버린다. */
-  if(!kbdOn || e.metaKey || e.altKey)return;
+  if((!kbdOn && !_padEv) || e.metaKey || e.altKey)return;
   if(e.ctrlKey && !/^[1-4]$/.test(keyOf(e)))return;   // 🔴 Ctrl+숫자만(사유 칩) — Ctrl+Z·X·C·V는 브라우저 몫(리뷰 09-23 R10 · ca8a31f4 회귀: 복사·되돌리기가 플래그를 붙였다)
   /* 🔴 **화살표 = 지금 보이는 것의 스크롤** (동하 09-10 실기: 게임패드 D패드로 표 카드를 못 굴렸다).
      카드 본문은 문서가 아니라 `#cardScroll` 안에서 구른다 — 초점이 아무 데도 없으면 브라우저는
@@ -10689,7 +10690,7 @@ function hdStep(dir){
     const nx=Math.max(0, Math.min(hs.length-1, cur+dir)); if(nx===cur && dir<0 && cur===0){ w.scrollTo({top:0}); return true; }
     if(nx===cur) return false; hs[nx].scrollIntoView({block:'start'}); return true; }catch(e){ return false; }
 }
-function hdKey(e){ if(!kbdOn || e.metaKey||e.ctrlKey||e.altKey) return;
+function hdKey(e){ if((!kbdOn && !_padEv) || e.metaKey||e.ctrlKey||e.altKey) return;
   if(e.key==='ArrowLeft'||e.key==='ArrowRight'){ if(hdStep(e.key==='ArrowRight'?1:-1)) e.preventDefault(); return; }
   /* 🔴 ↑↓도 본문을 굴린다 (동하 09-16 「오른쪽 사이드바로 한번 넘어가고 나면 그 뒤로 방향키가 안 먹음」) — 목차(사이드바)의 링크에 초점이 가면
      브라우저 기본 스크롤이 그 목차 상자를 굴리려 해 본문은 안 움직였다. 초점이 어디든 판 본문(window)을 굴린다. */
@@ -10792,7 +10793,7 @@ function renderHdQ(){
   $('hdQNext').textContent = last?'✓':'›';
   $('hdQNext').classList.toggle('qdone', !!last);
   $('hdQNext').disabled = last?false:(HD_QI>=HD_QS.length-1);
-  $('hdQNext').title = last?'다 봤어요 — 2주 쉬기':'다음 질문';
+  $('hdQNext').title = last?'다 봤어요 — '+READ_COOL+'일 쉬기':'다음 질문';
   if($('hdQList').classList.contains('on')){
     const head=HD_QS.length>=HD_PREVIEW_MIN
       ? `<div class="qhead">이 절에서 흔들린 질문 ${HD_QS.length}개예요 — <b>먼저 쭉 훑고</b> 본문을 한 번 통과하세요.</div>` : '';

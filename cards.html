@@ -5028,12 +5028,13 @@ document.addEventListener('visibilitychange',()=>{
     hiddenAt=Date.now();
     syncSessQueue(); saveSessionsFlush();
     cacheFlush(); if(dirty){ pushFromHidden=true; push(); }
+    if(typeof YM!=='undefined' && YM.pending && YM.pending.length){ clearTimeout(_ymPushT); ymPush(); }   // 문풀 대기분도(리뷰 09-23 R5)
     return;
   }
   if(!hiddenAt) return;              // 앱을 내려둔 시간은 응답 시간에서 조용히 뺀다 (정지 화면은 안 띄움 —
   const d=Date.now()-hiddenAt; hiddenAt=0;   // 잠깐 창 전환한 것까지 탭을 요구하면 성가시다)
   if(!pauseAt && shownAt && $('scrSolve').classList.contains('on')) pausedMs+=d;
-  if(d>60000) refreshRemote();       // 1분 넘게 자리 비웠으면 다른 기기 분을 당겨온다
+  if(d>60000){ refreshRemote(); if(typeof ymPull==='function') ymPull(); }       // 1분 넘게 자리 비웠으면 다른 기기 분을 당겨온다(문풀 로그도 · R6)
 });
 let refreshing=false, pendingRefresh=false, refreshFails=0;   // refreshFails = 연속 실패 횟수(X 목록 밖)
 async function refreshRemote(){     // 포그라운드 복귀 시 원격 상태 당겨오기 (새로고침 없이 기기 전환)
@@ -11121,11 +11122,23 @@ async function ymLoadRemote(){                 // 원격 로그 → 합집합 ·
   ymAdd(ymLoadPending()); YM.pending=ymLoadPending();
   ymDerive();
   try{ await idbSet(K_YM_LOG, JSON.stringify(ymFile())); }catch(e){}
-  YM.loaded=true;
+  YM.loaded=true; YM.pulledAt=Date.now();
+  if(YM.pending.length) ymPushSoon();          // 🔴 되살린 미전송분을 올린다(리뷰 09-23 R5 — 다음 문풀 탭까지 안 올라갔다)
+}
+/* 🔴 문풀 로그도 복귀 때 당긴다(리뷰 09-23 R6) — 부팅 뒤 첫 진입 한 번만 읽어서 다른 기기 표시가 안 보였고, 409 병합 때 이 기기의 뒤 이벤트가 그걸 덮었다.
+   이벤트 id 합집합이라 몇 번 당겨도 안전하다. 카드의 refreshRemote와 같은 자리에서 부르되, 한 번도 안 열었으면(카탈로그 없음) 건너뛴다. */
+async function ymPull(){
+  if(!YM.loaded || !cfg || !cfg.token) return;
+  try{ const got=await ghGet(YM_PATH); YM.remoteOK=true; if(got && Array.isArray(got.ev)){ ymAdd(got.ev); ymDerive(); _ymReady=null; }
+    YM.pulledAt=Date.now(); try{ await idbSet(K_YM_LOG, JSON.stringify(ymFile())); }catch(e){}
+    if(typeof ymRenderSoon==='function') ymRenderSoon(); }catch(e){}
+  if(YM.pending.length) ymPushSoon();
 }
 async function ymLoad(){ await Promise.all([ymLoadCatalog(), ymLoadRemote()]); }
-let _ymPushT=null;
-function ymPushSoon(){ clearTimeout(_ymPushT); _ymPushT=setTimeout(ymPush, 900); }   // 탭을 묶어 한 번에
+let _ymPushT=null, _ymFails=0;
+/* 🔴 실패 뒤엔 **지수 백오프**(리뷰 09-23 R7 — 0.9초 간격 무한 재시도, 시간당 약 4,000회 · 카드 저장과 같은 토큰 한도). 2·4·8…초, 최대 5분.
+   두 번 연속 실패하면 카드 저장과 같은 띠로 알린다(조용히 쌓이지 않게). 성공하면 0으로. */
+function ymPushSoon(){ clearTimeout(_ymPushT); const d=_ymFails? Math.min(300000, 2000*Math.pow(2,_ymFails-1)) : 900; _ymPushT=setTimeout(ymPush, d); }   // 탭을 묶어 한 번에
 async function ymPush(){
   if(!YM.pending.length || YM.pushing) return;
   if(!cfg||!cfg.token){ return; }              // 토큰 없는 기기 — 큐에만 쌓인다(카드 모드와 같은 규칙)
@@ -11135,8 +11148,9 @@ async function ymPush(){
     await ghPut(YM_PATH, ymFile, (remote)=>{ if(remote&&Array.isArray(remote.ev)) ymAdd(remote.ev); ymDerive(); });
     YM.pending=YM.pending.filter(e=>!inFlight.has(e.i)); ymSavePending();
     try{ await idbSet(K_YM_LOG, JSON.stringify(ymFile())); }catch(e){}
-    YM.lastErr=null;
-  }catch(e){ YM.lastErr=e; }
+    YM.lastErr=null; if(_ymFails>=2) hideBanner(); _ymFails=0;
+  }catch(e){ YM.lastErr=e; _ymFails++;
+    if(_ymFails>=2 && document.visibilityState==='visible') showBanner(e&&e.code==='auth'?'문풀 기록 저장 실패 — 토큰이 만료됐어요':e&&e.code==='perm'?'문풀 기록 저장 실패 — 토큰에 쓰기 권한이 없어요':'문풀 기록 저장 실패 — 이 기기에 모아 두고 다시 시도해요', e&&e.code==='auth'); }
   finally{ YM.pushing=false; if(YM.pending.length) ymPushSoon(); if(typeof ymRenderSoon==='function') ymRenderSoon(); }
 }
 /* ── 준비도 (§4) — 단위 카드 = 덮는 노드가 같은 과목 카드 node 경로의 어느 마디와 정확 일치(과목 마디 제외) ──
@@ -11231,7 +11245,7 @@ function ymRenderCurrent(){
 async function ymEnter(){
   _ymSubOpen.clear(); _ymRowPos.clear(); _ymTodayPin.clear();     // 펼쳐 둔 소문항 판·행 자리는 화면을 새로 들어올 때 비운다(오늘 목록의 고정 행도 그때 빠진다)
   if(!YM.loaded || !YM.cat){ $('ymTodayBody').innerHTML='<div class="ym-empty">문풀 카탈로그 여는 중…</div>'; go('scrYmToday'); await ymLoad(); }
-  else go('scrYmToday');
+  else { go('scrYmToday'); ymPull(); }   // 다시 들어올 때마다 원격 문풀 로그를 당긴다(R6)
   _ymReady=null; ymRenderToday();
 }
 function ymLeave(){ _ymSubOpen.clear(); _ymRowPos.clear(); _ymTodayPin.clear(); go('scrHome'); renderHome(); }

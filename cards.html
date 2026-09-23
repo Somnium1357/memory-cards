@@ -1625,6 +1625,22 @@ input,select{border-radius:10px;}
 .pause-card h2{font-family:var(--font);font-size:22px;font-weight:700;}
 .pause-card button{border-radius:999px;min-height:52px;font-size:17px;font-weight:600;}
 
+
+/* 세션 끝 (09-24) */
+.end-sheet{max-width:440px;padding:24px;display:flex;flex-direction:column;gap:16px;}
+.end-top{display:flex;align-items:center;gap:16px;}
+.end-ring{width:52px;height:52px;flex:0 0 auto;}
+.end-h{display:flex;flex-direction:column;gap:2px;}
+.end-k{font-size:13px;font-weight:600;color:var(--c-green);}
+.end-t{font-size:22px;font-weight:700;letter-spacing:-.015em;}
+.end-stats{display:grid;grid-template-columns:repeat(4,1fr);background:var(--c-card);border-radius:var(--r-group);box-shadow:var(--sh-card);padding:14px 8px;}
+.end-stats div{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.end-stats b{font-size:20px;font-weight:700;}
+.end-stats small{font-size:13px;color:var(--c-sec);}
+.end-next{display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:var(--c-card);border-radius:var(--r-group);box-shadow:var(--sh-card);padding:14px 20px;text-align:left;}
+.end-next span{font-size:17px;font-weight:600;color:var(--c-acc);}
+.end-next small{font-size:13px;color:var(--c-sec);}
+
 </style>
 </head>
 <body>
@@ -2309,6 +2325,8 @@ input,select{border-radius:10px;}
 
 <!-- 카드 상세 -->
 <div class="ovl" id="ovlCard"><div class="sheet wide" id="csSheet"></div></div>
+<!-- 세션 끝 (UX 정리안 §7 · 09-24) — 큐가 비면 세션 화면 위에 뜬다. 닫으면 종전대로 세션 화면 -->
+<div class="ovl" id="ovlEnd"><div class="sheet end-sheet" id="endBody"></div></div>
 
 <div id="toast"></div>
 
@@ -7346,6 +7364,28 @@ function finishSess(){         // 큐 소진 = 세션 화면으로 복귀 (성�
   }
   push();                      // 세션 경계 = 배치 push 시점
   go('scrSession');
+  if(curSess && curSess.lastScore && Date.now()-(curSess.lastScore.at||0)<5000) showSessEnd(curSess);   // 방금 끝낸 런이면 세션 끝 화면(09-24 · UX §7)
+}
+/* ═══ 세션 끝 화면 (UX 정리안 §7 「완료 순간을 보여 준다」 · 09-24) ═══
+   유지율 고리(첫 채점 기준 유지 = 「다시」 아닌 비율 · 세션 화면 「마지막 성적」과 같은 식) + 채점 · 시간 · 카드당 + 「다음: ○○ n장」 + 오늘로.
+   🔴 아무것도 새로 저장하지 않는다 — lastScore(finishSess가 방금 쓴 것)를 보여 줄 뿐이다. */
+function showSessEnd(sx){
+  const sc=sx.lastScore; if(!sc||!sc.n) return;
+  const hit=Math.round((sc.n-sc.r[1])/sc.n*100), per=Math.round(sc.ms/sc.n/1000);
+  const next=sessions.find(s=>s && s.id!==sx.id && sessRemain(s)>0);
+  const C=2*Math.PI*22, off=C*(1-hit/100);
+  $('endBody').innerHTML=`<div class="end-top"><svg class="end-ring" viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="22" fill="none" stroke="var(--c-fill)" stroke-width="7"/>
+      <circle cx="26" cy="26" r="22" fill="none" stroke="var(--c-green)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 26 26)"/></svg>
+    <div class="end-h"><span class="end-k">세션 끝</span><span class="end-t">${esc(sx.name)}</span></div></div>
+    <div class="end-stats"><div><b>${hit}%</b><small>유지율</small></div><div><b>${sc.n.toLocaleString()}</b><small>채점</small></div><div><b>${esc(fmtMin(sc.ms))}</b><small>시간</small></div><div><b>${per}초</b><small>카드당</small></div></div>
+    ${next?`<button class="end-next" id="endNext"><span>다음: ${esc(next.name)}</span><small>${sessRemain(next).toLocaleString()}장 · ${esc(fmtEst(sessRemain(next)))}</small></button>`:''}
+    <div class="btn-row"><button class="btn-ghost" id="endSess">세션 화면</button><button class="btn-primary" id="endHome">오늘로</button></div>`;
+  $('ovlEnd').classList.add('show');
+  const close=()=>$('ovlEnd').classList.remove('show');
+  $('endSess').onclick=close;
+  $('endHome').onclick=()=>{ close(); go('scrHome'); };
+  const nb=$('endNext'); if(nb) nb.onclick=()=>{ close(); viewSess=next; playSess(next); };
+  $('ovlEnd').onclick=(e)=>{ if(e.target===$('ovlEnd')) close(); };
 }
 let ssOpen=new Set();   // 세션 화면에서 펼쳐 둔 대주제 (중주제 낱개로 빼기용)
 let curTopic=null; // 방금 투입한 대주제 키

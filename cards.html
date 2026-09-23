@@ -1078,8 +1078,7 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 :root, :root[data-theme="b"]{ --shadow:0 0 0 1px rgba(255,255,255,.05), 0 8px 28px rgba(0,0,0,.38); }
 :root[data-theme="b"] .c-img, :root:not([data-theme]) .c-img{ filter:brightness(.88); }
 /* A5 타이포 — 페이퍼 앞면 700 → 600 · 긴 앞면 20 */
-:root[data-theme="c"] #cFront{ font-weight:600; }
-#cFront.long{ font-size:20px; font-weight:600; }
+/* A5(페이퍼 앞면 600 · 긴 앞면 20px)는 동하 09-23 「문면 글씨체 바뀐 거 별로」로 뺐다 */
 /* A6 반경 단계 — 채점 버튼 14 · 사이드바 22(카드와 같게) */
 .gbtn{ border-radius:14px; }
 #rail{ border-radius:22px; }
@@ -10149,8 +10148,10 @@ function realOverdue(){
     if(!s||!s.fsrs||s.retired||buried(c)) continue;
     if(effDueKey(dayKey(new Date(s.fsrs.due)), c.id) >= T) continue;
     if(settledToday(c)) continue;
-    if(qIds.has(c.id)) inQ.push(c); else if(autoScopes.some(sc=>inScope(c,sc))) rest.push(c); }
-  const live=dropSettled(inQ).concat(gateIn(rest, inQ));
+    if(qIds.has(c.id)) inQ.push(c); else if(autoScopes.some(sc=>scopeMatch(c,sc))) rest.push(c); }   // 🔴 scopeMatch — 세션이 빼 둔 범위(수학 교육과정 등 · 동하 의도)는 밀림이 아니다
+  /* 🔴 큐 안 카드도 문을 통과시켜 센다(동하 09-23 「일복 due 밀린 적 없음」 — 큐를 다 풀어도 짝 키·방향으로 **앱이 잡고 있는** 카드가
+     「N일째 밀렸어요」로 떴다. 사람이 풀 수 있는데 안 푼 것만 밀림이다). */
+  const live=gateIn([...inQ, ...rest], null);
   let oldest=0;
   for(const c of live){ const s=state.cards[c.id];
     const d=dkDiff(T, effDueKey(dayKey(new Date(s.fsrs.due)), c.id)); if(d>oldest) oldest=d; }
@@ -11639,7 +11640,7 @@ $('ovlImg').onclick=closeImg;
     const padT=parseFloat(getComputedStyle(Z).paddingTop)||0, off=Math.max(0, ct-zt-padT);
     if(C.getBoundingClientRect().height + off + padT <= Z.clientHeight - 10){ Z.classList.add('anchored'); C.style.marginTop=off+'px'; }
     requestAnimationFrame(fitCard); return r; };
-  const _s2=showCard; showCard=function(){ const Z=$('cardZone'); Z.classList.remove('anchored'); $('card').style.marginTop=''; const r=_s2.apply(this,arguments); const f=$('cFront'); f.classList.toggle('long',(f.textContent||'').length>150); return r; }; }   // A5 긴 앞면 20px
+  const _s2=showCard; showCard=function(){ const Z=$('cardZone'); Z.classList.remove('anchored'); $('card').style.marginTop=''; return _s2.apply(this,arguments); }; }
 
 </script>
 </body>

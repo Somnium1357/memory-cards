@@ -1411,6 +1411,98 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
   .gbtn .gl,#revealBtn{font-size:16px;}
 }
 
+
+/* ═══════════════ 디자인 이식 C — 홈 (09-24 · 디자인_언어 §6 · §7 · 캔버스 「확정 홈」) ═══════════════ */
+#scrHome{flex-direction:row;gap:var(--sp-m);padding:16px var(--sp-m) 8px;min-height:0;}
+#hSide{flex:0 0 var(--side-w);display:flex;flex-direction:column;gap:16px;padding:16px 12px 12px;border-radius:var(--r-panel);overflow-y:auto;
+  background:var(--c-glass);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);
+  box-shadow:0 0 0 .5px var(--c-glass-ring),0 8px 28px var(--c-glass-shadow);}
+.hs-head{display:flex;align-items:center;justify-content:space-between;height:41px;padding:0 12px;flex:0 0 auto;}
+.hs-title{font-size:34px;font-weight:700;letter-spacing:-.025em;line-height:41px;}
+.hs-dday{font-size:13px;font-weight:600;color:var(--c-acc);background:var(--c-acc-tint);border-radius:999px;padding:0 10px;line-height:26px;}
+.hs-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;flex:0 0 auto;}
+.hs-tile{border-radius:var(--r-tile);background:var(--c-tile);color:var(--c-label);padding:12px;display:flex;flex-direction:column;gap:8px;text-align:left;min-width:0;box-shadow:var(--sh-card);}
+.hs-tile:active{opacity:.8;}
+.ht-top{display:flex;justify-content:space-between;align-items:flex-start;width:100%;}
+.ht-ic{width:30px;height:30px;border-radius:15px;background:var(--tc);color:#fff;display:flex;align-items:center;justify-content:center;}
+.ht-ic svg{width:16px;height:16px;}
+.ht-n{font-size:24px;font-weight:700;letter-spacing:-.02em;line-height:30px;}
+.ht-n.sm{font-size:20px;}
+.ht-l{font-size:15px;font-weight:600;line-height:20px;color:var(--c-sec);}
+.hs-tile.on{background:var(--tc);color:#fff;}
+.hs-tile.on .ht-ic{background:rgba(255,255,255,.24);}
+.hs-tile.on .ht-l{color:#fff;}
+.hs-nav{display:flex;flex-direction:column;gap:2px;}
+.hs-grp{font-size:13px;font-weight:600;color:var(--c-sec);padding:8px 12px 4px;line-height:18px;}
+.hs-row{min-height:44px;border-radius:12px;display:flex;align-items:center;gap:12px;padding:0 12px;font-size:17px;font-weight:400;color:var(--c-label);text-align:left;width:100%;}
+.hs-row:active{background:var(--c-fill);}
+.hs-row svg{width:22px;height:22px;color:var(--c-acc);flex:0 0 auto;}
+.hs-bottom{margin-top:auto;}
+.hs-bottom .hs-row svg{color:var(--c-sec);}
+.h-foot{font-size:12px;color:var(--c-sec);padding:4px 12px 0;line-height:16px;}
+#scrHome .home-wrap{flex:1;min-width:0;overflow-y:auto;padding:0;}
+#scrHome .home-inner{max-width:none;padding-top:16px;display:flex;flex-direction:column;gap:16px;padding-bottom:4px;}
+.home-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:0;}
+.hh-t{display:flex;flex-direction:column;gap:2px;min-width:0;}
+#scrHome .h-title{font-family:var(--font);font-size:34px;font-weight:700;letter-spacing:-.025em;line-height:41px;margin:0;}
+#scrHome .h-sub{font-size:15px;color:var(--c-sec);line-height:20px;margin:0;}
+#btnSettingsP{display:none;width:44px;height:44px;border-radius:22px;align-items:center;justify-content:center;color:var(--c-label);}
+#btnSettingsP svg{width:22px;height:22px;}
+#hTilesP{display:none;}
+.hero{background:var(--c-card);border-radius:var(--r-group);padding:20px;display:flex;align-items:center;gap:20px;box-shadow:var(--sh-card);}
+.hero-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.hero-k{font-size:13px;font-weight:600;color:var(--c-acc);line-height:18px;}
+.hero-t{font-size:22px;font-weight:700;letter-spacing:-.015em;line-height:28px;}
+.hero-s{font-size:15px;color:var(--c-sec);line-height:20px;}
+.hero-go{height:50px;padding:0 26px 0 22px;border-radius:25px;background:var(--c-acc-fill);color:#fff;font-size:17px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;flex:0 0 auto;}
+.hero-go svg{width:15px;height:15px;}
+.hero-go.tint{background:var(--c-acc-tint);color:var(--c-acc);height:36px;padding:0 16px;border-radius:18px;font-size:15px;}
+.hero-ok{width:56px;height:56px;border-radius:28px;background:var(--c-green);color:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+.hero-ok svg{width:28px;height:28px;}
+.h-sec2{display:flex;justify-content:space-between;align-items:center;padding:0 8px 0 20px;height:32px;}
+.h-sec2 h2{margin:0;font-size:20px;font-weight:700;letter-spacing:-.015em;line-height:25px;}
+#btnNewSess{width:44px;height:44px;margin:-6px 0;display:flex;align-items:center;justify-content:center;color:var(--c-acc);border-radius:22px;background:none;padding:0;min-height:0;box-shadow:none;}
+#btnNewSess svg{width:22px;height:22px;}
+#sessList{background:var(--c-card);border-radius:var(--r-group);box-shadow:var(--sh-card);display:flex;flex-direction:column;overflow:hidden;}
+.sess2{min-height:60px;display:flex;align-items:center;gap:14px;padding:0 16px 0 20px;color:var(--c-label);text-align:left;width:100%;position:relative;}
+.sess2+.sess2::before{content:"";position:absolute;left:66px;right:0;top:0;height:1px;transform:scaleY(.5);background:var(--c-sep);}
+.sess2:active{background:var(--c-fill);}
+.s2-ic{width:32px;height:32px;flex:0 0 auto;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:700;}
+.s2-ic svg{width:17px;height:17px;}
+.sess2.fin .s2-ic{opacity:.45;}
+.s2-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;}
+.s2-n{font-size:17px;line-height:22px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.s2-s{font-size:13px;color:var(--c-sec);line-height:18px;}
+.sess2.fin .s2-s{color:var(--c-green);}
+.s2-r{display:flex;align-items:center;gap:10px;flex:0 0 auto;}
+.s2-r b{font-size:20px;font-weight:600;letter-spacing:-.01em;color:var(--c-label);}
+.s2-r small{font-size:15px;font-weight:400;color:var(--c-sec);margin-left:1px;}
+.s2-dash{font-size:17px;color:var(--c-sec);}
+#scrHome .plan-warn{border-radius:var(--r-group);margin:0;}
+.s2-chev{width:8px;height:14px;color:var(--c-chev);}
+.hp-views{display:none;}
+#tabBar{display:none;}
+@media (hover:hover) and (pointer:fine) and (min-width:1300px){ #scrHome .home-inner{max-width:var(--read-max);margin:0 auto;width:100%;} }
+/* 아이폰·좁은 화면 — 사이드바 대신 본문 위 타일 + 탭 막대 · 설정은 오른쪽 위 톱니 */
+@media (max-width:759px){
+  #scrHome{padding:4px var(--sp-m) 0;}
+  #hSide{display:none;}
+  #btnSettingsP{display:flex;}
+  .home-head{position:relative;padding-top:52px;}
+  #btnSettingsP{position:absolute;top:0;right:0;}
+  #hTilesP{display:grid;}
+  .hero{flex-direction:column;align-items:stretch;gap:16px;}
+  .hero-go{height:50px;}
+  .hp-views{display:block;}
+  .hp-list{background:var(--c-card);border-radius:var(--r-group);box-shadow:var(--sh-card);padding:4px;}
+  #scrHome .home-inner{padding-bottom:calc(62px + 24px);}
+  #tabBar{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;left:var(--sp-m);right:var(--sp-m);bottom:calc(8px + env(safe-area-inset-bottom));height:62px;border-radius:31px;padding:4px;z-index:20;
+    background:var(--c-glass);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);box-shadow:0 0 0 .5px var(--c-glass-ring),0 8px 28px var(--c-glass-shadow);}
+  .tab{height:54px;border-radius:27px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--c-label);font-size:10.5px;font-weight:600;}
+  .tab svg{width:22px;height:22px;}
+  .tab.on{background:var(--c-acc-tint);color:var(--c-acc);}
+}
+
 </style>
 </head>
 <body>
@@ -1481,32 +1573,42 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 
     <!-- 홈 -->
     <div class="scr" id="scrHome">
+      <!-- 🔴 디자인 이식 C (09-24 · 디자인_언어 §7 · 캔버스 「톤 · 페이퍼」 확정 홈): 가로 = 사이드바(타일 넷 · 보기 · 설정) + 본문(오늘 · 이어서 풀기 · 세션).
+           아이폰 = 사이드바 대신 본문 위 타일 + 아래 탭 막대(오늘 · 문풀 · 회독본 · 라이브러리). 플래그 타일은 없다(라이브러리 빠른 목록으로). -->
+      <aside id="hSide">
+        <div class="hs-head"><span class="hs-title">카드</span><span class="hs-dday" id="hDday"></span></div>
+        <div class="hs-tiles" id="hTiles"></div>
+        <nav class="hs-nav"><div class="hs-grp">보기</div>
+          <button class="hs-row" id="hsHd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5z"/><path d="M12 6.5v13"/></svg>회독본</button>
+          <button class="hs-row" id="ctOpen" title="음악·미술 2022 내용 체계표 — 가리고 쓰기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M9.5 4.5v15"/></svg>내용 체계표</button>
+          <button class="hs-row" data-go="scrList"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg>라이브러리</button>
+          <button class="hs-row" data-go="scrStats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V11M11 20V5M17 20v-6"/></svg>통계</button>
+        </nav>
+        <div class="hs-bottom"><button class="hs-row" id="btnSettings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>설정</button><div class="h-foot" id="hFoot"></div></div>
+      </aside>
       <div class="home-wrap"><div class="home-inner">
         <div class="home-head">
-          <div class="h-title">오늘</div>
-          <button class="gear" data-go="scrHelp" title="도움말" style="margin-right:2px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.3a3 3 0 1 1 3.4 4.4v1.1"/><path d="M12 17.6h.01"/></svg></button>
-          <button class="gear" id="btnSettings" title="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 8.9 19a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 5 8.9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9.5a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+          <div class="hh-t"><div class="h-title">오늘</div><div class="h-sub" id="hSub"></div></div>
+          <button class="gear glass-c" id="btnSettingsP" aria-label="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
         </div>
-        <div class="today-box" id="todayBox"></div>
-        <div class="h-sec">세션 <span id="hSub"></span></div>
-        <div id="sessList"></div>
-        <button class="more-btn" id="btnNewSess">＋ 새 세션</button>
+        <div class="hs-tiles" id="hTilesP"></div>
+        <div id="hHero"></div>
         <div id="planWarn" class="plan-warn"></div>
-        <div class="h-sec">라이브러리</div>
-        <div class="h-row">
-          <button class="h-tab" data-go="scrUnits">단위</button>
-          <button class="h-tab" data-go="scrList">카드 목록</button>
-          <button class="h-tab" id="ctOpen" title="음악·미술 2022 내용 체계표 — 가리고 쓰기">내용 체계표</button>
+        <div class="h-sec2"><h2>세션</h2><button id="btnNewSess" aria-label="새 세션" title="새 세션"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
+        <div id="sessList"></div>
+        <div class="hp-views">
+          <div class="hs-grp">보기</div>
+          <div class="hp-list"><button class="hs-row" id="ctOpenP"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M9.5 4.5v15"/></svg>내용 체계표</button><button class="hs-row" data-go="scrStats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V11M11 20V5M17 20v-6"/></svg>통계</button></div>
+          <div class="h-foot" id="hFootP"></div>
         </div>
-        <div class="h-sec">기록</div>
-        <div class="h-row">
-          <button class="h-tab" data-go="scrRead">읽기</button>
-          <button class="h-tab" data-go="scrStats">통계</button>
-          <button class="h-tab" data-go="scrWeak">약점</button>
-          <button class="h-tab" data-go="scrFlags">플래그</button>
-        </div>
-        <div class="h-foot" id="hFoot"></div>
+        <div class="today-box" id="todayBox" style="display:none"></div>
       </div></div>
+      <nav id="tabBar">
+        <button class="tab on" id="tabToday"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>오늘</span></button>
+        <button class="tab" id="tabYm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 3 3 5-6"/></svg><span>문풀</span></button>
+        <button class="tab" id="tabHd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5z"/><path d="M12 6.5v13"/></svg><span>회독본</span></button>
+        <button class="tab" data-go="scrList"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg><span>라이브러리</span></button>
+      </nav>
     </div>
 
     <!-- 세션 -->
@@ -1540,7 +1642,7 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 
     <!-- 목록 -->
     <div class="scr" id="scrList">
-      <div class="sub-head"><button class="tb-btn" data-go="scrHome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title">카드 목록</div></div>
+      <div class="sub-head"><button class="tb-btn" data-go="scrHome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title">라이브러리</div></div>
       <div class="sub-body"><div class="sub-inner">
         <div class="search-row"><input id="qSearch" type="search" placeholder="검색 (앞면·뒷면·태그)"><select id="qSort"><option value="doc">문서순</option><option value="recent">최근 푼 순</option><option value="risk">위험도순</option><option value="miss">틀림순</option></select></div>
         <div class="cond-row" id="condRow"></div>
@@ -2062,6 +2164,7 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
   <div class="tgl-row"><span>스와이프 채점 (좌 알맞음 · 우 다시)</span><div class="tgl" id="tglSwipe"></div></div>
   <div class="tgl-row"><span>키보드 단축키 (PC)</span><div class="tgl" id="tglKbd"></div></div>
   <button class="act-btn" id="setInput" style="margin-top:6px"><span>입력 배치 — 키보드 · 게임패드</span><small>단축키 안내 · 버튼 배치</small></button>
+  <button class="act-btn" id="setHelp" style="margin-top:6px"><span>도움말</span><small>화면·용어·검색 문법</small></button>
   <div class="field" style="margin-top:16px"><label>저장</label>
     <div class="h-tools" style="margin-top:0">
       <button class="h-tool" id="btnSync">지금 저장</button>
@@ -5503,6 +5606,7 @@ function updateSaveUI(){
    그래서 setDirty → updateSaveUI 경로에서도 다시 그린다. 기준은 dirty가 아니라 hasPending()(남은 파일이 있는가). */
 function renderFoot(){
   const f=document.getElementById('hFoot'); if(!f||!DATA.length) return;
+  const fp=document.getElementById('hFootP'); if(fp) setTimeout(()=>{ fp.innerHTML=f.innerHTML; },0);
   f.innerHTML=`카드 ${DATA.length.toLocaleString()}장 · 리뷰 로그 ${state.log.length.toLocaleString()}건`
     /* 🔴 「미저장분 있음」은 오류가 아니라 **5분 배치를 기다리는 중**인 경우가 대부분이다(동하 09-16 「왜 계속 뜨는 거」 · data 브랜치엔 전부 올라가 있었다) —
        복귀마다 세션을 다시 채워 세션 파일이 바뀜으로 찍히니 홈에 있는 시간 대부분 켜진다. 평소엔 회색 「저장 대기」, 빨강은 상단 배지와 같은 기준(10분 넘게 못 올림)일 때만. */
@@ -8397,33 +8501,115 @@ function renderPlanWarn(){
   box.innerHTML=blocks.join('<div style="height:10px"></div>');
   box.classList.add('on');
 }
+/* ═══ 홈 (디자인 이식 C · 09-24 · 디자인_언어 §7 · UX 정리안 §2) ═══════════════════════════════
+   타일 = 목적지(오늘 · 내일 · 문풀 · 푼 카드). 숫자는 그 목록의 개수:
+     오늘 = dueTodayCount()(= 옛 「남은 복습」 · 세션 두 문을 지난 수) · 내일 = tomorrowCount(null) ·
+     문풀 = ymDueToday() 길이(카탈로그를 받은 뒤) · 푼 카드 = 오늘(04시 경계) 채점한 **서로 다른** 카드 수(= 라이브러리 「오늘 푼」과 같은 술어).
+   세션 줄 = 아이콘 + 이름 + 부제 「약 n분」 + 오른쪽 본문색 장수. 시간 = 남은 장수 × 장당 시간(최근 채점 로그 ms 중앙값 · 5분 단위 · 최소 5분). */
+const SESS_COL=['var(--c-acc)','var(--c-indigo)','var(--c-green)','var(--c-orange)','var(--c-purple)','var(--c-teal)','var(--c-pink)'];
+function sessIcon(sx,i){
+  const nm=String(sx.name||''); let col=SESS_COL[i%SESS_COL.length], g=nm.replace(/\s/g,'').slice(0,1)||'·';
+  const d=nm.match(/(\d+)\s*차/);
+  if(/일일/.test(nm)){ col='var(--c-acc)'; g='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></svg>'; return {col,g}; }
+  if(d){ g=d[1]; col = d[1]==='5'?'var(--c-indigo)':d[1]==='3'?'var(--c-orange)':'var(--c-teal)'; }
+  else if(/총창/.test(nm)){ col='var(--c-green)'; g='총'; }
+  else if(/교육과정/.test(nm)){ col='var(--c-purple)'; g='교'; }
+  else if(/연문/.test(nm)){ col='var(--c-teal)'; g='연'; }
+  else if(/강사/.test(nm)){ col='var(--c-pink)'; g='강'; }
+  return {col, g:esc(g)};
+}
+let _msMed=null, _msMedLen=-1;
+function perCardMs(){   // 최근 채점 1,500건의 응답 시간(ms) 중앙값 — 멈춘 시간은 로그가 이미 뺐다(rate · pausedMs)
+  if(_msMed!=null && _msMedLen===state.log.length) return _msMed;
+  const v=[]; for(let i=state.log.length-1;i>=0 && v.length<1500;i--){ const e=state.log[i], x=e&&e[3]; if(x&&x.ms>0) v.push(x.ms); }
+  v.sort((a,b)=>a-b); _msMed = v.length>=30 ? v[v.length>>1] : 12000; _msMedLen=state.log.length; return _msMed;
+}
+function fmtEst(n){ if(!n) return '';
+  let m=Math.max(5, Math.round(n*perCardMs()/60000/5)*5);
+  if(m<60) return `약 ${m}분`; const h=Math.floor(m/60); m=m%60; return m?`약 ${h}시간 ${m}분`:`약 ${h}시간`; }
+function daysToExam(){ return Math.round((new Date(EXAM_DAY+'T12:00:00')-new Date(todayKey()+'T12:00:00'))/86400000); }
+function solvedTodayCount(){ const LR=lastRevMap(), tk=todayKey(); let n=0; for(const id in LR){ if(dayKey(new Date(LR[id][0]))===tk) n++; } return n; }
+let _ymHomeLoad=false;
+function ymTodayN(){
+  try{ if(typeof YM!=='undefined' && YM.cat && YM.loaded) return ymDueToday().length;
+    /* 문풀 타일 수 — 카탈로그·로그를 홈에서 한 번 조용히 받는다(문풀에 들어갈 때 받던 것과 같은 ymLoad · 합집합이라 몇 번 받아도 안전) */
+    if(!_ymHomeLoad && typeof ymLoad==='function'){ _ymHomeLoad=true;
+      ymLoad().then(()=>{ if($('scrHome').classList.contains('on')) renderHomeHead(dueTodayCount(), isRestDay(todayKey())); }).catch(()=>{ _ymHomeLoad=false; }); }
+  }catch(e){}
+  return null; }
+function openListCond(k){ go('scrList'); listCond=k; if(k==='today') $('qSort').value='recent'; renderList(true); }
+function renderHomeHead(due, restToday){
+  const d=new Date(todayKey()+'T12:00:00'), wd=['일','월','화','수','목','금','토'][d.getDay()];
+  let learned=0, live=0; for(const c of DATA){ const s=state.cards[c.id]; if(s&&s.retired) continue; live++; if(!isNew(c)) learned++; }
+  const dd=daysToExam();
+  const parts=[`${d.getMonth()+1}월 ${d.getDate()}일 ${wd}요일`];
+  if(dd>=0) parts.push(`시험까지 ${dd}일`);
+  parts.push(`학습 진입 ${live?Math.round(learned/live*100):0}%`);
+  if(restToday) parts.push('오늘은 쉬는 날');
+  $('hSub').textContent=parts.join(' · ');
+  $('hDday').textContent = dd>0?`D-${dd}`:dd===0?'D-day':''; $('hDday').style.display=dd>=0?'':'none';
+  const ym=ymTodayN(), tiles=[
+    {k:'today', n:due, l:'오늘', ic:'<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>', col:'var(--c-acc)', on:true},
+    {k:'tmr', n:tomorrowCount(null), l:'내일', ic:'<circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2"/>', col:'var(--c-indigo)'},
+    {k:'ym', n:ym, l:'문풀', ic:'<path d="m5 12.5 4.5 4.5L19 7.5"/>', col:'var(--c-green)'},
+    {k:'solved', n:solvedTodayCount(), l:'푼 카드', ic:'<rect x="4" y="6" width="13" height="15" rx="2.5"/><path d="M8 3h9.5A2.5 2.5 0 0 1 20 5.5V17"/>', col:'var(--c-teal)'},
+  ];
+  const html=tiles.map(t=>{ const num=t.n==null?'—':t.n.toLocaleString();
+    return `<button class="hs-tile${t.on?' on':''}" data-tile="${t.k}" style="--tc:${t.col}"><span class="ht-top"><span class="ht-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${t.ic}</svg></span><span class="ht-n${num.length>=6?' sm':''}">${num}</span></span><span class="ht-l">${t.l}</span></button>`; }).join('');
+  for(const id of ['hTiles','hTilesP']){ const box=$(id); box.innerHTML=html;
+    box.querySelectorAll('[data-tile]').forEach(b=>b.onclick=()=>{ const k=b.dataset.tile;
+      if(k==='today'){ const w=document.querySelector('#scrHome .home-wrap'); if(w) w.scrollTop=0; }
+      else if(k==='tmr') go('scrStats');           // 내일 = 예보가 있는 통계로(카드 목록 필터로 만들 술어가 아직 없다)
+      else if(k==='ym') ymEnter();
+      else if(k==='solved') openListCond('today'); }); }
+  renderHero(due);
+}
+function heroSess(){   // 이어서 풀기 = 지금 세션(남았으면) → 아니면 남은 세션 중 가장 최근에 푼 것
+  if(curSess && sessRemain(curSess)>0) return curSess;
+  let best=null, bt=-1; for(const sx of sessions){ if(!sx||sessRemain(sx)<=0) continue; const t=sx.lastAt?new Date(sx.lastAt).getTime():0; if(t>bt){ bt=t; best=sx; } }
+  return best;
+}
+function renderHero(due){
+  const box=$('hHero'); const sx=heroSess();
+  if(!sx){ const ym=ymTodayN();
+    box.innerHTML=`<section class="hero done"><span class="hero-ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>
+      <div class="hero-b"><span class="hero-t">오늘 할 일을 다 했어요</span><span class="hero-s">내일 ${tomorrowCount(null).toLocaleString()}장${ym?` · 문풀 ${ym}문항 남음`:''}</span></div>
+      ${ym?'<button class="hero-go tint" id="heroYm">문풀 열기</button>':''}</section>`;
+    const y=$('heroYm'); if(y) y.onclick=ymEnter; return; }
+  const remain=sessRemain(sx), st=stArr(sx.how.status).map(k=>({due:'복습',new:'신규',all:'전체',weak:'약점'}[k]||k)).join('+');
+  box.innerHTML=`<section class="hero"><div class="hero-b"><span class="hero-k">이어서 풀기</span><span class="hero-t">${esc(sx.name)}</span>
+      <span class="hero-s">${esc(st)} ${remain.toLocaleString()}장${sx.lastAt?` · 마지막 ${esc(fmtAgo(sx.lastAt))}`:''}</span></div>
+    <button class="hero-go" id="heroGo"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l11.6-7.2a1 1 0 0 0 0-1.72L8.5 3.94A1 1 0 0 0 7 4.8z"/></svg>시작</button></section>`;
+  $('heroGo').onclick=()=>{ const live=curSess&&curSess.id===sx.id&&sessRemain(sx)>0; viewSess=sx;
+    if(live){ go('scrSolve'); showCard(); } else playSess(sx); };
+}
+function renderSessRows(){
+  const box=$('sessList'); box.innerHTML='';
+  sessions.forEach((sx,i)=>{
+    if(!isFixed(sx) && sx.day!==todayKey()) refillSess(sx);   // 전체 범위는 열 때마다 오늘치로
+    const remain=sessRemain(sx), ic=sessIcon(sx,i);
+    const empty=isFixed(sx)&&!((sx.scope.units||[]).length||(sx.scope.mids||[]).length);
+    const sub = remain ? fmtEst(remain) : (empty?'담은 것 없음':'오늘 끝');
+    const el=document.createElement('button'); el.className='sess2'+(remain?'':' fin');
+    el.innerHTML=`<span class="s2-ic" style="background:${ic.col}">${ic.g}</span>
+      <span class="s2-b"><span class="s2-n">${esc(sx.name)}</span><span class="s2-s">${sx.temp?'임시 · 오늘까지 · ':''}${esc(sub)}</span></span>
+      <span class="s2-r">${remain?`<span class="s2-cnt"><b>${remain.toLocaleString()}</b><small>장</small></span>`:'<span class="s2-dash">—</span>'}<svg class="s2-chev" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m1.5 1.5 6 6-6 6"/></svg></span>`;
+    el.onclick=()=>{ viewSess=sx; go('scrSession'); };
+    box.appendChild(el);
+  });
+  if(!sessions.length) box.innerHTML='<div class="empty-note" style="padding:20px">세션이 없어요 — 오른쪽 위 ＋로 만들어요</div>';
+}
 function renderHome(){
   try{ if(DATA.length && !planIncomplete) basisCheck(); }catch(e){}
   let nw=0;
   for(const c of DATA){ if(isNew(c)&&!buried(c))nw++; }
   const due=dueTodayCount();   // 바로 위 카드의 「남은 복습」과 같은 정의(F5-1 — 두 수가 0 vs 39로 동거했다)
   const restToday=isRestDay(todayKey());
-  $('hSub').innerHTML = restToday
-    ? `<b style="color:var(--good)">오늘은 쉬는 날</b> · ${isWeeklyRest(todayKey())?'매주 '+RDOW[rest.dow]+'요일':'직접 추가한 날'}`
-      + (due?` · 그래도 풀 수 있는 ${due}장`:'')
-    : `복습 ${due.toLocaleString()} · 신규 ${nw.toLocaleString()}`;
+  renderHomeHead(due, restToday);
   renderFoot();
   cleanupTempSessions();
   renderPlanWarn();
-  const box=$('sessList'); box.innerHTML='';
-  for(const sx of sessions){
-    if(!isFixed(sx) && sx.day!==todayKey()) refillSess(sx);   // 전체 범위는 열 때마다 오늘치로
-    const remain=sessRemain(sx), live=curSess&&curSess.id===sx.id&&remain>0;
-    const el=document.createElement('div'); el.className='sess';
-    el.innerHTML=`<div class="b"><div class="nm">${esc(sx.name)}${live?' <span style="font-size:12px;color:var(--good)">● 진행 중</span>':''}${sx.temp?' <span style="font-size:12px;color:var(--faint)">임시 · 오늘까지</span>':''}</div>
-      <div class="ds">${esc(sessDesc(sx))}</div>
-      <div class="ds">누적 <b>${(sx.done||0).toLocaleString()}</b>회${sx.lastAt?` · 마지막 ${esc(fmtAgo(sx.lastAt))}`:' · 아직 안 품'}</div></div>
-      ${remain?`<div class="cnt"><b>${remain}</b><small>장 남음</small></div>`
-              :`<div class="cnt zero"><small>${isFixed(sx)&&!((sx.scope.units||[]).length||(sx.scope.mids||[]).length)?'담은 것 없음':'오늘 끝'}</small></div>`}`;
-    el.onclick=()=>{ viewSess=sx; go('scrSession'); };
-    box.appendChild(el);
-  }
-  if(!sessions.length)box.innerHTML='<div class="empty-note" style="padding:20px">세션이 없어요 — 아래에서 만들어요</div>';
+  renderSessRows();
   syncThemeSeg();
   $('tglReshow').classList.toggle('on',reshowOn);
   $('tglZtap').classList.toggle('on',zoneTapOn);
@@ -9315,6 +9501,11 @@ document.addEventListener('click', e=>{ const row=e.target.closest('.tgl-row'); 
 $('ctOpen').onclick=()=>openHoedok('tools/curric-table.html','음악·미술 내용 체계표');   // 가리고 쓰기 페이지(동하 09-23 「앱에 올려줘 · 음악도」 · 메타 인계) — 회독본 창에서 연다(앱 테마를 따라간다)
 $('ovlSettings').onclick=(e)=>{ if(e.target===$('ovlSettings'))$('ovlSettings').classList.remove('show'); };
 $('btnNewSess').onclick=()=>openSessEditor(null,null);
+$('btnSettingsP').onclick=()=>$('btnSettings').click();
+$('ctOpenP').onclick=()=>$('ctOpen').click();
+$('tabToday').onclick=()=>{ const w=document.querySelector('#scrHome .home-wrap'); if(w) w.scrollTop=0; };
+$('tabYm').onclick=()=>ymEnter();
+$('hsHd').onclick=()=>hdBrowse(); $('tabHd').onclick=()=>hdBrowse();
 $('ssEdit').onclick=()=>{ if(viewSess)openSessEditor(viewSess,null); };
 $('btnSync').onclick=async()=>{ if(!cfg||!cfg.token){openSetup();return;} await push(true); if(!dirty)toast('저장 완료'); };
 $('btnBackup').onclick=()=>{   // 파일이 나뉜 뒤로는 한 덩어리로 묶어 내려받는다
@@ -9390,6 +9581,7 @@ function renderPadUI(){ const box=$('padMap'), st=$('padStatus'); if(!box||!$('s
 }
 $('padReset').onclick=()=>{ padMap=Object.assign({}, PAD_DEF); lsSet(K_PAD, JSON.stringify(padMap)); padLearn=null; renderPadUI(); toast('기본 배치로'); };
 $('setInput').onclick=()=>{ $('ovlSettings').classList.remove('show'); go('scrInput'); renderPadUI(); };
+$('setHelp').onclick=()=>{ $('ovlSettings').classList.remove('show'); go('scrHelp'); };   // 홈의 ? 버튼은 09-24 은퇴(UX §1 — 도움말은 설정 안으로)
 $('inputBack').onclick=()=>{ padLearn=null; go('scrHome'); $('btnSettings').click(); };
 /* 키 초점 붙들기(09-16 시도) — 뺐다: iOS가 앱 전환·긴 무입력 뒤 하드웨어 키 대상을 놓는 건 페이지에서 되돌릴 수 없었고(동하 「앱 전환하면 먹통 그대로」),
    화면 밖 앵커는 화면을 옆으로 밀었다. 탭 한 번이면 돌아온다 — 그대로 둔다. */
@@ -11987,7 +12179,7 @@ function ymRenderUnit(id){
 $('ymBack').onclick=ymLeave;
 $('ymUnitBack').onclick=()=>{ go('scrYmToday'); ymRenderToday(); };
 /* 홈 머리의 알약 둘 — 「회독본」(둘러보기 · 동하 09-12 「회독본을 그냥 보러 들어갈 수가 없어」) · 「연문 →」 */
-{ const hh=document.querySelector('.home-head');
+{ const hh=null;   // 09-24 디자인 이식: 알약 은퇴(사이드바 「보기」 회독본 · 「문풀」 타일 · 아이폰 탭 막대)
   if(hh){ const g=hh.querySelector('.gear');
     const h=document.createElement('button'); h.className='ym-pill'; h.id='hdPill'; h.textContent='회독본'; h.title='회독본 둘러보기';
     h.onclick=hdBrowse; hh.insertBefore(h, g);

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko" data-theme="b">
+<html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
@@ -10,30 +10,173 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="theme-color" content="#13151A">
 <title>카드</title>
+<script>/* 테마 — 첫 페인트 전에 적는다(깜빡임 방지). 옛 값 b → dark · c → paper (09-24) */
+try{var _t=localStorage.getItem('cards_theme_v1');_t=_t==='b'?'dark':_t==='c'?'paper':_t;if(_t&&_t!=='auto')document.documentElement.dataset.theme=_t;var _l=localStorage.getItem('cards_light_v1');if(_l)document.documentElement.dataset.light=_l;}catch(e){}</script>
 <style>
-/* ══ 테마 토큰 — B(다크 포커스) 기본 · C(페이퍼 웜) ══ */
-:root, :root[data-theme="b"]{
-  --bg:#13151A; --surface:#1C1F27; --surface2:#252935; --sunken:#0E1014;
-  --ink:#E8EAF0; --ink2:#C3C8D4; --mute:#8A92A3; --faint:#8B93A6; --line:#2B303C;   /* mute: WCAG AA — 4.19 → 4.64 (F5-6) */
-  --accent:#8CA7FF; --accent-ink:#0E1014; --accent-dim:rgba(140,167,255,.13);
-  --again:#FF7A66; --hard:#E8B24A; --good:#3CC7A6; --easy:#6DA6FF;   /* UI 리뷰 09-23 U2·A1 — 적색맹 시뮬에서 다시·어려움·알맞음이 한 색이었다(ΔE 7 → 38) */
-  --again-dim:rgba(255,122,102,.16); --hard-dim:rgba(232,178,74,.16);
-  --good-dim:rgba(60,199,166,.16); --easy-dim:rgba(109,166,255,.16);
-  --danger:#F0716E; --ok:#57C97B;
-  --shadow:0 8px 28px rgba(0,0,0,.38); --shadow-sm:0 1px 4px rgba(0,0,0,.28);
-  --head-font:"NotoMusic",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Malgun Gothic",sans-serif;
+/* ══ 테마 토큰 — 디자인 이식 09-24 (정본 = skills\card\디자인_언어.md §2 · 값 = 디자인시안_2026-09-23\tokens.css) ══
+   테마 = 화이트 · 페이퍼 · 다크 + 자동(data-theme 없음 → 기기 라이트면 data-light 쪽 · 기본 페이퍼).
+   옛 이름(--bg --ink --mute …)은 아래 호환층이 새 이름으로 잇는다. 새 규칙은 --c-* · --t-* · --r-* 를 쓴다. */
+:root {
+  /* ── 글꼴 ── */
+  --font: "NotoMusic", -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  --font-music: "NotoMusic", var(--font);          /* 음표·쉼표 기호 — 24px 이상 */
+
+  /* ── 글자 크기 (px / 줄 높이) · iOS 기본 단계 ── */
+  --t-large: 34px;  --t-large-lh: 41px;   /* 화면 제목 · 700 · -0.025em */
+  --t-title2: 22px; --t-title2-lh: 28px;  /* 시트 안 큰 제목 · 700 */
+  --t-title3: 20px; --t-title3-lh: 25px;  /* 구역 제목 · 700 · -0.015em */
+  --t-body: 17px;   --t-body-lh: 22px;    /* 목록 줄 · 버튼 */
+  --t-sub: 15px;    --t-sub-lh: 20px;     /* 부제 · 알약 버튼 */
+  --t-foot: 13px;   --t-foot-lh: 18px;    /* 보조 설명 · 칩 · 구역 머리 */
+  --t-cap: 12px;    --t-cap-lh: 16px;     /* 수치 이름표 */
+  /* 풀이 카드 글자 단계(디자인_언어.md §4) — 아이폰 값은 아래 @media에서 */
+  --t-q: 24px;  --t-q-long: 20px;          /* 질문: 앞면·답면 같은 크기 · 200자 넘으면 long */
+  --t-ans-short: 38px;                      /* 답 ≤12자 · 700 */
+  --t-ans-mid: 28px;                        /* 답 ≤30자 · 700 */
+  --t-ans-body: 19px;                       /* 긴 답 · 구조형 · 항목 · 500 (구조형 라벨 = --t-foot 600) */
+  --t-cell: 17px; --t-cell-sym: 26px;       /* 표 칸 글자 · 기호 칸 */
+
+  /* ── 모서리 (동심 — 바깥 = 안 + 여백) ── */
+  --r-card: 30px;     /* 풀이 카드 */
+  --r-panel: 26px;    /* 사이드바 · 되짚기 · 시트 */
+  --r-group: 22px;    /* inset grouped 목록 · 구역 카드 */
+  --r-tile: 16px;     /* 타일 · 표 칸 묶음 */
+  --r-cell: 12px;     /* 표 칸 · 사이드바 줄 */
+  --r-pill: 999px;    /* 캡슐 버튼 · 칩 */
+
+  /* ── 간격 · 여백 ── */
+  --sp-m: 20px;       /* 아이패드 바깥 여백 = 칸 사이 */
+  --sp-top: 40px;     /* 상태바 24 + 유리 15 + 1 */
+  --sp-bot: 28px;     /* 홈 인디케이터 20 + 8 */
+  --side-w: 300px;    /* 사이드바 */
+  --insp-w: 236px;    /* 되짚기 패널 */
+  --tap: 44px;        /* 최소 누름 크기 */
+  --grade-h: 56px;    /* 채점 버튼 (아이폰 54) */
+  --read-max: 980px;  /* 데스크탑 본문 최대 폭 */
 }
-:root[data-theme="c"]{
-  --bg:#F3EDDE; --surface:#FBF7EC; --surface2:#F0E9D8; --sunken:#EAE2CE;
-  --ink:#2F2A20; --ink2:#4C4536; --mute:#6E6450; --faint:#746A50; --line:#E0D8C2;
-  --accent:#AE5B33; --accent-ink:#FBF7EC; --accent-dim:rgba(174,91,51,.11);
-  --again:#A8352A; --hard:#7A4B00; --good:#0F6A54; --easy:#2A52A4;   /* U2·A1 — 네 색 모두 글자/채움 ≥4.55 · 쉬움 채움이 회색처럼 보이던 것도 */   /* hard: WCAG AA — 4.12 → 4.78 (F5-6 · 다른 셋은 4.56~4.98로 이미 통과) */
-  --again-dim:rgba(168,53,42,.14); --hard-dim:rgba(122,75,0,.14);
-  --good-dim:rgba(15,106,84,.14); --easy-dim:rgba(42,82,164,.14);
-  --danger:#A93E35; --ok:#256E45;
-  --shadow:0 6px 22px rgba(93,80,52,.16); --shadow-sm:0 1px 4px rgba(93,80,52,.25);
-  --head-font:"NotoMusic","SerifKR","Apple Myungjo","Nanum Myeongjo",Georgia,serif;
+@media (max-width: 500px) {           /* 아이폰 */
+  :root { --sp-m: 16px; --sp-top: 62px; --sp-bot: 42px; --grade-h: 54px;
+          --t-q: 18px; --t-q-long: 16px; --t-ans-short: 30px; --t-ans-mid: 22px; --t-ans-body: 17px; --t-cell: 15px; --t-cell-sym: 22px; }
 }
+@media (hover: hover) and (pointer: fine) and (min-width: 1300px) {   /* 데스크탑 */
+  :root { --sp-m: 24px; --sp-top: 24px; --sp-bot: 24px; }
+}
+
+/* ══ 테마 셋: 화이트 · 페이퍼 · 다크 ══
+   <html data-theme="white|paper|dark">  — 없으면 자동: 기기 라이트 → data-light(white|paper, 기본 paper) · 기기 다크 → 다크
+   (앱은 설정값을 data-theme에, 「자동일 때 라이트 쪽」 선택을 data-light에 적는다) */
+
+/* ── 공통(라이트 계열) + 화이트 면 ── */
+:root, :root[data-theme="white"] {
+  color-scheme: light;
+  --c-bg: #F2F2F7; --c-card: #FFFFFF; --c-fill: #EFEFF4; --c-tile: #FFFFFF;
+  --c-label: #1D1D1F; --c-sec: #6E6E73; --c-ter: #8E8E93; --c-sep: #E3E3E8; --c-chev: #C4C4C9;
+  --c-glass: rgba(255,255,255,.72); --c-glass-ring: rgba(0,0,0,.06); --c-glass-shadow: rgba(0,0,0,.08);
+  --sh-card: 0 1px 3px rgba(0,0,0,.04);
+  --sh-big: 0 1px 3px rgba(0,0,0,.04), 0 12px 32px rgba(0,0,0,.05);
+  /* 바깥 화면 = 기본 톤(애플 시스템 색) — 풀이 화면은 아래 [data-screen="solve"]가 중간 톤으로 덮는다 */
+  --c-acc: #007AFF; --c-acc-fill: #007AFF; --c-acc-tint: rgba(0,122,255,.10); --c-acc-glow: rgba(0,122,255,.25);
+  --c-orange: #FF9500; --c-green: #34C759; --c-red: #FF3B30; --c-purple: #AF52DE;
+  --c-indigo: #5856D6; --c-teal: #30B0C7; --c-pink: #FF2D55; --c-danger: #D70015;
+  /* 채점 4색: 글자 / 면 — 버튼 = 면 + 글자 + 바닥 inset 0 -3px 0 글자색 */
+  --c-again: #D1453B; --c-again-bg: rgba(209,69,59,.11);
+  --c-hard:  #C7731A; --c-hard-bg:  rgba(199,115,26,.13);
+  --c-good:  #2A8A52; --c-good-bg:  rgba(42,138,82,.13);
+  --c-easy:  #2A6AD8; --c-easy-bg:  rgba(42,106,216,.11);
+  --c-dim: rgba(0,0,0,.28); --c-toast: rgba(30,30,32,.92);
+}
+
+/* ── 페이퍼 면(따뜻한 미색) — 강조·채점 색은 라이트와 같다 ── */
+:root[data-theme="paper"], :root:not([data-theme])[data-light="paper"], :root:not([data-theme]):not([data-light]) {
+  --c-bg: #F2EEE6; --c-card: #FBF9F4; --c-fill: #ECE7DD; --c-tile: #FBF9F4;
+  --c-label: #2B2824; --c-sec: #6E6860; --c-ter: #8E877C; --c-sep: #E2DCD0; --c-chev: #C7BFB2;
+  --c-glass: rgba(251,249,244,.78); --c-glass-ring: rgba(60,40,10,.07); --c-glass-shadow: rgba(60,40,10,.08);
+  --sh-card: 0 1px 3px rgba(60,40,10,.05);
+  --sh-big: 0 1px 3px rgba(60,40,10,.05), 0 12px 32px rgba(60,40,10,.06);
+}
+
+/* ── 다크(자동) ── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]):not([data-theme]):not([data-theme]) {   /* 우선순위 (0,4,0) — 자동 페이퍼 선택자 (0,3,0)를 이겨야 한다 */
+    color-scheme: dark;
+    --c-bg: #000000; --c-card: #1C1C1E; --c-fill: #2C2C2E; --c-tile: #2C2C2E;
+    --c-label: #F5F5F7; --c-sec: #98989F; --c-ter: #8D8D93; --c-sep: #38383A; --c-chev: #5A5A5F;
+    --c-acc: #0A84FF; --c-acc-fill: #0A84FF; --c-acc-tint: rgba(10,132,255,.20); --c-acc-glow: rgba(10,132,255,.35);
+    --c-orange: #FF9F0A; --c-green: #30D158; --c-red: #FF453A; --c-purple: #BF5AF2;
+    --c-indigo: #5E5CE6; --c-teal: #40C8E0; --c-pink: #FF375F; --c-danger: #FF6961;
+    --c-again: #FF7F74; --c-again-bg: rgba(255,127,116,.20);
+    --c-hard:  #F4AA55; --c-hard-bg:  rgba(244,170,85,.20);
+    --c-good:  #62CC88; --c-good-bg:  rgba(98,204,136,.18);
+    --c-easy:  #79AEFF; --c-easy-bg:  rgba(121,174,255,.22);
+    --c-glass: rgba(36,36,38,.72); --c-glass-ring: rgba(255,255,255,.10); --c-glass-shadow: rgba(0,0,0,.55);
+    --sh-card: 0 0 0 0.5px rgba(255,255,255,.07);
+    --sh-big: 0 0 0 0.5px rgba(255,255,255,.07);
+    --c-dim: rgba(0,0,0,.55); --c-toast: rgba(58,58,60,.95);
+  }
+}
+/* ── 다크(강제) — 위 블록과 값이 같아야 한다 ── */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --c-bg: #000000; --c-card: #1C1C1E; --c-fill: #2C2C2E; --c-tile: #2C2C2E;
+  --c-label: #F5F5F7; --c-sec: #98989F; --c-ter: #8D8D93; --c-sep: #38383A; --c-chev: #5A5A5F;
+  --c-acc: #0A84FF; --c-acc-fill: #0A84FF; --c-acc-tint: rgba(10,132,255,.20); --c-acc-glow: rgba(10,132,255,.35);
+  --c-orange: #FF9F0A; --c-green: #30D158; --c-red: #FF453A; --c-purple: #BF5AF2;
+  --c-indigo: #5E5CE6; --c-teal: #40C8E0; --c-pink: #FF375F; --c-danger: #FF6961;
+  --c-again: #FF7F74; --c-again-bg: rgba(255,127,116,.20);
+  --c-hard:  #F4AA55; --c-hard-bg:  rgba(244,170,85,.20);
+  --c-good:  #62CC88; --c-good-bg:  rgba(98,204,136,.18);
+  --c-easy:  #79AEFF; --c-easy-bg:  rgba(121,174,255,.22);
+  --c-glass: rgba(36,36,38,.72); --c-glass-ring: rgba(255,255,255,.10); --c-glass-shadow: rgba(0,0,0,.55);
+  --sh-card: 0 0 0 0.5px rgba(255,255,255,.07);
+  --sh-big: 0 0 0 0.5px rgba(255,255,255,.07);
+  --c-dim: rgba(0,0,0,.55); --c-toast: rgba(58,58,60,.95);
+}
+
+/* ── 풀이 화면 = 중간 톤 (풀이 화면 루트에 data-screen="solve") ── */
+[data-screen="solve"] {
+  --c-acc: #2A6AD8; --c-acc-fill: #2A6AD8; --c-acc-tint: rgba(42,106,216,.10); --c-acc-glow: transparent;
+  --c-orange: #E8900F; --c-danger: var(--c-sec);   /* 끄기 = 회색 */
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]):not([data-theme]):not([data-theme]) [data-screen="solve"] {
+    --c-acc: #6FA3FF; --c-acc-fill: #3D7BE8; --c-acc-tint: rgba(111,163,255,.18); --c-orange: #FFB14A;
+  }
+}
+:root[data-theme="dark"] [data-screen="solve"] {
+  --c-acc: #6FA3FF; --c-acc-fill: #3D7BE8; --c-acc-tint: rgba(111,163,255,.18); --c-orange: #FFB14A;
+}
+
+/* ════ 호환층 — 지금 cards.html 이 쓰는 이름 → 새 토큰 ════
+   (옮겨 가면서 한 줄씩 지운다. 다 지우면 이 블록도 삭제) */
+:root {
+  --bg: var(--c-bg);
+  --surface: var(--c-card);
+  --surface2: var(--c-fill);
+  --sunken: var(--c-fill);
+  --ink: var(--c-label);
+  --ink2: var(--c-sec);
+  --mute: var(--c-sec);
+  --faint: var(--c-ter);
+  --line: var(--c-sep);
+  --hair: var(--c-sep);
+  --accent: var(--c-acc);
+  --accent-fill: var(--c-acc-fill);   /* 흰 글자를 올리는 채움 버튼 */
+  --accent-ink: #fff;
+  --sh-soft: var(--sh-card);
+  --accent-dim: var(--c-acc-tint);
+  --again: var(--c-again); --again-dim: var(--c-again-bg);
+  --hard:  var(--c-hard);  --hard-dim:  var(--c-hard-bg);
+  --good:  var(--c-good);  --good-dim:  var(--c-good-bg);
+  --easy:  var(--c-easy);  --easy-dim:  var(--c-easy-bg);
+  --danger: var(--c-danger);
+  --ok: var(--c-green);
+  --shadow: var(--sh-big);
+  --shadow-sm: var(--sh-card);
+  --head-font: var(--font);        /* 옛 명조 제목 글꼴 → 시스템 글꼴로 통일 */
+  /* --sat-extra · --zone-a/c · --banner-h 는 배치용 변수라 건드리지 않는다 */
+}
+
+
 @font-face{
   font-family:"SerifKR";
   src:url("serif-kr-2.woff2") format("woff2");   /* 08-26: 서브셋 1,079자 → 11,720자(한글 전체). 파일명을 바꾼 건 캐시 무효화 목적 */
@@ -62,7 +205,7 @@ html,body{height:100%;}
 :root{--hair:var(--line);}   /* 쓰이는데 정의가 없던 토큰(UI 리뷰 U7) */
 body{
   background:var(--bg); color:var(--ink); overflow:hidden;
-  font-family:"NotoMusic",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Malgun Gothic",sans-serif;
+  font-family:var(--font); -webkit-font-smoothing:antialiased;
   -webkit-user-select:none; user-select:none; -webkit-text-size-adjust:100%;
   padding:calc(env(safe-area-inset-top) + var(--sat-extra)) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
@@ -955,8 +1098,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
   background:var(--bg);z-index:50;font-size:14px;color:var(--mute);font-weight:600;}
 
 /* ══ 연문 모드 (발주 §1·§6) — 악센트가 다르다 · 카드 모드 화면은 이 블록의 영향을 받지 않는다(:root.ym 아래에만) ══ */
-:root.ym, :root.ym[data-theme="b"]{ --accent:#5FD3C1; --accent-ink:#0E1014; --accent-dim:rgba(95,211,193,.14); }
-:root.ym[data-theme="c"]{ --accent:#256B4E; --accent-ink:#FBF7EC; --accent-dim:rgba(37,107,78,.12); }   /* dim 위 3.7~4.0 → AA(UI 리뷰 🟠) */
+:root.ym{ --accent:var(--c-good); --accent-fill:#2A8A52; --accent-ink:#fff; --accent-dim:var(--c-good-bg); }   /* 문풀 = 초록(디자인_언어 §2.4) · 채움은 흰 글자 AA 값 */
 .ym-pill{margin-left:auto;font-size:13px;font-weight:800;color:var(--accent);background:var(--accent-dim);border-radius:99px;padding:10px 14px;
   min-height:40px;display:flex;align-items:center;gap:4px;letter-spacing:.02em;}
 .ym-pill+.ym-pill{margin-left:0}   /* 알약 둘(회독본 · 연문) — 첫째가 오른쪽으로 밀고 둘째는 붙는다 */
@@ -1071,13 +1213,12 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 
 /* ═══ 아트 시안 (UI 리뷰 A2~A9) — 동하 09-23 「일단 넣어줘」 · 토큰은 위 테마 블록을 덮어쓴다 ═══ */
 /* A2 흐린 글자 두 단계 복원 */
-:root, :root[data-theme="b"]{ --mute:#9AA2B3; --faint:#8A92A3; }
-:root[data-theme="c"]{ --mute:#655B47; --faint:#6E6450; }
+/* (A2 흐린 글자 — 09-24 새 토큰으로 대체) */
 /* A3 페이퍼 액센트 — 경고 빨강과 갈리게 */
-:root[data-theme="c"]{ --accent:#9A4F2A; --accent-dim:rgba(154,79,42,.11); }
+/* (A3 — 09-24 새 토큰으로 대체) */
 /* A4 다크 카드 윤곽 · 흰 도식 눈부심 */
-:root, :root[data-theme="b"]{ --shadow:0 0 0 1px rgba(255,255,255,.05), 0 8px 28px rgba(0,0,0,.38); }
-:root[data-theme="b"] .c-img, :root:not([data-theme]) .c-img{ filter:brightness(.88); }
+:root[data-theme="dark"] .c-img{ filter:brightness(.88); }
+@media (prefers-color-scheme: dark){ :root:not([data-theme]) .c-img{ filter:brightness(.88); } }
 /* A5 타이포 — 페이퍼 앞면 700 → 600 · 긴 앞면 20 */
 /* A5(페이퍼 앞면 600 · 긴 앞면 20px)는 동하 09-23 「문면 글씨체 바뀐 거 별로」로 뺐다 */
 /* A6 반경 단계 — 채점 버튼 14 · 사이드바 22(카드와 같게) */
@@ -1677,11 +1818,14 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
   <p class="desc">매일 만지는 것이 아니라 여기 넣어뒀어요.</p>
   <div class="field"><label>테마</label>
     <div id="themeSeg">
-      <button id="thB">다크 포커스</button>
-      <button id="thC">페이퍼 웜</button>
+      <button data-th="auto">자동</button>
+      <button data-th="white">화이트</button>
+      <button data-th="paper">페이퍼</button>
+      <button data-th="dark">다크</button>
     </div>
+    <div class="seg" id="lightSeg" style="margin-top:8px"><button data-lt="paper">자동일 때 라이트 = 페이퍼</button><button data-lt="white">화이트</button></div>
   </div>
-  <div class="field"><label>하루 신규 권장량 (체크포인트 표시용)</label>
+  <div class="field" style="display:none"><label>하루 신규 권장량 (체크포인트 표시용)</label>
     <input id="intakeCap" type="number" inputmode="numeric" min="0" placeholder="130"></div>
   <div class="field"><label>복습 강도 — 얼마나 안 잊게 할까</label>
     <div class="rng-row"><span class="rng-v" id="retVal">90%</span><span class="desc" id="retLoad"></span></div>
@@ -8039,8 +8183,7 @@ function renderHome(){
     box.appendChild(el);
   }
   if(!sessions.length)box.innerHTML='<div class="empty-note" style="padding:20px">세션이 없어요 — 아래에서 만들어요</div>';
-  $('thB').classList.toggle('on',theme==='b');
-  $('thC').classList.toggle('on',theme==='c');
+  syncThemeSeg();
   $('tglReshow').classList.toggle('on',reshowOn);
   $('tglZtap').classList.toggle('on',zoneTapOn);
   $('scrSolve').classList.toggle('ztap',zoneTapOn);
@@ -9116,13 +9259,24 @@ document.addEventListener('keydown',e=>{
 });
 
 /* 테마 */
-let theme=lsGet(K_THEME)||'b';
-function applyTheme(){ document.documentElement.dataset.theme=theme; lsSet(K_THEME,theme);
+/* 테마 = auto · white · paper · dark (09-24 디자인 이식) — 옛 값 b → dark · c → paper.
+   auto = data-theme 없음(기기 설정) · 자동일 때 라이트 쪽 = data-light(white|paper · 기본 paper) */
+const K_LIGHT='cards_light_v1';
+let theme=(v=>v==='b'?'dark':v==='c'?'paper':(['auto','white','paper','dark'].includes(v)?v:'auto'))(lsGet(K_THEME));
+let lightPref=lsGet(K_LIGHT)==='white'?'white':'paper';
+function applyTheme(){ const de=document.documentElement;
+  if(theme==='auto') delete de.dataset.theme; else de.dataset.theme=theme;
+  de.dataset.light=lightPref; lsSet(K_THEME,theme); lsSet(K_LIGHT,lightPref);
+  const col=getComputedStyle(de).getPropertyValue('--c-bg').trim()||'#F2EEE6';
   const mc=document.querySelector('meta[name=theme-color]');
-  const col=theme==='b'?'#13151A':'#F3EDDE';
   if(mc)mc.content=col; else{const m=document.createElement('meta');m.name='theme-color';m.content=col;document.head.appendChild(m);} }
-$('thB').onclick=()=>{theme='b';applyTheme();renderHome();};
-$('thC').onclick=()=>{theme='c';applyTheme();renderHome();};
+function syncThemeSeg(){
+  document.querySelectorAll('#themeSeg [data-th]').forEach(b=>b.classList.toggle('on',b.dataset.th===theme));
+  document.querySelectorAll('#lightSeg [data-lt]').forEach(b=>b.classList.toggle('on',b.dataset.lt===lightPref));
+  const ls=$('lightSeg'); if(ls) ls.style.display=theme==='auto'?'':'none'; }
+document.querySelectorAll('#themeSeg [data-th]').forEach(b=>b.onclick=()=>{theme=b.dataset.th;applyTheme();syncThemeSeg();renderHome();});
+document.querySelectorAll('#lightSeg [data-lt]').forEach(b=>b.onclick=()=>{lightPref=b.dataset.lt;applyTheme();syncThemeSeg();renderHome();});
+try{ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ if(theme==='auto') applyTheme(); }); }catch(e){}
 
 /* ═══════════════ 프리셋 편집기 ═══════════════ */
 function chipSet(box, all, sel){

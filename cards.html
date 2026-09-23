@@ -1641,6 +1641,11 @@ input,select{border-radius:10px;}
 .end-next span{font-size:17px;font-weight:600;color:var(--c-acc);}
 .end-next small{font-size:13px;color:var(--c-sec);}
 
+
+/* 문풀 오늘 — 선택 행(키·패드를 쓸 때만 보인다) · 버튼 키 표시 */
+:root[data-keys="on"] #ymTodayBody .ym-row.sel{box-shadow:inset 0 0 0 2px var(--c-acc);}
+.ym-btn .keycap{margin-left:6px;}
+
 </style>
 </head>
 <body>
@@ -9809,6 +9814,7 @@ document.addEventListener('keydown',e=>{
      채점 1~4와 손가락 자리가 같고 Ctrl만 얹는 꼴이라 외울 것이 없다. 그 밖의 조합은 여전히 버린다. */
   if((!kbdOn && !_padEv) || e.metaKey || e.altKey)return;
   { const tg=e.target&&e.target.tagName; if(!(tg==='INPUT'||tg==='TEXTAREA'||tg==='SELECT')) document.documentElement.dataset.keys='on'; }   // 키 표시(09-24)
+  if(!e.ctrlKey && !(e.target&&/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) && typeof ymTodayKey==='function' && (!e.repeat||/^Arrow/.test(e.key)) && ymTodayKey(e)){ e.preventDefault(); return; }
   if(e.ctrlKey && !/^[1-4]$/.test(keyOf(e)))return;   // 🔴 Ctrl+숫자만(사유 칩) — Ctrl+Z·X·C·V는 브라우저 몫(리뷰 09-23 R10 · ca8a31f4 회귀: 복사·되돌리기가 플래그를 붙였다)
   /* 🔴 **화살표 = 지금 보이는 것의 스크롤** (동하 09-10 실기: 게임패드 D패드로 표 카드를 못 굴렸다).
      카드 본문은 문서가 아니라 `#cardScroll` 안에서 구른다 — 초점이 아무 데도 없으면 브라우저는
@@ -12196,6 +12202,24 @@ async function ymEnter(){
   else { go('scrYmToday'); ymPull(); }   // 다시 들어올 때마다 원격 문풀 로그를 당긴다(R6)
   _ymReady=null; ymRenderToday();
 }
+/* ═══ 문풀 오늘 — 키·패드 (UX 정리안 §6 · 09-24) ═══
+   선택 행 하나(_ymSel = 오늘 목록 안 순번)를 ↑↓로 옮기고 Z = 또 틀림 · C = 닫힘 · U = 되돌리기.
+   패드는 padSynth가 같은 키를 보내므로 따로 배선하지 않는다. 행을 누르면 그 행이 선택된다(탭 동작은 그대로). */
+let _ymSel=0;
+function ymRows(){ return [...document.querySelectorAll('#ymTodayBody .ym-list > .ym-row[data-ym-item]')]; }
+function ymSelSync(){ const rows=ymRows(); if(_ymSel>=rows.length) _ymSel=Math.max(0,rows.length-1);
+  rows.forEach((r,i)=>{ r.classList.toggle('sel', i===_ymSel); r.addEventListener('pointerdown',()=>{ _ymSel=i; ymSelSync(); },{once:true}); }); }
+function ymTodayKey(e){
+  if(!$('scrYmToday').classList.contains('on') || document.querySelector('.ovl.show')) return false;
+  const k=keyOf(e), rows=ymRows();
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){ if(!rows.length) return false;
+    _ymSel=Math.max(0,Math.min(rows.length-1,_ymSel+(e.key==='ArrowDown'?1:-1))); ymSelSync();
+    rows[_ymSel].scrollIntoView({block:'nearest'}); return true; }
+  if(k==='u'){ const b=$('ymTodayUndo'); if(b) b.click(); return true; }
+  if(k==='z'||k==='c'){ const r=rows[_ymSel]; if(!r) return true;
+    const b=r.querySelector(k==='z'?'[data-ym-x]':'[data-ym-close]'); if(b) b.click(); return true; }
+  return false;
+}
 function ymLeave(){ _ymSubOpen.clear(); _ymRowPos.clear(); _ymTodayPin.clear(); go('scrHome'); renderHome(); }
 /* ── 오늘 ────────────────────────────────────────────────────────────────────── */
 /* ── 「오늘」 화면 = 세 층 접기 트리 (동하 09-19 확정 · 발주 §3 「오늘 블록 접을 수 있게 · 그 아래 연문/과목… · 중등기출/과목…」)
@@ -12244,7 +12268,7 @@ function ymRenderToday(){
       return '<div class="ym-row" data-ym-item="'+esc(it.id)+'">'
         +'<span class="ym-mark '+cls+'">'+esc(txt)+'</span>'
         +'<div class="t"><b>'+esc(src+ymSubj(it.subj))+' '+esc(it.no)+'번</b><small>'+esc(u?ymLabel(u)[0]:it.unit)+' · '+ymWhere(it)+(s.due&&s.due<tk?' · '+dkDiff(tk,s.due)+'일 지남':'')+(s.due&&s.due>tk?' · 다시 '+s.due.slice(5).replace('-','/'):'')+(s.closed?' · 닫힘':'')+'</small></div>'
-        +'<div class="ym-btns">'+ymSubToggleBtn(it.id)+'<button class="ym-btn close" data-ym-close="'+esc(it.id)+'">▽ 닫힘</button><button class="ym-btn again" data-ym-x="'+esc(it.id)+'">또 틀림</button></div></div>'
+        +'<div class="ym-btns">'+ymSubToggleBtn(it.id)+'<button class="ym-btn close" data-ym-close="'+esc(it.id)+'">▽ 닫힘<span class="keycap">C</span></button><button class="ym-btn again" data-ym-x="'+esc(it.id)+'">또 틀림<span class="keycap">Z</span></button></div></div>'
         +(_ymSubOpen.has(it.id)?ymSubPanel(it.id):''); }).join('')+'</div>';
     else h+='<div class="ym-empty">오늘 다시 풀 문항이 없어요</div>';
     /* 되돌리기 — 오늘 화면에서 ▽·또 틀림을 잘못 눌러도 무를 수 있게(동하 09-21 「잘못 누르면 되돌릴 수가 없음」). 단위 화면의 되돌리기와 같은 이벤트(u). */
@@ -12293,6 +12317,7 @@ function ymRenderToday(){
   body.querySelectorAll('[data-ym-close]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); if(!ymTapOk()) return; ymEvent(b.dataset.ymClose,'▽'); toast('닫았어요 — 잘못 눌렀으면 되돌리기'); ymRenderToday(); });
   body.querySelectorAll('[data-ym-x]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); if(!ymTapOk()) return; ymEvent(b.dataset.ymX,'x'); toast('또 틀림 — 7일 뒤 · 잘못 눌렀으면 되돌리기'); ymRenderToday(); });
   const ub=$('ymTodayUndo'); if(ub) ub.onclick=ev=>{ ev.stopPropagation(); if(ymUndoLast()){ toast('되돌렸어요'); ymRenderToday(); } else toast('되돌릴 것이 없어요'); };
+  ymSelSync();
   body.querySelectorAll('[data-ym-unit]').forEach(r=>r.onclick=()=>ymOpenUnit(r.dataset.ymUnit));
   body.querySelectorAll('[data-ym-item]').forEach(r=>r.onclick=()=>{ const it=YM.cat.items.find(x=>x.id===r.dataset.ymItem); if(it) ymOpenUnit(it.unit); });
   const tog=(key)=>{ ymFoldToggle(key); const y=body.parentElement.scrollTop; ymRenderToday(); body.parentElement.scrollTop=y; };   // 펼쳐도 보던 자리를 지킨다

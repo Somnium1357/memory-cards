@@ -1646,6 +1646,19 @@ input,select{border-radius:10px;}
 :root[data-keys="on"] #ymTodayBody .ym-row.sel{box-shadow:inset 0 0 0 2px var(--c-acc);}
 .ym-btn .keycap{margin-left:6px;}
 
+
+/* 라이브러리 빠른 목록 (09-24 · 캔버스 「라이브러리」 판) */
+.lh-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:10px;}
+@media (max-width:759px){ .lh-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
+.lh-tile{flex-direction:row;align-items:center;gap:10px;padding:12px 14px;min-height:56px;}
+.lh-tile .lh-ic{width:30px;height:30px;border-radius:15px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;}
+.lh-tile .lh-ic svg{width:16px;height:16px;}
+.lh-tile .l{flex:1;min-width:0;font-size:15px;font-weight:500;color:var(--c-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;}
+.lh-tile .n{font-size:20px;font-weight:700;color:var(--c-label);}
+.lh-tile.zero{background:var(--c-tile);opacity:.5;}
+.lh-main .lh-tile{min-height:60px;}
+.lh-units{background:var(--c-card);border-radius:var(--r-group);box-shadow:var(--sh-card);margin-top:12px;}
+
 </style>
 </head>
 <body>
@@ -10253,17 +10266,18 @@ function renderListHome(){       // 조건 없을 때 — 숫자 붙은 진입�
       if(ok) cnt[x.k]=(cnt[x.k]||0)+1;
     }
   }
-  let h='';
-  for(const g of ['되짚기','오늘','정리']){
-    h+=`<div class="h-sec">${g}</div><div class="lh-grid">`;
-    for(const x of LIST_CONDS.filter(y=>y.g===g)){
-      const n=cnt[x.k]||0;
-      h+=`<button class="lh-tile${n?'':' zero'}" data-k="${esc(x.k)}"${n?'':' disabled'}>`
-       + `<span class="n">${n}</span><span class="l">${esc(x.n)}</span></button>`;
-    }
-    h+='</div>';
-  }
-  h+=`<button class="more-btn" id="lhUnits">과목·단위로 훑기 → 단위 화면</button>`;
+  /* 09-24 디자인 이식: 빠른 목록 = 아이콘 + 이름 + 수(캔버스 「라이브러리」 판) · 위 줄 넷(복습 예정 · 누수 · 최근 틀린 · 끈 카드 — UX §2) · 아래 줄 나머지.
+     약점 칸은 뺐다(UX §1 — 「자꾸 틀림」은 누수 하나로) · is:weak 검색은 그대로. */
+  const LH_IC={due:['var(--c-acc)','<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>'],
+    leech:['var(--c-purple)','<path d="M12 7v6"/><path d="M12 17h.01"/>'], forgot:['var(--c-red)','<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/>'],
+    retired:['var(--c-sec)','<path d="M12 3.5v8"/><path d="M6.4 7.2a7.5 7.5 0 1 0 11.2 0"/>'], flag:['var(--c-orange)','<path d="M6.5 21V6h11l-2 4 2 4h-11"/>'],
+    ann:['var(--c-teal)','<path d="M4 20h4l10-10-4-4L4 16v4z"/>'], today:['var(--c-teal)','<rect x="4" y="6" width="13" height="15" rx="2.5"/><path d="M8 3h9.5A2.5 2.5 0 0 1 20 5.5V17"/>'],
+    buried:['var(--c-indigo)','<circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2"/>']};
+  const tile=(k)=>{ const x=LIST_CONDS.find(y=>y.k===k); if(!x) return ''; const n=cnt[k]||0, ic=LH_IC[k]||['var(--c-acc)','<circle cx="12" cy="12" r="8"/>'];
+    return `<button class="lh-tile${n?'':' zero'}" data-k="${esc(k)}"${n?'':' disabled'}><span class="lh-ic" style="background:${ic[0]}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ic[1]}</svg></span><span class="l">${esc(x.n)}</span><span class="n">${n.toLocaleString()}</span></button>`; };
+  let h=`<div class="lh-grid lh-main">${['due','leech','forgot','retired'].map(tile).join('')}</div>`
+       +`<div class="lh-grid">${['flag','ann','today','buried'].map(tile).join('')}</div>`;
+  h+=`<button class="gr-row lh-units" id="lhUnits"><span class="gr-ic" style="background:var(--c-indigo)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg></span><span class="gr-b"><span class="gr-t">단위로 보기</span><span class="gr-s">과목 → 단위 · 복습 · 신규 · 세션에 넣기</span></span><svg class="s2-chev" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m1.5 1.5 6 6-6 6"/></svg></button>`;
   const box=$('listHome'); box.innerHTML=h;
   box.querySelectorAll('.lh-tile').forEach(b=>b.onclick=()=>{
     listCond=b.dataset.k;

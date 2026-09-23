@@ -1503,11 +1503,51 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
   .tab.on{background:var(--c-acc-tint);color:var(--c-acc);}
 }
 
+
+/* ═══════════════ 디자인 이식 E — 사이드바 상시 · 들어간 화면 머리(‹ + 큰 제목) · 그룹 카드 (09-24 · 디자인_언어 §7) ═══════════════ */
+#hSide{margin:16px 0 8px var(--sp-m);flex:0 0 var(--side-w);align-self:stretch;min-height:0;}
+#app[data-screen="solve"] #hSide{display:none;}
+@media (max-width:759px){ #hSide{display:none;} }
+.hs-row.on{background:var(--c-acc-tint);color:var(--c-acc);font-weight:600;}
+#scrHome{gap:0;}
+/* 들어간 화면: 맨 위 44 줄(유리 원형 ‹ + 오른쪽 동작) · 그 아래 Large Title */
+.sub-head,.sub-head{flex-wrap:wrap;gap:0 8px;padding:16px var(--sp-m) 0;max-width:none;margin:0;width:auto;}
+@media (min-width:760px){ .sub-head{max-width:none;margin:0;padding:16px var(--sp-m) 0;} .sub-head>.tb-btn:first-child{margin-left:0;} }
+.sub-head .tb-btn{width:44px;height:44px;border-radius:22px;color:var(--c-label);background:var(--c-glass);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);
+  box-shadow:0 0 0 .5px var(--c-glass-ring),0 8px 28px var(--c-glass-shadow);}
+.sub-head .tb-btn svg{width:20px;height:20px;stroke-width:2.2;}
+.sub-title{order:9;flex:0 0 100%;font-family:var(--font);font-size:34px;font-weight:700;letter-spacing:-.025em;line-height:41px;margin-top:8px;}
+.sub-head>.tb-btn:first-child+.sub-title+*{margin-left:auto;}
+@media (min-width:760px){ #scrList .sub-head>.tb-btn:first-child,#scrStats .sub-head>.tb-btn:first-child{display:none;} #scrList .sub-title,#scrStats .sub-title{margin-top:0;} }
+.sub-body{padding:16px var(--sp-m) 24px;}
+.sub-inner{max-width:none;}
+@media (hover:hover) and (pointer:fine) and (min-width:1300px){ .sub-inner{max-width:var(--read-max);margin:0 auto;} }
+/* 그룹 카드 — inset grouped(반경 22 · card 면 · 옅은 그림자) */
+.stat,.bar-list,.card-box,details.ss-score,.rd-list{background:var(--c-card);border-radius:var(--r-group);box-shadow:var(--sh-card);}
+.lh-tile{border-radius:var(--r-tile);background:var(--c-tile);box-shadow:var(--sh-card);}
+.lrow{border-radius:var(--r-cell);background:var(--c-card);}
+.more-btn{border-radius:var(--r-group);}
+input,select{border-radius:10px;}
+.search-row input,#qSearch,#uSearch{background:var(--c-fill);border:0;min-height:36px;}
+/* 토글 = 켜짐 초록 · 꺼짐 fill (§6) */
+.tgl.on{background:var(--c-green);}
+
 </style>
 </head>
 <body>
 <div id="loading">여는 중…</div>
 <div id="app">
+  <aside id="hSide">
+    <div class="hs-head"><span class="hs-title">카드</span><span class="hs-dday" id="hDday"></span></div>
+    <div class="hs-tiles" id="hTiles"></div>
+    <nav class="hs-nav"><div class="hs-grp">보기</div>
+      <button class="hs-row" id="hsHd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5z"/><path d="M12 6.5v13"/></svg>회독본</button>
+      <button class="hs-row" id="ctOpen" title="음악·미술 2022 내용 체계표 — 가리고 쓰기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M9.5 4.5v15"/></svg>내용 체계표</button>
+      <button class="hs-row" data-go="scrList"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg>라이브러리</button>
+      <button class="hs-row" data-go="scrStats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V11M11 20V5M17 20v-6"/></svg>통계</button>
+    </nav>
+    <div class="hs-bottom"><button class="hs-row" id="btnSettings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>설정</button><div class="h-foot" id="hFoot"></div></div>
+  </aside>
   <div id="main">
     <div id="banner"></div>
     <div id="topbar">
@@ -1575,17 +1615,6 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
     <div class="scr" id="scrHome">
       <!-- 🔴 디자인 이식 C (09-24 · 디자인_언어 §7 · 캔버스 「톤 · 페이퍼」 확정 홈): 가로 = 사이드바(타일 넷 · 보기 · 설정) + 본문(오늘 · 이어서 풀기 · 세션).
            아이폰 = 사이드바 대신 본문 위 타일 + 아래 탭 막대(오늘 · 문풀 · 회독본 · 라이브러리). 플래그 타일은 없다(라이브러리 빠른 목록으로). -->
-      <aside id="hSide">
-        <div class="hs-head"><span class="hs-title">카드</span><span class="hs-dday" id="hDday"></span></div>
-        <div class="hs-tiles" id="hTiles"></div>
-        <nav class="hs-nav"><div class="hs-grp">보기</div>
-          <button class="hs-row" id="hsHd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5z"/><path d="M12 6.5v13"/></svg>회독본</button>
-          <button class="hs-row" id="ctOpen" title="음악·미술 2022 내용 체계표 — 가리고 쓰기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M9.5 4.5v15"/></svg>내용 체계표</button>
-          <button class="hs-row" data-go="scrList"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg>라이브러리</button>
-          <button class="hs-row" data-go="scrStats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V11M11 20V5M17 20v-6"/></svg>통계</button>
-        </nav>
-        <div class="hs-bottom"><button class="hs-row" id="btnSettings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>설정</button><div class="h-foot" id="hFoot"></div></div>
-      </aside>
       <div class="home-wrap"><div class="home-inner">
         <div class="home-head">
           <div class="hh-t"><div class="h-title">오늘</div><div class="h-sub" id="hSub"></div></div>
@@ -8335,7 +8364,9 @@ function go(id){
   $('btnPause').style.display = railShow?'':'none';   // 풀이 중에만 의미 있는 버튼
   $('btnUndo').style.display  = railShow?'':'none';   // 홈·세션 화면에 떠 있으면 무엇을 되돌리는지 모호하다
   $('rail').style.display=railShow?'flex':'none';
-  $('app').dataset.screen = railShow ? 'solve' : '';   // 풀이 화면 = 중간 톤 강조색(tokens [data-screen="solve"] · 디자인_언어 §2.2)
+  $('app').dataset.screen = railShow ? 'solve' : '';
+  document.querySelectorAll('#hSide .hs-nav [data-go]').forEach(b=>b.classList.toggle('on', b.dataset.go===id));   // 사이드바 = 지금 목적지
+  document.querySelectorAll('#hSide .hs-tile').forEach(t=>t.classList.toggle('on', (t.dataset.tile==='today'&&id==='scrHome')||(t.dataset.tile==='ym'&&/^scrYm/.test(id))));   // 풀이 화면 = 중간 톤 강조색(tokens [data-screen="solve"] · 디자인_언어 §2.2)
   $('railFab').classList.remove('show');               // ☰ 떠 있는 버튼은 은퇴 — 윗줄 ⋯ · 아이폰 한 손 막대 ⋯가 서랍을 연다(09-24)
   if(id!=='scrHome') navGuard();          // 홈이 아니면 뒤로가기용 칸을 물고 있는다
   if(id==='scrHome')renderHome();
@@ -8555,10 +8586,11 @@ function renderHomeHead(due, restToday){
     {k:'solved', n:solvedTodayCount(), l:'푼 카드', ic:'<rect x="4" y="6" width="13" height="15" rx="2.5"/><path d="M8 3h9.5A2.5 2.5 0 0 1 20 5.5V17"/>', col:'var(--c-teal)'},
   ];
   const html=tiles.map(t=>{ const num=t.n==null?'—':t.n.toLocaleString();
-    return `<button class="hs-tile${t.on?' on':''}" data-tile="${t.k}" style="--tc:${t.col}"><span class="ht-top"><span class="ht-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${t.ic}</svg></span><span class="ht-n${num.length>=6?' sm':''}">${num}</span></span><span class="ht-l">${t.l}</span></button>`; }).join('');
+    const onNow = t.k==='today' ? $('scrHome').classList.contains('on') : t.k==='ym' ? /^scrYm/.test((document.querySelector('.scr.on')||{}).id||'') : false;
+    return `<button class="hs-tile${onNow?' on':''}" data-tile="${t.k}" style="--tc:${t.col}"><span class="ht-top"><span class="ht-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${t.ic}</svg></span><span class="ht-n${num.length>=6?' sm':''}">${num}</span></span><span class="ht-l">${t.l}</span></button>`; }).join('');
   for(const id of ['hTiles','hTilesP']){ const box=$(id); box.innerHTML=html;
     box.querySelectorAll('[data-tile]').forEach(b=>b.onclick=()=>{ const k=b.dataset.tile;
-      if(k==='today'){ const w=document.querySelector('#scrHome .home-wrap'); if(w) w.scrollTop=0; }
+      if(k==='today'){ if(!$('scrHome').classList.contains('on')) go('scrHome'); const w=document.querySelector('#scrHome .home-wrap'); if(w) w.scrollTop=0; }
       else if(k==='tmr') go('scrStats');           // 내일 = 예보가 있는 통계로(카드 목록 필터로 만들 술어가 아직 없다)
       else if(k==='ym') ymEnter();
       else if(k==='solved') openListCond('today'); }); }

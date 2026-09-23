@@ -1068,6 +1068,27 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 .cs-imgs img{display:block;width:100%;max-height:38vh;object-fit:contain;object-position:center top;
   border-radius:10px;background:var(--sunken);cursor:zoom-in;}
 
+/* ═══ 아트 시안 (UI 리뷰 A2~A9) — 동하 09-23 「일단 넣어줘」 · 토큰은 위 테마 블록을 덮어쓴다 ═══ */
+/* A2 흐린 글자 두 단계 복원 */
+:root, :root[data-theme="b"]{ --mute:#9AA2B3; --faint:#8A92A3; }
+:root[data-theme="c"]{ --mute:#655B47; --faint:#6E6450; }
+/* A3 페이퍼 액센트 — 경고 빨강과 갈리게 */
+:root[data-theme="c"]{ --accent:#9A4F2A; --accent-dim:rgba(154,79,42,.11); }
+/* A4 다크 카드 윤곽 · 흰 도식 눈부심 */
+:root, :root[data-theme="b"]{ --shadow:0 0 0 1px rgba(255,255,255,.05), 0 8px 28px rgba(0,0,0,.38); }
+:root[data-theme="b"] .c-img, :root:not([data-theme]) .c-img{ filter:brightness(.88); }
+/* A5 타이포 — 페이퍼 앞면 700 → 600 · 긴 앞면 20 */
+:root[data-theme="c"] #cFront{ font-weight:600; }
+#cFront.long{ font-size:20px; font-weight:600; }
+/* A6 반경 단계 — 채점 버튼 14 · 사이드바 22(카드와 같게) */
+.gbtn{ border-radius:14px; }
+#rail{ border-radius:22px; }
+.h-tab{ border-radius:14px; } .ym-row{ border-radius:14px; }
+/* A7 아이콘 선 굵기 1.75 */
+.tb-btn svg, .rbtn svg, .gear svg, .sub-head svg{ stroke-width:1.75; }
+/* A8 아이패드 넓은 화면 — 통계·목록·읽기 폭 900 */
+@media (min-width:1000px){ #scrStats .sub-inner, #scrList .sub-inner, #scrRead .sub-inner{ max-width:900px; } }
+
 </style>
 </head>
 <body>
@@ -11618,7 +11639,7 @@ $('ovlImg').onclick=closeImg;
     const padT=parseFloat(getComputedStyle(Z).paddingTop)||0, off=Math.max(0, ct-zt-padT);
     if(C.getBoundingClientRect().height + off + padT <= Z.clientHeight - 10){ Z.classList.add('anchored'); C.style.marginTop=off+'px'; }
     requestAnimationFrame(fitCard); return r; };
-  const _s2=showCard; showCard=function(){ const Z=$('cardZone'); Z.classList.remove('anchored'); $('card').style.marginTop=''; return _s2.apply(this,arguments); }; }
+  const _s2=showCard; showCard=function(){ const Z=$('cardZone'); Z.classList.remove('anchored'); $('card').style.marginTop=''; const r=_s2.apply(this,arguments); const f=$('cFront'); f.classList.toggle('long',(f.textContent||'').length>150); return r; }; }   // A5 긴 앞면 20px
 
 </script>
 </body>

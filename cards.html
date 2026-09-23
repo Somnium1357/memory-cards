@@ -8704,7 +8704,7 @@ function renderPlanWarn(){
    타일 = 목적지(오늘 · 내일 · 문풀 · 푼 카드). 숫자는 그 목록의 개수:
      오늘 = dueTodayCount()(= 옛 「남은 복습」 · 세션 두 문을 지난 수) · 내일 = tomorrowCount(null) ·
      문풀 = ymDueToday() 길이(카탈로그를 받은 뒤) · 푼 카드 = 오늘(04시 경계) 채점한 **서로 다른** 카드 수(= 라이브러리 「오늘 푼」과 같은 술어).
-   세션 줄 = 아이콘 + 이름 + 부제 「약 n분」 + 오른쪽 본문색 장수. 시간 = 남은 장수 × 장당 시간(최근 채점 로그 ms 중앙값 · 5분 단위 · 최소 5분). */
+   세션 줄 = 아이콘 + 이름 + 부제 「약 n분」 + 오른쪽 본문색 장수. 시간 = 남은 장수 × 장당 시간(perCardMs — 실제 걸린 시간 기준 · 5분 단위 · 최소 5분). */
 const SESS_COL=['var(--c-acc)','var(--c-indigo)','var(--c-green)','var(--c-orange)','var(--c-purple)','var(--c-teal)','var(--c-pink)'];
 function sessIcon(sx,i){
   const nm=String(sx.name||''); let col=SESS_COL[i%SESS_COL.length], g=nm.replace(/\s/g,'').slice(0,1)||'·';
@@ -8718,10 +8718,16 @@ function sessIcon(sx,i){
   return {col, g:esc(g)};
 }
 let _msMed=null, _msMedLen=-1;
-function perCardMs(){   // 최근 채점 1,500건의 응답 시간(ms) 중앙값 — 멈춘 시간은 로그가 이미 뺐다(rate · pausedMs)
+/* 장당 시간 = **실제 걸린 시간 ÷ 푼 카드 수** (최근 채점 4,000건 · 09-24).
+   🔴 브리프 권장(응답 시간 ms 중앙값)은 실측의 절반쯤이었다 — 중앙값 7.3초 vs 실제 13~17초/장(09-18~23 · 재출로 한 장을 여러 번 채점 +
+   공개 뒤 읽기 + 카드 사이 틈). 그래서 이웃 채점 사이 간격(5분 넘는 틈은 쉼으로 보고 뺀다)을 더하고 「날·카드」 쌍 수로 나눈다. */
+function perCardMs(){
   if(_msMed!=null && _msMedLen===state.log.length) return _msMed;
-  const v=[]; for(let i=state.log.length-1;i>=0 && v.length<1500;i--){ const e=state.log[i], x=e&&e[3]; if(x&&x.ms>0) v.push(x.ms); }
-  v.sort((a,b)=>a-b); _msMed = v.length>=30 ? v[v.length>>1] : 12000; _msMedLen=state.log.length; return _msMed;
+  const L=state.log, a=Math.max(0,L.length-4000); let sum=0; const seen=new Set(); let prev=null;
+  for(let i=a;i<L.length;i++){ const e=L[i]; if(!e) continue; const t=logTs(e); if(!(t>0)) continue;
+    if(prev!=null){ const dt=t-prev; if(dt>0 && dt<300000) sum+=dt; }
+    prev=t; seen.add(dayKey(new Date(t))+'|'+e[0]); }
+  _msMed = (seen.size>=100 && sum>0) ? sum/seen.size : 15000; _msMedLen=L.length; return _msMed;
 }
 function fmtEst(n){ if(!n) return '';
   let m=Math.max(5, Math.round(n*perCardMs()/60000/5)*5);

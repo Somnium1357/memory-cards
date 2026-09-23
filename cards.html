@@ -3951,7 +3951,7 @@ function clampDue(due, id, card){
     const t=daysToR(card, examRet());                         // ④ R*에 닿는 날
     const base=card.last_review?dayKey(new Date(card.last_review)):todayKey();
     const day=dkAdd(base, t), D7=dkAdd(EXAM_DAY, -EXAM_SPREAD);
-    if(day>todayKey() && day<D7) return new Date(day+'T12:00:00+09:00');
+    if(day>base && day<D7) return new Date(day+'T12:00:00+09:00');   // 🔴 비교 기준 = **채점일**(리뷰 09-23 R1 · 동하 「처리」). 예전 `todayKey()`는 재생하는 날에 따라 답이 달라져(결정성 위반) 당긴 카드가 제날에 D-7 창으로 튀었다 — 지난 날이면 밀린 카드로 두고 백로그 분산이 받는다
   }
   return new Date(examClampKey(id)+'T12:00:00+09:00');         // ⑤ D-7 창 흩뿌림
 }
@@ -4083,7 +4083,7 @@ function effDueKey(k, id){               // 저장된 due → 화면에 쓰는 �
   /* 시험일 상한 — 휴식일 뒤로 밀기·백로그 슬롯이 **시험 뒤로 넘겨 버린** 경우만 되돌린다.
      🔴 저장된 due 자체가 시험 뒤인 카드는 **그대로 둔다** — 「시험날에도 충분히 남는다」고 판정돼 안 당긴 카드다
      (동하 결정 09-06 · 목표율 클램프). 예전처럼 여기서 다시 당기면 그 판정이 무효가 된다. */
-  if(d>dayKey(EXAM_END) && k<=dayKey(EXAM_END)) d=examClampKey(id);
+  if(d>=EXAM_DAY && k<=EXAM_DAY){ d=examClampKey(id); let g=0; while(isRestDay(d) && g++<7) d=dkAdd(d,-1); }   // 🔴 시험 **당일**도 막고(>=) · 창 자리가 휴식일이면 앞날로(리뷰 09-23 R17)
   _effCache.set(ck, d); return d;
 }
 function weekKeyOf(d){            // ISO 주 (월요일 시작) — 하루 경계 4시를 먼저 적용한 날짜 기준
@@ -4166,7 +4166,7 @@ function reInsert(c, tries){
   const rest=queue.length-qPos-1;
   const gap = tries>=2 ? Infinity : Math.min(RE_GAP_MAX, Math.max(RE_GAP_MIN, Math.floor(rest/2)));
   const at = Math.min(queue.length, qPos+1+gap);
-  const rc = Object.create(c); rc._re=tries; rc._at=gradeSeq;   // 같은 카드의 **다른 자리** — 원본 카드 객체는 안 건드린다
+  const rc = Object.create(c); rc._re=tries; rc._at=gradeSeq; rc._day=todayKey();   // _day = 재출이 생긴 날(R18)   // 같은 카드의 **다른 자리** — 원본 카드 객체는 안 건드린다
   queue.splice(at, 0, rc);
   return rc;
 }
@@ -4731,7 +4731,7 @@ function mergeSessions(remote, local, log){
   const dayStart=new Date(tk+'T04:00:00+09:00').getTime();
   const solvedSince=(cut)=>{ const set=new Set(); for(let i=(log||[]).length-1;i>=0;i--){ const e=log[i]; if(logTs(e)<cut)break; set.add(e[0]); } return set; };
   const solvedToday=solvedSince(dayStart), solvedCache=new Map();
-  const solvedFor=(a,b)=>{ const la=a.lastAt||0, lb=b.lastAt||0; const older=Math.min(la||Infinity, lb||Infinity);
+  const solvedFor=(a,b)=>{ const la=Math.max(a.lastAt||0, a.fillAt||0), lb=Math.max(b.lastAt||0, b.fillAt||0);   // fillAt = 채우기 경로 시각(리뷰 09-23 R19 — lastAt이 안 올라 기준이 며칠 전으로 잡혔다) const older=Math.min(la||Infinity, lb||Infinity);
     const cut=Math.min(isFinite(older)?older:dayStart, dayStart); if(cut===dayStart) return solvedToday;
     if(!solvedCache.has(cut)) solvedCache.set(cut, solvedSince(cut)); return solvedCache.get(cut); };
   const byId={}, tomb={};
@@ -4921,7 +4921,7 @@ function mergeSessInto(remote){
   if(curSess && rqRun===curSess.id && Array.isArray(curSess.rq) && queue.length){
     const have=new Set(queue.slice(qPos).filter(c=>c._re).map(c=>c.id)), tr=todayRatings();
     for(const [id,re] of curSess.rq){ const c=BYID[id]; if(!c||have.has(id)||tr[id]!==1||retired(c)||offed(c)) continue;
-      const rc=Object.create(c); rc._re=Math.max(1,+re||1); rc._at=gradeSeq; queue.push(rc); }
+      const rc=Object.create(c); rc._re=Math.max(1,+re||1); rc._at=gradeSeq; rc._day=todayKey(); queue.push(rc); }
   }
   if(viewSess) viewSess=sessions.find(x=>x.id===viewSess.id)||viewSess;
 }
@@ -6008,14 +6008,14 @@ function refillSess(sx){ // 전체 범위 세션은 날이 바뀌면 스스로 �
         지금 자동 세션은 「일일 복습」 하나이고 그 범위는 **비어 있다**(= 전 범위 · `ex` 목록만 있다) —
         그래서 실사용에서는 이 필터가 곧 「사람이 빼라고 한 것만 뺀다」와 같다. 좁힌 자동 세션이 생기면 다시 보라. */
   const sc0=asPreset(sx).scope;
-  const keep=(sx.q||[]).filter(id=>{ const c=BYID[id]; return c && !settledToday(c) && !buried(c) && scopeMatch(c, sc0); });
+  const keep=(sx.q||[]).filter(id=>{ const c=BYID[id]; return c && !settledToday(c) && !buried(c) && scopeMatch(c, sc0) && (isNew(c) || isDue(c)); });   // 🔴 due도 신규도 아닌 카드(어제 푼 것 · 낡은 세션 파일)는 남기지 않는다(리뷰 09-23 R14 · F4-1 잔여 — 「미리 보는 중」으로 큐 머리에 와 FSRS를 움직였다)
   /* 오늘 사람이 뺀 것(「빼기」·「큐 비우기」 qDel 툼스톤)은 다시 채우지 않는다(전층 감사 F4-3) — refreshRemote의 day 리셋 뒤 도로 채워졌다 */
   const delToday=id=>{ const t=sx.qDel&&sx.qDel[id]; return !!t && dayKey(new Date(t))===todayKey(); };
   const fresh=buildQueue(asPreset(sx), sx.how.status, keep.map(id=>BYID[id]).filter(Boolean)).map(c=>c.id).filter(id=>!delToday(id));
    // 🔴 남긴 큐를 씨앗으로
   const have=new Set(keep);
   sx.q=[...keep, ...fresh.filter(id=>!have.has(id))];
-  sx.day=todayKey(); saveSessionsSoon();
+  sx.day=todayKey(); sx.fillAt=Date.now(); saveSessionsSoon();
   /* 🔴 진행 중인 세션이면 화면 큐에도 붙인다(전층 감사 F4-2) — 풀이 중 04:00을 넘기면 새 날 분량이 저장 큐에만 들어가고
      다음 syncSessQueue가 저장 큐를 화면 잔량으로 되덮어 279장이 사라지며 「오늘 몫 다 풀었어요」가 거짓이 됐다. */
   if(curSess&&curSess.id===sx.id){ const inQ=new Set(queue.map(c=>c.id));
@@ -6081,7 +6081,7 @@ function addScopeToSess(sx, sel){ // 내용 추가 — sel={units:[],mids:[]}
     if(sx.scDel) for(const k of [...(sel.units||[]), ...(sel.mids||[])]) delete sx.scDel[k];
   }
   if(curSess&&curSess.id===sx.id){ for(const id of add){ if(BYID[id])queue.push(BYID[id]); } counts(); }
-  sx.day=todayKey(); saveSessionsFlush();
+  sx.day=todayKey(); sx.fillAt=Date.now(); saveSessionsFlush();
   return add.length;
 }
 let lastAddHeld=0, lastAddOff=0;   // 직전 추가에서 안 들어간 장수 — 나중에 올 것 / 세션이 안 받는 것
@@ -6634,7 +6634,7 @@ function playSess(sx){          // 세션 화면의 [이어가기] — 남은 �
   if(Array.isArray(sx.rq) && sx.rq.length && sx.day===todayKey()){
     const tr=todayRatings();
     const ins=[]; for(const [id,re,at] of sx.rq){ const c=BYID[id]; if(!c||tr[id]!==1||retired(c)||offed(c)) continue;   // 🔴 오늘 마지막 채점이 「다시」인 것만(리뷰 09-23 R11 · 어제 것·이미 통과한 것 제외)
-      const rc=Object.create(c); rc._re=Math.max(1,+re||1); rc._at=gradeSeq; ins.push([Math.min(queue.length, +at||0), rc]); }   // 회차 상한 없음(09-22)
+      const rc=Object.create(c); rc._re=Math.max(1,+re||1); rc._at=gradeSeq; rc._day=todayKey(); ins.push([Math.min(queue.length, +at||0), rc]); }   // 회차 상한 없음(09-22)
     ins.sort((a,b)=>b[0]-a[0]); for(const [at,rc] of ins) queue.splice(at,0,rc);   // 뒤에서부터 끼워 자리가 안 밀린다
   }
   // 🔴 저장된 큐를 이어 풀 때도 한 번 더 건다 — 큐는 조립 뒤에도 「내용 추가」로 뒤에 붙는다
@@ -7203,7 +7203,7 @@ function rate(num){
      「오늘 두 번째」라 FSRS를 건너뛰고, `replayLog()`는 다음 날 첫 채점으로 반영한다(재현 확정 · 실데이터 0건).
      로그가 정본이므로 로그가 쓰는 시각에 날짜를 맞춘다. */
   const s=st(c.id), tk=dayKey(now);
-  const reN=c._re||0;                       // 0 = 그날 첫 대면 · 1,2,3… = 재출 회차(상한 없음 · 09-22)
+  const reN=(c._re && (c._day||tk)===tk) ? c._re : 0;   // 0 = 그날 첫 대면 · 1,2,3… = 재출 회차(상한 없음 · 09-22) · 🔴 04시를 넘긴 재출은 새 날 **정식 채점**(리뷰 09-23 R18 — 기록 없이 하루 밀렸다)
   const hasItems=itemMarks.length>=2, anyX=itemMarks.some(Boolean);
   /* 🔴 재출은 「다시 / 통과」 둘뿐이다(동하 09-07) — 버튼은 숨겼는데 키(패드 Y=2·B=4)가 그 문을 우회해
      어려움·쉬움으로 넘어갔다(동하 09-12 「어려움 탭은 안 되는데 버튼 누르면 넘어감」). 입구 하나에서 막는다. */
@@ -8108,7 +8108,7 @@ function renderSession(){
     else doIt();
   };
   const br=$('ssRefill'); if(br)br.onclick=()=>{
-    sx.q=refillQ.slice(); sx.day=todayKey();
+    sx.q=refillQ.slice(); sx.day=todayKey(); sx.fillAt=Date.now();
     qGrow(sx); if(sx.qDel) for(const id of refillQ) delete sx.qDel[id];   // 사람이 다시 채웠다 = 축소 취소
     saveSessionsFlush();
     if(live){ for(const id of refillQ){ if(BYID[id])queue.push(BYID[id]); } counts(); }

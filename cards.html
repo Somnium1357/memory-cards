@@ -1288,7 +1288,8 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 #cLower{flex:58 1 0;position:relative;display:flex;flex-direction:column;}
 #cBackWrap,#cBackWrap.on{display:flex;flex-direction:column;flex:1 1 auto;margin:0;border:0;padding:0;visibility:hidden;}
 #cBackWrap.on{visibility:visible;}
-#cAnsBody{position:relative;flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;gap:8px;padding:8px 0;}
+#cAnsBody{position:relative;flex:1 1 auto;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);}
+#cAnsIn{grid-area:1/1;display:flex;flex-direction:column;justify-content:center;gap:8px;padding:8px 0;min-width:0;}
 #cAnsLab{font-size:13px;font-weight:600;line-height:18px;color:var(--c-sec);}
 #cBack{color:var(--c-label);}
 #cBack.ans-s{font-size:var(--t-ans-short);font-weight:700;line-height:1.2;letter-spacing:-.025em;}
@@ -1299,9 +1300,10 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 #cBack .as-row+.as-row{box-shadow:inset 0 .5px 0 var(--c-sep);}
 #cBack .as-k{font-size:13px;font-weight:600;line-height:18px;color:var(--c-sec);margin-bottom:2px;}
 /* 가림 면 — 앞면에서만. 부모가 visibility:hidden이어도 이 면은 visible로 되살린다(답 글자는 계속 숨음) */
-#cCover{position:absolute;inset:0;visibility:visible;background:var(--c-fill);border-radius:20px;
+#cCover{grid-area:1/1;position:relative;visibility:visible;background:var(--c-fill);border-radius:20px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;cursor:pointer;}
-#card.rev #cCover,#card.tbl #cCover{display:none;}
+#card.rev #cCover{visibility:hidden;}   /* 답면 = 숨기기만(높이 유지 → 선·버튼 불변) */
+#card.tbl #cCover{display:none;}
 #revealHint{margin:0;font-size:15px;font-weight:400;color:var(--c-sec);text-align:center;}
 #hintBox{margin:0;max-width:none;gap:8px;}
 .hint-chip{min-height:44px;padding:0 16px;border:0;border-radius:22px;background:transparent;color:var(--c-label);
@@ -1705,12 +1707,15 @@ input,select{border-radius:10px;}
               <div id="cTable"></div>
               <div id="cBackWrap">
                 <div id="cAnsBody">
-                  <div id="cAnsLab">정답</div>
-                  <div id="cBack"></div>
-                  <div class="c-imgs back" id="cImgB"></div>
-                  <div id="cItems"></div>
-                  <div id="cNote"></div>
-                  <div id="cSrc"></div>
+                  <div id="cAnsIn">
+                    <div id="cAnsLab">정답</div>
+                    <div id="cBack"></div>
+                    <div class="c-imgs back" id="cImgB"></div>
+                    <div id="cItems"></div>
+                    <div id="cNote"></div>
+                    <div id="cSrc"></div>
+                  </div>
+                  <!-- 가림 면 = 답과 같은 격자 칸에 겹친다 → 칸 높이 = 둘 중 큰 쪽(힌트 칩이 많아도 넘치지 않는다) · 답면에선 visibility로만 치운다(높이 그대로) -->
                   <div id="cCover"><div id="revealHint">카드를 누르면 정답이 보여요</div><div id="hintBox"></div></div>
                 </div>
                 <div id="cMeta"><span class="typ-tag" id="cTyp"></span><span class="typ-tag" id="cDir">역방향</span><span id="cHint"></span><span id="cTags"></span><button class="typ-tag" id="cTagAdd">＋태그</button><input id="cTagInput" type="text" maxlength="16" placeholder="태그"><div id="cHoedok"></div></div>
@@ -7867,7 +7872,7 @@ function scopeHtml(c){   // 경로 = 과목 › 갈래 › 주제 (과목 번호
 function reveal(){
   const c=cur(); if(!c||revealed)return;
   revealed=true; revealAt=Date.now();
-  $('hintBox').classList.remove('on');      // 답면에서는 힌트 칩을 치운다(연 것은 hintUsed에 남는다)
+  /* 힌트 칩은 가림 면 안이라 답면에선 가림 면과 함께 visibility로 숨는다 — 여기서 치우면(display) 칸 높이가 바뀌어 선이 움직였다(09-24 실측 5px) */
   const hasItems=Array.isArray(c.items)&&c.items.length>=2;
   const isDiag=c.typ==='도식';   // 답면이 "(도식 — 회독본…)" 한 줄뿐 — cDiag가 같은 말을 링크까지 붙여 한다
   /* 🔴 표 카드는 **표 자체가 답면**이다(#cTable이 위에서 전량 공개된다). back 문자열을 여기 또 찍으면

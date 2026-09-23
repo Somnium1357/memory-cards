@@ -1659,6 +1659,9 @@ input,select{border-radius:10px;}
 .lh-main .lh-tile{min-height:60px;}
 .lh-units{background:var(--c-card);border-radius:var(--r-group);box-shadow:var(--sh-card);margin-top:12px;}
 
+
+/* UX §1 (09-24): 단위 줄 「읽음 표시」는 화면에서 뺀다(사용 9번 · 마지막 8/22) — 기록(state.hoedok)은 그대로 둔다 */
+.u-row .rd{display:none;}
 </style>
 </head>
 <body>
@@ -9224,7 +9227,7 @@ function renderUnits(){
     const sel=ks.filter(k=>uPicked.has(k)).length;
     const h=document.createElement('div'); h.className='u-grp'+(open?' open':'');
     h.innerHTML=`<span class="cv">▸</span><span class="nm">${esc(sj.split('.')[1]||sj)}</span>
-      <span class="mt">${ks.length}단위 · 읽음 ${read}/${ks.length}${due?` · <b>복습 ${due}</b>`:''}${nw?` · 신규 ${nw}`:''}${sel?` · <i>선택 ${sel}</i>`:''}</span>`;
+      <span class="mt">${ks.length}단위${due?` · <b>복습 ${due}</b>`:''}${nw?` · 신규 ${nw}`:''}${sel?` · <i>선택 ${sel}</i>`:''}</span>`;
     h.onclick=()=>{ uOpen.has(sj)?uOpen.delete(sj):uOpen.add(sj); saveUOpen(); renderUnits(); };
     box.appendChild(h);
     if(!open) continue;

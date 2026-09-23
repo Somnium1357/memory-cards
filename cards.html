@@ -7186,7 +7186,7 @@ function intervalsPreview(c){ // 채점 버튼 위 다음 간격 미리보기
     if(!firstToday){ $(lab).textContent='기록만'; continue; }   // 당일 재출이 없어져 사실상 안 뜨는 경로
     try{
       const r=engFor(c.id).next(fc, now, RATING[num]);
-      let due=clampDue(r.card.due, c.id);
+      let due=clampDue(r.card.due, c.id, r.card);
       const days=Math.max(0,Math.round((due-now)/86400000));
       $(lab).textContent = days<1?'<1일':(days<30?days+'일':(days/30.4).toFixed(1)+'개월');
     }catch(e){ $(lab).textContent=''; }
@@ -7854,11 +7854,14 @@ function deadScopeKeys(){
   for(const mk in byMid){ const set=byMid[mk]; if(set.size>1) for(const sk of set) live.add(sk); }
   const out=new Map();
   for(const sx of sessions){ if(!sx||!sx.scope) continue;
-    for(const kk of [...(sx.scope.units||[]), ...(sx.scope.mids||[])]){
+    const ex=sx.scope.ex||{};   // 빼 둔 목록도 같은 기준으로 본다 — 이름이 바뀌면 조용히 되살아난다(리뷰 09-23 R23)
+    for(const kk of [...(sx.scope.units||[]), ...(sx.scope.mids||[]), ...(ex.units||[]), ...(ex.mids||[])]){
       if(live.has(kk)) continue;
       if(/\|\|$/.test(kk) && live.has(kk.slice(0,-2))) continue;   // 「(기타)」 통(단위||)이 비어 있는 건 정상 — 단위가 살아 있으면 고아가 아니다(동하 09-22 「이거 또 뜸」 · 루틴이 마지막 무태그 카드를 지운 뒤)
       if(!out.has(kk)) out.set(kk, new Set());
       out.get(kk).add(sx.name||'이름 없음'); } }
+  if(fsrsCfg.focusAt && fsrsCfg.focus){ for(const kk of [...(fsrsCfg.focus.units||[]), ...(fsrsCfg.focus.mids||[])]){   // 집중 암기 대상도(R23)
+    if(live.has(kk) || (/\|\|$/.test(kk) && live.has(kk.slice(0,-2)))) continue; if(!out.has(kk)) out.set(kk,new Set()); out.get(kk).add('집중 암기'); } }
   return [...out].map(([k,names])=>({k, names:[...names]}));
 }
 function renderPlanWarn(){
@@ -8848,7 +8851,9 @@ function padPoll(){
     for(let i=0;i<b.length;i++){ const was=!!padPrev[i], is=down(i);
       if(is && !was){
         padLast=i;
-        if(padLearn){ padMap[padLearn]=i; padLearn=null; lsSet(K_PAD, JSON.stringify(padMap)); renderPadUI(); padPrev[i]=true; continue; }
+        if(padLearn){ const prevBtn=padMap[padLearn]; const owner=Object.keys(padMap).find(k=>k!==padLearn && padMap[k]===i);   // 🔴 겹침 금지 — 그 버튼을 쓰던 동작과 맞바꾼다(리뷰 09-23 R13: 「쉬움」을 겹쳐 배정하면 「알맞음」이 기록됐다)
+          padMap[padLearn]=i; if(owner){ padMap[owner]=(prevBtn==null?null:prevBtn); const a=PAD_ACTS.find(x=>x[0]===owner); toast('#'+i+' 을(를) 쓰던 「'+(a?a[1]:owner)+'」은 '+(prevBtn==null?'배정 없음':'#'+prevBtn)+'(으)로 옮겼어요'); }
+          padLearn=null; lsSet(K_PAD, JSON.stringify(padMap)); renderPadUI(); padPrev[i]=true; continue; }
         if(i===padMap.mod){ padPrev[i]=true; continue; }
         const act=Object.keys(padMap).find(k=>padMap[k]===i && k!=='mod');
         if(act) padSynth(act, mod && ['again','hard','good','easy'].includes(act));
@@ -9366,6 +9371,7 @@ function lastRevMap(){ // 카드별 마지막 리뷰 [ts, rating] — 로그가 
   for(let i=lastRevIdxLen;i<state.log.length;i++){
     const e=state.log[i], t=logTs(e);
     if(!isFinite(t))continue;
+    if(e[3]&&e[3].re) continue;               // 🔴 재출은 「마지막 리뷰」가 아니다(리뷰 09-23 R12 — 재출 통과가 「다시」를 덮어 최근 틀린 목록이 193 → 29장)
     const p=lastRevIdx[e[0]];
     if(!p||t>=p[0]) lastRevIdx[e[0]]=[t,e[2]];
   }
@@ -9797,7 +9803,7 @@ function msBuckets(){         // 응답 시간 분포 — 지금은 평균 하�
            ['10~20초',10000,20000],['20~60초',20000,60000],['60초+',60000,1e12]];
   const cnt=B.map(()=>0); let n=0, sum=0;
   for(const e of state.log){ const ex=e[3];
-    if(!ex||typeof ex.ms!=='number'||ex.ms<=0) continue;
+    if(!ex||typeof ex.ms!=='number'||ex.ms<=0||ex.re) continue;   // 재출 제외(R22)
     for(let i=0;i<B.length;i++) if(ex.ms>=B[i][1]&&ex.ms<B[i][2]){ cnt[i]++; n++; sum+=ex.ms; break; }
   }
   return {labels:B.map(x=>x[0]), cnt, n, avg:n?sum/n:0};
@@ -10196,6 +10202,7 @@ function renderStats(){
   const cut=Date.now()-30*86400000;
   for(const e of state.log){ const isFirst=!seen.has(e[0]); seen.add(e[0]);
     if(logTs(e)<cut||isFirst) continue;        // 🔴 logTs는 이미 ms (위와 같은 함정)
+    if(e[3]&&e[3].re) continue;                 // 재출 제외 — 같은 화면의 다른 유지율과 정의를 맞춘다(리뷰 09-23 R22)
     R[e[2]]=(R[e[2]]||0)+1;
     const ex=e[3]; if(ex&&typeof ex.ms==='number'){ msSum+=ex.ms; msN++; } }
   const rtot=R[1]+R[2]+R[3]+R[4], pct=n=>rtot?Math.round(n/rtot*100):0;
@@ -11094,6 +11101,9 @@ function ymUndoLast(){                          // 마지막 (안 무른) 이벤
   const undone=new Set(YM.ev.filter(e=>e.m==='u'&&e.ref).map(e=>e.ref));
   for(let i=YM.ev.length-1;i>=0;i--){ const e=YM.ev[i];
     if(e.m==='u' || undone.has(e.i)) continue;
+    /* 🔴 묶음(g) — 「이 단위 풀었음」은 done + 표시 없던 문항 ○를 한 번에 찍는다. 되돌리기도 **묶음째**(리뷰 09-23 R20 · 13문항 단위 = 14탭이었다).
+       각각은 평범한 u 이벤트라 파생·파이썬 참조는 그대로다. */
+    if(e.g){ let last=null; for(const x of YM.ev){ if(x.g===e.g && x.m!=='u' && !undone.has(x.i)) last=ymEvent(x.k,'u',{ref:x.i}); } return last; }
     return ymEvent(e.k,'u',{ref:e.i});
   }
   return null;
@@ -11286,7 +11296,7 @@ function ymRenderToday(){
      화면을 나가면(ymEnter·ymLeave가 _ymSubOpen을 비움) 다음 렌더에서 빠진다. */
   const dueNow=ymDueToday(); const dueIds=new Set(dueNow.map(x=>x.it.id));
   for(const id of dueIds) if(_ymSubOpen.has(id)) _ymTodayPin.add(id);   // 🔴 이 화면에서 due였던 채로 펼친 행만 고정한다 — 단위 화면에서 펼친 것(_ymSubOpen 공용)이 여기로 새면 오늘 채점한 문항이 「다시 풀 문항」에 떴다(동하 09-21)
-  const pinned=[..._ymTodayPin].filter(k=>!dueIds.has(k)).map(k=>{ const it=YM.cat.items.find(x=>x.id===k); const st=YM.st.items[k]; return it&&st?{it:it, s:st}:null; }).filter(Boolean);
+  const pinned=[..._ymTodayPin].filter(k=>!dueIds.has(k) && !(YM.st.items[k]&&YM.st.items[k].skip)).map(k=>{ const it=YM.cat.items.find(x=>x.id===k); const st=YM.st.items[k]; return it&&st?{it:it, s:st}:null; }).filter(Boolean);   // 제외한 문항은 고정에서도 뺀다(리뷰 09-23 R21)
   /* 자리 고정 — 한 번 그린 행은 이 화면에 있는 동안 같은 자리(동하 09-21 「탭하면 순서가 바뀜」). 처음 본 순서를 _ymRowPos에 적어 두고 그걸로 정렬한다. */
   const due=dueNow.concat(pinned); for(const x of due){ if(!_ymRowPos.has(x.it.id)) _ymRowPos.set(x.it.id, _ymRowPos.size); } due.sort((a,b)=>_ymRowPos.get(a.it.id)-_ymRowPos.get(b.it.id));
   h+='<div class="ym-tree-head" data-ym-fold-row="today"><b>오늘</b><small>다시 풀 문항 '+due.length+'</small>'+foldBtn('today')+'</div>';
@@ -11420,8 +11430,9 @@ function ymRenderUnit(id){
   $('ymDoneBtn').onclick=()=>{
     if(done) return;
     /* 「이 단위 풀었음」 = 초회 완료 날짜 + 그때 표시 없는 문항 전부에 ○를 **실제 이벤트로** 저장(§3-2 · 해석 규칙이 아니라 데이터) */
-    ymEvent(u.id,'done');
-    let n=0; for(const it of its){ const s=YM.st.items[it.id]; if(s&&s.skip) continue; if(!s||(!s.m&&!s.closed)){ ymEvent(it.id,'○'); n++; } }
+    const g=ymNonce();                           // 묶음 id — 되돌리기가 done과 딸린 ○를 한 번에 무른다(R20)
+    ymEvent(u.id,'done',{g});
+    let n=0; for(const it of its){ const s=YM.st.items[it.id]; if(s&&s.skip) continue; if(!s||(!s.m&&!s.closed)){ ymEvent(it.id,'○',{g}); n++; } }
     toast('풀었음 — 표시 없던 '+n+'문항에 ○'); _ymReady=null; ymRenderUnit(id);
   };
 }

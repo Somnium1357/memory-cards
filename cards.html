@@ -16,9 +16,9 @@
   --bg:#13151A; --surface:#1C1F27; --surface2:#252935; --sunken:#0E1014;
   --ink:#E8EAF0; --ink2:#C3C8D4; --mute:#8A92A3; --faint:#8B93A6; --line:#2B303C;   /* mute: WCAG AA — 4.19 → 4.64 (F5-6) */
   --accent:#8CA7FF; --accent-ink:#0E1014; --accent-dim:rgba(140,167,255,.13);
-  --again:#F0716E; --hard:#EFA85A; --good:#57C97B; --easy:#68A8F5;
-  --again-dim:rgba(240,113,110,.13); --hard-dim:rgba(239,168,90,.13);
-  --good-dim:rgba(87,201,123,.13); --easy-dim:rgba(104,168,245,.13);
+  --again:#FF7A66; --hard:#E8B24A; --good:#3CC7A6; --easy:#6DA6FF;   /* UI 리뷰 09-23 U2·A1 — 적색맹 시뮬에서 다시·어려움·알맞음이 한 색이었다(ΔE 7 → 38) */
+  --again-dim:rgba(255,122,102,.16); --hard-dim:rgba(232,178,74,.16);
+  --good-dim:rgba(60,199,166,.16); --easy-dim:rgba(109,166,255,.16);
   --danger:#F0716E; --ok:#57C97B;
   --shadow:0 8px 28px rgba(0,0,0,.38); --shadow-sm:0 1px 4px rgba(0,0,0,.28);
   --head-font:"NotoMusic",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Malgun Gothic",sans-serif;
@@ -27,9 +27,9 @@
   --bg:#F3EDDE; --surface:#FBF7EC; --surface2:#F0E9D8; --sunken:#EAE2CE;
   --ink:#2F2A20; --ink2:#4C4536; --mute:#6E6450; --faint:#746A50; --line:#E0D8C2;
   --accent:#AE5B33; --accent-ink:#FBF7EC; --accent-dim:rgba(174,91,51,.11);
-  --again:#A93E35; --hard:#82540A; --good:#256E45; --easy:#2D5AA8;   /* hard: WCAG AA — 4.12 → 4.78 (F5-6 · 다른 셋은 4.56~4.98로 이미 통과) */
-  --again-dim:rgba(169,62,53,.10); --hard-dim:rgba(143,93,14,.12);
-  --good-dim:rgba(37,110,69,.11); --easy-dim:rgba(45,90,168,.10);
+  --again:#A8352A; --hard:#7A4B00; --good:#0F6A54; --easy:#2A52A4;   /* U2·A1 — 네 색 모두 글자/채움 ≥4.55 · 쉬움 채움이 회색처럼 보이던 것도 */   /* hard: WCAG AA — 4.12 → 4.78 (F5-6 · 다른 셋은 4.56~4.98로 이미 통과) */
+  --again-dim:rgba(168,53,42,.14); --hard-dim:rgba(122,75,0,.14);
+  --good-dim:rgba(15,106,84,.14); --easy-dim:rgba(42,82,164,.14);
   --danger:#A93E35; --ok:#256E45;
   --shadow:0 6px 22px rgba(93,80,52,.16); --shadow-sm:0 1px 4px rgba(93,80,52,.25);
   --head-font:"NotoMusic","SerifKR","Apple Myungjo","Nanum Myeongjo",Georgia,serif;
@@ -59,6 +59,7 @@ html,body{height:100%;}
    iOS 27 상태바(유리)가 env(safe-area-inset-top)보다 몇 px 더 내려와 블러 가장자리가 상단바에 겹친다 → 홈 화면 앱(standalone)에서만
    위 안전영역에 --sat-extra 를 더한다. 값 하나만 만지면 된다(기기에서 실측해 올리거나 내린다). PC·브라우저 탭은 0. */
 @media (display-mode: standalone){ :root{--sat-extra:15px;} }   /* 09-16 동하 실측 「15픽셀 주니까 해결됨」 */
+:root{--hair:var(--line);}   /* 쓰이는데 정의가 없던 토큰(UI 리뷰 U7) */
 body{
   background:var(--bg); color:var(--ink); overflow:hidden;
   font-family:"NotoMusic",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Malgun Gothic",sans-serif;
@@ -99,7 +100,7 @@ input:focus,select:focus{border-color:var(--accent);}
 #rail{flex:0 0 216px;border-left:1px solid var(--line);background:var(--surface);
   display:flex;flex-direction:column;padding:14px 12px calc(14px + env(safe-area-inset-bottom));overflow-y:auto;}
 @media (max-width:1119px), (orientation:portrait){
-  #rail{position:fixed;right:0;top:0;bottom:0;z-index:40;transform:translateX(105%);
+  #rail{position:fixed;right:0;top:0;bottom:0;z-index:40;transform:translateX(105%);padding-top:calc(14px + env(safe-area-inset-top) + var(--sat-extra));   /* 상단 안전영역(U11) */
     transition:transform .22s ease;box-shadow:var(--shadow);width:240px;}
   #rail.open{transform:none;}
   #railFab.show{display:flex;}
@@ -185,7 +186,11 @@ input:focus,select:focus{border-color:var(--accent);}
   transition:opacity .2s ease-out;}
 #cardZone.tinting::before{transition:none;}
 #cardScroll{overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;}
-#cScope{font-size:12px;font-weight:600;color:var(--mute);letter-spacing:.2px;margin-bottom:12px;
+/* 넘칠 때만 가장자리를 흐린다(UI 리뷰 U1 — iOS는 스크롤바를 숨겨 잘린 줄이 「끝」처럼 보였다). 끝까지 내리면 아래 페이드가 사라진다. */
+#cardScroll.fade-b{-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(to bottom,#000 calc(100% - 28px),transparent);}
+#cardScroll.fade-t{-webkit-mask-image:linear-gradient(to top,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(to top,#000 calc(100% - 22px),transparent);}
+#cardScroll.fade-t.fade-b{-webkit-mask-image:linear-gradient(to bottom,transparent,#000 22px,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(to bottom,transparent,#000 22px,#000 calc(100% - 28px),transparent);}
+#cScope{flex:0 0 auto;font-size:12px;font-weight:600;color:var(--mute);letter-spacing:.2px;margin-bottom:12px;   /* flex 0 0 — 넘치는 카드에서 눌려 글자 밑이 잘렸다(U6) */
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 #cFront{font-size:24px;font-weight:700;line-height:1.5;font-family:var(--head-font);letter-spacing:-.2px;}
 #cBackWrap{display:none;margin-top:18px;border-top:1px solid var(--line);padding-top:16px;}
@@ -206,6 +211,7 @@ input:focus,select:focus{border-color:var(--accent);}
   letter-spacing:.2px;padding-top:5px;padding-bottom:5px;}
 #cTable th.rh{text-align:left;padding-left:8px;color:var(--ink2);font-size:12.5px;}
 #cTable td{color:var(--ink2);font-weight:600;}
+#cTable td.mus{font-size:24px;line-height:1.15;}   /* 음악 기호(U+1D100대)가 든 칸 — 14px로는 쉼표 구별이 안 됐다(UI 리뷰 U3) */
 /* 가리개 — 🔴 칸이 아니라 **글자만** 덮는다. 칸을 통째로 칠하면 「애매하게 꽉 찬」 모양이 되고
    (동하 08-29 실기), 답이 한 글자인지 긴 구절인지도 안 보인다. `?` 글리프도 뺐다 — 회색 띠 하나로
    가려졌다는 건 이미 보인다. 🔴 터치 대상은 여전히 **칸 전체**(td.onclick)라 띠가 작아도 누르기 쉽다.
@@ -280,6 +286,7 @@ input:focus,select:focus{border-color:var(--accent);}
 #cHint{font-size:12px;color:var(--faint);font-weight:500;}
 #cTags{display:flex;gap:5px;flex-wrap:wrap;}
 /* 탭이 동작인 것(태그 제거·＋태그)만 패딩으로 36px대까지 — 표시용 .typ-tag는 그대로 둔다 (감사 U3) */
+#cMeta{flex-wrap:wrap;} .typ-tag,.ann-chip,#cTags .utag,#cTagAdd{white-space:nowrap;flex:0 0 auto;}   /* 「방/법」 글자 단위 줄바꿈(UI 리뷰 U10) */
 #cTags .utag{font-size:12px;font-weight:700;color:var(--accent);background:var(--accent-dim);
   padding:11px 12px;border-radius:999px;}
 #cTagAdd{color:var(--faint);padding:11px 12px;}
@@ -291,12 +298,13 @@ input:focus,select:focus{border-color:var(--accent);}
 #phaseLine{text-align:center;font-size:12px;font-weight:600;color:var(--faint);padding:0 0 4px;min-height:16px;}
 
 /* ══ 채점 바 — 낮고 넓게 ══ */
-#gradeBar{flex:0 0 auto;display:flex;gap:8px;padding:6px 18px calc(4px + env(safe-area-inset-bottom));
+#gradeBar{flex:0 0 auto;display:flex;gap:8px;padding:6px 18px 4px;   /* 아래 안전영역은 body padding이 이미 준다 — 여기서 또 더하면 두 번(UI 리뷰 U5) */
   max-width:700px;width:100%;margin:0 auto;visibility:hidden;}
 #gradeBar.on{visibility:visible;}
 .gbtn{flex:1;height:54px;border-radius:16px;display:flex;flex-direction:column;align-items:center;
   justify-content:center;gap:1px;font-weight:700;transition:opacity .1s, transform .06s;}
 .gbtn:active{transform:scale(.97);}
+.gbtn{box-shadow:inset 0 -3px 0 currentColor;}   /* 색 말고도 구별되게 — 바닥 원색 띠(U2) */
 .gbtn .gl{font-size:15px;letter-spacing:-.2px;}
 .gbtn .gi{font-size:12px;font-weight:600;opacity:.75;}
 #gradeBar.noiv .gi{display:none;}   /* 간격 미리보기 숨김(기본) — 설정 토글 · 동하 09-05 */
@@ -345,7 +353,7 @@ input:focus,select:focus{border-color:var(--accent);}
 .ft-chip.on{background:var(--accent-dim);color:var(--accent);border-color:var(--accent);}
 
 /* ══ 홈 화면 ══ */
-.home-wrap{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 18px calc(24px + env(safe-area-inset-bottom));}
+.home-wrap{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 18px 24px;}   /* U5 */
 .home-inner{max-width:660px;margin:0 auto;}
 .h-title{font-size:24px;font-weight:800;font-family:var(--head-font);margin:10px 2px 4px;letter-spacing:-.3px;}
 .h-sub{font-size:12px;color:var(--mute);margin:0 2px 14px;}
@@ -399,7 +407,7 @@ input:focus,select:focus{border-color:var(--accent);}
   .sub-head>.tb-btn:first-child{margin-left:-52px;}
 }
 .sub-title{font-size:17px;font-weight:800;font-family:var(--head-font);flex:1;}
-.sub-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 18px calc(24px + env(safe-area-inset-bottom));}
+.sub-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 18px 24px;}   /* U5 */
 .sub-inner{max-width:660px;margin:0 auto;}
 .lrow{background:var(--surface);border-radius:16px;padding:12px 16px;margin-bottom:8px;font-size:13px;}
 .lrow .lf{font-weight:600;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
@@ -550,7 +558,7 @@ details.ss-score[open]>summary{border-bottom:1px solid var(--line);margin-bottom
 
 /* ══ 오버레이 시트 ══ */
 .ovl{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);display:none;
-  align-items:center;justify-content:center;padding:20px;}
+  align-items:center;justify-content:center;padding:calc(20px + env(safe-area-inset-top) + var(--sat-extra)) 20px calc(20px + env(safe-area-inset-bottom));}   /* 위아래 안전영역(U11) */
 .ovl.show{display:flex;}
 /* 확인 다이얼로그는 다른 시트 위에서 열린다(조립기의 템플릿 덮어쓰기 등) — 항상 최상단 */
 #ovlConfirm{z-index:90;}
@@ -592,6 +600,9 @@ details.ss-score[open]>summary{border-bottom:1px solid var(--line);margin-bottom
   background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:999px;font-size:13px;font-weight:600;
   opacity:0;transition:all .22s;z-index:99;box-shadow:var(--shadow);white-space:nowrap;max-width:88vw;overflow:hidden;text-overflow:ellipsis;}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+#toast{pointer-events:none;}                                   /* 밑의 버튼 탭을 막지 않는다(UI 리뷰 U4) */
+#toast.hi{bottom:calc(100px + env(safe-area-inset-bottom));}   /* 풀이·문풀 = 채점 버튼·바닥 띠 위 */
+@media (max-width:520px){ #toast{white-space:normal;text-align:center;border-radius:16px;line-height:1.45;} }
 /* ══ 일시정지 ══ */
 #ovlPause{background:var(--bg);}
 .pause-card{text-align:center;max-width:340px;padding:20px;}
@@ -727,6 +738,8 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .bulkbar.on{display:flex;}
 .bulkbar .n{font-size:12.5px;font-weight:800;color:var(--accent);align-self:center;padding:0 6px;}
 .bulkbar button{padding:9px 12px;border-radius:11px;background:var(--surface2);font-size:12.5px;font-weight:700;color:var(--ink2);}
+.bulkbar button.danger{color:var(--again);background:var(--again-dim);}   /* 되돌리기 어려운 조작은 끝에 · 위험색(U8) */
+.bulkbar{bottom:-24px;margin-bottom:-24px;box-shadow:0 -6px 18px var(--bg),var(--shadow);}   /* sub-body 아래 여백까지 덮어 띠 밑으로 행이 비치지 않게(U8 · .ym-foot과 같은 수) */
 
 /* ══ 차트 ══ */
 .card-box{background:var(--surface);border-radius:16px;padding:14px 16px 12px;margin-bottom:12px;box-shadow:var(--shadow-sm);}
@@ -954,6 +967,9 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .ym-subtog.has{color:var(--accent);background:var(--accent-dim);}
 .ym-subtog.on{outline:1.5px solid var(--accent);}
 .ym-subs{display:flex;flex-direction:column;gap:6px;margin:-2px 0 6px 58px;padding:8px 10px;border-radius:12px;background:var(--sunken);}
+.ym-subs .ym-mark{background:var(--surface);border:1.5px solid var(--line);}   /* 빈 칸이 판 배경과 같은 색이라 안 보였다(U7 · 대비 1.00) */
+.ym-subs .ym-mark.ok,.ym-subs .ym-mark.hard,.ym-subs .ym-mark.q,.ym-subs .ym-mark.pass{border-color:transparent;}
+.ym-subs .ym-mark.ok{background:var(--again-dim);} .ym-subs .ym-mark.hard{background:var(--hard-dim);} .ym-subs .ym-mark.pass{background:var(--good-dim);} .ym-subs .ym-mark.q{background:var(--surface2);}
 .ym-subrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
 .ym-sublab{font-size:13px;font-weight:800;color:var(--ink2);min-width:22px;}
 .ym-sublab.dim{color:var(--mute);font-weight:700;min-width:0;margin-left:4px;}
@@ -968,6 +984,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .ym-pct{flex:0 0 auto;width:42px;text-align:right;font-size:13px;font-weight:800;color:var(--ink2);font-variant-numeric:tabular-nums;}
 .ym-pct.none{color:var(--faint);font-weight:600;}
 .ym-btns{display:flex;gap:6px;flex:0 0 auto;}
+@media (max-width:430px){ .ym-row{flex-wrap:wrap;} .ym-row .ym-btns{width:100%;justify-content:flex-end;} }   /* 아이폰 — 문항 이름 칸이 39px로 눌리던 것(U10) */
 .ym-btn{min-height:44px;padding:0 14px;border-radius:12px;font-size:13.5px;font-weight:800;background:var(--surface2);color:var(--ink);}
 .ym-btn.close{background:var(--easy-dim);color:var(--easy);}
 .ym-btn.again{background:var(--again-dim);color:var(--again);}
@@ -979,8 +996,8 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .ym-empty{padding:14px 4px;font-size:13.5px;color:var(--mute);}
 /* 🔴 바닥 띠는 스크롤 영역의 **아래 패딩(24px+safe-area)까지 덮는다** (동하 09-15 「플로팅바가 좀 이상 · 네모칸 배경이 보인다」).
    sticky bottom:0 은 패딩 위에 멈춰서 그 아래 24px(아이패드는 +홈 인디케이터)로 줄이 비쳐 보였다 — 띠를 그만큼 내려 붙이고 그 높이를 안에 패딩으로 채운다. */
-.ym-foot{display:flex;gap:8px;position:sticky;bottom:calc(-24px - env(safe-area-inset-bottom));margin-bottom:calc(-24px - env(safe-area-inset-bottom));
-  padding:12px 0 calc(28px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--hair);}
+.ym-foot{display:flex;gap:8px;position:sticky;bottom:-24px;margin-bottom:-24px;   /* U5 — sub-body 아래 여백(24px)만 덮는다 */
+  padding:12px 0 28px;background:var(--bg);border-top:1px solid var(--hair);}
 .ym-foot .ym-btn{flex:1;}
 details.ym-subj>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:48px;padding:6px 4px;font-size:15px;font-weight:800;}
 details.ym-subj>summary::-webkit-details-marker{display:none;}
@@ -1182,7 +1199,6 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
         <button class="more-btn" id="listMore" style="display:none">더 보기</button>
         <div class="bulkbar" id="bulkBar">
           <span class="n" id="bulkN">0장</span>
-          <button data-bulk="retire">끄기</button>
           <button data-bulk="restore">다시 켜기</button>
           <button data-bulk="flag">플래그</button>
           <button data-bulk="unflag">플래그 해제</button>
@@ -1190,6 +1206,7 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
           <button data-bulk="tag">태그 부착</button>
           <input id="bulkTag" type="text" maxlength="16" placeholder="태그 입력 후 Enter" style="display:none;flex:1;min-width:130px">
           <button data-bulk="none">선택 해제</button>
+          <button data-bulk="retire" class="danger" style="margin-left:auto">끄기</button>
         </div>
       </div></div>
     </div>
@@ -1658,8 +1675,8 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
     <p class="desc" style="margin-top:6px">그날 복습분은 <b>앞 3일</b>에 나눠 <b>미리</b> 나가요 — 미리 아는 날이니까요.</p>
   </div>
   <div class="field"><label>휴식일 — 하루만 추가</label>
-    <div style="display:flex;gap:8px;align-items:center">
-      <input id="restDate" type="date" style="flex:1">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input id="restDate" type="date" style="flex:1 1 150px;min-width:0">
       <button class="btn-ghost" id="restAdd" style="flex:0 0 auto">추가</button>
       <button class="btn-ghost" id="restSkip" style="flex:0 0 auto" title="매주 휴식 요일이어도 그날은 공부">빼기</button>
       <button class="btn-ghost" id="restToday" style="flex:0 0 auto">오늘</button>
@@ -7104,6 +7121,24 @@ let revealAt=0;
    `shownAt`(showCard가 찍는다)에서 350ms 안이면 버린다. 되돌리기도 카드를 바꾸므로 같은 자로 잰다. */
 let guardAt=0;   // 연타 가드 기준 = 카드가 **화면에 뜬** 시각. 응답 시간 기준(shownAt)과 가른다 — 되돌리기가 shownAt을 과거로 되살리면 가드가 무력해졌다(리뷰 09-23 R15)
 function tooSoon(){ return guardAt && (Date.now()-guardAt) < RATE_MIN_MS; }
+/* 넘침 판정 + 그림 카드 문면 우선(UI 리뷰 U1) — 카드를 그릴 때·공개할 때·그림이 로드될 때·화면 크기가 바뀔 때 */
+function fitCard(){
+  const sc=$('cardScroll'); if(!sc) return;
+  const imgs=[...sc.querySelectorAll('.c-imgs.on .c-img')];
+  for(const im of imgs) im.style.maxHeight='';
+  let over=sc.scrollHeight-sc.clientHeight;
+  if(over>2 && imgs.length){                      // 그림을 줄여서라도 글을 먼저 보인다 — 그림은 최소 140px
+    const im=imgs[0], h=im.getBoundingClientRect().height;
+    if(h>140){ im.style.maxHeight=Math.max(140, Math.floor(h-over-4))+'px'; over=sc.scrollHeight-sc.clientHeight; }
+  }
+  for(const td of document.querySelectorAll('#cTable td')) td.classList.toggle('mus', /[\u{1D100}-\u{1D1FF}]/u.test(td.textContent));   // U3
+  fadeCard();
+}
+function fadeCard(){ const sc=$('cardScroll'); if(!sc) return; const over=sc.scrollHeight-sc.clientHeight;
+  sc.classList.toggle('fade-b', over>2 && sc.scrollTop < over-2); sc.classList.toggle('fade-t', over>2 && sc.scrollTop>2); }
+$('cardScroll').addEventListener('scroll', fadeCard, {passive:true});
+$('cardScroll').addEventListener('load', e=>{ if(e.target.tagName==='IMG') requestAnimationFrame(fitCard); }, true);
+window.addEventListener('resize', ()=>requestAnimationFrame(fitCard));
 function reveal(){
   const c=cur(); if(!c||revealed)return;
   revealed=true; revealAt=Date.now();
@@ -10902,7 +10937,7 @@ document.addEventListener('click', (e)=>{
 
 /* ═══════════════ 토스트 ═══════════════ */
 let toastT=null;
-function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show');
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.toggle('hi', !!document.querySelector('#scrSolve.on,#scrYmToday.on,#scrYmUnit.on')); t.classList.add('show');
   clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1800); }
 
 /* ═══════════════ 세션 범위 키 복구 (2026-09-01) ═══════════════ */
@@ -11545,6 +11580,9 @@ function openImg(src, alt){
 }
 function closeImg(){ const o=$('ovlImg'); o.classList.remove('show'); o.innerHTML=''; }
 $('ovlImg').onclick=closeImg;
+/* 카드를 그리거나 공개한 뒤 넘침·그림 크기·음악 기호 칸을 맞춘다(UI 리뷰 U1·U3) — 두 함수를 감싼다(모든 호출처가 전역 이름을 통한다) */
+{ const _s=showCard; showCard=function(){ const r=_s.apply(this,arguments); requestAnimationFrame(fitCard); return r; };
+  const _r=reveal; reveal=function(){ const r=_r.apply(this,arguments); requestAnimationFrame(fitCard); return r; }; }
 
 </script>
 </body>

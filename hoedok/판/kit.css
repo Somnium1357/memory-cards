@@ -371,3 +371,26 @@ h2.tg.closed::before,h3.tg.closed::before{transform:rotate(-90deg);}
 .clpsd{display:none !important;}
 .list-view .tnav a.cur{color:var(--ink);font-weight:700;}
 .toc-view[hidden],.list-view[hidden]{display:none;}
+
+/* 좁은 폭(≤500px · 아이폰 세로) — 도식이 가로로 넘쳐 본문이 1,109px 까지 늘었다(카드앱 UI 리뷰 09-23 U9② · 동하 「가로 스크롤 금지」).
+   가지·수렴은 넘치면 다음 줄로(마지막 칸만 줄어든다), 괄호+목록(포크)은 붙인 채, 세로 사슬의 주석은 단 아래로, 여러 단은 한 단으로.
+   글자는 낱말 단위로만 끊는다(keep-all). 카드 QC 09-20 · 2026-09-23. */
+@media (max-width:500px){
+  .branch,.converge{flex-wrap:wrap;row-gap:4px;}
+  .branch>*,.converge>*{flex:0 1 auto;max-width:100%;min-width:0;}
+  .fork>:last-child{flex:1 1 auto;min-width:0;}   /* 포크(괄호+목록)는 줄을 안 바꾼다 — 바꾸면 괄호가 제 줄로 떨어져 높이 0 이 된다 */
+  /* 마지막 칸(보통 긴 설명)만 줄어들며 제 줄에 남는다 — 전부 줄바꿈시키면 「→」·「}」가 외톨이 줄로 떨어지고,
+     전부 줄이면 앞 칸이 한 글자 폭으로 눌린다(09-23 실측 둘 다) */
+  .branch>:last-child,.converge>:last-child{flex:1 1 8em;min-width:0;}
+  .converge{gap:8px;}
+  .fork>.mkf{flex:0 0 12px;} .converge>svg,.branch>svg{flex:0 0 auto;}   /* 괄호·꺾쇠 도형은 글자가 없어 줄어들면 폭 0 으로 사라진다(뺄셈 〈 실측) */
+  .vchain{grid-template-columns:minmax(0,1fr);}
+  .vchain>.ann{grid-column:1;padding-left:1.2em;}
+  .cols,.cols.fit{grid-template-columns:minmax(0,1fr);}
+  .term{white-space:normal;}
+  .kids>*,.bracket>*,.stack>*,.row>*{min-width:0;}
+  .stack,.kids,.bracket,.row,.desc,.ann,.stp,.link{overflow-wrap:break-word;word-break:keep-all;}   /* anywhere 는 min-content 를 한 글자로 만들어 칸이 눌린다 */
+  img.photo,.fig img{max-width:100% !important;}
+  h1,h2{padding-right:50px;}   /* 오른쪽 위 목차 버튼(42px · 고정)이 제목 끝을 덮었다(U9②) */
+  .stack[style*="min-width"],.branch>[style*="min-width"]{min-width:0 !important;}   /* 조각의 칸 맞춤용 인라인 min-width(도덕 23.5em 등)는 폰에서 푼다 */
+}

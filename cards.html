@@ -8817,7 +8817,7 @@ function trendHtml(sx){
       return `<span title="${s.n}장">`
         + `<i style="height:${Math.max(2,Math.round(hit*.22))}px"></i>${hit}</span>`;   // 100% = 22px
     }).join('')+`</div>
-    <div class="why">최근 <b>${recent.length}회</b> 정답률</div>`;
+    <div class="why">최근 <b>${recent.length}회</b> 유지율</div>`;
 }
 function unitStatsAll(){   // 단위별 집계 한 번에 (DATA 1회 순회)
   const LR=lastRevMap(), m={};
@@ -9206,7 +9206,7 @@ function renderUnits(){
     const sel=ks.filter(k=>uPicked.has(k)).length;
     const h=document.createElement('div'); h.className='u-grp'+(open?' open':'');
     h.innerHTML=`<span class="cv">▸</span><span class="nm">${esc(sj.split('.')[1]||sj)}</span>
-      <span class="mt">${ks.length}단위 · 읽음 ${read}/${ks.length}${due?` · <b>due ${due}</b>`:''}${nw?` · 신규 ${nw}`:''}${sel?` · <i>선택 ${sel}</i>`:''}</span>`;
+      <span class="mt">${ks.length}단위 · 읽음 ${read}/${ks.length}${due?` · <b>복습 ${due}</b>`:''}${nw?` · 신규 ${nw}`:''}${sel?` · <i>선택 ${sel}</i>`:''}</span>`;
     h.onclick=()=>{ uOpen.has(sj)?uOpen.delete(sj):uOpen.add(sj); saveUOpen(); renderUnits(); };
     box.appendChild(h);
     if(!open) continue;
@@ -9376,7 +9376,7 @@ function renderPick(){
       <button class="open">
         <span class="tw">${tw?'▸':''}</span>
         <span class="nm">${esc(name)}</span>
-        <span class="ct">${cnt}${held?'<span class="in-sess">들어 있음</span>':''}${due?`<span class="due">due ${due}</span>`:''}</span></button>`;
+        <span class="ct">${cnt}${held?'<span class="in-sess">들어 있음</span>':''}${due?`<span class="due">복습 ${due}</span>`:''}</span></button>`;
     const nope=()=>toast('이미 들어 있어요 — 빼려면 세션 화면의 「빼기」');
     el.querySelector('.pick').onclick=(e)=>{ e.stopPropagation(); held?nope():onPick(); };
     el.querySelector('.open').onclick=(e)=>{ e.stopPropagation(); (onOpen||(held?nope:onPick))(); };
@@ -9722,7 +9722,7 @@ const K_PAD='cards_pad_v1';
 const PAD_ACTS=[   // [id, 라벨, 합성할 키] — 순서 = 화면 순서
   ['reveal','답 보기 → 알맞음 (Space)',{code:'Space',key:' '}], ['again','다시 (Z)',{code:'Digit1',key:'1'}], ['hard','어려움 (X)',{code:'Digit2',key:'2'}],
   ['good','알맞음 (C)',{code:'Digit3',key:'3'}], ['easy','쉬움 (V)',{code:'Digit4',key:'4'}], ['undo','되돌리기 (U)',{code:'KeyU',key:'u'}],
-  ['bury','내일로 (B)',{code:'KeyB',key:'b'}], ['off','끄기 (O)',{code:'KeyO',key:'o'}], ['hint','초성 힌트 (T)',{code:'KeyT',key:'t'}],
+  ['bury','내일로 (B)',{code:'KeyB',key:'b'}], ['off','끄기 (O)',{code:'KeyO',key:'o'}], ['hint','첫 글자 힌트 (T)',{code:'KeyT',key:'t'}],
   ['home','홈 (H)',{code:'KeyH',key:'h'}], ['pause','일시정지 (P)',{code:'KeyP',key:'p'}], ['mod','사유 칩 보조키 — 누른 채 채점 버튼 (Ctrl+1~4)',null],
   ['up','위로 스크롤 (↑)',{code:'ArrowUp',key:'ArrowUp'}], ['down','아래로 스크롤 (↓)',{code:'ArrowDown',key:'ArrowDown'}],
   ['left','회독본 이전 절 (←)',{code:'ArrowLeft',key:'ArrowLeft'}], ['right','회독본 다음 절 (→)',{code:'ArrowRight',key:'ArrowRight'}]];
@@ -10120,7 +10120,7 @@ function renderCardSheet(){
   if(s.miss) facts.push(`<span class="f ${isLeech(c)?'warn':''}">틀림 <b>${s.miss}</b></span>`);
   if(isLeech(c)) facts.push('<span class="f warn">⚠ 누수</span>');
   if(s.retired) facts.push('<span class="f warn">끔</span>');
-  if(buried(c)) facts.push('<span class="f warn">오늘 미룸</span>');
+  if(buried(c)) facts.push('<span class="f warn">내일로 뺌</span>');
   const tags=[...(c.tags||[]).map(t=>`<span class="tg">${esc(t)}</span>`),
     ...userTags(c.id).map(t=>`<button class="utag" data-untag="${esc(t)}">#${esc(t)} ✕</button>`),
     ...((s.ann||[]).map(t=>`<button class="utag ann" data-unann="${esc(t)}">@${esc(t)} ✕</button>`))];
@@ -10160,7 +10160,7 @@ function renderCardSheet(){
     <div class="cs-acts">
       <button class="cs-act" id="csSolve">지금 이 카드 풀기</button>
       <button class="cs-act ${s.flag!=null?'on':''}" id="csFlag">${s.flag!=null?'플래그 해제':'플래그'}</button>
-      <button class="cs-act ${buried(c)?'on':''}" id="csBury">${buried(c)?'미룸 취소':'내일로 미루기'}</button>
+      <button class="cs-act ${buried(c)?'on':''}" id="csBury">${buried(c)?'내일로 취소':'내일로'}</button>
       <button class="cs-act ${s.retired?'on':''}" id="csRetire">${s.retired?'다시 켜기':'끄기'}</button>
     </div>
     <div id="csTypes" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px">${
@@ -10234,7 +10234,7 @@ const LIST_CONDS=[
       return !!lr && lr[1]===1 && (Date.now()-lr[0]) < 7*86400000; }},
   {g:'오늘',   k:'today',   n:'오늘 푼',   f:null, today:true},
   {g:'오늘',   k:'due',     n:'복습 예정', f:c=>isDue(c)},
-  {g:'오늘',   k:'buried',  n:'오늘 미룸', f:c=>buried(c)},
+  {g:'오늘',   k:'buried',  n:'내일로 뺀', f:c=>buried(c)},
   {g:'정리',   k:'retired', n:'끈 카드',   f:c=>retired(c), ret:true},
 ];
 function renderListHome(){       // 조건 없을 때 — 숫자 붙은 진입점. 전체 장수는 일부러 안 쓴다
@@ -10267,7 +10267,7 @@ function renderListHome(){       // 조건 없을 때 — 숫자 붙은 진입�
   $('lhUnits').onclick=()=>go('scrUnits');
 }
 const picked=new Set();
-const RATE_NAME={1:'Again',2:'Hard',3:'Good',4:'Easy'};
+const RATE_NAME={1:'다시',2:'어려움',3:'알맞음',4:'쉬움'};   // 이력 한글화(UX §3 · 09-24)
 let lastRevIdx=null, lastRevIdxLen=-1, lastRevLog=null;
 function lastRevMap(){ // 카드별 마지막 리뷰 [ts, rating] — 로그가 늘어난 만큼만 갱신
   if(lastRevIdx && lastRevLog===state.log && lastRevIdxLen===state.log.length) return lastRevIdx;
@@ -10298,7 +10298,7 @@ function cardRow(c, extraMeta){
     ${s&&s.fsrs?`<span class="m">S ${s.fsrs.stability.toFixed(1)}일</span><span class="m">R ${r!=null?Math.round(r*100)+'%':'—'}</span>`:'<span class="m">신규</span>'}
     ${s&&s.miss?`<span class="m warn">틀림 ${s.miss}</span>`:''}
     ${isLeech(c)?'<span class="m warn">⚠ 누수</span>':''}
-    ${buried(c)?'<span class="m">오늘 미룸</span>':''}
+    ${buried(c)?'<span class="m">내일로 뺌</span>':''}
     ${s&&s.flag!=null?`<span class="m warn">⚑${s.flag?' '+esc(s.flag):''}</span>`:''}
     ${(s&&s.ann&&s.ann.length)?`<span class="m">@${esc(s.ann.join('·'))}</span>`:''}
     ${extraMeta||''}</div>`;
@@ -11094,9 +11094,9 @@ function renderStats(){
   const peak=F.cols.reduce((m,c)=>Math.max(m,c.load),0);
   const wk1=F.cols.slice(0,7).reduce((a,c)=>a+c.fresh,0);
   h+='<div class="st-pair"><div class="card-box"><h3>복습 부하 예보 (14일)</h3>'
-    +'<div class="cap">막대 = 그날 쌓일 양(이월 + 새 due) · 선 = 하루 처리(최근 실측)</div>'
+    +'<div class="cap">막대 = 그날 쌓일 양(이월 + 새 복습) · 선 = 하루 처리(최근 실측)</div>'
     +barChart(fcols,{h:110, cap:cap, capLab:'하루 처리 '+Number(cap).toLocaleString()})
-    +'<div class="cap" style="margin-top:8px">앞 7일에 <b>새로</b> due가 되는 건 '+wk1.toLocaleString()+'장 · 가장 몰리는 날 <b>'+peak.toLocaleString()+'장</b></div></div>'
+    +'<div class="cap" style="margin-top:8px">앞 7일에 <b>새로</b> 복습일이 되는 건 '+wk1.toLocaleString()+'장 · 가장 몰리는 날 <b>'+peak.toLocaleString()+'장</b></div></div>'
     +sigH+'</div>';
 
   /* ═══ E. 과목별 — 유지율 오름차순(나쁜 과목이 위) ═══ */
@@ -11106,7 +11106,7 @@ function renderStats(){
     .filter(r=>r.e.done)
     .sort((a,b)=>(a.p==null?999:a.p)-(b.p==null?999:b.p));
   h+='<div class="card-box"><h3>과목별 — 진도와 유지율</h3>'
-    +'<div class="cap">유지율 낮은 과목이 위 · 막대 = 학습 진입 · 오른쪽 = 오늘 due</div>'
+    +'<div class="cap">유지율 낮은 과목이 위 · 막대 = 학습 진입 · 오른쪽 = 오늘 복습</div>'
     +'<div class="bar-list" style="background:none;padding:4px 0;margin:0">';
   for(const r of rows){ const pr=r.e.tot?Math.round(r.e.done/r.e.tot*100):0;
     h+='<div class="bl-row"><span class="n" style="min-width:52px">'+esc(r.sj.split('.')[1]||r.sj)+'</span>'
@@ -11158,7 +11158,7 @@ function renderStats(){
     +barChart(MS.labels.map((L,i)=>({a:MS.cnt[i], label:L, title:L+' · '+MS.cnt[i].toLocaleString()+'회'})),{h:80});
   if(HR.n){ const cols=[]; for(let hh=0;hh<24;hh++) cols.push({a:HR.cnt[hh], label:(hh%6===0)?hh+'시':'', title:hh+'시 · '+HR.cnt[hh].toLocaleString()+'회'});
     adv+='<div class="cap" style="margin-top:14px"><b>시간대</b></div>'+barChart(cols,{h:70}); }
-  adv+='<div class="cap" style="margin-top:14px">끈 카드 '+ret.toLocaleString()+' · 오늘 미룸 '+bur.toLocaleString()+'</div>';
+  adv+='<div class="cap" style="margin-top:14px">끈 카드 '+ret.toLocaleString()+' · 내일로 뺌 '+bur.toLocaleString()+'</div>';
   h+='<div class="card-box"><details><summary style="cursor:pointer;font-weight:600">자세히 — 풀이량 · 분포 · 추이</summary>'+adv+'</details></div>';
 
   $('statsBody').innerHTML=h;

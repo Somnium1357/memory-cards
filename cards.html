@@ -353,7 +353,7 @@ input:focus,select:focus{border-color:var(--accent);}
 #flagMemoRow.on{display:block;}
 #flagMemo{width:100%;font-size:16px;padding:8px 10px;}
 /* 플래그 사유 칩 — 한 번 탭이 곧 플래그+사유다 (타이핑 제로 경로) */
-#flagTypes{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:6px 2px 2px;}   /* 오른쪽 19px 빈자리(UI 리뷰 🟡) */
+#flagTypes{display:flex;flex-wrap:wrap;gap:5px;padding:6px 2px 2px;}   /* 2열 격자는 칩이 칸을 꽉 채워 큰 타원이 됐다(동하 09-23 「칩 모양이 이상해짐」) — 원래대로 */
 .ft-chip{font-size:12px;font-weight:600;padding:0 10px;min-height:44px;display:inline-flex;align-items:center;border-radius:999px;line-height:1;
   background:transparent;color:var(--mute);border:1.5px solid var(--line);}
   /* 높이 44px(터치 기준) · 채움 없이 테두리만 — 칩 4개가 늘 펼쳐져 카드보다 먼저 눈에 들어왔다(동하 09-05 비평 5).

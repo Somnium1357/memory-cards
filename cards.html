@@ -4731,7 +4731,7 @@ function mergeSessions(remote, local, log){
   const dayStart=new Date(tk+'T04:00:00+09:00').getTime();
   const solvedSince=(cut)=>{ const set=new Set(); for(let i=(log||[]).length-1;i>=0;i--){ const e=log[i]; if(logTs(e)<cut)break; set.add(e[0]); } return set; };
   const solvedToday=solvedSince(dayStart), solvedCache=new Map();
-  const solvedFor=(a,b)=>{ const la=Math.max(a.lastAt||0, a.fillAt||0), lb=Math.max(b.lastAt||0, b.fillAt||0);   // fillAt = 채우기 경로 시각(리뷰 09-23 R19 — lastAt이 안 올라 기준이 며칠 전으로 잡혔다) const older=Math.min(la||Infinity, lb||Infinity);
+  const solvedFor=(a,b)=>{ const la=Math.max(a.lastAt||0, a.fillAt||0), lb=Math.max(b.lastAt||0, b.fillAt||0); const older=Math.min(la||Infinity, lb||Infinity);   // fillAt = 채우기 경로 시각(리뷰 09-23 R19 — lastAt이 안 올라 기준이 며칠 전으로 잡혔다)
     const cut=Math.min(isFinite(older)?older:dayStart, dayStart); if(cut===dayStart) return solvedToday;
     if(!solvedCache.has(cut)) solvedCache.set(cut, solvedSince(cut)); return solvedCache.get(cut); };
   const byId={}, tomb={};

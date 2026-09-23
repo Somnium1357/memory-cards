@@ -7025,7 +7025,7 @@ function showCard(){
   if(skipped) syncSessQueue();
   const c=cur();
   if(!c){ showSummaryOrNew(); return; }
-  revealed=false; itemMarks=(c.items||[]).map(()=>false); shownAt=Date.now(); pausedMs=0;
+  revealed=false; itemMarks=(c.items||[]).map(()=>false); shownAt=Date.now(); pausedMs=0; guardAt=shownAt;
   hintUsed=new Set(); renderHintBox(c);
   $('summary').style.display='none'; $('cardZone').style.display='flex';
   $('revealHint').style.display='block';
@@ -7056,7 +7056,8 @@ let revealAt=0;
 /* 🔴 카드가 **바뀐 직후**의 파괴적 동작(끄기·내일로·되돌리기)도 같은 이유로 버린다 (동하 09-11 「끄기가 연속으로 눌려」).
    X를 누르면 카드가 꺼지고 **다음 카드가 곧장 뜨는데**, 그때 튕긴 두 번째 X가 그 카드까지 껐다.
    `shownAt`(showCard가 찍는다)에서 350ms 안이면 버린다. 되돌리기도 카드를 바꾸므로 같은 자로 잰다. */
-function tooSoon(){ return shownAt && (Date.now()-shownAt) < RATE_MIN_MS; }
+let guardAt=0;   // 연타 가드 기준 = 카드가 **화면에 뜬** 시각. 응답 시간 기준(shownAt)과 가른다 — 되돌리기가 shownAt을 과거로 되살리면 가드가 무력해졌다(리뷰 09-23 R15)
+function tooSoon(){ return guardAt && (Date.now()-guardAt) < RATE_MIN_MS; }
 function reveal(){
   const c=cur(); if(!c||revealed)return;
   revealed=true; revealAt=Date.now();
@@ -7296,9 +7297,12 @@ function doUndo(){
   const sameRun = sn.run===undoRun;
   // 1) 카드 상태 되돌리기 — u는 지금 시각으로 올린다. 옛 u를 그대로 쓰면 다기기 병합이
   //    「원격이 더 새것」이라 판단해 되돌린 것을 도로 덮는다.
-  if(sn.prev===null) delete state.cards[sn.id];
+  /* 🔴 기록이 없던 카드를 되돌릴 때 **지우지 않고 해제 기록을 남긴다**(리뷰 09-23 R4) — 지우면 원격에 남은 `retired:true`가 병합 한 번에 도로 들어와
+     형제 끄기를 되돌린 낱장이 다시 은퇴했다(끈 목록에도 안 보임). 채점 되돌리기는 로그가 정본이라 종전대로 지운다(마크 파일에 흔적을 안 늘린다). */
+  const relRec=()=>({fsrs:null,miss:0,retired:false,flag:null,ann:[],u:new Date().toISOString(),d:'',lt:0});
+  if(sn.prev===null){ if(sn.k==='rate') delete state.cards[sn.id]; else state.cards[sn.id]=relRec(); }
   else { sn.prev.u=new Date().toISOString(); state.cards[sn.id]=sn.prev; }
-  if(sn.also) for(const a of sn.also){ if(a.prev===null) delete state.cards[a.id]; else { a.prev.u=new Date().toISOString(); state.cards[a.id]=a.prev; } }   // 형제 끄기 되돌림(09-16)
+  if(sn.also) for(const a of sn.also){ if(a.prev===null) state.cards[a.id]=relRec(); else { a.prev.u=new Date().toISOString(); state.cards[a.id]=a.prev; } }   // 형제 끄기 되돌림(09-16)
   if(sn.k==='rate'){
     dropLogEntry(sn.entry);        // 2) 로그에서 그 채점만 제거
     /* 그 채점 때문에 큐에 꽂았던 재출 항목도 같이 뺀다 — 안 빼면 「다시」를 무른 카드가
@@ -7335,7 +7339,7 @@ function doUndo(){
   showCard();
   /* 🔴 되돌린 채점을 다시 매길 때 **처음 카드를 본 시각부터** 센다(동하 09-21 「시간이 좀 적게 나온다」 실측 — 다시·어려움 카드마다 평균 4초가 빠졌다 =
      되돌리기 뒤 showCard가 shownAt을 지금으로 갈아 첫 시도 시간이 버려진 몫). 같은 런의 그 카드일 때만. */
-  if(sn.k==='rate' && sameRun && sn.shownAt && cur() && cur().id===sn.id){ shownAt=sn.shownAt; pausedMs=sn.pausedMs||0; }
+  if(sn.k==='rate' && sameRun && cur() && cur().id===sn.id){ const was=sn.entry&&sn.entry[3]&&sn.entry[3].ms; if(was) { shownAt=Date.now()-was; pausedMs=0; } }   // 되돌려 다시 매기면 **첫 시도 시간 + 지금부터** — 다음 카드를 본 시간은 안 넣는다(리뷰 09-23 R15 · 2.4s→8.9s)
   syncSessQueue();                 // 되돌린 카드가 저장된 세션 큐에도 돌아오게
   toast(undoStack.length?`되돌렸어요 (${undoStack.length}단계 더)`:'되돌렸어요');
 }
@@ -8741,7 +8745,7 @@ function renderRestUI(){
 $('cfgIv').onclick=()=>saveIv(!ivShow.v);
 $('restDow').onclick=(e)=>{ const b=e.target.closest('button'); if(!b)return;
   rest.dow = b.dataset.v==='' ? null : +b.dataset.v;
-  saveRest(); renderRestUI(); renderHome();
+  saveRest(); resyncQueues(); renderRestUI(); renderHome();   // 실효 due가 통째로 움직인다 — 큐도 맞춘다(리뷰 09-23 R16)
   toast(rest.dow==null?'매주 반복 휴식일 없음':`매주 ${RDOW[rest.dow]}요일 — 그날 몫은 앞 3일로 미리 나가요`); };
 function addRestDay(d){
   if(!d) return;
@@ -8750,11 +8754,12 @@ function addRestDay(d){
   /* 오늘을 쉬기로 했으면 자동 충전 세션의 오늘 큐를 비운다 — 그게 「쉰다」의 뜻이다.
      되돌릴 길은 있다: 세션 화면의 「＋ 이어서 채우기」. */
   if(d===todayKey()){ for(const sx of sessions){ if(!isFixed(sx)){ sx.q=[]; sx.day=todayKey(); } } saveSessionsFlush(); }
+  else resyncQueues();                 // 다른 날을 쉬면 그날 몫이 뒤 3일로 — 오늘 큐가 바뀔 수 있다(R16)
   renderRestUI(); renderHome();
   toast(d===todayKey()?'오늘은 쉬어요 — 오늘 몫은 뒤 3일에 나눠 갚아요':`${d} 휴식 — 그 몫은 뒤 3일에 나눠 갚아요`); }
 $('restAdd').onclick=()=>addRestDay($('restDate').value);
 $('restSkip').onclick=()=>{ const d=$('restDate').value; if(!d) return;
-  if((rest.days||[]).indexOf(d)>=0){ rest.days=rest.days.filter(x=>x!==d); saveRest(); renderRestUI(); renderHome(); toast(d+' 휴식을 뺐어요'); return; }
+  if((rest.days||[]).indexOf(d)>=0){ rest.days=rest.days.filter(x=>x!==d); saveRest(); resyncQueues(); renderRestUI(); renderHome(); toast(d+' 휴식을 뺐어요'); return; }
   if(!(rest.dow!=null && new Date(d+'T12:00:00').getDay()===rest.dow)){ toast('그날은 원래 휴식일이 아니에요'); return; }
   if((rest.skip||[]).indexOf(d)>=0){ toast('이미 공부하는 날로 돼 있어요'); return; }
   rest.skip=[...(rest.skip||[]), d]; saveRest();

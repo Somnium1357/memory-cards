@@ -114,6 +114,7 @@ input:focus,select:focus{border-color:var(--accent);}
 /* ══ 상단 바 ══ */
 /* 버튼 44×44 = 최소 터치 타깃 — 세로 패딩을 깎아 topbar 전체 높이는 종전(~50px)과 같게 (감사 U3) */
 #topbar{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:4px 12px 2px;min-height:46px;}
+#main:not(.solving) #topbar{display:none;}
 .tb-btn{width:44px;height:44px;display:flex;align-items:center;justify-content:center;
   border-radius:12px;color:var(--mute);}
 .tb-btn:active{background:var(--surface2);}
@@ -132,7 +133,8 @@ input:focus,select:focus{border-color:var(--accent);}
 #banner{display:none;background:var(--again-dim);color:var(--again);font-size:13px;font-weight:600;
   padding:8px 14px;text-align:center;}
 #banner.show{display:block;}
-#banner button{font-weight:800;text-decoration:underline;color:inherit;margin-left:8px;}
+#banner button{font-weight:800;text-decoration:underline;color:inherit;margin-left:8px;padding:12px 8px;margin-top:-12px;margin-bottom:-12px;}   /* 표적 44(UI 리뷰 🟠) */
+#banner.good{background:var(--accent-dim);color:var(--accent);}   /* 새 버전 = 좋은 소식 — 저장 실패와 같은 빨강이던 것 */
 
 /* ══ 풀이 화면 ══ */
 .scr{display:none;flex:1;min-height:0;flex-direction:column;}
@@ -141,6 +143,8 @@ input:focus,select:focus{border-color:var(--accent);}
    세로 방향 flex라 「카드를 탭하면 정답」 힌트는 카드 바로 아래에 붙어 같이 가운데로 온다(바닥 절대 위치는 토스트에 가렸다).
    넓은 표 카드는 .tblleft로 왼쪽부터(가로). 채점 바는 바닥(엄지 자리). */
 #cardZone{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 18px 10px;position:relative;}
+#cardZone.anchored{justify-content:flex-start;}
+@media (max-width:430px){ #cardZone{padding-left:10px;padding-right:10px;} #card{padding-left:18px;padding-right:18px;} #cTable td,#cTable th{padding:6px 5px;font-size:12.5px;} }   /* 아이폰 — 좌우 여백이 폭의 23%였다(UI 리뷰 🟠) */   /* 공개 뒤 — 앞면 자리 그대로(위 reveal 감싸기) */
 /* 🔴 마당 탭이 켜져 있을 때만 「눌러도 되는 자리」로 보이게 한다 — iOS는 그렇게 생기지 않은
    요소에는 합성 click을 안 내는 판이 있고(그래서 #card에 원래 cursor:pointer가 있다),
    **애플펜슬은 그 판정이 손가락보다 깐깐하다**(동하 09-07 실기: 펜슬만 마당이 무반응). */
@@ -192,6 +196,7 @@ input:focus,select:focus{border-color:var(--accent);}
 #cardScroll.fade-t.fade-b{-webkit-mask-image:linear-gradient(to bottom,transparent,#000 22px,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(to bottom,transparent,#000 22px,#000 calc(100% - 28px),transparent);}
 #cScope{flex:0 0 auto;font-size:12px;font-weight:600;color:var(--mute);letter-spacing:.2px;margin-bottom:12px;   /* flex 0 0 — 넘치는 카드에서 눌려 글자 밑이 잘렸다(U6) */
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#cFront,#cBack,.it-row,#cNote,.act-btn span{word-break:keep-all;overflow-wrap:anywhere;}   /* 「바탕으/로」 같은 단어 중간 끊김(UI 리뷰 🟠) */
 #cFront{font-size:24px;font-weight:700;line-height:1.5;font-family:var(--head-font);letter-spacing:-.2px;}
 #cBackWrap{display:none;margin-top:18px;border-top:1px solid var(--line);padding-top:16px;}
 /* 표 카드 (2026-08-29) — 표 하나를 통째로 싣는 카드. 값 칸만 가렸다가 탭하면 드러난다.
@@ -234,6 +239,8 @@ input:focus,select:focus{border-color:var(--accent);}
 #cardZone.tblleft{align-items:flex-start;}   /* 넓은 표 카드는 왼쪽부터(가로) — #cardZone이 세로 flex라 가로 정렬은 align-items다 */
 #cBackWrap.on{display:block;}
 #cBack{font-size:19px;font-weight:600;line-height:1.55;color:var(--ink2);}
+#cBack.short{font-size:22px;font-weight:700;color:var(--ink);}   /* 짧은 답(≤20자) — 공개 뒤 시선이 갈 곳(UI 리뷰 🟠) */
+#card.rev #cFront{color:var(--ink2);}
 #cItems{display:none;flex-direction:column;gap:7px;margin-top:4px;}
 #cItems.on{display:flex;}
 .it-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
@@ -312,6 +319,7 @@ input:focus,select:focus{border-color:var(--accent);}
    버튼이 넷」이었다 — 그때 기각된 대안을 이번에 채택했다(동하 09-07). 간격 미리보기도 없앤다:
    재출 채점은 일정을 안 건드리므로 보여 줄 간격이 없다. */
 #gradeBar.re #gHard,#gradeBar.re #gEasy{display:none;}
+#gradeBar.re #gGood{flex:3;}   /* 「다시」가 평소 「어려움」 자리까지 덮어 오터치로 재출이 한 바퀴 더 돌았다(UI 리뷰 🟠) */
 #gradeBar.re .gi{display:none;}
 /* .dim = 시각적으로만 죽인다 — pointer-events를 막으면 탭이 rate()에 못 가 안내 토스트가 안 뜬다 (감사 U2) */
 .gbtn.dim{opacity:.22;}
@@ -380,6 +388,7 @@ input:focus,select:focus{border-color:var(--accent);}
   text-align:center;font-size:13px;font-weight:700;color:var(--ink2);box-shadow:var(--shadow);}
 .h-tab:active{background:var(--surface2);}
 .h-tools{display:flex;gap:8px;margin-top:14px;}
+#btnSolveList{border:1.5px solid var(--line);border-radius:12px;box-shadow:none;background:transparent;}   /* 약점 화면의 「이 N장 풀기」와 같은 모양(UI 리뷰 🟠) */
 .h-tool{flex:1;border:1.5px solid var(--line);border-radius:12px;padding:10px 6px;
   font-size:12px;font-weight:700;color:var(--mute);text-align:center;}
 .h-tool:active{background:var(--surface2);}
@@ -427,6 +436,7 @@ input:focus,select:focus{border-color:var(--accent);}
 .bl-row .bar{flex:1;height:6px;border-radius:99px;background:var(--sunken);overflow:hidden;}
 .bl-row .bar i{display:block;height:100%;background:var(--accent);border-radius:99px;}
 .bl-row .c{flex:0 0 40px;text-align:right;color:var(--mute);font-size:12px;}
+.bl-row .m.warn{color:var(--again);font-weight:700;}   /* 유지율 70% 미만 — 규칙이 .lmeta에만 걸려 안 나왔다(UI 리뷰 🟠) */
 .list-note{font-size:12px;font-weight:700;color:var(--mute);padding:2px 4px 10px;}
 .rd-list{background:var(--surface);border-radius:16px;padding:4px 14px;}
 .rd-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line);}
@@ -450,7 +460,7 @@ input:focus,select:focus{border-color:var(--accent);}
 .rd-chip i{font-style:normal;font-size:12px;color:var(--mute);}
 .rd-chip.off{opacity:.6;}
 /* 읽기 체크리스트(09-05) — 체크 단추 · 다시율 3단 색 · 재등장 표시 */
-.rd-chk{flex:0 0 28px;width:28px;height:28px;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);color:var(--accent-ink);font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;}
+.rd-chk{flex:0 0 28px;width:28px;height:28px;border-radius:8px;border:1.5px solid var(--mute);background:var(--surface);color:var(--accent-ink);font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;}
 .rd-chk.on{background:var(--good);border-color:var(--good);}
 .rd-n.warn{color:var(--again);} .rd-n.mid{color:var(--hard);}
 .rd-again{margin-left:6px;font-weight:700;color:var(--mute);} .rd-again.warn{color:var(--again);}
@@ -576,7 +586,10 @@ details.ss-score[open]>summary{border-bottom:1px solid var(--line);margin-bottom
 .seg{display:flex;background:var(--sunken);border-radius:12px;padding:3px;gap:3px;}
 .seg button{flex:1;padding:8px 4px;border-radius:8px;font-size:12px;font-weight:700;color:var(--mute);white-space:nowrap;}
 .seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm);}
-.rng{width:100%;-webkit-appearance:none;appearance:none;background:transparent;margin:10px 0 2px;}
+.rng{width:100%;-webkit-appearance:none;appearance:none;background:transparent;margin:10px 0 2px;border:none;padding:0;}   /* 입력칸 테두리 상자에 갇혀 있었다 */
+.rest-chip{border-radius:999px;}
+@media (min-width:900px){ #ovlSettings .sheet{max-width:760px;column-count:2;column-gap:28px;} #ovlSettings .field,#ovlSettings .btn-row{break-inside:avoid;} }   /* 넓은 화면 2열 — 1180 가로에서 2.6화면을 굴렸다(UI 리뷰 🟠) */
+.sheet-x{position:sticky;top:-22px;float:right;margin:-8px -8px 0 0;width:44px;height:44px;border-radius:12px;color:var(--mute);font-size:20px;z-index:2;background:var(--surface);}
 .rng::-webkit-slider-runnable-track{height:6px;border-radius:99px;background:var(--sunken);}
 .rng::-moz-range-track{height:6px;border-radius:99px;background:var(--sunken);}
 .rng::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;margin-top:-8px;border-radius:99px;
@@ -591,7 +604,7 @@ details.ss-score[open]>summary{border-bottom:1px solid var(--line);margin-bottom
 .wt-cell{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--mute);}
 .wt-cell input{width:100%;padding:6px 8px;font-size:16px;text-align:center;}
 .tgl-row{display:flex;align-items:center;justify-content:space-between;padding:9px 2px;font-size:13px;font-weight:600;}
-.tgl{width:46px;height:28px;border-radius:99px;background:var(--sunken);position:relative;transition:background .15s;}
+.tgl{width:46px;height:28px;border-radius:99px;background:var(--line);position:relative;transition:background .15s;}   /* 꺼진 트랙 대비(UI 리뷰 🟠) */
 .tgl::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;
   background:var(--surface);box-shadow:var(--shadow-sm);transition:transform .15s;}
 .tgl.on{background:var(--accent);}
@@ -733,6 +746,8 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
   border:2px solid var(--line);display:none;}
 #listBody.picking .lrow .ck{display:block;}
 #listBody.picking .lrow.sel .ck{background:var(--accent);border-color:var(--accent);}
+#listBody.picking .lrow{padding-right:40px;}   /* 체크 칸이 앞면 글자를 덮었다(UI 리뷰 🟠) */
+#listBody.picking .lrow.sel .ck::after{content:'✓';display:flex;align-items:center;justify-content:center;height:100%;font-size:13px;font-weight:900;color:var(--accent-ink);}
 .bulkbar{position:sticky;bottom:0;z-index:5;display:none;gap:6px;flex-wrap:wrap;
   background:var(--surface);border-radius:16px;padding:10px;box-shadow:var(--shadow);margin-top:10px;}
 .bulkbar.on{display:flex;}
@@ -777,7 +792,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .pw-key b{color:var(--ink2);font-weight:800;font-variant-numeric:tabular-nums;}
 .spark{display:block;width:100%;height:44px;overflow:visible;}
 .spark .ln{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round;}
-.spark .dot{fill:var(--accent);}
+.spark .dot{stroke:var(--accent);stroke-linecap:round;}
 .kpi{display:flex;gap:8px;margin-top:8px;}
 .kpi span{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;
   padding:10px 4px;border-radius:12px;background:var(--sunken);}
@@ -937,7 +952,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 
 /* ══ 연문 모드 (발주 §1·§6) — 악센트가 다르다 · 카드 모드 화면은 이 블록의 영향을 받지 않는다(:root.ym 아래에만) ══ */
 :root.ym, :root.ym[data-theme="b"]{ --accent:#5FD3C1; --accent-ink:#0E1014; --accent-dim:rgba(95,211,193,.14); }
-:root.ym[data-theme="c"]{ --accent:#2E7D5B; --accent-ink:#FBF7EC; --accent-dim:rgba(46,125,91,.12); }
+:root.ym[data-theme="c"]{ --accent:#256B4E; --accent-ink:#FBF7EC; --accent-dim:rgba(37,107,78,.12); }   /* dim 위 3.7~4.0 → AA(UI 리뷰 🟠) */
 .ym-pill{margin-left:auto;font-size:13px;font-weight:800;color:var(--accent);background:var(--accent-dim);border-radius:99px;padding:8px 14px;
   min-height:40px;display:flex;align-items:center;gap:4px;letter-spacing:.02em;}
 .ym-pill+.ym-pill{margin-left:0}   /* 알약 둘(회독본 · 연문) — 첫째가 오른쪽으로 밀고 둘째는 붙는다 */
@@ -979,7 +994,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .ym-subrow{gap:4px;}
 .ym-subadd{min-height:34px;padding:0 10px;border-radius:9px;font-size:12px;font-weight:800;background:none;border:1.5px dashed var(--line);color:var(--mute);}
 .ym-row .ym-skip{min-height:34px;padding:0 10px;border-radius:9px;font-size:12px;font-weight:800;background:none;border:1.5px solid var(--line);color:var(--ink2);flex:0 0 auto;}
-.ym-bar{flex:0 0 auto;width:64px;height:8px;border-radius:99px;background:var(--sunken);overflow:hidden;}
+.ym-bar{flex:0 0 auto;width:64px;height:8px;border-radius:99px;background:var(--line);overflow:hidden;}   /* 트랙이 배경과 같은 색(대비 1.00)이었다 */
 .ym-bar i{display:block;height:100%;background:var(--accent);border-radius:99px;}
 .ym-pct{flex:0 0 auto;width:42px;text-align:right;font-size:13px;font-weight:800;color:var(--ink2);font-variant-numeric:tabular-nums;}
 .ym-pct.none{color:var(--faint);font-weight:600;}
@@ -1041,7 +1056,7 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 /* 🔴 **세로로 긴 그림은 높이에 맞추면 손톱만 해진다** (동하 09-10 · 표 카드 그림 1201×3591 = 3:1).
    확대는 「자세히 보려고」 누르는 것인데 `max-height:100%`가 폭을 120px대로 눌러 버렸다(확대해도 268px).
    그런 그림만 **폭을 채우고 세로로 굴린다**. 판정은 `openImg`가 화면 비와 견줘서 한다. */
-#ovlImg{overflow:auto;-webkit-overflow-scrolling:touch;}
+#ovlImg{overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pinch-zoom pan-x pan-y;}   /* 핀치 확대(UI 리뷰 🟠) */
 #ovlImg.tall{align-items:flex-start;}
 #ovlImg.tall img{max-height:none;width:100%;height:auto;}
 #ovlImg .hint{position:absolute;left:0;right:0;bottom:calc(14px + env(safe-area-inset-bottom));text-align:center;
@@ -1129,6 +1144,7 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
         <div class="h-row">
           <button class="h-tab" data-go="scrUnits">단위</button>
           <button class="h-tab" data-go="scrList">카드 목록</button>
+          <button class="h-tab" id="ctOpen" title="음악·미술 2022 내용 체계표 — 가리고 쓰기">내용 체계표</button>
         </div>
         <div class="h-sec">기록</div>
         <div class="h-row">
@@ -1619,7 +1635,7 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
     <div class="tgl-row"><span>방향 분산 (역방향은 도입 +2~3일 뒤)</span><div class="tgl" id="nsBury"></div></div>
     <div class="tgl-row"><span>복습 소진 후 신규 이어가기</span><div class="tgl" id="nsNewAfter"></div></div>
   </details>
-  <div class="btn-row"><button class="btn-ghost" id="nsDelete" style="color:var(--again)">삭제</button><button class="btn-ghost" id="nsCancel">취소</button><button class="btn-primary" id="nsSave">만들기</button></div>
+  <div class="btn-row"><button class="btn-ghost" id="nsDelete" style="color:var(--again);margin-right:auto;flex:0 0 auto;padding:10px 14px;border-color:transparent">삭제</button><button class="btn-ghost" id="nsCancel">취소</button><button class="btn-primary" id="nsSave">만들기</button></div>
 </div></div>
 
 <!-- 단위 선택기 -->
@@ -1632,7 +1648,7 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 </div></div>
 
 <!-- 설정 -->
-<div class="ovl" id="ovlSettings"><div class="sheet">
+<div class="ovl" id="ovlSettings"><div class="sheet"><button class="sheet-x" id="setCloseX" title="닫기">✕</button>
   <h2>설정</h2>
   <p class="desc">매일 만지는 것이 아니라 여기 넣어뒀어요.</p>
   <div class="field"><label>테마</label>
@@ -5138,7 +5154,7 @@ function renderFoot(){
     +`${hasPending()?(Date.now()-lastPushAt>STALE_MS?' · <b style="color:var(--hard)">미저장분 있음</b>':' · <span style="opacity:.55">저장 대기</span>'):''}`;
 }
 function showBanner(msg, isAuth){
-  const b=document.getElementById('banner');
+  const b=document.getElementById('banner'); b.classList.remove('good');
   b.innerHTML=msg+(isAuth?'<button id="bnFix">연결</button>':'<button id="bnRetry">재시도</button>');
   b.classList.add('show'); syncBannerH();
   const f=document.getElementById('bnFix'), rt=document.getElementById('bnRetry');
@@ -5166,7 +5182,7 @@ async function checkNewVersion(){
   const b=document.getElementById('banner');
   if(b.classList.contains('show') && b.dataset.newver) return;
   b.innerHTML='새 버전이 올라왔어요 — 다시 열면 적용돼요<button id="bnReload">다시 열기</button>';
-  b.dataset.newver='1'; b.classList.add('show'); syncBannerH();
+  b.dataset.newver='1'; b.classList.add('show','good'); syncBannerH();
   document.getElementById('bnReload').onclick=async()=>{ try{ syncSessQueue(); saveSessionsFlush(); cacheFlush(); if(dirty) await push(); }catch(e){} location.reload(); };
 }
 
@@ -7069,6 +7085,7 @@ function showHoedokLink(c){
   const a=el.querySelector('a'); if(a)a.onclick=(e)=>e.stopPropagation();   // 탭이 카드 되접기로 먹지 않게
 }
 function showCard(){
+  $('card').classList.remove('rev');
   /* 🔴 오늘 정리된 카드는 어떤 경로로 큐에 남아 있든 화면에 안 띄운다 — 규칙의 마지막 관문.
      큐 조립 때(playSess·buildQueue)만 거르면 샌다: 세션 순서·설정을 바꾸면 저장 큐가
      통째로 재주입되고, 다른 기기 채점은 병합으로 뒤늦게 들어온다. 두 경로 다 아래에서 막았지만,
@@ -7152,6 +7169,7 @@ function reveal(){
   const isTbl=!!c.table;
   $('cBack').textContent = (hasItems||isDiag||isTbl)?'':c.back;
   $('cBack').style.display = (hasItems||isDiag||isTbl)?'none':'block';
+  $('cBack').classList.toggle('short', !(hasItems||isDiag||isTbl) && String(c.back||'').length<=20); $('card').classList.add('rev');
   const box=$('cItems'); box.innerHTML=''; box.classList.toggle('on',hasItems);
   if(hasItems){
     const ordered = c.typ==='단계'||c.typ==='연쇄';
@@ -7769,6 +7787,7 @@ function gEnd(x,y){
 
 /* ═══════════════ 화면 전환 ═══════════════ */
 function go(id){
+  document.getElementById('main').classList.toggle('solving', id==='scrSolve');   // 풀이 화면 밖에서는 윗줄(⌂) 숨김 — 하위 화면은 ‹ 하나(UI 리뷰 🟠 · 홈의 ⌂는 아무 일도 안 했다)
   if(id!=='scrSolve'){ resumeSession(); syncSessQueue();
     if(pendingRefresh){ pendingRefresh=false; setTimeout(refreshRemote,0); } }
   /* 🔴 **홈으로 나가면 복귀 지점을 버린다** (전층 감사 F4-8 · 2026-09-06).
@@ -8131,7 +8150,7 @@ function renderSession(){
     ${(ntU&&(ntU.held||ntU.skipped))?`<div class="why">${ntU.held?esc(holdNote(ntU.why)):''}${ntU.skipped?`${ntU.held?' · ':''}앞 주제 <b>${ntU.skipped}개</b>는 오늘 푼 카드와 겹쳐 내일`:''}</div>`:''}
     <div class="ss-line"><span>${esc(sessDesc(sx))}</span><span>누적 <b>${sx.done||0}</b>회</span><span>${sx.lastAt?'마지막 '+fmtAgo(sx.lastAt):'아직 안 품'}</span></div>`;
   if(sx.lastScore&&sx.lastScore.n){ const sc=sx.lastScore, hit=Math.round((sc.n-sc.r[1])/sc.n*100);
-    h+=`<details class="ss-score"><summary>마지막 성적 <b>${hit}%</b> · ${sc.n}회 · ${fmtMin(sc.ms)}</summary>${scoreHtml(sc)}${trendHtml(sx)}</details>`; }
+    h+=`<details class="ss-score"${sc.run===undoRun&&Date.now()-(sc.at||0)<10*60*1000?' open':''}><summary>마지막 성적 <b>${hit}%</b> · ${sc.n}회 · ${fmtMin(sc.ms)}</summary>${scoreHtml(sc)}${trendHtml(sx)}</details>`; }
   const exU=(sx.scope.ex&&sx.scope.ex.units)||[], exM=(sx.scope.ex&&sx.scope.ex.mids)||[];
   const exN=exU.length+exM.length, exCards=exCount(sx);
   const exNames=[...exU.map(k=>{ try{return hoedokLabel(k);}catch(e){return k;} }),
@@ -8864,6 +8883,8 @@ $('restSkip').onclick=()=>{ const d=$('restDate').value; if(!d) return;
   renderRestUI(); renderHome(); toast(d+' 은 공부하는 날 — '+RDOW[rest.dow]+'요일 휴식 예외'+(q.add||q.del?` · 오늘 목록 ${q.add?`+${q.add}`:''}${q.add&&q.del?' ':''}${q.del?`−${q.del}`:''}`:'')); };
 $('restToday').onclick=()=>addRestDay(todayKey());
 $('setClose').onclick=()=>$('ovlSettings').classList.remove('show');
+$('setCloseX').onclick=()=>$('ovlSettings').classList.remove('show');
+$('ctOpen').onclick=()=>openHoedok('tools/curric-table.html','음악·미술 내용 체계표');   // 가리고 쓰기 페이지(동하 09-23 「앱에 올려줘 · 음악도」 · 메타 인계) — 회독본 창에서 연다(앱 테마를 따라간다)
 $('ovlSettings').onclick=(e)=>{ if(e.target===$('ovlSettings'))$('ovlSettings').classList.remove('show'); };
 $('btnNewSess').onclick=()=>openSessEditor(null,null);
 $('ssEdit').onclick=()=>{ if(viewSess)openSessEditor(viewSess,null); };
@@ -9695,7 +9716,7 @@ function sparkLine(pts, opt){
   const span=Math.max(1,hi-lo), y=v=>6+(H-12)*(1-(v-lo)/span), x=i=>W*(i+0.5)/n;
   const d=pts.map((p,i)=>(i?'L':'M')+x(i).toFixed(2)+' '+y(p.v).toFixed(2)).join(' ');
   const last=n-1, loI=vs.indexOf(lo), show=new Set([last, loI]);
-  const dots=pts.map((p,i)=>'<circle class="dot" cx="'+x(i).toFixed(2)+'" cy="'+y(p.v).toFixed(2)+'" r="'+(i===last?2.4:1.5)+'"><title>'+esc(p.title||'')+'</title></circle>').join('');
+  const dots=pts.map((p,i)=>'<line class="dot" x1="'+x(i).toFixed(2)+'" y1="'+y(p.v).toFixed(2)+'" x2="'+x(i).toFixed(2)+'" y2="'+y(p.v).toFixed(2)+'" stroke-width="'+(i===last?5:3.2)+'" vector-effect="non-scaling-stroke"><title>'+esc(p.title||'')+'</title></line>').join('');   // 원은 늘이기에 타원이 됐다(UI 리뷰 🟠) — 길이 0 선 + 둥근 끝은 늘어나지 않는다
   const vals=pts.map((p,i)=>'<span>'+(show.has(i)?esc(String(p.v))+(opt&&opt.unit||''):'')+'</span>').join('');
   const labs=pts.map(p=>'<span>'+esc(p.label||'')+'</span>').join('');
   return '<div class="spark-val">'+vals+'</div>'
@@ -10017,9 +10038,12 @@ function trajChart(hist, pred, zero){
   }
   g+='<line x1="'+x(nH-1).toFixed(1)+'" y1="0" x2="'+x(nH-1).toFixed(1)+'" y2="'+(H-PADB)+'" stroke="var(--line)" stroke-width="1"/>';
   g+='<line x1="'+W+'" y1="0" x2="'+W+'" y2="'+(H-PADB)+'" stroke="var(--again)" stroke-width="1.5"/>';
-  const lab=(i,t,anc)=>'<text x="'+Math.min(W-2,Math.max(2,x(i))).toFixed(1)+'" y="'+(H-4)+'" font-size="10" fill="var(--mute)" text-anchor="'+anc+'">'+t+'</text>';
-  g+=lab(0, all[0].k.slice(5), 'start')+lab(nH-1,'오늘','middle')+lab(L-1,'시험','end');
-  return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="width:100%;height:'+H+'px;display:block">'+g+'</svg>';
+  /* 축 글자는 SVG 밖(HTML) — 늘이기로 글자가 눌렸다(아이폰 0.49배 · UI 리뷰 🟠 · 위 「글자는 SVG 안에 두지 마라」 원칙) */
+  const lab=(i,t,anc)=>{ const pc=(Math.min(W-2,Math.max(2,x(i)))/W*100).toFixed(2); const tr=anc==='start'?'0':anc==='end'?'-100%':'-50%';
+    return '<span style="position:absolute;bottom:2px;left:'+pc+'%;transform:translateX('+tr+');font-size:10.5px;color:var(--mute);white-space:nowrap">'+t+'</span>'; };
+  const k0=all[0].k.slice(5).replace('-','/');
+  return '<div style="position:relative"><svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="width:100%;height:'+H+'px;display:block">'+g+'</svg>'
+    +lab(0, k0, 'start')+lab(nH-1,'오늘','middle')+lab(L-1,'시험','end')+'</div>';
 }
 /* 궤적은 무겁다(시뮬 ≈1.4초) — 통계를 열 때마다 다시 돌리지 않는다.
    🔴 렌더 경로에 전수 계산을 넣으면 화면이 죽는다(09-06 F2-1 회귀에서 배운 것). */
@@ -10142,7 +10166,7 @@ function statSignals(){
     if(a7-a30>=SIG_AGAIN_GAP) out.push({t:'이번 주 「다시」 '+Math.round(a7)+'% (30일 '+Math.round(a30)+'%) — 간격이 긴가? 복습 강도를 보세요', go:'scrHome'});
   }
   let leech=0; for(const c of DATA) if(isLeech(c)) leech++;
-  if(leech>=SIG_LEECH) out.push({t:'거머리 <b>'+leech+'장</b> — 약점에서 손보세요', go:'scrWeak'});
+  if(leech>=SIG_LEECH) out.push({t:'누수 <b>'+leech+'장</b> — 약점에서 손보세요', go:'scrWeak'});
   return out.slice(0,3);
 }
 function renderStats(){
@@ -10182,12 +10206,12 @@ function renderStats(){
       +trajChart(T.hist, T.pred, T.zero)
       +'<div class="cap" style="margin-top:6px">굳음(21일 이상) · 무름 · 안 나옴 순으로 쌓았어요 · '
       +'점선 = 예측 · 옅은 점선 = 오늘부터 신규를 안 넣으면('+((T.zeroEnd&&T.zeroEnd.hard)||0).toLocaleString()+'장)</div>'
-      +'<div class="cap" style="margin-top:4px;opacity:.75">최근 7일 기준 — 신규 '+T.inp.newPerDay+'/일 · 처리 '+T.inp.cap+'/일'
+      +'<div class="cap" style="margin-top:4px;color:var(--mute)">최근 7일 기준 — 신규 '+T.inp.newPerDay+'/일 · 처리 '+T.inp.cap+'/일'
       +' · 유지율 '+Math.round(T.inp.pFirst*100)+'/'+Math.round(T.inp.pRev*100)+'%'
       +(T.doneKey?' · 신규 소진 '+T.doneKey.slice(5).replace('-','/'):'')+'</div>';
     recordForecast(T);
     const FC=forecastCheck();
-    if(FC) h+='<div class="cap" style="margin-top:4px;opacity:.75">지난주 예측 오차 '
+    if(FC) h+='<div class="cap" style="margin-top:4px;color:var(--mute)">지난주 예측 오차 '
       +(FC.err>=0?'+':'')+FC.err+'% (예측 '+FC.pred.toLocaleString()+' · 실제 '+FC.actual.toLocaleString()+')'
       +(FC.basisChanged?' · ⚠ 기준 바뀜(파라미터·강도 변경)':'')+'</div>';
     h+='</div>';
@@ -10208,7 +10232,7 @@ function renderStats(){
       const last=(i===hs.length-1);
       spark.push({a:v, b:nw, label:last?'오늘':((hs.length-1-i)%7===0?k.slice(5).replace('-','/'):''),
         cls:last?'today':(isRestDay(k)?'rest':''), title:k+' · 새로 굳은 '+v+'장 · 처음 본 '+nw+'장'}); }
-    h+='<div class="cap">새로 굳은 <b>'+(G.newHard>=0?'+':'')+G.newHard+'</b> · 거머리 탈출 <b>'+G.escaped+'</b>'
+    h+='<div class="cap">새로 굳은 <b>'+(G.newHard>=0?'+':'')+G.newHard+'</b> · 누수 탈출 <b>'+G.escaped+'</b>'
       +' · '+today.cards+'장 — 신규 '+today.nw+' · 복습 '+Math.max(0,today.cards-today.nw)+' · '+fmtMin(today.ms)+'</div>'
       +(spark.length?barChart(spark,{h:60}):'')
       +'<div class="legend" style="margin-top:6px"><span><i style="background:var(--accent)"></i>새로 굳음</span>'
@@ -11490,7 +11514,7 @@ function ymRenderUnit(id){
     return '<div class="ym-row'+(sk?' skip':'')+'" data-ym-tap="'+esc(it.id)+'"><span class="ym-mark '+cls+'">'+esc(txt)+'</span><div class="t"><b>'+esc(it.no)+'번</b><small>'+(sk?'제외 · ':'')+ymWhere(it)+(s&&s.due&&!s.closed&&!sk?' · 다시 '+s.due.slice(5).replace('-','/'):'')+'</small></div>'
       +(sk?'':ymSubToggleBtn(it.id))+'<button class="ym-skip" data-ym-skip="'+esc(it.id)+'">'+(sk?'해제':'제외')+'</button></div>'
       +(!sk&&_ymSubOpen.has(it.id)?ymSubPanel(it.id):''); }).join('')+'</div>';
-  h+='<div class="ym-foot"><button class="ym-btn ghost" id="ymUndoBtn">되돌리기</button><button class="ym-btn ghost" id="ymSkipBtn">'+(skip?'제외 해제':'제외')+'</button><button class="ym-btn primary" id="ymDoneBtn"'+(done?' disabled':'')+'>'+(done?'풀었음 '+done.slice(5):'이 단위 풀었음')+'</button></div>';
+  h+='<div class="ym-foot"><button class="ym-btn ghost" id="ymUndoBtn">되돌리기</button><button class="ym-btn ghost" id="ymSkipBtn">'+(skip?'단위 제외 해제':'단위 제외')+'</button><button class="ym-btn primary" id="ymDoneBtn"'+(done?' disabled':'')+'>'+(done?'풀었음 '+done.slice(5):'이 단위 풀었음')+'</button></div>';
   body.innerHTML=h;
   body.querySelectorAll('.ym-subs').forEach(p=>p.onclick=ev=>ev.stopPropagation());
   body.querySelectorAll('[data-ym-tap]').forEach(row=>row.onclick=()=>{ const it=its.find(x=>x.id===row.dataset.ymTap); if(!it) return;
@@ -11582,7 +11606,14 @@ function closeImg(){ const o=$('ovlImg'); o.classList.remove('show'); o.innerHTM
 $('ovlImg').onclick=closeImg;
 /* 카드를 그리거나 공개한 뒤 넘침·그림 크기·음악 기호 칸을 맞춘다(UI 리뷰 U1·U3) — 두 함수를 감싼다(모든 호출처가 전역 이름을 통한다) */
 { const _s=showCard; showCard=function(){ const r=_s.apply(this,arguments); requestAnimationFrame(fitCard); return r; };
-  const _r=reveal; reveal=function(){ const r=_r.apply(this,arguments); requestAnimationFrame(fitCard); return r; }; }
+  const _r=reveal; reveal=function(){
+    /* 🔴 공개하면 질문이 35~192px 위로 튀었다(카드가 세로 가운데 정렬 · UI 리뷰 🟠). 앞면 자리를 적어 두고 답면은 아래로만 자라게 한다 — 넘치면 가운데 그대로. */
+    const Z=$('cardZone'), C=$('card'); const zt=Z.getBoundingClientRect().top, ct=C.getBoundingClientRect().top;
+    const r=_r.apply(this,arguments);
+    const padT=parseFloat(getComputedStyle(Z).paddingTop)||0, off=Math.max(0, ct-zt-padT);
+    if(C.getBoundingClientRect().height + off + padT <= Z.clientHeight - 10){ Z.classList.add('anchored'); C.style.marginTop=off+'px'; }
+    requestAnimationFrame(fitCard); return r; };
+  const _s2=showCard; showCard=function(){ const Z=$('cardZone'); Z.classList.remove('anchored'); $('card').style.marginTop=''; return _s2.apply(this,arguments); }; }
 
 </script>
 </body>

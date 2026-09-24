@@ -1277,6 +1277,7 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 #cScope{display:flex;align-items:center;gap:6px;margin:0;font-size:13px;font-weight:500;color:var(--c-sec);letter-spacing:0;min-width:0;overflow:hidden;white-space:nowrap;}
 #cScope .sc-p{overflow:hidden;text-overflow:ellipsis;}
 #cScope .sc-chev{width:6px;height:10px;flex:0 0 auto;color:var(--c-ter);}
+#cScope .sc-first{flex:0 0 auto;font-size:15px;font-weight:600;line-height:18px;}   /* 과목명만 살짝 크게(동하 09-24) — 줄 높이 18 그대로라 카드 위치 무변 */
 #phaseLine{flex:0 1 auto;min-width:0;padding:0;min-height:0;font-size:13px;font-weight:400;color:var(--c-sec);text-align:right;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 #cardScroll{flex:1 1 auto;min-height:0;display:block;}   /* 🔴 block — flex면 #cSplit이 칸 높이로 줄어들어 긴 문면이 가림 면과 겹쳤다(09-24 아이폰 실측) */
@@ -1310,6 +1311,7 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
   font-size:17px;font-weight:500;gap:8px;}
 .hint-chip .hc-ic{width:20px;height:20px;color:var(--c-orange);flex:0 0 auto;}
 .hint-chip.on{background:var(--c-card);color:var(--c-label);border:0;font-family:var(--font);font-size:17px;letter-spacing:.06em;}
+.hint-chip.on[data-lab=""]::before{content:none;}   /* 이름표 없는 칩 — 빈 ::before가 flex 칸이 돼 gap 6만큼 글자가 오른쪽으로 쏠렸다(동하 09-24) */
 /* 메타 줄 — 유형 칩 · 한 줄 설명 · 태그 · 「회독본 ↗」(오른쪽) */
 #cMeta,#cMeta.on{display:flex;flex:0 0 auto;align-items:center;gap:10px;min-height:36px;margin:0;flex-wrap:wrap;}
 .typ-tag{font-size:13px;font-weight:500;color:var(--c-label);background:var(--c-fill);padding:0 12px;line-height:28px;border-radius:999px;}

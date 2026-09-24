@@ -1589,6 +1589,42 @@ input,select{border-radius:10px;}
 .ss-panel details.ss-score{background:none;box-shadow:none;padding:0;margin-top:10px;border-radius:0;}
 .ss-panel details.ss-score summary{font-size:15px;color:var(--c-acc);}
 #ssUnitFold{margin-top:0;}
+/* 09-24 세션 화면 한 열(동하 「헤더만 밑으로 내려와 UI가 움직이는 것처럼」 · 「기능 배열이 난잡」)
+   사이드바가 보이는 폭: ‹ 숨김(「오늘」 타일이 돌아가는 길 · 세션 화면에서도 켜짐) · 큰 제목과 ✎를 한 줄에 → 제목 윗선 = 통계·설정 제목 윗선. 문풀 오늘도 같다. */
+@media (min-width:760px){
+  #scrSession .sub-head>.tb-btn:first-child,#scrYmToday .sub-head>.tb-btn:first-child{display:none;}
+  #scrSession .sub-title,#scrYmToday .sub-title{order:0;flex:1 1 auto;min-width:0;margin-top:0;}
+}
+details.gr-fold{display:block;}
+details.gr-fold>summary{list-style:none;cursor:pointer;}
+details.gr-fold>summary::-webkit-details-marker{display:none;}
+details.gr-fold>summary .s2-chev{transition:transform .18s;}
+details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
+#ssUnitFold{margin:0 0 22px;} #ssUnits{padding:0 12px 12px;}
+.grp>details.gr-fold{position:relative;}
+.grp>*+details.gr-fold::before{content:"";position:absolute;left:20px;right:0;top:0;height:1px;transform:scaleY(.5);background:var(--c-sep);}
+.grp .gr-row.static+.gr-row.static::before{left:20px;}
+.gr-row.static:active{background:none;}
+.gr-r.ok{color:var(--c-green);font-weight:600;}
+.gr-in{padding:4px 20px 16px;}
+/* 세션 격자(09-24 2차) — 폰: 한 줄 흐름(패널·자세히 카드 숨김, 「기록」 목록 줄) · 가로(≥900): 「범위 | 기록」 머리 한 줄 · 범위 카드와 성적 패널 같은 높이(stretch) · 아래 = 나머지 | 자세히 */
+.ss-g .a-sh,.ss-g .a-pnl,.ss-g .a-det{display:none;}
+.ss-g .a-rng{margin-bottom:22px;}
+@media (min-width:900px){
+  .ss-g{display:grid;grid-template-columns:minmax(0,1fr) 320px;grid-template-areas:"rh sh" "rng pnl" "rest det";column-gap:20px;align-items:start;}
+  .ss-g .a-rh{grid-area:rh;} .ss-g .a-sh{grid-area:sh;display:block;} .ss-g .a-rng{grid-area:rng;align-self:stretch;}
+  .ss-g .a-pnl{grid-area:pnl;display:flex;align-self:stretch;margin-bottom:22px;} .ss-g .a-det{grid-area:det;display:block;} .ss-g .a-rest{grid-area:rest;min-width:0;}
+  .ss-g .a-rec{display:none;}
+  .ss-g .a-rng>.gr-row{flex:1 1 auto;}   /* 패널이 더 높으면 줄이 고르게 늘어난다(빈 바닥 대신) */
+  .ss-g .a-pnl .ssp-r{margin-top:auto;padding-top:10px;box-shadow:inset 0 .5px 0 var(--c-sep);}   /* 누적 줄 = 범위 카드 바닥선에 붙는다 */
+}
+.ss-trend.d14{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:0;margin:2px 0 4px;}
+.ss-trend.d14 span{font-size:10.5px;}
+.ss-trend.d14 span.off i{height:2px;opacity:.25;} .ss-trend.d14 span.off{color:var(--c-ter);}
+.ss-trend.d14 span.na{visibility:hidden;}
+.gr-in .sc-top{word-break:keep-all;} .gr-in .sc-streak{margin-top:10px;font-size:15px;color:var(--c-sec);}
+.grp-f:empty{padding:0;}
+
 
 
 /* ═══════════════ 디자인 이식 E(3) — 시트 · 설정 · 토스트 · 잠시 멈춤 (09-24 · 디자인_언어 §6 · §7 · §7.3) ═══════════════ */
@@ -5526,6 +5562,8 @@ function mergeSessions(remote, local, log){
         const lastToday={}; for(let i=(log||[]).length-1;i>=0;i--){ const e=log[i]; if(logTs(e)<dayStart) break; if(lastToday[e[0]]===undefined) lastToday[e[0]]=e[2]; }
         const rq=[...rqm.values()].filter(r=>lastToday[r[0]]===1);
         if(rq.length) merged.rq=rq; else delete merged.rq; }
+      { const pa=newer.pg, pb=older.pg;   // 진행 막대 카운터(09-24) — 더 늦은 날을 따르고, 같은 날이면 큰 쪽
+        if(pa||pb){ const d=[(pa&&pa.day)||'', (pb&&pb.day)||''].sort().pop(); merged.pg={day:d, n:Math.max(pa&&pa.day===d?(pa.n||0):0, pb&&pb.day===d?(pb.n||0):0)}; } }
       merged.qDel=mergeShrinkMaps(newer, older, 'qDel');
       merged.qAt=[newer.qAt||'', older.qAt||''].sort().pop()||undefined;
       merged.scDel=mergeShrinkMaps(newer, older, 'scDel');
@@ -5537,7 +5575,7 @@ function mergeSessions(remote, local, log){
       { const all=[...(newer.scores||[]), ...(older.scores||[])].sort((x,y)=>(y.at||0)-(x.at||0));
         const seen=new Set(), out=[];
         for(const x of all){ const k=(x.at||0)+':'+(x.n||0); if(seen.has(k)) continue; seen.add(k); out.push(x); }
-        if(out.length>30) out.length=30;
+        if(out.length>120) out.length=120;   // 09-24 30 → 120 — 하루 서너 회차라 30이면 9~11일치뿐이었다(2주 추이)
         merged.scores=out; if(out.length) merged.lastScore=out[0]; }
       /* 🔴 일회성 정정(doneFix)이 한쪽에만 있으면 max를 쓰지 않는다 — max면 **정정 전 큰 값이 이겨**
          정정이 되돌아간다. 마커 있는 쪽을 따르고 마커를 물려준다. 둘 다 있으면 평소대로 max. */
@@ -7494,7 +7532,7 @@ function finishSess(){         // 큐 소진 = 세션 화면으로 복귀 (성�
          동기화 대상(SESS_PATH)이라 세션마다 무한히 쌓이면 저장 용량·PUT 크기에 걸린다.
          항목 하나가 약 80바이트라 세션당 2.4KB가 상한이다. 30회면 두어 달치라 추이엔 넘친다. */
       curSess.scores=[sc, ...(curSess.scores||[])];
-      if(curSess.scores.length>30) curSess.scores.length=30;
+      if(curSess.scores.length>120) curSess.scores.length=120;   // 09-24 30 → 120(2주 추이 · 실측 일일 복습 30회 = 9일) · 세션당 약 10KB 상한
     }
     curSess.q=keepIds(curSess);   // 화면 잔량 + 오늘 못 낸 보류분 (F3-2)
     /* 🔴 증가분만 더한다. 예전엔 `+sessionDone`이라 **한 번의 playSess에서 finishSess가 여러 번**
@@ -7577,7 +7615,7 @@ function usableTopic(qRest){
     const names=['구멍','옛 미노출','신설','장면'], on=[0,1,2,3].filter(i=>tc[i]);
     const label=(on.length===1 ? names[on[0]] : on.map(i=>names[i]+' '+tc[i]).join(' · '));
     const subs=new Set(sel.map(c=>c.subj)).size;
-    return {nt:{key:null, label:label+' · '+subs+'과목 섞음', date:null, cards:sel, mixed:true}, fresh:sel, rest:rest,
+    return {nt:{key:null, label:label+' · '+subs+'과목 섞음', date:null, cards:sel, mixed:true, subs}, fresh:sel, rest:rest,
             held:Math.max(0, Math.min(W,cand.length)-fresh.length), why:holdReasons(cand.slice(0,W), rest), skipped:0};
   }
   const tried=new Set(); let nt;
@@ -7643,6 +7681,9 @@ function todayRated(){ let n=0; const tk=todayKey();
   for(let i=state.log.length-1;i>=0;i--){ if(dayKey(logDate(state.log[i]))===tk)n++; else if(n)break; }
   return n;
 }
+/* 진행 막대 카운터(09-24 · 동하 「다른 기기에서도 진행도 유지」) — 세션마다 {day, n} = 그 세션에서 **오늘 처음 채점한 카드 수**.
+   세션 파일(동기화)에 실려 기기 사이에 이어진다 · 같은 날끼리 병합은 max(mergeSessInto) · 되돌리기는 -1 · 새 날이면 0부터. 표시 전용(큐·일정 무관). */
+function pgBump(sx, d){ const tk=todayKey(); if(!sx.pg||sx.pg.day!==tk) sx.pg={day:tk, n:0}; sx.pg.n=Math.max(0,(sx.pg.n||0)+d); saveSessionsSoon(); }
 function counts(){ // 상단 바 — 남은 수는 현재 세션 큐 · 「내일」은 전 범위(아래 U3 참고)
   /* 🔴 **라벨과 수를 큐 내용에서 뽑는다** (전층 감사 F3-11 · 2026-09-06).
      예전 라벨은 `phase`(첫 카드가 신규였나)라, due+신규 세션에서 첫 장이 신규면 복습 39장까지
@@ -7663,9 +7704,13 @@ function counts(){ // 상단 바 — 남은 수는 현재 세션 큐 · 「내�
   /* 09-24 디자인 이식: 윗줄 = 진행 캡슐(세션 이름 · 막대 · n장 남음 — 디자인 §7.1). 「오늘 n · 내일 ~n」은 홈 타일이 말한다.
      라벨(신규·복습·남음)은 캡슐 title에 남긴다(길게 누르면·마우스 올리면 보인다). */
   const tot=queue.length, done=Math.max(0,tot-rest.length);
+  /* 진행 막대 = **그날 이 세션** 기준(동하 09-24 「닫았다 열 때마다 진행바가 바뀜 · 그날 듀 기준으로 고정」) — 다시 열면 큐가 남은 카드로만
+     다시 조립돼(playSess) 분모가 매번 줄고 막대가 0에서 다시 시작했다. 막대 = 오늘 이 세션에서 처음 채점한 수(pg) ÷ (그것 + 남은 첫 대면). 재출은 뺀다. */
+  let bd=done, bt=tot;
+  if(curSess){ const n=(curSess.pg&&curSess.pg.day===todayKey())?(curSess.pg.n||0):0; bd=n; bt=n+rest.filter(c=>!c._re).length; }
   $('tbSess').textContent = curSess ? curSess.name : (curPreset ? '풀이' : '');
   $('tbCounts').textContent = curPreset ? `${rest.length.toLocaleString()}장 남음` : '';
-  $('tbBar').style.width = tot ? Math.round(done/tot*100)+'%' : '0%';
+  $('tbBar').style.width = bt ? Math.round(bd/bt*100)+'%' : '0%';
   $('tbProg').title = curPreset ? `${label} ${rest.length} · 오늘 ${todayRated()} · 내일 ~${tomorrowCount(null)}` : '';
 }
 /* ═══ 표 카드 (동하 2026-08-29 · QC `table` 규약) ═══════════════════════════════
@@ -8123,6 +8168,7 @@ function rate(num){
              sid:curSess?curSess.id:null, phase, sessionDone, newServed,
              sess:{r:sess.r.slice(), ms:sess.ms, streak:sess.streak, best:sess.best, re:sess.re} };
   undoPush(undoSnap);
+  if(firstToday && !reN && curSess){ pgBump(curSess, 1); undoSnap.pg=curSess.id; }   // 진행 막대(09-24) — 되돌리면 doUndo가 -1
   if(firstToday && !reN){                  // 그날 첫 채점만 FSRS 반영 (재출은 절대 아니다)
     const fc = s.fsrs?fsrsRevive(s.fsrs):FSRS.createEmptyCard(now);
     const r=engFor(c.id).next(fc, now, RATING[num]);   // 갈래별 목표율 — replayLog와 같은 문
@@ -8236,6 +8282,7 @@ function doUndo(){
   else { sn.prev.u=new Date().toISOString(); state.cards[sn.id]=sn.prev; }
   if(sn.also) for(const a of sn.also){ if(a.prev===null) state.cards[a.id]=relRec(); else { a.prev.u=new Date().toISOString(); state.cards[a.id]=a.prev; } }   // 형제 끄기 되돌림(09-16)
   if(sn.k==='rate'){
+    if(sn.pg){ const t=sessions.find(x=>x.id===sn.pg); if(t) pgBump(t, -1); }   // 진행 막대 카운터도 무른다(09-24)
     dropLogEntry(sn.entry);        // 2) 로그에서 그 채점만 제거
     /* 그 채점 때문에 큐에 꽂았던 재출 항목도 같이 뺀다 — 안 빼면 「다시」를 무른 카드가
        나중에 재출로 또 나온다(되돌리기가 절반만 된 꼴). */
@@ -8648,7 +8695,7 @@ function go(id){
   $('rail').style.display=railShow?'flex':'none';
   $('app').dataset.screen = railShow ? 'solve' : '';
   document.querySelectorAll('#hSide .hs-nav [data-go]').forEach(b=>b.classList.toggle('on', b.dataset.go===id));   // 사이드바 = 지금 목적지
-  document.querySelectorAll('#hSide .hs-tile').forEach(t=>t.classList.toggle('on', (t.dataset.tile==='today'&&id==='scrHome')||(t.dataset.tile==='ym'&&/^scrYm/.test(id))));   // 풀이 화면 = 중간 톤 강조색(tokens [data-screen="solve"] · 디자인_언어 §2.2)
+  document.querySelectorAll('#hSide .hs-tile').forEach(t=>t.classList.toggle('on', (t.dataset.tile==='today'&&(id==='scrHome'||id==='scrSession'))||(t.dataset.tile==='ym'&&/^scrYm/.test(id))));   // 풀이 화면 = 중간 톤 강조색(tokens [data-screen="solve"] · 디자인_언어 §2.2)
   $('railFab').classList.remove('show');               // ☰ 떠 있는 버튼은 은퇴 — 윗줄 ⋯ · 아이폰 한 손 막대 ⋯가 서랍을 연다(09-24)
   if(id!=='scrHome') navGuard();          // 홈이 아니면 뒤로가기용 칸을 물고 있는다
   if(id==='scrHome')renderHome();
@@ -8879,7 +8926,7 @@ function renderHomeHead(due, restToday){
     {k:'solved', n:solvedTodayCount(), l:'푼 카드', ic:'<rect x="4" y="6" width="13" height="15" rx="2.5"/><path d="M8 3h9.5A2.5 2.5 0 0 1 20 5.5V17"/>', col:'var(--c-teal)'},
   ];
   const html=tiles.map(t=>{ const num=t.n==null?'—':t.n.toLocaleString();
-    const onNow = t.k==='today' ? $('scrHome').classList.contains('on') : t.k==='ym' ? /^scrYm/.test((document.querySelector('.scr.on')||{}).id||'') : false;
+    const onNow = t.k==='today' ? ($('scrHome').classList.contains('on')||$('scrSession').classList.contains('on')) : t.k==='ym' ? /^scrYm/.test((document.querySelector('.scr.on')||{}).id||'') : false;
     return `<button class="hs-tile${onNow?' on':''}" data-tile="${t.k}" style="--tc:${t.col}"><span class="ht-top"><span class="ht-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${t.ic}</svg></span><span class="ht-n${num.length>=6?' sm':''}">${num}</span></span><span class="ht-l">${t.l}</span></button>`; }).join('');
   for(const id of ['hTiles','hTilesP']){ const box=$(id); box.innerHTML=html;
     box.querySelectorAll('[data-tile]').forEach(b=>b.onclick=()=>{ const k=b.dataset.tile;
@@ -8960,23 +9007,27 @@ function scoreHtml(sc){
     <div class="legend" style="justify-content:center">
       <span><i style="background:var(--again)"></i>다시 ${sc.r[1]}</span><span><i style="background:var(--hard)"></i>어려움 ${sc.r[2]}</span>
       <span><i style="background:var(--good)"></i>알맞음 ${sc.r[3]}</span><span><i style="background:var(--easy)"></i>쉬움 ${sc.r[4]}</span></div>
-    ${sc.best>=5?`<div class="sc-streak">🔥 최고 연속 ${sc.best}</div>`:''}</div>`;
+    ${sc.best>=5?`<div class="sc-streak">최고 연속 ${sc.best}</div>`:''}</div>`;
 }
 /* 세션 성적 추이 (동하 2026-08-24) — 회차별 정답률(=다시가 아닌 비율)만 최근 10회.
    scoreHtml 같은 성적표를 여러 개 쌓지 않는다: 추이에서 볼 건 「나아지고 있나」 하나뿐이라
    숫자 + 얇은 막대 한 줄이면 족하고, 세션 화면이 이미 길다.
    🔴 scores가 없던 세션(2026-08-24 이전 전부)에서도 깨지면 안 된다 — (sx.scores||[])로 방어하고,
    2회 미만이면 아예 안 그린다(1회짜리는 바로 위 「마지막 성적」과 같은 말이다). */
-function trendHtml(sx){
-  const all=(sx.scores||[]).filter(s=>s&&s.n&&s.r);
+function trendHtml(sx){   /* 09-24 동하 「최근 n을 2주 이상으로」 — 회차 10개 → **날마다 14칸**(그날 회차를 합친 정답률 · 안 푼 날은 빈 칸 · 기록 이전은 칸만) */
+  const all=(sx.scores||[]).filter(s=>s&&s.n&&s.r&&s.at);
   if(all.length<2) return '';
-  const recent=all.slice(0,10).reverse();        // 왼쪽이 오래된 회차 = 읽는 방향과 시간 방향을 맞춘다
-  return `<div class="ss-trend">`+recent.map(s=>{
-      const hit=Math.round((s.n-s.r[1])/s.n*100);
-      return `<span title="${s.n}장">`
-        + `<i style="height:${Math.max(2,Math.round(hit*.22))}px"></i>${hit}</span>`;   // 100% = 22px
+  const tk=todayKey(), by={};
+  for(const s of all){ const k=dayKey(new Date(s.at)); const e=by[k]||(by[k]={n:0,a:0}); e.n+=s.n; e.a+=s.r[1]; }
+  const first=dayKey(new Date(Math.min(...all.map(s=>s.at))));   /* 가장 오래된 기록 — 그 전 날은 「안 풂」이 아니라 「기록 없음」 */
+  const days=[]; for(let i=13;i>=0;i--) days.push(dkAdd(tk,-i));
+  if(days.filter(k=>by[k]).length<2) return '';
+  return `<div class="ss-trend d14">`+days.map(k=>{ const e=by[k], md=k.slice(5).replace('-','/');
+      if(!e) return `<span class="${k<first?'na':'off'}" title="${md} ${k<first?'기록 없음':'안 풂'}"><i></i>·</span>`;
+      const hit=Math.round((e.n-e.a)/e.n*100);
+      return `<span title="${md} · ${e.n}장"><i style="height:${Math.max(2,Math.round(hit*.22))}px"></i>${hit}</span>`;   // 100% = 22px
     }).join('')+`</div>
-    <div class="why">최근 <b>${recent.length}회</b> 유지율</div>`;
+    <div class="why">최근 <b>2주</b> 날마다 유지율${first>days[0]?` · 기록은 ${first.slice(5).replace('-','/')}부터`:''}</div>`;
 }
 function unitStatsAll(){   // 단위별 집계 한 번에 (DATA 1회 순회)
   const LR=lastRevMap(), m={};
@@ -9081,33 +9132,38 @@ function renderSession(){
   const row=(id,ic,t,s,r)=>`<button class="gr-row" id="${id}">${ic}<span class="gr-b"><span class="gr-t">${t}</span>${s?`<span class="gr-s">${s}</span>`:''}</span>${r!=null?`<span class="gr-r">${r}</span>`:''}${CHEV}</button>`;
   const exU=(sx.scope.ex&&sx.scope.ex.units)||[], exM=(sx.scope.ex&&sx.scope.ex.mids)||[];
   const exN=exU.length+exM.length, exCards=exCount(sx);
-  const exNames=[...exU.map(k=>{ try{return hoedokLabel(k);}catch(e){return k;} }),
-                 ...exM.map(k=>k.split('||').slice(1).join(' · '))];
   const heroWhy = remain ? '' : (!isFixed(sx)?'날이 바뀌면 그날 복습분으로 다시 채워져요.':noScope?'직접 담은 세션은 담은 것만 풀어요 — 아래 「범위 넓히기」로 넣으세요.':'');
   let h=`<div class="ss-sub">${esc(sessDesc(sx))}</div>
     <section class="ss-hero"><div class="ssh-b"><span class="ssh-k">오늘 남은 카드</span><span class="ssh-n">${remain.toLocaleString()}<small> 장</small></span>
       ${(ntU&&(ntU.held||ntU.skipped))?`<span class="ssh-d">${ntU.held?esc(holdNote(ntU.why)):''}${ntU.skipped?`${ntU.held?' · ':''}앞 주제 ${ntU.skipped}개는 오늘 푼 카드와 겹쳐 내일`:''}</span>`:heroWhy?`<span class="ssh-d">${heroWhy}</span>`:''}</div>
       <button class="hero-go" id="ssGo"${remain?'':' disabled'}><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l11.6-7.2a1 1 0 0 0 0-1.72L8.5 3.94A1 1 0 0 0 7 4.8z"/></svg>${remain?'이어가기':noScope?'담은 카드 없음':'오늘 끝'}</button></section>
-    <div class="ss-grid"><div class="ss-left">
-      <div class="grp-h">범위</div>
-      <section class="grp">
+    <!-- 09-24 세션 화면(동하 2차): 범위 | 성적 패널 = 한 줄에서 높이 맞춤(격자 stretch) · 자세히는 패널 밑 카드 · 폰은 「기록」 목록 줄 · 위험은 맨 아래 -->
+    <div class="ss-g">
+      <div class="grp-h a-rh">범위</div>
+      <section class="grp a-rng">
         ${(refillQ&&refillQ.length)?row('ssRefill',IC('<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/>','var(--c-green)'),'이어서 채우기',esc(comp.replace(/^ · /,'')),`${refillQ.length.toLocaleString()}장`):''}
-        ${nt?row('ssNew',IC('<circle cx="12" cy="12" r="8"/><path d="M12 8.5v7M8.5 12h7"/>','var(--c-acc)'),'다음 진도 넣기',esc(nt.label)+(nt.date?` · ${esc(nt.date)} 수강`:''),`${ntU.fresh.length.toLocaleString()}장`):''}
-        ${row('ssAdd',IC('<path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/>','var(--c-indigo)'),'범위 넓히기',(isFixed(sx)||(sx.scope.units||[]).length||(sx.scope.mids||[]).length)?'내가 고른 단위가 이 세션에 들어와요':'전 범위 세션이라 오늘 큐에만 얹어요',null)}
-        ${row('ssEx',IC('<circle cx="12" cy="12" r="8"/><path d="M8.5 12h7"/>','var(--c-sec)'),'주제 빼 두기',exN?`${esc(exNames.slice(0,2).join(' / '))}${exN>2?` 외 ${exN-2}`:''}`:'고른 주제를 이 세션에서 계속 빼요',exN?`${exN}개 · ${exCards.toLocaleString()}장`:null)}
+        ${nt?row('ssNew',IC('<circle cx="12" cy="12" r="8"/><path d="M12 8.5v7M8.5 12h7"/>','var(--c-acc)'),'다음 진도 넣기','',`${nt.mixed?`${nt.subs}과목`:esc(String(nt.label||'').split(' · ')[0])} · ${ntU.fresh.length.toLocaleString()}장`):''}
+        ${row('ssAdd',IC('<path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/>','var(--c-indigo)'),'범위 넓히기','',null)}
+        ${row('ssEx',IC('<circle cx="12" cy="12" r="8"/><path d="M8.5 12h7"/>','var(--c-sec)'),'주제 빼 두기','',exN?`${exN}개 · ${exCards.toLocaleString()}장`:null)}
       </section>
-      <div class="grp-f">넣기·빼기는 이 세션의 범위만 바꿔요. 다른 세션엔 그대로예요. 단위 줄의 「빼기」도 「주제 빼 두기」에 쌓여요.</div>
+      <div class="grp-h a-sh">기록</div>
+      <section class="ss-panel a-pnl">${(sx.lastScore&&sx.lastScore.n)?(()=>{ const sc=sx.lastScore, hit=Math.round((sc.n-sc.r[1])/sc.n*100);
+          return `<span class="ssp-k">마지막 성적${sx.lastAt?` · ${esc(fmtAgo(sx.lastAt))}`:''}</span><span class="ssp-n">${hit}%</span><span class="ssp-d">${sc.n.toLocaleString()}회 · ${fmtMin(sc.ms)}</span>`; })():'<span class="ssp-k">아직 성적이 없어요</span>'}
+        <div class="ssp-r"><span>누적</span><span>${(sx.done||0).toLocaleString()}회</span></div></section>
+      ${(sx.lastScore&&sx.lastScore.n)?`<details class="gr-fold grp a-det"${sx.lastScore.run===undoRun&&Date.now()-(sx.lastScore.at||0)<10*60*1000?' open':''}><summary class="gr-row"><span class="gr-b"><span class="gr-t">자세히</span></span>${CHEV}</summary><div class="gr-in">${scoreHtml(sx.lastScore)}${trendHtml(sx)}</div></details>`:''}
+      <div class="a-rest">
+      <details class="grp gr-fold" id="ssUnitFold"><summary class="gr-row"><span class="gr-b"><span class="gr-t" id="ssUnitSum">이 세션의 단위</span></span>${CHEV}</summary>
+        <div id="ssUnits"></div></details>
+      <div class="a-rec"><div class="grp-h">기록</div>
+      <section class="grp">${(sx.lastScore&&sx.lastScore.n)?(()=>{ const sc=sx.lastScore, hit=Math.round((sc.n-sc.r[1])/sc.n*100);
+          return `<div class="gr-row static"><span class="gr-b"><span class="gr-t">마지막 성적</span><span class="gr-s">${sx.lastAt?`${esc(fmtAgo(sx.lastAt))} · `:''}${sc.n.toLocaleString()}회 · ${fmtMin(sc.ms)}</span></span><span class="gr-r ok">${hit}%</span></div>`; })():'<div class="gr-row static"><span class="gr-b"><span class="gr-t">아직 성적이 없어요</span></span></div>'}
+        <div class="gr-row static"><span class="gr-b"><span class="gr-t">누적</span></span><span class="gr-r">${(sx.done||0).toLocaleString()}회</span></div>
+        ${(sx.lastScore&&sx.lastScore.n)?`<details class="gr-fold"${sx.lastScore.run===undoRun&&Date.now()-(sx.lastScore.at||0)<10*60*1000?' open':''}><summary class="gr-row"><span class="gr-b"><span class="gr-t">자세히</span></span>${CHEV}</summary><div class="gr-in">${scoreHtml(sx.lastScore)}${trendHtml(sx)}</div></details>`:''}
+      </section><div class="grp-f"></div></div>
       ${remain?`<section class="grp"><button class="gr-row danger" id="ssClear"><span class="gr-b"><span class="gr-t">오늘 큐 비우기</span></span><span class="gr-r">${remain.toLocaleString()}장</span></button></section>
       <div class="grp-f">오늘 큐만 비워요. 범위·누적 횟수·성적은 그대로예요.</div>`:''}
-      <details class="fold" id="ssUnitFold"><summary id="ssUnitSum">이 세션의 단위</summary>
-        <div id="ssUnits"></div></details>
-    </div>
-    <div class="ss-right"><section class="ss-panel">${(sx.lastScore&&sx.lastScore.n)?(()=>{ const sc=sx.lastScore, hit=Math.round((sc.n-sc.r[1])/sc.n*100);
-        return `<span class="ssp-k">마지막 성적${sx.lastAt?` · ${esc(fmtAgo(sx.lastAt))}`:''}</span><span class="ssp-n">${hit}%</span><span class="ssp-d">${sc.n.toLocaleString()}회 · ${fmtMin(sc.ms)}</span>`; })():'<span class="ssp-k">아직 성적이 없어요</span>'}
-      <span class="ssp-sep"></span>
-      <div class="ssp-r"><span>누적</span><span>${(sx.done||0).toLocaleString()}회</span></div>
-      ${(sx.lastScore&&sx.lastScore.n)?`<details class="ss-score"${sx.lastScore.run===undoRun&&Date.now()-(sx.lastScore.at||0)<10*60*1000?' open':''}><summary>자세히</summary>${scoreHtml(sx.lastScore)}${trendHtml(sx)}</details>`:''}
-    </section></div></div>`;
+      </div>
+    </div>`;
   body.innerHTML=h;
   $('ssGo').onclick=()=>{ if(live){ go('scrSolve'); showCard(); } else playSess(sx); };
   const bn=$('ssNew'); if(bn)bn.onclick=()=>{ if(!live)playSess(sx); curPreset=asPreset(sx); extendWithNew(); };
@@ -10174,7 +10230,8 @@ $('nsSave').onclick=()=>{
     // lastScore를 지키던 이유 그대로 scores(추이 이력)도 지킨다 (2026-08-24)
     const keepQ=nsTarget.q, keepDone=nsTarget.done, keepScore=nsTarget.lastScore, keepScores=nsTarget.scores;
     const prevU=new Set(nsTarget.scope.units||[]), prevM=new Set(nsTarget.scope.mids||[]);  // 편집 **전** 범위
-    Object.assign(nsTarget, nsState, {q:keepQ, done:keepDone, lastScore:keepScore, scores:keepScores});
+    const keepPg=nsTarget.pg;   // 진행 막대 카운터도 시트 사본에 덮이지 않게(09-24)
+    Object.assign(nsTarget, nsState, {q:keepQ, done:keepDone, lastScore:keepScore, scores:keepScores, pg:keepPg});
     if(!isFixed(nsTarget)) nsTarget.day='';            // 범위가 바뀌었으면 다음 진입 때 다시 채운다
     else if((nsTarget.scope.units||[]).length||(nsTarget.scope.mids||[]).length){
       // 범위가 지정된 직접 추가 세션: 빠진 범위 카드는 큐에서 빼고, 새 범위는 채운다

@@ -5943,7 +5943,16 @@ const SCENE_LAST=100000;   // 09-15 동하 「장면 카드 투입은 수강 순
    baseline을 못 받았으면(YM_BASE null) ②③이 하나로 합쳐진다(옛 규칙) — 조용히 깨지는 것보다 낫다. */
 const NEW_TIER_STEP=50000, NEW_HOLE_FIRST=-200000;
 function isHole(c){ return /(^|\s)구멍 \d{2}-\d{2}/.test(String(c.src||'')) || (c.tags||[]).includes('구멍'); }   // 루틴 실물 = src 「출처 구멍 09-15」(09-15 · 9f320ff7)
-function newTier(c){ if(isHole(c)) return 0; if(c.typ==='장면') return 3; if(typeof YM_BASE!=='undefined' && YM_BASE) return YM_BASE.has(c.id)?1:2; return 1; }
+/* 🔴 **원소 낱장 = 부모 통짜의 층** (동하 결정 09-24 · 판정대기 ⑦ 「당기는 쪽으로 하되 일괄 당기는 것보다 정상적인 위치에」 · 메타 인계).
+   낱장은 확장 신설이라 ③층(baseline 밖)에 떨어져 옛 미노출 뒤에 섰고, 이미 배운 통짜 69장이 낱장 286장에 막혀 게이트에 얼어 있었다(09-24 실측).
+   → 낱장은 부모(`elems`로 잇는 게이트 그 연결)의 층을 따른다. 층 안 순서는 그대로(planRank → 문서순)라 부모 곁 문서 자리로 들어간다.
+   ⚠ 「맨 앞 일괄」(NEW_HOLE_FIRST 류)이 아니다 · 게이트 면제 없음(09-16) · FSRS·로그 무변 — 파생 순서만. */
+let _elemPar=null, _elemParData=null;
+function elemParent(c){ if(_elemParData!==DATA){ _elemPar=new Map(); _elemParData=DATA;
+    for(const p of DATA) if(Array.isArray(p.elems)) for(const id of p.elems) if(id!==p.id && !_elemPar.has(id)) _elemPar.set(id,p); }
+  return _elemPar.get(c.id)||null; }
+function newTierOwn(c){ if(isHole(c)) return 0; if(c.typ==='장면') return 3; if(typeof YM_BASE!=='undefined' && YM_BASE) return YM_BASE.has(c.id)?1:2; return 1; }
+function newTier(c){ const p=elemParent(c); return newTierOwn(p||c); }
 function newRank(c){ const t=newTier(c); return planRank(tagKey(c)) + (t===0 ? NEW_HOLE_FIRST : t===3 ? SCENE_LAST : t===2 ? NEW_TIER_STEP : 0); }
 function newSort(a,b){ return newRank(a)-newRank(b) || a._i-b._i; } // 신규 = 수강일 오래된 대주제 → 문서순 · 장면은 맨 뒤
 function hoedokPending(){ // 회독 대기 = 카드가 진입했는데 아직 읽음 체크 안 된 대주제

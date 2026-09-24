@@ -1,4 +1,32 @@
 
+/* ── 절 카드 (09-24 개편 · 앱 디자인 언어) — 절 제목(h2)·대주제 배너(.part)는 카드 바깥, 그 뒤 내용은 .sect 카드 한 장.
+   조립기의 쪽(.pg) 구조와 앵커는 그대로 — 쪽이 절 경계에 걸리면 쪽 껍데기를 복제해 양쪽 카드에 나눠 담는다(id 는 첫 조각만).
+   🔴 다른 스크립트(눈금·꺾쇠·접기)보다 먼저 돈다 — 재배치 뒤의 자리를 재야 한다. ── */
+(function(){
+  var main=document.querySelector('main.wrap'); if(!main) return;
+  var pgs=[].slice.call(main.querySelectorAll(':scope > section.pg')); if(!pgs.length) return;
+  var foot=main.querySelector(':scope > .foot');
+  var card=null;
+  pgs.forEach(function(pg){
+    var nodes=[].slice.call(pg.childNodes);
+    while(pg.firstChild) pg.removeChild(pg.firstChild);
+    pg.parentNode.removeChild(pg);
+    var host=null, used=false;
+    nodes.forEach(function(n){
+      if(n.nodeType===3 && !n.textContent.trim()) return;
+      var head=n.nodeType===1 && (n.tagName==='H2' || n.classList.contains('part'));
+      if(head){
+        if(!used){ main.insertBefore(pg, foot); used=true; }   /* 제목만 있는 쪽 — 쪽 id 는 빈 표지로 남긴다 */
+        main.insertBefore(n, foot); card=null; host=null; return;
+      }
+      if(!card){ card=document.createElement('div'); card.className='sect'; main.insertBefore(card, foot); host=null; }
+      if(!host){ if(used){ host=pg.cloneNode(false); host.removeAttribute('id'); } else { host=pg; used=true; } card.appendChild(host); }
+      host.appendChild(n);
+    });
+    if(!used) main.insertBefore(pg, foot);
+  });
+})();
+
 /* 꺾쇠 팔 맞추기 — 첫 항목·끝 항목의 세로 중앙에 팔 끝을 붙인다.
    CSS 로는 자식 높이를 알 수 없어서 재서 넣는다. 레이아웃만 읽고 아무것도 저장하지 않는다. */
 (function(){
@@ -141,33 +169,20 @@
   all();
 })();
 
-/* 테마 — 카드앱과 같은 저장소를 읽는다(같은 origin). 앱에서 고른 테마가 여기도 적용된다.
-   저장값 없으면 시스템 설정. 우상단 버튼으로 여기서 바꾸면 앱에도 반영된다(같은 키). */
+/* 테마 — 카드앱 설정을 그대로 따른다(같은 origin · 09-24 개편). 판에는 테마 단추가 없다(내용 화면 · 동하 09-24).
+   cards_theme_v1 = white|paper|dark|auto(없음) · 옛 값 b→dark · c→paper. 자동이면 data-theme 을 비우고
+   cards_light_v1(white|paper)을 data-light 에 — kit.css 가 기기 라이트/다크에 맞춰 고른다. 앱이 다른 탭에서 바꾸면 따라 바뀐다. */
 (function(){
-  var KEY='cards_theme_v1';
-  function cur(){
-    try{ var v=localStorage.getItem(KEY); if(v==='b'||v==='c') return v; }catch(e){}
-    return matchMedia('(prefers-color-scheme:light)').matches ? 'c' : 'b';
+  var root=document.documentElement;
+  function apply(){
+    var v=null, l=null;
+    try{ v=localStorage.getItem('cards_theme_v1'); l=localStorage.getItem('cards_light_v1'); }catch(e){}
+    if(v==='b') v='dark'; else if(v==='c') v='paper';
+    if(v==='white'||v==='paper'||v==='dark') root.dataset.theme=v; else root.removeAttribute('data-theme');
+    if(l==='white'||l==='paper') root.dataset.light=l; else root.removeAttribute('data-light');
   }
-  function apply(v){ document.documentElement.dataset.theme=v; }
-  apply(cur());
-  function mkBtn(){
-    var b=document.createElement('button');
-    b.id='themeBtn';
-    b.setAttribute('aria-label','테마 전환');
-    b.textContent = document.documentElement.dataset.theme==='b' ? '☀' : '☾';
-    b.style.cssText='position:fixed;top:12px;right:12px;z-index:9;width:30px;height:30px;opacity:.92;'
-      +'border:1px solid var(--hair);border-radius:50%;background:var(--bg);color:var(--dim);'
-      +'font-size:15px;cursor:pointer;line-height:1;';
-    b.onclick=function(){
-      var v=document.documentElement.dataset.theme==='b'?'c':'b';
-      apply(v); b.textContent=v==='b'?'☀':'☾';
-      try{ localStorage.setItem(KEY,v); }catch(e){}
-    };
-    document.body.appendChild(b);
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',mkBtn);
-  else mkBtn();
+  apply();
+  window.addEventListener('storage',function(e){ if(!e.key||/^cards_(theme|light)_v1$/.test(e.key)) apply(); });
 })();
 
 
@@ -179,7 +194,8 @@ document.querySelectorAll('.mkf svg,.mkd svg,.converge>svg,.fork svg,.fig svg').
 /* ── 위키 v3 (09-01) — 절 접기 + 해시 자동 펼침 + 우측 서랍 목차(아이콘 버튼) ── */
 (function(){
   var main=document.querySelector('main.wrap'); if(!main) return;
-  var flow=[].slice.call(document.querySelectorAll('main.wrap .pg > *'));
+  /* 09-24: 절 제목은 카드 바깥(main 직계) · 내용은 .sect > .pg > * — 둘 다 문서 순서로 */
+  var flow=[].slice.call(document.querySelectorAll('main.wrap > h2, main.wrap > .part, main.wrap .pg > *'));
   function rangeOf(h){
     var i=flow.indexOf(h), out=[];
     for(var j=i+1;j<flow.length;j++){var e=flow[j];
@@ -190,13 +206,14 @@ document.querySelectorAll('.mkf svg,.mkd svg,.converge>svg,.fork svg,.fig svg').
     return out;}
   function setClosed(h,closed){
     h.classList.toggle('closed',closed);
+    if(h.tagName==='H2'){ for(var s=h.nextElementSibling; s&&s.tagName!=='H2'&&!s.classList.contains('part')&&!s.classList.contains('foot'); s=s.nextElementSibling){ if(s.classList.contains('sect')) s.classList.toggle('clpsd',closed); } }
     rangeOf(h).forEach(function(e){
       if(closed){e.classList.add('clpsd');}
       else{e.classList.remove('clpsd');
         if(e.tagName==='H3'&&e.classList.contains('closed'))
           rangeOf(e).forEach(function(x){x.classList.add('clpsd');});}
     });}
-  [].slice.call(document.querySelectorAll('main.wrap .pg > h2, main.wrap .pg > h3'))
+  [].slice.call(document.querySelectorAll('main.wrap > h2, main.wrap .pg > h2, main.wrap .pg > h3'))
     .forEach(function(h){h.classList.add('tg');
       h.addEventListener('click',function(ev){
         if(ev.target.closest('a'))return;
@@ -213,22 +230,29 @@ document.querySelectorAll('.mkf svg,.mkd svg,.converge>svg,.fork svg,.fig svg').
   window.addEventListener('hashchange',function(){
     expandTo(decodeURIComponent(location.hash.slice(1)));});
   if(location.hash)expandTo(decodeURIComponent(location.hash.slice(1)));
+  /* 목차 — 왼쪽 유리 패널 · 🔴 기본 접힘(09-24 동하 「회독본은 내용요소 — distraction 없게」) · 과목마다 마지막 상태 기억.
+     가로 1000px 이상에선 본문을 밀고(목차를 띄운 채 읽기), 좁으면 겹쳐 뜨고 링크를 누르면 닫힌다. */
   var sb=document.querySelector('.sidebar');
   if(sb){
-    var btn=document.createElement('button'); btn.className='tocbtn'; btn.title='목차';
-    btn.innerHTML='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 5h14M3 10h14M3 15h9"/></svg>';
+    var h1=document.querySelector('main.wrap h1'), KEY='pan_side_'+(h1?h1.textContent.trim():'');
+    var btn=document.createElement('button'); btn.className='tocbtn'; btn.title='목차'; btn.setAttribute('aria-label','목차');
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M9 4.5v15"/></svg>';
     var scrim=document.createElement('div'); scrim.className='scrim';
-    function setOpen(o){sb.classList.toggle('open',o); document.body.classList.toggle('tocopen',o);}
-    btn.addEventListener('click',function(){setOpen(!sb.classList.contains('open'));});
-    scrim.addEventListener('click',function(){setOpen(false);});
+    function wide(){ return window.innerWidth>=1000; }
+    function setOpen(o,save){sb.classList.toggle('open',o); document.body.classList.toggle('tocopen',o); btn.setAttribute('aria-expanded',o?'true':'false');
+      if(save){ try{ localStorage.setItem(KEY,o?'1':'0'); }catch(e){} } }
+    btn.addEventListener('click',function(){setOpen(!sb.classList.contains('open'),true);});
+    scrim.addEventListener('click',function(){setOpen(false,true);});
     var tv=sb.querySelector('.toc-view'), lv=sb.querySelector('.list-view');
     sb.addEventListener('click',function(ev){
       var sw=ev.target.closest('.toc-switch');
       if(sw&&tv&&lv){ev.preventDefault(); tv.hidden=true; lv.hidden=false; return;}
       var bk=ev.target.closest('.toc-back');
       if(bk){ev.preventDefault(); if(tv&&lv){lv.hidden=true; tv.hidden=false;} return;}
-      if(ev.target.closest('a'))setOpen(false);});
+      if(ev.target.closest('a')&&!wide())setOpen(false,false);});
     document.body.appendChild(btn); document.body.appendChild(scrim);
+    var saved=null; try{ saved=localStorage.getItem(KEY); }catch(e){}
+    setOpen(saved==='1'&&wide(),false);
   }
 })();
 

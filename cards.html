@@ -1677,6 +1677,16 @@ input,select{border-radius:10px;}
 /* 홈 스크롤 막대가 카드 오른쪽 위에 겹치던 것(동하 09-24 아이폰 실기) — 좌우 여백을 스크롤 칸 **안**으로 옮겨 막대가 화면 가장자리에 서게 한다 */
 #scrHome{padding-left:0;padding-right:0;}
 #scrHome .home-wrap{padding-left:var(--sp-m);padding-right:var(--sp-m);}
+
+/* 설정 슬라이더 — 손잡이(28)가 아래 글자와 겹치던 것(동하 09-24 아이폰) · 입력 칸 높이를 손잡이만큼 */
+.rng{height:28px;margin:8px 0 6px;display:block;}
+.rng-ends{margin-top:0;}
+#ovlSettings .desc{margin-top:6px;}
+#ovlSettings .kbd-note{font-size:13px;color:var(--c-sec);line-height:18px;margin:-2px 0 8px;}
+
+/* 시트 ✕ — 스크롤하면 떠 있는 ✕가 글자를 덮던 것 → 유리 동그라미 바탕(글자는 그 밑으로 지나간다) */
+.sheet-x{width:44px;height:44px;border-radius:22px;z-index:2;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--c-label);
+  background:var(--c-glass);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);box-shadow:0 0 0 .5px var(--c-glass-ring),0 4px 14px var(--c-glass-shadow);}
 </style>
 </head>
 <body>
@@ -2281,7 +2291,7 @@ input,select{border-radius:10px;}
 <!-- 설정 -->
 <div class="ovl" id="ovlSettings"><div class="sheet"><button class="sheet-x" id="setCloseX" title="닫기">✕</button>
   <h2>설정</h2>
-  <p class="desc">매일 만지는 것이 아니라 여기 넣어뒀어요.</p>
+  <p class="desc">매일 만지는 건 여기 없어요.</p>
   <div class="field"><label>테마</label>
     <div id="themeSeg">
       <button data-th="auto">자동</button>
@@ -2293,26 +2303,25 @@ input,select{border-radius:10px;}
   </div>
   <div class="field" style="display:none"><label>하루 신규 권장량 (체크포인트 표시용)</label>
     <input id="intakeCap" type="number" inputmode="numeric" min="0" placeholder="130"></div>
-  <div class="field"><label>복습 강도 — 얼마나 안 잊게 할까</label>
+  <div class="field"><label>복습 강도</label>
     <div class="rng-row"><span class="rng-v" id="retVal">90%</span><span class="desc" id="retLoad"></span></div>
-    <input class="rng" id="retRange" type="range" min="85" max="95" step="1" value="90">
-    <div class="rng-ends"><span>넓게 (85%)</span><span>촘촘히 (95%)</span></div>
-    <p class="desc" style="margin-top:6px">오른쪽일수록 덜 잊지만 <b>하루 분량이 늘어요</b>. 바꾸면 모든 카드의 복습일이 다시 잡혀요(기록은 그대로).</p>
-    <div class="tgl-row" style="margin-top:8px"><span>채점 버튼 밑에 다음 간격(14일·22일…) 보이기</span><div class="tgl" id="cfgIv"></div></div>
+    <input class="rng" id="retRange" type="range" min="85" max="95" step="any" value="90">
+    <div class="rng-ends"><span>넓게 85%</span><span>촘촘히 95%</span></div>
+    <p class="desc">올리면 덜 잊지만 하루 분량이 늘어요.</p>
+    <div class="tgl-row" style="margin-top:8px"><span>채점 버튼에 다음 간격 보이기</span><div class="tgl" id="cfgIv"></div></div>
   </div>
-  <div class="field"><label>집중 암기 — 고른 카드만 복습 강도 따로</label>
+  <div class="field"><label>집중 암기</label>
     <div class="rng-row"><span class="rng-v" id="cretVal">95%</span><span class="desc" id="cretLoad"></span></div>
     <button class="act-btn" id="focusPick" style="margin:4px 0 8px"><span>집중 암기 카드 고르기</span><small id="focusPickSub"></small></button>
-    <input class="rng" id="cretRange" type="range" min="85" max="98" step="1" value="95">
-    <div class="rng-ends"><span>넓게 (85%)</span><span>촘촘히 (98%)</span></div>
-    <p class="desc" style="margin-top:6px">고른 단위·중주제의 카드만 이 목표로 돌려요(나머지는 위 복습 강도). 처음엔 각 과목 「2022 개정 교육과정」이 골라져 있어요 — 총창·통합교과는 넣고 싶으면 고르세요. 바꾸면 그 카드들의 복습일이 다시 잡혀요(기록은 그대로).</p>
+    <input class="rng" id="cretRange" type="range" min="85" max="98" step="any" value="95">
+    <div class="rng-ends"><span>넓게 85%</span><span>촘촘히 98%</span></div>
+    <p class="desc">고른 카드만 이 강도로 돌려요.</p>
   </div>
-  <div class="field"><label>시험날 목표 — 시험 당일에 얼마나 남아 있게 할까</label>
+  <div class="field"><label>시험날 목표</label>
     <div class="rng-row"><span class="rng-v" id="xretVal">95%</span><span class="desc" id="xretLoad"></span></div>
-    <input class="rng" id="xretRange" type="range" min="88" max="99" step="1" value="95">
-    <div class="rng-ends"><span>느슨히 (88%)</span><span>빡빡히 (99%)</span></div>
-    <p class="desc" style="margin-top:6px">복습일이 <b>시험 뒤로</b> 잡힌 카드에만 걸려요. 시험날 기억 확률이 이 값보다 낮으면 시험 전으로 당겨 옵니다.
-      낮추면 마지막 주가 가벼워지고, 올리면 더 촘촘히 당겨와요.</p>
+    <input class="rng" id="xretRange" type="range" min="88" max="99" step="any" value="95">
+    <div class="rng-ends"><span>느슨히 88%</span><span>빡빡히 99%</span></div>
+    <p class="desc">시험날 기억이 이 값보다 낮을 카드를 시험 전으로 당겨요.</p>
   </div>
   <div class="field" id="fwField" style="display:none"><label>내 기억 패턴 맞추기</label>
     <div id="fwBox"></div>
@@ -2322,7 +2331,7 @@ input,select{border-radius:10px;}
       <button data-v="">없음</button><button data-v="0">일</button><button data-v="1">월</button><button data-v="2">화</button
       ><button data-v="3">수</button><button data-v="4">목</button><button data-v="5">금</button><button data-v="6">토</button>
     </div>
-    <p class="desc" style="margin-top:6px">그날 복습분은 <b>앞 3일</b>에 나눠 <b>미리</b> 나가요 — 미리 아는 날이니까요.</p>
+    <p class="desc">그날 몫은 앞 3일에 나눠 미리 풀어요.</p>
   </div>
   <div class="field"><label>휴식일 — 하루만 추가</label>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -2332,11 +2341,10 @@ input,select{border-radius:10px;}
       <button class="btn-ghost" id="restToday" style="flex:0 0 auto">오늘</button>
     </div>
     <div id="restList" style="margin-top:8px"></div>
-    <p class="desc" style="margin-top:6px">직접 추가한 날은 <b>뒤 3일</b>에 나눠 갚아요 — 갑자기 쉬는 건 과거로 못 보내니까요. 「빼기」는 매주 휴식 요일인 날을 <b>그날만 공부하는 날</b>로 돌려요(연휴 등).</p>
+    <p class="desc">추가한 날은 뒤 3일에 나눠 풀어요 · 「빼기」 = 휴식 요일을 그날만 공부하는 날로.</p>
   </div>
   <div class="tgl-row"><span>「다시」 카드 그날 다시 내기</span><div class="tgl" id="tglReshow"></div></div>
-  <div class="kbd-note">「다시」를 누른 카드가 <b>같은 세션에서 한 번 더</b> 나와요(남은 큐의 절반 · 최소 15장 · 최대 60장 뒤).
-    재출 화면은 <b>다시 / 통과</b> 둘만이고, 복습 일정과 「오늘 채점」 수는 <b>안 바뀌어요</b> — 첫 채점만 셉니다.</div>
+  <div class="kbd-note">같은 세션 뒤쪽에 한 번 더 나와요 · 일정엔 첫 채점만 들어가요.</div>
   <div class="tgl-row"><span>카드 마당 전체 탭 (여백을 짚어도 공개)</span><div class="tgl" id="tglZtap"></div></div>
   <div class="tgl-row"><span>스와이프 채점 (좌 알맞음 · 우 다시)</span><div class="tgl" id="tglSwipe"></div></div>
   <div class="tgl-row"><span>키보드 단축키 (PC)</span><div class="tgl" id="tglKbd"></div></div>
@@ -9612,12 +9620,13 @@ function setCurricRet(v){   // 교육과정 갈래 목표율 — setRetention과
     + (q.add||q.del ? ` · 오늘 목록 ${q.add?`+${q.add}`:''}${q.add&&q.del?' ':''}${q.del?`−${q.del}`:''}` : ''));
 }
 /* 끌 때마다 재계산하면 무겁다(전량 replayLog) — 숫자만 따라가고 **손을 뗄 때** 한 번 적용한다 */
-$('xretRange').addEventListener('input', ()=>{ $('xretVal').textContent=$('xretRange').value+'%'; });
-$('xretRange').addEventListener('change', ()=>{ setExamRet(+$('xretRange').value/100); });
-$('retRange').addEventListener('input', ()=>{ $('retVal').textContent=$('retRange').value+'%'; });
-$('retRange').addEventListener('change', ()=>{ setRetention(+$('retRange').value/100); });
-$('cretRange').addEventListener('input', ()=>{ $('cretVal').textContent=$('cretRange').value+'%'; });
-$('cretRange').addEventListener('change', ()=>{ setCurricRet(+$('cretRange').value/100); });
+/* 슬라이더 — 끄는 동안은 매끄럽게 움직이고(step any · 동하 09-24 「부드럽게」) 값은 1% 단위로 반올림해 보여 주고 저장한다 */
+function rngBind(id, valId, apply){ const r=$(id); const pct=()=>Math.round(+r.value);
+  r.addEventListener('input', ()=>{ $(valId).textContent=pct()+'%'; });
+  r.addEventListener('change', ()=>{ const v=pct(); r.value=v; $(valId).textContent=v+'%'; apply(v/100); }); }
+rngBind('xretRange','xretVal', setExamRet);
+rngBind('retRange','retVal', setRetention);
+rngBind('cretRange','cretVal', setCurricRet);
 function setFocus(sel){    // 집중 암기 대상 바꾸기 — 목표율 바꿀 때와 같은 삼종 세트(엔진은 그대로 · 배정만 바뀌므로 replayLog부터)
   const before=dueTodayCount();
   fsrsCfg.focus={units:(sel.units||[]).slice(), mids:(sel.mids||[]).slice()}; fsrsCfg.focusAt=Date.now(); _focusSel=null;

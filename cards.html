@@ -735,7 +735,7 @@ details.ss-score[open]>summary{border-bottom:1px solid var(--line);margin-bottom
 .seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm);}
 .rng{width:100%;-webkit-appearance:none;appearance:none;background:transparent;margin:10px 0 2px;border:none;padding:0;}   /* 입력칸 테두리 상자에 갇혀 있었다 */
 .rest-chip{border-radius:999px;}
-@media (min-width:900px){ #ovlSettings .sheet{max-width:760px;column-count:2;column-gap:28px;} #ovlSettings .field,#ovlSettings .btn-row{break-inside:avoid;} }   /* 넓은 화면 2열 — 1180 가로에서 2.6화면을 굴렸다(UI 리뷰 🟠) */
+/* 넓은 화면 2열은 09-24에 폐기 — 넘친 칸이 보이지 않는 셋째 열로 가로로 밀렸다(풀이·그 밖·저장 · 동하 아이패드 실기). 사이드바가 보이는 폭에서는 설정 = 본문 페이지(.page · 아래 「디자인 이식 G」) */
 .sheet-x{position:sticky;top:-22px;float:right;margin:-8px -8px 0 0;width:44px;height:44px;border-radius:12px;color:var(--mute);font-size:20px;z-index:2;background:var(--surface);}
 .rng::-webkit-slider-runnable-track{height:6px;border-radius:99px;background:var(--sunken);}
 .rng::-moz-range-track{height:6px;border-radius:99px;background:var(--sunken);}
@@ -1759,6 +1759,16 @@ input,select{border-radius:10px;}
 .sheet-x{width:44px;height:44px;border-radius:22px;z-index:2;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--c-label);
   background:var(--c-glass);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);box-shadow:0 0 0 .5px var(--c-glass-ring),0 4px 14px var(--c-glass-shadow);}
 
+/* ═══ 디자인 이식 G — 설정 = 본문 페이지 (09-24 · 사이드바가 보이는 폭) ═══
+   떠 있는 시트 → 사이드바 오른쪽 본문을 채우는 한 열 inset grouped(통계·라이브러리와 같은 틀) · 큰 제목 34 · ✕·「닫기」 없음(사이드바로 떠난다 · Esc). */
+#ovlSettings{z-index:59;}   /* 설정에서 여는 시트(GitHub 연결 ovlSetup 등 · z 60)가 설정 밑에 깔렸다 — DOM 순서가 앞이라 */
+#ovlSettings.page{left:var(--set-left,0px);background:var(--c-bg);align-items:stretch;justify-content:stretch;padding:0;}
+#ovlSettings.page .sheet{max-width:none;width:100%;max-height:none;height:100%;border-radius:0;box-shadow:none;background:var(--c-bg);padding:calc(var(--set-top,0px) + 16px) var(--sp-m) 32px;overflow-y:auto;}   /* 제목 윗선 = 사이드바 「카드」 제목 윗선 */
+#ovlSettings.page .sheet>h2{font-size:34px;font-weight:700;letter-spacing:-.025em;line-height:41px;margin:0 0 16px 4px;}
+#ovlSettings.page .sheet-x,#ovlSettings.page .sheet>.btn-row{display:none;}
+#hSide.set-on .hs-row.on:not(#btnSettings){background:none;color:var(--c-label);font-weight:400;}   /* 설정을 연 동안 강조는 「설정」 줄 하나 */
+#hSide.set-on .hs-tile.on{background:var(--c-tile);color:var(--c-label);} #hSide.set-on .hs-tile.on .ht-ic{background:var(--tc);} #hSide.set-on .hs-tile.on .ht-l{color:var(--c-sec);}
+
 /* 설정 = 제목 + 조작 칸만 (09-24) */
 .set-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;font-size:17px;}
 .set-row .seg{flex:0 0 auto;}
@@ -2374,6 +2384,7 @@ input,select{border-radius:10px;}
 <!-- 설정 -->
 <div class="ovl" id="ovlSettings"><div class="sheet"><button class="sheet-x" id="setCloseX" title="닫기">✕</button>
   <h2>설정</h2>
+  <div class="set-cols">
   <!-- 09-24 동하 「제목하고 상호작용 칸들만 딱딱」 — 설명 문단 없음. 숫자(오늘 n장 등)만 조작 결과로 남긴다 -->
   <div class="field"><label>테마</label>
     <div id="themeSeg">
@@ -2437,6 +2448,7 @@ input,select{border-radius:10px;}
       <button class="h-tool" id="btnBackup">상태 백업</button>
       <button class="h-tool" id="btnSetup">GitHub 연결</button>
     </div>
+  </div>
   </div>
   <div class="btn-row"><button class="btn-primary" id="setClose">닫기</button></div>
 </div></div>
@@ -9597,6 +9609,11 @@ $('btnSettings').onclick=()=>{
   // 열 때 현재값을 채운다 — 비어 있으면 설정돼 있어도 미설정처럼 보인다 (감사 U7). 없으면 placeholder 130 유지.
   $('intakeCap').value = intake.cap!=null ? intake.cap : '';
   renderRestUI(); renderRetUI(); renderFwUI(); applyIv();
+  /* 사이드바가 보이는 폭 = 본문 페이지로 연다(디자인_언어 §7 「최상위 화면: 사이드바 + 본문」 · 동하 09-24 「2열 스크롤은 일반적이지 않다」) — 왼쪽 끝 = 사이드바 오른쪽 */
+  const sd=$('hSide'), pg=!!sd && getComputedStyle(sd).display!=='none';
+  $('ovlSettings').classList.toggle('page', pg);
+  if(pg){ const r=sd.getBoundingClientRect(); $('ovlSettings').style.setProperty('--set-left', Math.round(r.right)+'px'); $('ovlSettings').style.setProperty('--set-top', Math.round(r.top)+'px'); }
+  $('btnSettings').classList.toggle('on', pg); if(pg) sd.classList.add('set-on');
   $('ovlSettings').classList.add('show'); };
 /* 복습 강도(목표 기억률) — 바꾸면 전 카드 due가 한 번에 옮겨진다.
    🔴 **로그·S·D는 안 건드린다.** FSRS는 같은 S에서 간격 배수만 다시 뽑으므로 `replayLog()`로
@@ -9826,6 +9843,9 @@ $('restSkip').onclick=()=>{ const d=$('restDate').value; if(!d) return;
 $('restToday').onclick=()=>addRestDay(todayKey());
 $('setClose').onclick=()=>$('ovlSettings').classList.remove('show');
 $('setCloseX').onclick=()=>$('ovlSettings').classList.remove('show');
+/* 페이지로 열린 설정은 사이드바의 다른 목적지를 누르면 닫힌다(그 목적지로 간다) · 닫히면 설정 줄 강조를 푼다 */
+{ const sd=$('hSide'); if(sd) sd.addEventListener('click',e=>{ if(e.target.closest('#btnSettings')) return; $('ovlSettings').classList.remove('show'); },true);
+  new MutationObserver(()=>{ if(!$('ovlSettings').classList.contains('show')){ $('btnSettings').classList.remove('on'); if(sd) sd.classList.remove('set-on'); } }).observe($('ovlSettings'),{attributes:true,attributeFilter:['class']}); }
 document.addEventListener('click', e=>{ const row=e.target.closest('.tgl-row'); if(!row || e.target.closest('.tgl,button,a,input,select')) return;
   const t=row.querySelector('.tgl'); if(t) t.click(); });   // 토글 줄 어디를 눌러도(UI 리뷰 🟡)
 $('ctOpen').onclick=()=>openHoedok('tools/curric-table.html','음악·미술 내용 체계표');   // 가리고 쓰기 페이지(동하 09-23 「앱에 올려줘 · 음악도」 · 메타 인계) — 회독본 창에서 연다(앱 테마를 따라간다)

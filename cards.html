@@ -1467,7 +1467,7 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 #btnNewSess svg{width:22px;height:22px;}
 #sessList{background:var(--c-card);border-radius:var(--r-group);box-shadow:var(--sh-card);display:flex;flex-direction:column;overflow:hidden;}
 .sess2{min-height:60px;display:flex;align-items:center;gap:14px;padding:0 16px 0 20px;color:var(--c-label);text-align:left;width:100%;position:relative;}
-.sess2+.sess2::before{content:"";position:absolute;left:66px;right:0;top:0;height:1px;transform:scaleY(.5);background:var(--c-sep);}
+.sess2+.sess2::before{content:"";position:absolute;left:20px;right:20px;top:0;height:1px;transform:scaleY(.5);background:var(--c-sep);}
 .sess2:active{background:var(--c-fill);}
 .s2-ic{width:32px;height:32px;flex:0 0 auto;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:700;}
 .s2-ic svg{width:17px;height:17px;}
@@ -1542,7 +1542,7 @@ input,select{border-radius:10px;}
 .sig-box{display:flex;flex-direction:column;}
 .sig-list{flex:1;display:flex;flex-direction:column;}
 .sig-row{flex:1;min-height:60px;display:flex;align-items:center;gap:12px;cursor:pointer;position:relative;}
-.sig-row+.sig-row::before{content:"";position:absolute;left:44px;right:0;top:0;height:1px;transform:scaleY(.5);background:var(--c-sep);}
+.sig-row+.sig-row::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;transform:scaleY(.5);background:var(--c-sep);}
 .sg-ic{width:32px;height:32px;border-radius:9px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;}
 .sg-ic svg{width:17px;height:17px;}
 .sg-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;}
@@ -1813,7 +1813,7 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
 
 /* 세션 줄 = 색 점 12 (아이콘 네모 대신 · 09-24) — 구분선은 글자 시작(20 + 12 + 14)부터 */
 .s2-dot{width:12px;height:12px;border-radius:6px;flex:0 0 auto;}
-.sess2+.sess2::before{left:46px;}
+.sess2+.sess2::before{left:20px;}   /* 09-24 동하 「일관성 있게」 — 구분선은 어느 목록이나 카드 안쪽 여백 양쪽 */
 </style>
 </head>
 <body>

@@ -1673,6 +1673,10 @@ input,select{border-radius:10px;}
 #loading .ld-bar i{display:block;width:40%;height:100%;border-radius:2px;background:var(--c-acc);animation:ldmove 1.4s ease-in-out infinite;}
 @keyframes ldmove{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
 #loading .ld-s{font-size:15px;color:var(--c-sec);text-align:center;padding:0 24px;}
+
+/* 홈 스크롤 막대가 카드 오른쪽 위에 겹치던 것(동하 09-24 아이폰 실기) — 좌우 여백을 스크롤 칸 **안**으로 옮겨 막대가 화면 가장자리에 서게 한다 */
+#scrHome{padding-left:0;padding-right:0;}
+#scrHome .home-wrap{padding-left:var(--sp-m);padding-right:var(--sp-m);}
 </style>
 </head>
 <body>

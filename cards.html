@@ -1572,7 +1572,7 @@ input,select{border-radius:10px;}
 .grp{background:var(--c-card);border-radius:var(--r-group);box-shadow:var(--sh-card);overflow:hidden;display:flex;flex-direction:column;}
 .grp-f{font-size:13px;color:var(--c-sec);padding:6px 20px 0;line-height:18px;margin-bottom:22px;}
 .gr-row{min-height:52px;display:flex;align-items:center;gap:14px;padding:8px 16px 8px 20px;text-align:left;color:var(--c-label);width:100%;position:relative;}
-.gr-row+.gr-row::before{content:"";position:absolute;left:64px;right:0;top:0;height:1px;transform:scaleY(.5);background:var(--c-sep);}
+.gr-row+.gr-row::before{content:"";position:absolute;left:20px;right:20px;top:0;height:1px;transform:scaleY(.5);background:var(--c-sep);}   /* 09-24 동하 「구분선이 중간에 툭 끊겨서」 — 글자 시작점(64) → 카드 안쪽 여백 20 양쪽 */
 .gr-row:active{background:var(--c-fill);}
 .gr-ic{width:30px;height:30px;flex:0 0 auto;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;}
 .gr-ic svg{width:17px;height:17px;}
@@ -1602,8 +1602,7 @@ details.gr-fold>summary .s2-chev{transition:transform .18s;}
 details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
 #ssUnitFold{margin:0 0 22px;} #ssUnits{padding:0 12px 12px;}
 .grp>details.gr-fold{position:relative;}
-.grp>*+details.gr-fold::before{content:"";position:absolute;left:20px;right:0;top:0;height:1px;transform:scaleY(.5);background:var(--c-sep);}
-.grp .gr-row.static+.gr-row.static::before{left:20px;}
+.grp>*+details.gr-fold::before{content:"";position:absolute;left:20px;right:20px;top:0;height:1px;transform:scaleY(.5);background:var(--c-sep);}
 .gr-row.static:active{background:none;}
 .gr-r.ok{color:var(--c-green);font-weight:600;}
 .gr-in{padding:4px 20px 16px;}
@@ -1615,8 +1614,8 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
   .ss-g .a-rh{grid-area:rh;} .ss-g .a-sh{grid-area:sh;display:block;} .ss-g .a-rng{grid-area:rng;align-self:stretch;}
   .ss-g .a-pnl{grid-area:pnl;display:flex;align-self:stretch;margin-bottom:22px;} .ss-g .a-det{grid-area:det;display:block;} .ss-g .a-rest{grid-area:rest;min-width:0;}
   .ss-g .a-rec{display:none;}
-  .ss-g .a-rng>.gr-row{flex:1 1 auto;}   /* 패널이 더 높으면 줄이 고르게 늘어난다(빈 바닥 대신) */
-  .ss-g .a-pnl .ssp-r{margin-top:auto;padding-top:10px;box-shadow:inset 0 .5px 0 var(--c-sep);}   /* 누적 줄 = 범위 카드 바닥선에 붙는다 */
+  .ss-g .a-rng>.gr-row{flex:1 1 auto;}   /* 패널이 더 높으면 줄이 고르게 늘어난다 — 🔴 누적을 부제 줄로 합쳐 패널을 낮췄다(동하 09-24 「구분선이 이상」: 두 줄 세션에서 줄이 52 → 78로 늘어 구분선이 빈칸 가운데 떴다) */
+  .ss-g .a-pnl{justify-content:center;}
 }
 .ss-trend.d14{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:0;margin:2px 0 4px;}
 .ss-trend.d14 span{font-size:10.5px;}
@@ -1699,8 +1698,7 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
 .ym-list.ymg{display:block;}
 .ymg .ym-row{position:relative;border-radius:0;background:none;box-shadow:none;min-height:60px;padding:8px 14px 8px 20px;gap:12px;}
 .ymg .ym-row:active{background:var(--c-fill);}
-.ymg>*+.ym-row::before,.ymg>*+.ymg-subj::before,.ymg>*+.ymg-done::before{content:'';position:absolute;top:0;right:0;left:60px;height:.5px;background:var(--c-sep);}
-.ymg>*+.ymg-subj::before{left:20px;}
+.ymg>*+.ym-row::before,.ymg>*+.ymg-subj::before,.ymg>*+.ymg-done::before{content:'';position:absolute;top:0;right:20px;left:20px;height:.5px;background:var(--c-sep);}   /* 세션 화면과 같게 안쪽 여백 양쪽(09-24) */
 .ymg .ym-row>.ym-mark{flex:0 0 28px;min-width:28px;width:28px;height:28px;padding:0;border-radius:0;background:none;font-size:21px;}
 .ymg .ym-row .t b{font-size:17px;font-weight:600;color:var(--c-label);}
 .ymg .ym-row .t small{font-size:13px;color:var(--c-sec);}
@@ -1725,7 +1723,7 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
 .ymg-subj .t small{font-size:13px;color:var(--c-sec);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ymg-subj .val{flex:0 0 auto;font-size:17px;color:var(--c-sec);font-variant-numeric:tabular-nums;}
 .ymg-tree .ym-row.sub{min-height:52px;padding-left:40px;background:none;}
-.ymg-tree>*+.ym-row.sub::before,.ymg-tree>*+.ymg-done::before{left:40px;}
+/* 트리 단위 줄 구분선도 20부터(09-24) */
 .ymg-tree .ym-row.sub .t b{font-size:16px;font-weight:400;}
 .ymg-done{position:relative;display:flex;align-items:center;min-height:44px;padding:0 10px 0 40px;cursor:pointer;-webkit-user-select:none;user-select:none;}
 .ymg-done small{margin-right:auto;font-size:15px;color:var(--c-sec);}
@@ -1750,9 +1748,9 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
   #ymTodayBody .ymg .ql,#ymTodayBody .ymg .ym-subtog .ar{display:none;}   /* 폰 재풀이: 「문제」·▾를 빼 「p8 · 해설 p2」가 한 줄에 든다(동하 09-24 「두 줄 줄바꿈이 쫌」 · 실측 칸 76~87 vs 필요 97~111) */
   #ymTodayBody .ymg .ym-row>.ym-mark{flex-basis:24px;min-width:24px;width:24px;}
   #scrYmUnit .ym-foot .ym-btn{font-size:15px;white-space:nowrap;padding:0 8px;} #scrYmUnit .ym-prog{padding:0 16px 4px;}   /* 폰: 「문제 p8 · 해설 p2」가 말줄임으로 잘려 면을 못 봤다 → 두 줄 허용 */
-  .ymg>*+.ym-row::before{left:54px;}
+  .ymg>*+.ym-row::before,.ymg>*+.ymg-subj::before,.ymg>*+.ymg-done::before{left:16px;right:16px;}
   .ymg .ym-subs{margin-left:16px;margin-right:10px;}
-  .ymg-head{padding-left:16px;} .ymg-cap{padding-left:16px;} .ymg-subj{padding-left:16px;} .ymg>*+.ymg-subj::before{left:16px;}
+  .ymg-head{padding-left:16px;} .ymg-cap{padding-left:16px;} .ymg-subj{padding-left:16px;}
 }
 
 
@@ -9148,8 +9146,7 @@ function renderSession(){
       </section>
       <div class="grp-h a-sh">기록</div>
       <section class="ss-panel a-pnl">${(sx.lastScore&&sx.lastScore.n)?(()=>{ const sc=sx.lastScore, hit=Math.round((sc.n-sc.r[1])/sc.n*100);
-          return `<span class="ssp-k">마지막 성적${sx.lastAt?` · ${esc(fmtAgo(sx.lastAt))}`:''}</span><span class="ssp-n">${hit}%</span><span class="ssp-d">${sc.n.toLocaleString()}회 · ${fmtMin(sc.ms)}</span>`; })():'<span class="ssp-k">아직 성적이 없어요</span>'}
-        <div class="ssp-r"><span>누적</span><span>${(sx.done||0).toLocaleString()}회</span></div></section>
+          return `<span class="ssp-k">마지막 성적${sx.lastAt?` · ${esc(fmtAgo(sx.lastAt))}`:''}</span><span class="ssp-n">${hit}%</span><span class="ssp-d">${sc.n.toLocaleString()}회 · ${fmtMin(sc.ms)} · 누적 ${(sx.done||0).toLocaleString()}회</span>`; })():`<span class="ssp-k">아직 성적이 없어요</span><span class="ssp-d">누적 ${(sx.done||0).toLocaleString()}회</span>`}</section>
       ${(sx.lastScore&&sx.lastScore.n)?`<details class="gr-fold grp a-det"${sx.lastScore.run===undoRun&&Date.now()-(sx.lastScore.at||0)<10*60*1000?' open':''}><summary class="gr-row"><span class="gr-b"><span class="gr-t">자세히</span></span>${CHEV}</summary><div class="gr-in">${scoreHtml(sx.lastScore)}${trendHtml(sx)}</div></details>`:''}
       <div class="a-rest">
       <details class="grp gr-fold" id="ssUnitFold"><summary class="gr-row"><span class="gr-b"><span class="gr-t" id="ssUnitSum">이 세션의 단위</span></span>${CHEV}</summary>

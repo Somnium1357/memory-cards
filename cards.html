@@ -1647,6 +1647,77 @@ input,select{border-radius:10px;}
 /* 문풀 오늘 — 선택 행(키·패드를 쓸 때만 보인다) · 버튼 키 표시 */
 :root[data-keys="on"] #ymTodayBody .ym-row.sel{box-shadow:inset 0 0 0 2px var(--c-acc);}
 .ym-btn .keycap{margin-left:6px;}
+/* ═══════════════ 디자인 이식 F — 문풀 (09-24 · 동하 「문풀 쪽 화면(특히 재풀이)이 너무 별로」 · 디자인_언어 §1·§3·§6) ═══════════════
+   줄마다 떠 있던 카드 → inset grouped 목록(반경 22 · 0.5 구분선은 글자 시작점부터) · 표시는 칸 없이 글리프 · 채점 두 버튼은 회색 캡슐 + 색 글자.
+   재풀이는 단위별로 묶는다(머리에 과목·단위 이름 한 번). 되돌리기는 머리 오른쪽 ↶. */
+.ymg-head{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 6px 0 20px;margin:26px 0 4px;cursor:pointer;-webkit-user-select:none;user-select:none;}
+.ymg-head:first-child{margin-top:6px;}
+.ymg-head>b{flex:0 0 auto;font-size:22px;font-weight:700;letter-spacing:-.01em;color:var(--c-label);}
+.ymg-head>small{margin-left:auto;min-width:0;font-size:15px;color:var(--c-sec);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums;}
+.ymg-chev{flex:0 0 auto;width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:var(--c-chev);transition:transform .18s;}
+.ymg-chev svg{width:13px;height:13px;}
+.ymg-chev.on{transform:rotate(90deg);}
+.ymg-head .ymg-chev{color:var(--c-ter);}
+.ymg-cap{font-size:13px;line-height:18px;color:var(--c-sec);padding:14px 20px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ymg{background:var(--c-card);border-radius:var(--r-group);box-shadow:var(--sh-card);overflow:hidden;}
+.ym-list.ymg{display:block;}
+.ymg .ym-row{position:relative;border-radius:0;background:none;box-shadow:none;min-height:60px;padding:8px 14px 8px 20px;gap:12px;}
+.ymg .ym-row:active{background:var(--c-fill);}
+.ymg>*+.ym-row::before,.ymg>*+.ymg-subj::before,.ymg>*+.ymg-done::before{content:'';position:absolute;top:0;right:0;left:60px;height:.5px;background:var(--c-sep);}
+.ymg>*+.ymg-subj::before{left:20px;}
+.ymg .ym-row>.ym-mark{flex:0 0 28px;min-width:28px;width:28px;height:28px;padding:0;border-radius:0;background:none;font-size:21px;}
+.ymg .ym-row .t b{font-size:17px;font-weight:600;color:var(--c-label);}
+.ymg .ym-row .t small{font-size:13px;color:var(--c-sec);}
+.ymg .ym-row .t small .late{color:var(--c-orange);}
+.ymg .ym-row .t small .nw,.ymg .ym-row .t small .late{white-space:nowrap;}   /* 폰에서 두 줄로 갈 때 「해설 / p2」처럼 끊기지 않게 · 끊는 자리는 「 · 」뿐 */
+.ymg .ym-btns{gap:8px;}
+.ymg .ym-btn{min-height:36px;padding:0 14px;border-radius:18px;font-size:15px;font-weight:600;background:var(--c-fill);border:0;}
+.ymg .ym-btn.close{color:var(--c-easy);}
+.ymg .ym-btn.again{color:var(--c-again);}
+.ymg .ym-subtog{min-height:36px;padding:0 8px;border-radius:18px;background:none;color:var(--c-ter);font-size:15px;font-weight:500;outline:0;}
+.ymg .ym-subtog.has{background:none;color:var(--c-acc);}
+.ymg .ym-subtog.on{background:var(--c-acc-tint);color:var(--c-acc);outline:0;}
+.ymg .ym-subs{margin:0 14px 12px 60px;padding:10px 12px;border-radius:14px;background:var(--c-fill);}
+.ymg .ym-subs .ym-mark{background:var(--c-card);border-color:var(--c-sep);}
+.ymg .ym-row .ym-skip{min-height:36px;padding:0 8px;border:0;background:none;color:var(--c-ter);font-size:15px;font-weight:500;}
+.ymg .ym-empty{padding:18px 20px;font-size:15px;color:var(--c-sec);}
+/* 트리: 과목 줄(오른쪽 값 n/N + 꺾쇠) · 펼치면 단위 줄이 40 들여 같은 카드 안에 */
+.ymg-subj{position:relative;display:flex;align-items:center;gap:10px;min-height:60px;padding:8px 10px 8px 20px;cursor:pointer;-webkit-user-select:none;user-select:none;}
+.ymg-subj:active,.ymg-done:active{background:var(--c-fill);}
+.ymg-subj .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;}
+.ymg-subj .t b{font-size:17px;font-weight:400;color:var(--c-label);}
+.ymg-subj .t small{font-size:13px;color:var(--c-sec);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ymg-subj .val{flex:0 0 auto;font-size:17px;color:var(--c-sec);font-variant-numeric:tabular-nums;}
+.ymg-tree .ym-row.sub{min-height:52px;padding-left:40px;background:none;}
+.ymg-tree>*+.ym-row.sub::before,.ymg-tree>*+.ymg-done::before{left:40px;}
+.ymg-tree .ym-row.sub .t b{font-size:16px;font-weight:400;}
+.ymg-done{position:relative;display:flex;align-items:center;min-height:44px;padding:0 10px 0 40px;cursor:pointer;-webkit-user-select:none;user-select:none;}
+.ymg-done small{margin-right:auto;font-size:15px;color:var(--c-sec);}
+.ymg-in{padding:14px 20px 14px 40px !important;}
+.ymg .ym-bar{width:56px;height:6px;background:var(--c-fill);}
+.ymg .ym-bar i{background:var(--c-green);}
+.ymg .ym-pct{width:44px;font-size:15px;font-weight:400;color:var(--c-sec);}
+.ymg-foot{padding:14px 20px 0;gap:4px 14px;font-size:13px;color:var(--c-sec);}
+.ymg-foot b{color:var(--c-label);font-weight:600;}
+/* 단위 화면 */
+.ymg-kick{display:block;font-size:15px;font-weight:400;letter-spacing:0;line-height:20px;color:var(--c-sec);margin-top:2px;}
+#scrYmUnit .ym-prog{padding:0 20px 4px;gap:4px 14px;font-size:15px;color:var(--c-sec);}
+#scrYmUnit .ym-prog b{color:var(--c-label);font-weight:600;}
+#scrYmUnit .ym-foot .ym-btn{min-height:50px;border-radius:25px;border:0;font-size:17px;font-weight:600;background:var(--c-card);color:var(--c-label);box-shadow:var(--sh-card);}
+#scrYmUnit .ym-foot .ym-btn.primary{background:var(--c-green);color:#fff;}
+@media (max-width:430px){
+  .ymg .ym-row{flex-wrap:nowrap;padding:8px 10px 8px 16px;gap:10px;}
+  .ymg .ym-row .ym-btns{width:auto;gap:6px;}
+  .ymg .ym-btn{padding:0 11px;font-size:14px;}
+  .ymg .ym-subtog{padding:0 4px;font-size:14px;}
+  .ymg .ym-row .t small{white-space:normal;word-break:keep-all;}
+  #ymTodayBody .ymg .ql,#ymTodayBody .ymg .ym-subtog .ar{display:none;}   /* 폰 재풀이: 「문제」·▾를 빼 「p8 · 해설 p2」가 한 줄에 든다(동하 09-24 「두 줄 줄바꿈이 쫌」 · 실측 칸 76~87 vs 필요 97~111) */
+  #ymTodayBody .ymg .ym-row>.ym-mark{flex-basis:24px;min-width:24px;width:24px;}
+  #scrYmUnit .ym-foot .ym-btn{font-size:15px;white-space:nowrap;padding:0 8px;} #scrYmUnit .ym-prog{padding:0 16px 4px;}   /* 폰: 「문제 p8 · 해설 p2」가 말줄임으로 잘려 면을 못 봤다 → 두 줄 허용 */
+  .ymg>*+.ym-row::before{left:54px;}
+  .ymg .ym-subs{margin-left:16px;margin-right:10px;}
+  .ymg-head{padding-left:16px;} .ymg-cap{padding-left:16px;} .ymg-subj{padding-left:16px;} .ymg>*+.ymg-subj::before{left:16px;}
+}
 
 
 /* 라이브러리 빠른 목록 (09-24 · 캔버스 「라이브러리」 판) */
@@ -1773,7 +1844,7 @@ input,select{border-radius:10px;}
 
     <!-- ══ 연문 모드 (발주 2026-09-08) — 세 화면. 카드 모드 화면과 완전히 갈린다 ══ -->
     <div class="scr" id="scrYmToday">
-      <div class="sub-head"><button class="tb-btn" id="ymBack" title="카드 모드로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title">오늘<span class="ym-tag">문풀</span></div></div>
+      <div class="sub-head"><button class="tb-btn" id="ymBack" title="카드 모드로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="sub-title">문풀</div><button class="tb-btn" id="ymTodayUndo" title="되돌리기 (U)" aria-label="되돌리기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button></div>
       <div class="sub-body"><div class="sub-inner" id="ymTodayBody"></div></div>
     </div>
     <div class="scr" id="scrYmUnit">
@@ -12320,7 +12391,8 @@ function ymRenderToday(){
   const nextBySubj={};
   for(const u of YM.cat.units.slice().sort((a,b)=>a.seq-b.seq)){ if(ymUnitFinished(u)) continue; if(!nextBySubj[u.subj]) nextBySubj[u.subj]=u; }
   const wrongN=(pred)=>{ let n=0; for(const it of YM.cat.items){ if(!pred(it)) continue; const s=YM.st.items[it.id]; if(s&&s.m==='✓'&&!s.closed&&!s.skip) n++; } return n; };
-  const foldBtn=(key)=>'<button class="ym-fold'+(ymFoldOpen(key)?' on':'')+'" data-ym-fold="'+esc(key)+'">▾</button>';
+  /* 접기 표시 = 꺾쇠 하나(미리 알림 목록 머리 문법 · 09-24 문풀 이식) — 행 전체가 누름 자리라 버튼 칸을 따로 두지 않는다 */
+  const foldBtn=(key)=>'<span class="ymg-chev'+(ymFoldOpen(key)?' on':'')+'" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>';
 
   // ① 오늘
   /* 🔴 소문항을 펼쳐 둔 행은 표시를 찍어 due가 오늘을 벗어나도 **이 화면에 있는 동안은 그대로 둔다**(동하 09-21 「소문항 채점 탭하자마자 사라져 버림」 — 나머지 소문항을 못 찍는다).
@@ -12330,19 +12402,25 @@ function ymRenderToday(){
   const pinned=[..._ymTodayPin].filter(k=>!dueIds.has(k) && !(YM.st.items[k]&&YM.st.items[k].skip)).map(k=>{ const it=YM.cat.items.find(x=>x.id===k); const st=YM.st.items[k]; return it&&st?{it:it, s:st}:null; }).filter(Boolean);   // 제외한 문항은 고정에서도 뺀다(리뷰 09-23 R21)
   /* 자리 고정 — 한 번 그린 행은 이 화면에 있는 동안 같은 자리(동하 09-21 「탭하면 순서가 바뀜」). 처음 본 순서를 _ymRowPos에 적어 두고 그걸로 정렬한다. */
   const due=dueNow.concat(pinned); for(const x of due){ if(!_ymRowPos.has(x.it.id)) _ymRowPos.set(x.it.id, _ymRowPos.size); } due.sort((a,b)=>_ymRowPos.get(a.it.id)-_ymRowPos.get(b.it.id));
-  h+='<div class="ym-tree-head" data-ym-fold-row="today"><b>오늘</b><small>다시 풀 문항 '+due.length+'</small>'+foldBtn('today')+'</div>';
+  h+='<div class="ymg-head" data-ym-fold-row="today"><b>다시 풀 문항</b><small>'+due.length+'</small>'+foldBtn('today')+'</div>';
   if(ymFoldOpen('today')){
-    h+='<div class="ym-tree-body">';
-    if(due.length) h+='<div class="ym-list">'+due.map(({it,s})=>{ const u=ymUnitById(it.unit); const [cls,txt]=ymMarkChip(s); const src=u&&u.kind==='paper'?ymSrcName(u)+' ':'';
-      return '<div class="ym-row" data-ym-item="'+esc(it.id)+'">'
-        +'<span class="ym-mark '+cls+'">'+esc(txt)+'</span>'
-        +'<div class="t"><b>'+esc(src+ymSubj(it.subj))+' '+esc(it.no)+'번</b><small>'+esc(u?ymLabel(u)[0]:it.unit)+' · '+ymWhere(it)+(s.due&&s.due<tk?' · '+dkDiff(tk,s.due)+'일 지남':'')+(s.due&&s.due>tk?' · 다시 '+s.due.slice(5).replace('-','/'):'')+(s.closed?' · 닫힘':'')+'</small></div>'
-        +'<div class="ym-btns">'+ymSubToggleBtn(it.id)+'<button class="ym-btn close" data-ym-close="'+esc(it.id)+'">▽ 닫힘<span class="keycap">C</span></button><button class="ym-btn again" data-ym-x="'+esc(it.id)+'">또 틀림<span class="keycap">Z</span></button></div></div>'
-        +(_ymSubOpen.has(it.id)?ymSubPanel(it.id):''); }).join('')+'</div>';
-    else h+='<div class="ym-empty">오늘 다시 풀 문항이 없어요</div>';
-    /* 되돌리기 — 오늘 화면에서 ▽·또 틀림을 잘못 눌러도 무를 수 있게(동하 09-21 「잘못 누르면 되돌릴 수가 없음」). 단위 화면의 되돌리기와 같은 이벤트(u). */
-    h+='<div style="display:flex;justify-content:flex-end;margin-top:6px"><button class="ym-btn ghost" id="ymTodayUndo" style="min-height:38px;padding:0 12px;font-size:13px">되돌리기</button></div>';
-    h+='</div>';
+    /* 단위별 묶음(09-24 문풀 이식 · 동하 「재풀이가 너무 별로」) — 과목·단위 이름은 묶음 머리에 한 번만, 줄에는 번호·면만.
+       묶음 순서 = 그 묶음 첫 행의 자리(_ymRowPos) → 자리 고정 규칙(09-21)은 그대로다. 키 선택(ymRows)은 DOM 순서라 묶음을 넘어 이어진다. */
+    if(due.length){ const grp=new Map();
+      for(const x of due){ const k=x.it.unit; if(!grp.has(k)) grp.set(k,[]); grp.get(k).push(x); }
+      for(const [uid,xs] of grp){ const u=ymUnitById(uid); const src=u&&u.kind==='paper'?ymSrcName(u)+' · ':'';
+        h+='<div class="ymg-cap">'+esc(src+ymSubj(xs[0].it.subj))+' · '+esc(u?ymLabel(u)[0]:uid)+'</div>';
+        h+='<div class="ym-list ymg">'+xs.map(({it,s})=>{ const [cls,txt]=ymMarkChip(s);
+          const late=s.due&&s.due<tk?'<span class="late"> · '+dkDiff(tk,s.due)+'일 지남</span>':'';
+          return '<div class="ym-row" data-ym-item="'+esc(it.id)+'">'
+            +'<span class="ym-mark '+cls+'">'+esc(txt)+'</span>'
+            +'<div class="t"><b>'+esc(it.no)+'번</b><small>'+ymWhere(it).split(' · ').map(x=>'<span class="nw">'+x.replace(/^문제 /,'<span class="ql">문제 </span>')+'</span>').join(' · ')+late+(s.due&&s.due>tk?' · 다시 '+s.due.slice(5).replace('-','/'):'')+(s.closed?' · 닫힘':'')+'</small></div>'
+            +ymSubToggleBtn(it.id)
+            +'<div class="ym-btns"><button class="ym-btn close" data-ym-close="'+esc(it.id)+'">▽ 닫힘<span class="keycap">C</span></button><button class="ym-btn again" data-ym-x="'+esc(it.id)+'">또 틀림<span class="keycap">Z</span></button></div></div>'
+            +(_ymSubOpen.has(it.id)?ymSubPanel(it.id):''); }).join('')+'</div>';
+      } }
+    else h+='<div class="ym-list ymg"><div class="ym-empty">오늘 다시 풀 문항이 없어요</div></div>';
+    /* 되돌리기는 머리 오른쪽 ↶(#ymTodayUndo · 정적 마크업)로 옮겼다 — 동하 09-21 「잘못 누르면 되돌릴 수가 없음」 · UX §6 「도구 막대 ↶ + U키」 */
   }
 
   // ② 소스 → ③ 과목 → 단위
@@ -12355,22 +12433,22 @@ function ymRenderToday(){
     const live=units.filter(u=>!ymSkipped(u.id)); const finN=live.filter(ymUnitFinished).length;
     const wrong=wrongN(it=>{ const u=ymUnitById(it.unit); return u&&ymSrcOf(u)===src; });
     const sk='src:'+src;
-    h+='<div class="ym-tree-head" data-ym-fold-row="'+sk+'"><b>'+srcName+'</b><small>단위 '+finN+'/'+live.length+' · ✓ '+wrong+(YM_DUE[src]?' · '+ymPaceText(src):'')+'</small>'+foldBtn(sk)+'</div>';
+    h+='<div class="ymg-head" data-ym-fold-row="'+sk+'"><b>'+srcName+'</b><small>단위 '+finN+'/'+live.length+' · ✓ '+wrong+(YM_DUE[src]?' · '+ymPaceText(src):'')+'</small>'+foldBtn(sk)+'</div>';
     if(!ymFoldOpen(sk)) continue;
-    h+='<div class="ym-tree-body">';
+    /* 과목 = inset 목록 줄 하나(오른쪽 값 = 끝낸 단위 n/N) · 펼치면 그 아래에 단위 줄이 같은 카드 안에서 들여 붙는다 */
+    h+='<div class="ymg ymg-tree">';
     for(const sj of subjSorted){
       const us=units.filter(u=>u.subj===sj).sort((a,b)=>a.seq-b.seq); if(!us.length) continue;
       const liveS=us.filter(u=>!ymSkipped(u.id)); const fins=us.filter(ymUnitFinished); const open=us.filter(u=>!ymUnitFinished(u));
       const w=wrongN(it=>it.subj===sj && (()=>{ const u=ymUnitById(it.unit); return u&&ymSrcOf(u)===src; })());
       let rd=''; if(src==='lect'){ let n=0,ok=0; for(const u of us){ const r=ymReady(u); n+=r.n; ok+=r.ok; } rd=n?' · 준비도 '+Math.round(ok/n*100)+'%':''; }
       const key=src+'/'+sj;
-      h+='<div class="ym-tree-head sub" data-ym-fold-row="'+esc(key)+'"><span class="ym-subj">'+esc(ymSubj(sj))+'</span><small>단위 '+(liveS.filter(ymUnitFinished).length)+'/'+liveS.length+' · ✓ '+w+rd+(fins.length?' · 완료 '+fins.length:'')+'</small>'+foldBtn(key)+'</div>';
+      h+='<div class="ymg-subj" data-ym-fold-row="'+esc(key)+'"><div class="t"><b>'+esc(ymSubj(sj))+'</b><small>✓ '+w+rd+'</small></div><span class="val">'+(liveS.filter(ymUnitFinished).length)+'/'+liveS.length+'</span>'+foldBtn(key)+'</div>';
       if(!ymFoldOpen(key)) continue;
-      h+='<div class="ym-sub">'+(open.length?open.map(unitRow).join(''):'<div class="ym-empty" style="padding:6px 4px">남은 단위가 없어요</div>');
+      h+=open.length?open.map(unitRow).join(''):'<div class="ym-empty ymg-in">남은 단위가 없어요</div>';
       if(fins.length){ const dk='done:'+key;
-        h+='<div class="ym-tree-head sub done" data-ym-fold-row="'+esc(dk)+'"><small>완료 '+fins.length+'</small>'+foldBtn(dk)+'</div>';
+        h+='<div class="ymg-done" data-ym-fold-row="'+esc(dk)+'"><small>완료 '+fins.length+'</small>'+foldBtn(dk)+'</div>';
         if(ymFoldOpen(dk)) h+=fins.map(unitRow).join(''); }
-      h+='</div>';
     }
     h+='</div>';
   }
@@ -12378,7 +12456,7 @@ function ymRenderToday(){
   // 진도 한 줄
   const p=ymProgress();
   const paceSpans=YM_SRC.filter(([k])=>YM_DUE[k] && YM.cat.units.some(u=>ymSrcOf(u)===k)).map(([k,nm])=>{ const q=ymPace(k); return '<span>'+nm+' '+(q.left?q.dl.slice(5).replace('-','/')+'까지 하루 <b>'+q.per+'</b>':'<b>끝</b>')+'</span>'; }).join('');   // 소스별(메타 09-23)
-  h+='<div class="ym-prog"><span>단위 <b>'+p.units.toLocaleString()+'</b>/'+p.unitsN.toLocaleString()+(p.skipped?' <small>(제외 '+p.skipped+')</small>':'')+'</span><span>문항 <b>'+p.items.toLocaleString()+'</b>/'+p.itemsN.toLocaleString()+(p.itemsSkipped?' <small>(제외 '+p.itemsSkipped+')</small>':'')+'</span>'
+  h+='<div class="ym-prog ymg-foot"><span>단위 <b>'+p.units.toLocaleString()+'</b>/'+p.unitsN.toLocaleString()+(p.skipped?' <small>(제외 '+p.skipped+')</small>':'')+'</span><span>문항 <b>'+p.items.toLocaleString()+'</b>/'+p.itemsN.toLocaleString()+(p.itemsSkipped?' <small>(제외 '+p.itemsSkipped+')</small>':'')+'</span>'
     +paceSpans+'<span>재풀이 잔여 <b>'+p.redo+'</b></span></div>';
   body.innerHTML=h;
   /* 🔴 연타 가드 350ms(리뷰 09-23 R9) — 누르면 곧바로 다시 그려 다음 행이 같은 자리로 올라와, 더블탭이 **다음 문항까지 닫았다.** 카드 채점 가드와 같은 값. */
@@ -12435,16 +12513,16 @@ function ymBindSubs(body, rerender){
     const next=(kp.depth===0?ymSubMax(k,null):ymSubMax(kp.base,kp.n))+1; ymEvent(k+'.'+next, '-'); rerender(); });   // 존재 = '-' 이벤트
   body.querySelectorAll('[data-ym-subtog]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); const k=b.dataset.ymSubtog; _ymSubOpen.has(k)?_ymSubOpen.delete(k):_ymSubOpen.add(k); rerender(); });
 }
-function ymSubToggleBtn(key){ const has=ymSubHas(key); return '<button class="ym-subtog'+(_ymSubOpen.has(key)?' on':'')+(has?' has':'')+'" data-ym-subtog="'+esc(key)+'" title="소문항 채점 펼치기">'+(has?'소문항 '+ymSubMax(key,null):'소문항')+(_ymSubOpen.has(key)?' ▴':' ▾')+'</button>'; }
+function ymSubToggleBtn(key){ const has=ymSubHas(key); return '<button class="ym-subtog'+(_ymSubOpen.has(key)?' on':'')+(has?' has':'')+'" data-ym-subtog="'+esc(key)+'" title="소문항 채점 펼치기">'+(has?'소문항 '+ymSubMax(key,null):'소문항')+'<span class="ar">'+(_ymSubOpen.has(key)?' ▴':' ▾')+'</span></button>'; }
 function ymRenderUnit(id){
   const u=ymUnitById(id); const body=$('ymUnitBody'); if(!u){ body.innerHTML=''; return; }
   const [l1,l2]=ymLabel(u); const r=ymReady(u); const done=YM.st.units[u.id]&&YM.st.units[u.id].done, skip=ymSkipped(u.id);
-  $('ymUnitTitle').innerHTML=esc(ymSubj(u.subj))+' · '+esc(l1)+'<span class="ym-tag">문풀</span>';
+  $('ymUnitTitle').innerHTML=esc(l1)+'<small class="ymg-kick">'+esc(ymSubj(u.subj))+' · 문풀</small>';
   const its=ymItemsOf(u);
   let h='<div class="ym-prog" style="padding-top:0"><span>'+esc(l2)+'</span><span>문항 <b>'+its.length+'</b></span>'+(u.kind==='paper'?'':'<span>면 '+esc(u.pages||'')+'</span>')
     +'<span>준비도 <b>'+(r.pct==null?'—':r.pct+'%')+'</b>'+(r.n?' <small>(카드 '+r.n+')</small>':'')+'</span>'+(done?'<span>풀었음 <b>'+done.slice(5)+'</b></span>':'')+(skip?'<span>제외 <b>'+YM.st.units[u.id].skip.slice(5)+'</b></span>':'')+'</div>';
-  h+='<div class="ym-sec">문항 <small>줄을 탭하면 없음 → ✓ → △ → ? 순으로 바뀌어요'+(done?' (풀었음 뒤에는 ○로 돌아와요)':'')+'</small></div>';
-  h+='<div class="ym-list">'+its.map(it=>{ const s=YM.st.items[it.id]; const [cls,txt]=ymMarkChip(s); const sk=!!(s&&s.skip);
+  h+='<div class="ymg-cap">줄을 누르면 없음 → ✓ → △ → ?'+(done?' → ○':'')+'</div>';
+  h+='<div class="ym-list ymg">'+its.map(it=>{ const s=YM.st.items[it.id]; const [cls,txt]=ymMarkChip(s); const sk=!!(s&&s.skip);
     return '<div class="ym-row'+(sk?' skip':'')+'" data-ym-tap="'+esc(it.id)+'"><span class="ym-mark '+cls+'">'+esc(txt)+'</span><div class="t"><b>'+esc(it.no)+'번</b><small>'+(sk?'제외 · ':'')+ymWhere(it)+(s&&s.due&&!s.closed&&!sk?' · 다시 '+s.due.slice(5).replace('-','/'):'')+'</small></div>'
       +(sk?'':ymSubToggleBtn(it.id))+'<button class="ym-skip" data-ym-skip="'+esc(it.id)+'">'+(sk?'해제':'제외')+'</button></div>'
       +(!sk&&_ymSubOpen.has(it.id)?ymSubPanel(it.id):''); }).join('')+'</div>';

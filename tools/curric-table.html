@@ -3,63 +3,87 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>음악·미술 내체표</title>
-<script>try{const t=localStorage.getItem('cards_theme_v1');if(t)document.documentElement.dataset.theme=(t==='c'?'light':'dark');}catch(e){}</script>
+<title>내용 체계표</title>
+<script>/* 앱 테마를 첫 그림 전에 — 판(hoedok/판/kit.js)과 같은 규칙 */try{var _t=localStorage.getItem('cards_theme_v1'),_l=localStorage.getItem('cards_light_v1');_t=_t==='b'?'dark':_t==='c'?'paper':_t;if(_t==='white'||_t==='paper'||_t==='dark')document.documentElement.dataset.theme=_t;if(_l==='white'||_l==='paper')document.documentElement.dataset.light=_l;}catch(e){}</script>
 <style>
-:root{--bg:#fbfaf7;--ink:#1d1d1b;--mute:#6b6862;--line:#d9d5cc;--card:#ffffff;--acc:#2f5d8a;--acc2:#8a4b2f;--hide:#f1eee7;--hint:#7a6a3a}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#171716;--ink:#ecebe7;--mute:#a09c94;--line:#3a3834;--card:#201f1d;--acc:#8fb4db;--acc2:#e0a07e;--hide:#2a2926;--hint:#d6c48a}}
-:root[data-theme="dark"]{--bg:#171716;--ink:#ecebe7;--mute:#a09c94;--line:#3a3834;--card:#201f1d;--acc:#8fb4db;--acc2:#e0a07e;--hide:#2a2926;--hint:#d6c48a}
+/* 앱 디자인 언어(skills\card\디자인_언어.md) 토큰 — 판 kit.css 와 같은 값 (09-24 카드 QC · 동하 「내체표도 앱 디자인 맞춰」) */
+:root,:root[data-theme="paper"]{--bg:#F2EEE6;--card:#FBF9F4;--fill:#ECE7DD;--label:#2B2824;--sec:#6E6860;--ter:#8E877C;--sep:#E2DCD0;
+  --glass:rgba(242,238,230,.82);--shadow:0 1px 3px rgba(60,40,10,.04);--acc:#007AFF;--accTint:rgba(0,122,255,.10);color-scheme:light}
+:root[data-theme="white"]{--bg:#F2F2F7;--card:#FFFFFF;--fill:#EFEFF4;--label:#1D1D1F;--sec:#6E6E73;--ter:#8E8E93;--sep:#E3E3E8;
+  --glass:rgba(242,242,247,.82);--shadow:0 1px 3px rgba(0,0,0,.04);--acc:#007AFF;--accTint:rgba(0,122,255,.10);color-scheme:light}
+:root[data-theme="dark"]{--bg:#000000;--card:#1C1C1E;--fill:#2C2C2E;--label:#F5F5F7;--sec:#98989F;--ter:#8D8D93;--sep:#38383A;
+  --glass:rgba(0,0,0,.78);--shadow:0 0 0 .5px rgba(255,255,255,.07);--acc:#0A84FF;--accTint:rgba(10,132,255,.20);color-scheme:dark}
+@media (prefers-color-scheme:light){:root:not([data-theme])[data-light="white"]{--bg:#F2F2F7;--card:#FFFFFF;--fill:#EFEFF4;--label:#1D1D1F;--sec:#6E6E73;--ter:#8E8E93;--sep:#E3E3E8;--glass:rgba(242,242,247,.82);--shadow:0 1px 3px rgba(0,0,0,.04)}}
+@media (prefers-color-scheme:dark){:root:not([data-theme]){--bg:#000000;--card:#1C1C1E;--fill:#2C2C2E;--label:#F5F5F7;--sec:#98989F;--ter:#8D8D93;--sep:#38383A;--glass:rgba(0,0,0,.78);--shadow:0 0 0 .5px rgba(255,255,255,.07);--acc:#0A84FF;--accTint:rgba(10,132,255,.20);color-scheme:dark}}
+@font-face{font-family:"PanSans";src:url("../pan-sans-kr-2.woff2") format("woff2");font-weight:400 700;font-display:swap;unicode-range:U+AC00-D7A3}
+@font-face{font-family:"PanSans";src:url("../pan-sans-kr-1.woff2") format("woff2");font-weight:400 700;font-display:swap;
+  unicode-range:U+20-7E,U+A0-FF,U+370-3FF,U+1100-11FF,U+2000-23FF,U+2460-26FF,U+27C0-27FF,U+2A00-2AFF,U+3000-303F,U+30A0-30FF,U+3130-318F,U+3200-32FF,U+4E2D,U+4E36,U+4F5C,U+52DE,U+591A,U+AC00-D7A3,U+FF00-FFEF}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 "Pretendard","Noto Sans KR","Malgun Gothic",sans-serif}
-.wrap{max-width:1100px;margin:0 auto;padding:20px 16px 60px}
-h1{font-size:1.35rem;margin:0 0 4px}
-.sub{color:var(--mute);font-size:.88rem;margin:0 0 16px}
-.bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 14px;position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:2;border-bottom:1px solid var(--line)}
-.bar button{font:inherit;font-size:.86rem;padding:6px 11px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;cursor:pointer}
-.bar button.on{border-color:var(--acc);color:var(--acc);font-weight:700}
-.bar .sep{width:1px;height:22px;background:var(--line);margin:0 4px}
-h2{font-size:1.1rem;margin:26px 0 6px;color:var(--acc)}
-h3{font-size:.98rem;margin:18px 0 6px}
-.note{color:var(--mute);font-size:.84rem;margin:2px 0 8px}
-table{width:100%;border-collapse:collapse;background:var(--card);margin:0 0 6px;table-layout:fixed}
-th,td{border:1px solid var(--line);padding:6px 8px;vertical-align:top;font-size:.9rem}
-th{background:transparent;color:var(--mute);font-weight:600;font-size:.8rem;text-align:left}
-td.k{width:84px;color:var(--mute);font-size:.8rem}
-td.up{color:var(--hint);font-size:.8rem;width:22%}
-td.c{cursor:pointer}
-td.c.h{background:var(--hide);color:transparent}
-td.c.h::selection{background:transparent}
-td.nil{color:var(--mute);text-align:center}
-.art th.g34{border-bottom:2px solid var(--acc)}
-.art th.g56{border-bottom:2px solid var(--acc2)}
-.tabs{display:flex;gap:6px;margin:0 0 4px}
-@media (max-width:640px){th,td{font-size:.8rem;padding:5px}td.k{width:56px}td.up{display:none}}
-@media print{.bar{display:none}body{background:#fff;color:#000}td.c.h{background:#fff;color:transparent}td.up.hp{color:transparent}}
+body{margin:0;background:var(--bg);color:var(--label);
+  font:15px/1.55 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","PanSans",sans-serif;
+  word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1100px;margin:0 auto;padding:40px 20px 60px}
+.eyebrow{color:var(--sec);font-size:13px;line-height:18px;margin:0}
+h1{font-size:34px;line-height:41px;font-weight:700;letter-spacing:-.025em;margin:2px 0 14px}
+/* 도구 막대 — 유리 · 과목은 분할 단추, 가리기는 캡슐 */
+.bar{position:sticky;top:0;z-index:3;display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;padding:10px 0 12px;margin:0 0 4px;
+  background:var(--glass);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%)}
+.seg{display:inline-flex;background:var(--fill);border-radius:10px;padding:2px}
+.seg button{font:inherit;font-size:15px;font-weight:500;border:0;background:transparent;color:var(--label);padding:6px 16px;border-radius:8px;cursor:pointer;min-height:34px}
+.seg button.on{background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{font:inherit;font-size:13px;font-weight:500;border:0;background:var(--fill);color:var(--label);padding:7px 13px;border-radius:999px;cursor:pointer;min-height:34px}
+.chips button.on{background:var(--accTint);color:var(--acc);font-weight:600}
+.chips button[hidden]{display:none}
+/* 영역 — 제목은 카드 바깥, 표는 카드 안 */
+h2{font-size:22px;line-height:28px;font-weight:700;margin:28px 0 8px 4px}
+h2 small{font-size:13px;font-weight:400;color:var(--sec);margin-left:6px}
+h3{font-size:17px;line-height:22px;font-weight:600;margin:0;padding:14px 0 6px}
+.card{background:var(--card);border-radius:22px;box-shadow:var(--shadow);padding:6px 20px 10px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);text-align:left;padding:12px 10px 8px;border-bottom:.5px solid var(--sep)}
+td{padding:10px;vertical-align:top;border-bottom:.5px solid var(--sep)}
+tr:last-child>td{border-bottom:0}
+td.k{width:88px;color:var(--sec);font-size:13px;font-weight:600;padding-left:0}
+th:first-child{padding-left:0}
+td.k2{font-weight:600;padding-left:0}
+.it{padding:1px 0}
+.c{cursor:pointer;border-radius:6px;transition:background .12s,color .12s}
+.c.h{background:var(--fill);color:transparent}
+.c.h::selection{background:transparent}
+.nil{color:var(--ter)}
+@media (max-width:640px){
+  h1{font-size:28px;line-height:34px}
+  .card{padding:4px 14px 8px;border-radius:18px}
+  td,th{padding:8px 6px;font-size:14px} td.k{width:58px;font-size:12px}
+}
+@media print{.bar{display:none}body{background:#fff}.card{box-shadow:none;padding:0}.c.h{background:#fff}}
 </style>
 </head>
 <body>
 <div class="wrap">
-<h1>음악·미술 내체표</h1>
-<p class="sub">2022 개정 · 책 내용 체계표 배치 그대로 · 항목을 누르면 가리기/보이기 · 위 버튼으로 한꺼번에.</p>
+<p class="eyebrow">2022 개정 · 책 내용 체계표 배치 그대로 · 칸을 누르면 가리기/보이기</p>
+<h1>내용 체계표</h1>
 
 <div class="bar">
-  <button data-sub="music" class="on">음악</button><button data-sub="art">미술</button>
-  <span class="sep"></span>
-  <button data-mode="show" class="on">전부 보기</button>
-  <button data-mode="g56">5~6 가리기</button>
-  <button data-mode="g34">3~4 가리기</button>
-  <button data-mode="proc">과정·기능 가리기</button>
-  <button data-mode="all">전부 가리기</button>
-  <span class="sep"></span>
-  <button onclick="window.print()">인쇄</button>
+  <div class="seg"><button data-sub="music" class="on">음악</button><button data-sub="art">미술</button><button data-sub="pe">체육</button></div>
+  <div class="chips">
+    <button data-mode="show" class="on">전부 보기</button>
+    <button data-mode="g56">5~6 가리기</button>
+    <button data-mode="g34">3~4 가리기</button>
+    <button data-mode="proc">과정·기능 가리기</button>
+    <button data-mode="ex" hidden>예시 가리기</button>
+    <button data-mode="all">전부 가리기</button>
+  </div>
 </div>
 
 <section id="bookmusic"></section>
 <section id="bookart" hidden></section>
+<section id="bookpe" hidden></section>
 </div>
 
 <script>
-/* 데이터 = 회독본 8.음악 552~ · 9.미술 768~ (09-23 기준) */
+/* 데이터 = 회독본 8.음악 552~ · 9.미술 768~ (09-23 기준) · 7.체육 「내용 체계」 가치·태도 + 「신체활동 예시」 (09-24 기준 · 회독본 1385~1612) */
 const MUSIC = {
   "연주": {
     "지식·이해": [["생활 속의 음악","간단한 악곡의 연주 형태","생활 → 악곡의 연주 형태"],["기초적인 음악 요소","음악 요소","공통(세 영역 같음)"],["자세와 주법","주법과 표현 기법","자세 → 표현 기법"],["느낌, 여러 소리","어울림, 여러 악기","소리 → 어울림·악기"]],
@@ -99,17 +123,68 @@ const ART = {
     val: [["자신의 감상 관점 존중","서로 다른 관점의 존중","자신 → 서로 다른"],["미술 문화에 관한 관심","공동체 문화에 참여","관심 → 참여"]]
   }
 };
+/* 체육 가치·태도: 영역 → [3~4, 5~6] (회독본 7.체육 「가치·태도 내용 요소」) */
+const PE_VAL = {
+  "운동": [["긍정적 신체 인식","운동 및 건강에 관한 관심","운동 및 건강 습관 실천 의지"],
+          ["체력 운동 참여의 근면성","체력 증진을 위한 끈기","성장 발달의 차이 공감","안전사고에서의 침착성"]],
+  "스포츠": [["움직임 수행의 자신감과 적극성","최선을 다하는 태도","게임 규칙 준수","스포츠 환경에 대한 개방성"],
+            ["스포츠 활동 참여의 적극성","목표 달성 의지","상대 기술 인정","팀원과의 협력","구성원 배려","스포츠 환경을 아끼는 태도","스포츠 환경에 감사하는 태도"]],
+  "표현": [["움직임 표현에 대한 호기심","움직임 표현에 대한 감수성"],
+          ["다양한 표현 활동 유형에 대한 수용적 태도","움직임 표현의 심미성 추구"]]
+};
+/* 체육 신체활동 예시: 학년군 → 영역 → [세부 영역, [[하위, 예시] …]] · 하위가 없으면 [null, 예시] (회독본 7.체육 「신체활동 예시」) */
+const PE_EX = {
+  "34": {
+    "운동": [["기본 체력운동", [["체력운동 관련 기본 움직임 기술","걷기, 달리기, 매달리기, 버티기나 굽히기, 밀기, 당기기 등"],["체력운동 기능","오래 달리거나 걷기, 팔굽혀펴기, 윗몸말아올리기, 왕복달리기 등"]]],
+            ["건강 운동 및 생활 습관", [["건강 생활 습관","자세, 체중 및 체형 관리, 위생, 식습관, 정서 관리 활동 등"],["운동 생활 습관","맨손체조, 산책, 계단 오르기, 생활 주변 운동기구 활용하기 등"]]]],
+    "스포츠": [["기본 움직임의 기초 기술", [["이동 움직임","방향 전환 달리기, 뛰기, 구르기, 물에서 이동하기 등"],["비이동 움직임","균형잡기, 구부리기, 회전하기, 물에 뜨기 등"],["조작 움직임","던지기, 굴리기, 차기, 잡기, 치기, 튀기기, 몰기, 타기 등"]]],
+              ["스포츠 유형별 움직임 기술", [["기술형 스포츠 유형별 움직임","앞뒤 구르기, 옆돌기, 전력 달리기, 헤엄치기, 발차기 등"],["전략형 스포츠 유형별 움직임","공던지기와 잡기, 공몰기, 공차기와 멈추기, 공치기와 받기, 라켓으로 치기 등"],["생태형 스포츠 유형별 움직임","균형 잡고 이동하기, 타고 버티기, 잡고 오르기 등"]]]],
+    "표현": [["기본 움직임의 기초 표현", [["이동 움직임 표현","워킹, 점핑, 호핑, 스키핑, 갤러핑, 리핑, 슬라이딩 등"],["비이동 움직임 표현","펴기, 접기, 비틀기, 제자리 돌기, 털기, 흔들기 등"],["조작 움직임 표현","들기, 돌리기 등"]]],
+            ["기본 움직임의 표현 방법", [["추상 표현","언어 표현, 느낌이나 생각 표현하기 등"],["모방 표현","사물 표현, 인물 표현, 자연 현상 표현하기 등"],["리듬 표현","박자, 강약, 빠르기, 패턴에 따라 표현하기 등"],["도구 표현","줄, 공, 천, 훌라후프 등을 활용하여 표현하기 등"]]]]
+  },
+  "56": {
+    "운동": [["건강 체력 및 운동 체력", [["건강체력 관련 운동","근력, 근지구력, 심폐지구력, 유연성 운동 등"],["운동체력 관련 운동","순발력, 민첩성, 평형성, 협응성 운동 등"]]],
+            ["성장 및 안전 활동", [["성장 관련 활동","신체 변화 및 제2차 성징 이해 활동, 감정 수용 및 조절 활동, 관계 형성 활동, 성 건강 활동 등"],["안전 활동","운동 관련 안전사고 예방 및 대처 활동, 생활 안전사고 예방 및 대처 활동, 자연환경 변화 대처 활동 등"]]]],
+    "스포츠": [["기술형 스포츠 유형별 활동", [["기록형","육상 활동, 경영 활동, 빙상 활동, 표적 활동 등"],["동작형","매트 활동, 뜀틀 활동, 평균대 활동 등"],["투기형","태권도 활동, 씨름 활동 등"]]],
+              ["전략형 스포츠 유형별 활동", [["영역형","축구형 게임, 농구형 게임, 핸드볼형 게임, 럭비형 게임, 하키형 게임 등"],["필드형","야구형 게임 등"],["네트형","배구형 게임, 배드민턴형 게임, 족구형 게임, 탁구형 게임, 테니스형 게임 등"]]],
+              ["생태형 스포츠 유형별 활동", [["생활환경형","골프형 활동, 플라잉디스크형 활동, 자전거타기형 활동, 인라인스케이팅 활동, 스포츠클라이밍 활동, 민속놀이 등"],["자연환경형","오리엔티어링, 등산 활동, 캠핑 활동, 수상 활동, 설상 활동, 승마 활동 등"]]]],
+    "표현": [["스포츠 표현 활동", [[null,"창작체조 활동, 음악줄넘기 활동 등"]]],
+            ["전통 표현 활동", [[null,"우리나라의 민속무용 활동, 외국의 민속무용 활동 등"]]],
+            ["현대 표현 활동", [[null,"라인댄스 활동, 댄스스포츠 활동, 스트리트댄스 활동 등"]]]]
+  }
+};
 const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-const cell = (t, g, cat) => t == null ? '<td class="nil">—</td>' : `<td class="c" data-g="${g}" data-cat="${cat}">${esc(t)}</td>`;
+const it = (x, g, cat) => `<div class="it c" data-g="${g}" data-cat="${cat}">${esc(x)}</div>`;
 
 /* 책 그대로: 영역마다 표 하나 · 행 = 범주 · 열 = 3~4 / 5~6 · 칸 안 항목은 책 순서 */
 function bookTable(area, cats){
-  let h = `<h2>${area}</h2><table><tr><th style="width:84px">범주</th><th>3~4학년군</th><th>5~6학년군</th></tr>`;
+  let h = `<h2>${esc(area)}</h2><div class="card"><table><tr><th style="width:88px">범주</th><th>3~4학년군</th><th>5~6학년군</th></tr>`;
   for (const [cat, list34, list56] of cats){
-    const li = (xs, g) => xs.filter(x => x != null).map(x => `<div class="c" data-g="${g}" data-cat="${cat}" style="padding:2px 0">· ${esc(x)}</div>`).join('');
+    const li = (xs, g) => xs.filter(x => x != null).map(x => it(x, g, cat)).join('');
     h += `<tr><td class="k">${cat}</td><td>${li(list34,'34')}</td><td>${li(list56,'56')}</td></tr>`;
   }
-  return h + '</table>';
+  return h + '</table></div>';
+}
+function peVal(){
+  let h = `<h2>가치·태도 내용 요소</h2><div class="card"><table><tr><th style="width:88px">영역</th><th>3~4학년군</th><th>5~6학년군</th></tr>`;
+  for (const [area, [a, b]] of Object.entries(PE_VAL))
+    h += `<tr><td class="k">${area}</td><td>${a.map(x => it(x,'34','가치·태도')).join('')}</td><td>${b.map(x => it(x,'56','가치·태도')).join('')}</td></tr>`;
+  return h + '</table></div>';
+}
+function peEx(g){
+  let h = `<h2>신체활동 예시 <small>${g === '34' ? '초등학교 3~4학년군' : '초등학교 5~6학년군'}</small></h2><div class="card">`;
+  for (const [area, subs] of Object.entries(PE_EX[g])){
+    h += `<h3>${area}</h3><table><tr><th style="width:24%">세부 영역</th><th style="width:24%">하위</th><th>예시</th></tr>`;
+    for (const [sub, rows] of subs){
+      rows.forEach(([lo, ex], i) => {
+        h += '<tr>' + (i === 0 ? `<td class="k2" rowspan="${rows.length}">${it(sub, g, '세부')}</td>` : '')
+          + (lo == null ? `<td class="nil">—</td>` : `<td>${it(lo, g, '하위')}</td>`)
+          + `<td>${it(ex, g, '예시')}</td></tr>`;
+      });
+    }
+    h += '</table>';
+  }
+  return h + '</div>';
 }
 function buildBook(){
   let m = '';
@@ -120,30 +195,41 @@ function buildBook(){
   for (const [area, d] of Object.entries(ART))
     a += bookTable(area, [["지식·이해", d.rows.map(r => r[0]), d.rows.map(r => r[2])], ["과정·기능", d.rows.map(r => r[1]), d.rows.map(r => r[3])], ["가치·태도", d.val.map(r => r[0]), d.val.map(r => r[1])]]);
   document.getElementById('bookart').innerHTML = a;
+  document.getElementById('bookpe').innerHTML = peVal() + peEx('34') + peEx('56');
 }
 buildBook();
-/* 음악 3~4 지식·이해의 공통 항목 중복 표시 방지: 책은 칸마다 그대로 적혀 있으므로 그대로 둔다 */
-let sub = 'music', view = 'book';
-function showSec(){ for (const id of ['bookmusic','bookart']) document.getElementById(id).hidden = true;
-  document.getElementById('book' + sub).hidden = false; }
-document.head.insertAdjacentHTML('beforeend', '<style>div.c{cursor:pointer}div.c.h{background:var(--hide);color:transparent;border-radius:4px}</style>');
 
-let mode = 'show';
+let sub = 'music', mode = 'show';
+function setMode(m){ mode = m; document.querySelectorAll('[data-mode]').forEach(x => x.classList.toggle('on', x.dataset.mode === m)); apply(); }
+function showSec(){
+  for (const id of ['bookmusic','bookart','bookpe']) document.getElementById(id).hidden = true;
+  document.getElementById('book' + sub).hidden = false;
+  /* 체육엔 과정·기능이 없고 예시가 있다 — 단추를 바꿔 끼운다 */
+  document.querySelector('[data-mode="proc"]').hidden = (sub === 'pe');
+  document.querySelector('[data-mode="ex"]').hidden = (sub !== 'pe');
+  if ((sub === 'pe' && mode === 'proc') || (sub !== 'pe' && mode === 'ex')) setMode('show');
+}
 function apply(){
-  document.querySelectorAll('td.c, div.c').forEach(td => {
-    const g = td.dataset.g, cat = td.dataset.cat;
-    const hide = mode === 'all' || (mode === 'g56' && g === '56') || (mode === 'g34' && g === '34') || (mode === 'proc' && cat === '과정·기능');
-    td.classList.toggle('h', hide);
+  document.querySelectorAll('.c').forEach(el => {
+    const g = el.dataset.g, cat = el.dataset.cat;
+    const hide = mode === 'all' || (mode === 'g56' && g === '56') || (mode === 'g34' && g === '34')
+      || (mode === 'proc' && cat === '과정·기능') || (mode === 'ex' && cat === '예시');
+    el.classList.toggle('h', hide);
   });
 }
 document.addEventListener('click', e => {
-  const td = e.target.closest('td.c, div.c'); if (td){ td.classList.toggle('h'); return; }
+  const c = e.target.closest('.c'); if (c){ c.classList.toggle('h'); return; }
   const b = e.target.closest('.bar button'); if (!b) return;
   if (b.dataset.sub){ sub = b.dataset.sub; document.querySelectorAll('[data-sub]').forEach(x => x.classList.toggle('on', x === b)); showSec(); }
-  if (b.dataset.view){ view = b.dataset.view; document.querySelectorAll('[data-view]').forEach(x => x.classList.toggle('on', x === b)); showSec(); }
-  if (b.dataset.mode){ mode = b.dataset.mode; document.querySelectorAll('[data-mode]').forEach(x => x.classList.toggle('on', x === b)); apply(); }
-  if (b.hasAttribute('data-hint')){ const on = b.classList.toggle('on'); document.querySelectorAll('td.up').forEach(t => { t.style.visibility = on ? 'hidden' : ''; t.classList.toggle('hp', on); }); b.textContent = on ? '단서 보이기' : '단서 숨기기'; }
+  if (b.dataset.mode) setMode(b.dataset.mode);
 });
+/* 주소 끝 #music · #art · #pe 로 과목을 골라 연다 */
+{ const h = location.hash.slice(1); const b = document.querySelector(`[data-sub="${h}"]`); if (b) b.click(); }
+/* 앱이 다른 곳에서 테마를 바꾸면 따라 바뀐다 */
+window.addEventListener('storage', e => { if (!e.key || /^cards_(theme|light)_v1$/.test(e.key)) {
+  try{ let t = localStorage.getItem('cards_theme_v1'), l = localStorage.getItem('cards_light_v1'); t = t==='b'?'dark':t==='c'?'paper':t;
+    const r = document.documentElement; if (['white','paper','dark'].includes(t)) r.dataset.theme = t; else r.removeAttribute('data-theme');
+    if (['white','paper'].includes(l)) r.dataset.light = l; else r.removeAttribute('data-light'); }catch(_){} } });
 </script>
 </body>
 </html>

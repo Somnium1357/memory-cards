@@ -1824,7 +1824,7 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
     <div class="hs-tiles" id="hTiles"></div>
     <nav class="hs-nav"><div class="hs-grp">보기</div>
       <button class="hs-row" id="hsHd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5z"/><path d="M12 6.5v13"/></svg>회독본</button>
-      <button class="hs-row" id="ctOpen" title="음악·미술 2022 내용 체계표 — 가리고 쓰기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M9.5 4.5v15"/></svg>내용 체계표</button>
+      <button class="hs-row" id="ctOpen" title="음악·미술·체육 2022 내용 체계표 — 가리고 쓰기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M9.5 4.5v15"/></svg>내용 체계표</button>
       <button class="hs-row" data-go="scrList"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg>라이브러리</button>
       <button class="hs-row" data-go="scrStats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V11M11 20V5M17 20v-6"/></svg>통계</button>
     </nav>
@@ -9901,7 +9901,7 @@ $('setCloseX').onclick=()=>$('ovlSettings').classList.remove('show');
   new MutationObserver(()=>{ if(!$('ovlSettings').classList.contains('show')){ $('btnSettings').classList.remove('on'); if(sd) sd.classList.remove('set-on'); } }).observe($('ovlSettings'),{attributes:true,attributeFilter:['class']}); }
 document.addEventListener('click', e=>{ const row=e.target.closest('.tgl-row'); if(!row || e.target.closest('.tgl,button,a,input,select')) return;
   const t=row.querySelector('.tgl'); if(t) t.click(); });   // 토글 줄 어디를 눌러도(UI 리뷰 🟡)
-$('ctOpen').onclick=()=>openHoedok('tools/curric-table.html','음악·미술 내용 체계표');   // 가리고 쓰기 페이지(동하 09-23 「앱에 올려줘 · 음악도」 · 메타 인계) — 회독본 창에서 연다(앱 테마를 따라간다)
+$('ctOpen').onclick=()=>openHoedok('tools/curric-table.html','내용 체계표');   // 가리고 쓰기 페이지(동하 09-23 「앱에 올려줘 · 음악도」 · 메타 인계) — 회독본 창에서 연다(앱 테마를 따라간다)
 $('ovlSettings').onclick=(e)=>{ if(e.target===$('ovlSettings'))$('ovlSettings').classList.remove('show'); };
 $('btnNewSess').onclick=()=>openSessEditor(null,null);
 $('btnSettingsP').onclick=()=>$('btnSettings').click();

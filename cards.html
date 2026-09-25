@@ -1318,7 +1318,8 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 #cDir{color:var(--c-label);background:var(--c-fill);}
 #cHint{font-size:13px;color:var(--c-sec);font-weight:400;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 #cTags .utag{color:var(--c-label);background:var(--c-fill);font-weight:500;font-size:13px;padding:0 12px;line-height:28px;}
-#cTagAdd{color:var(--c-sec);padding:0 12px;background:transparent;}
+#cTagAdd{color:var(--c-sec);padding:0 12px;background:transparent;position:relative;}
+#cTagAdd::after{content:'';position:absolute;left:0;right:0;top:-4px;bottom:-4px;}   /* 누름 영역 28 → 36(디자인 언어 「34 미만 없음」 · 리뷰 09-25) — 폭·위치는 그대로 */
 #cHoedok,#cHoedok.on{margin:0 0 0 auto;}
 #cHoedok{display:none;} #cHoedok.on{display:flex;}
 #cHoedok a{font-size:15px;font-weight:500;color:var(--c-sec);min-height:44px;display:flex;align-items:center;gap:4px;padding:0;margin:0;}
@@ -1396,6 +1397,14 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 
 /* 데스크탑 — 카드 칸 안에서 카드 최대 900 가운데 */
 @media (hover:hover) and (pointer:fine) and (min-width:1300px){ #card,#gradeBar,#gradeBar.on{max-width:900px;margin-left:auto;margin-right:auto;} }
+/* PC 풀이 배치 = C안(동하 09-25 · 디자인·리뷰 정본 `card\구현검수_2026-09-25.md`): 카드 900 + 20 + 레일 236 = 1156을 한 묶음으로 창 가운데.
+   M = (창 − 1156)/2 · 카드·채점 막대 왼끝 M · 레일 오른끝 = 창 − M · 윗줄 ‹ = 카드 왼끝 · ⏸↶ = 레일 오른끝 · 진행 알약 중심 = 카드 중심. */
+@media (hover:hover) and (pointer:fine) and (min-width:1300px){
+  :root{--pcM:calc((100vw - 1156px) / 2);}
+  #main.railed #scrSolve{padding-left:var(--pcM);padding-right:calc(var(--pcM) + var(--insp-w) + 20px);}
+  body #rail{right:var(--pcM);}   /* 레일은 #main 밖이다 */
+  #main.railed #topbar{padding-left:var(--pcM);padding-right:var(--pcM);column-gap:0;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) calc(var(--insp-w) + 20px);}
+}
 
 /* 아이폰(≤500) — 반경 26 · 안쪽 18/18/12 · 윗줄엔 ‹ + 진행만 · 한 손 막대 · 채점 54/8/16 */
 @media (max-width:500px){
@@ -7798,9 +7807,14 @@ function renderTable(c, back){
   // 왼쪽 정렬을 전제로 잰다: 마당 왼쪽 패딩(18)에서 사이드바 왼쪽까지, 카드 좌우 패딩(56)을 뺀다
   let avail = Math.floor(Math.min(railL, window.innerWidth) - (zL+18) - 18 - 56);
   if(!(avail>200)) avail=604;
-  const L=tblLayout(t, avail);
+  /* 값 1개짜리 축은 표에서 빼 제목 줄로 올린다(브리프 B-10 · 디자인·리뷰 09-25 검수 「열 하나를 차지 · 아이폰 폭의 절반」).
+     칸 찾기(tblFind)는 원래 t로 한다 — 빠진 축은 값이 하나뿐이라 좌표에 없어도 같은 칸이 잡힌다. 1×1(전부 1개)이면 그대로 둔다. */
+  const multi=a=>((t.axes[a]||[]).length>1), singles=[...t.rows,...t.cols].filter(a=>!multi(a));
+  const tv = (singles.length && (t.rows.some(multi)||t.cols.some(multi))) ? {...t, rows:t.rows.filter(multi), cols:t.cols.filter(multi)} : t;
+  let ttl=String(t.title||''); if(tv!==t) for(const a of singles){ const v=(t.axes[a]||[])[0]; if(v && v!=='*' && !ttl.includes(v)) ttl+=(ttl?' · ':'')+v; }
+  const L=tblLayout(tv, avail);
   const colTuples=tblProduct(t, L.cols);
-  const rowTuples=tblRowTuples(t, L.rows);   // 🔴 곱집합이 아니다 — 안 가르는 축은 접힌다 (위 주석)
+  const rowTuples=tblRowTuples(tv, L.rows);   // 🔴 곱집합이 아니다 — 안 가르는 축은 접힌다 (위 주석)
   // 카드 폭 — 표가 660을 넘어야 할 때만 상한을 푼다
   const need=L.headW*L.rows.length + colTuples.length*L.minW;
   const wide = need>604 && avail>=need;
@@ -7816,7 +7830,7 @@ function renderTable(c, back){
      넘치는 표(`wide`)는 그대로 `need`로 잰다(카드를 넓히는 쪽이라 상한이 필요하다). */
   const wid=Math.min(Math.max(need, 320), avail);
 
-  let h=`<div class="tt">${esc(t.title||'')}</div>`;   // 축 이름은 아래 축 이름 줄이 맡는다
+  let h=`<div class="tt">${esc(ttl)}</div>`;   // 축 이름은 아래 축 이름 줄이 맡는다
   h+=`<table${wide?` style="max-width:${wid}px"`:''}>`;   // 좁은 표는 상한 없이 100% (위 주석)
   /* 🔴 축 이름 줄 — 열 축의 **이름**이 표 어디에도 안 찍혀 있었다. 값만 보고는 그 열이 무슨 축인지
      알 수 없다. 「교사의 입장」 표는 행 축(다양성 인정)도 O/X, 열 축(의견 표명)도 O/X라 특히 못 읽었다
@@ -7825,7 +7839,7 @@ function renderTable(c, back){
      표 모서리의 `\`는 관례가 「앞=행 · 뒤=열」이다. 읽으면 학자가 열 축이 되고 O/X 열은 이름을 잃는다.
      같은 쪽 축은 `·`로 잇고, 행/열 구분은 **칸을 나누는 것**으로 한다. */
   // 행 축 이름은 머리 전체를 세로로 덮는다 — 안 그러면 그 아래에 빈 칸이 하나 생긴다
-  h+='<tr>'+`<th colspan="${L.rows.length}" rowspan="${L.cols.length+1}" class="axl">${esc(L.rows.join(' · '))}</th>`
+  h+='<tr>'+(L.rows.length?`<th colspan="${L.rows.length}" rowspan="${L.cols.length+1}" class="axl">${esc(L.rows.join(' · '))}</th>`:'')   // 행 축이 다 빠졌으면(1×n) 모서리 칸 없음
      +`<th colspan="${colTuples.length}" class="axl">${esc(L.cols.join(' · '))}</th></tr>`;
   // 열 머리 (바깥 → 안쪽). 바깥 축은 안쪽 개수만큼 colspan
   for(let ci=0; ci<L.cols.length; ci++){
@@ -7961,6 +7975,7 @@ function showCard(){
   $('phaseLine').textContent = whyNow(c);   // 이 카드가 왜 지금 나왔는지 (동하 2026-08-21)
   $('ohWhy').textContent = whyNow(c);       // 아이폰 = 한 손 막대 가운데(디자인 §7.1)
   fillBack(c);                              // 답면을 미리 깔아 둔다(가려진 채) — 공개해도 선·버튼이 안 움직인다
+  requestAnimationFrame(coverFit);
   syncRail(); counts();
   $('cardScroll').scrollTop=0;
   saveResume();                  // 회독본 갔다 돌아올 자리 (앞면 상태)
@@ -8015,6 +8030,13 @@ function fillBackText(c, hide){
   el.textContent=b;
   el.classList.add(b.length<=12?'ans-s':b.length<=30?'ans-m':'ans-l');
 }
+/* 가림 면을 카드 바닥까지 늘린다(동하 09-25 「회색 부분 배치가 이상」) — 밑에 답면용 줄(#cMeta · 유형·＋태그·회독본 ↗)이
+   숨은 채 44px을 차지해 가림 면 아래가 비었다(아이패드 실측 가림 404~656 · 아래칸 ~700). 음수 margin-bottom으로 그 줄 위를 덮는다 —
+   격자 행 높이(minmax(0,1fr))는 부모 flex가 정하므로 흐름·선·답 위치는 그대로다(rect2로 잰다). 답면에선 가림 면이 visibility:hidden. */
+function coverFit(){ const cv=$('cCover'), lo=$('cLower'); if(!cv||!lo) return; cv.style.marginBottom='';
+  if(!cv.offsetParent) return; const ext=Math.round(lo.getBoundingClientRect().bottom - cv.getBoundingClientRect().bottom);
+  if(ext>0) cv.style.marginBottom=(-ext)+'px'; }
+window.addEventListener('resize',()=>requestAnimationFrame(coverFit));
 function fillBack(c){   // 앞면에서 답면을 미리 깐다 — 보이는 건 가림 면뿐(#cBackWrap visibility:hidden)
   const hasItems=Array.isArray(c.items)&&c.items.length>=2, isDiag=c.typ==='도식', isTbl=!!c.table;
   fillBackText(c, hasItems||isDiag||isTbl);

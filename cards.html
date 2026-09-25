@@ -1391,7 +1391,8 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 #flagMemo{min-height:36px;border-radius:10px;background:var(--c-fill);border:0;padding:0 12px;font-size:16px;color:var(--c-label);}
 .rail-sep{height:1px;transform:scaleY(.5);background:var(--c-sep);margin:8px 12px;}
 
-/* 아이폰 한 손 막대(⏸ · 왜 지금 · ↶ · ⋯) — 채점 바로 위 · 가로 화면엔 없다 */
+/* 아이폰 한 손 막대(⏸ · 왜 지금 · ↶ · ⋯) — 🔴 09-25 동하 「굳이 하단에 있을 이유?」로 은퇴: 버튼은 아이패드처럼 윗줄 오른쪽, 「왜 지금」은 카드 머리줄 오른쪽.
+   카드가 58px 길어지고 채점 바로 위 오터치 자리가 없어진다(대가 = ↶가 엄지에서 멀다 · 동하 선택). 마크업·배선은 남겨 둔다(되살릴 때 CSS 한 줄). */
 #ohBar{display:none;}
 #ohWhy{min-width:0;text-align:center;font-size:13px;color:var(--c-sec);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
@@ -1406,10 +1407,9 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
   #main.railed #topbar{padding-left:var(--pcM);padding-right:var(--pcM);column-gap:0;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) calc(var(--insp-w) + 20px);}
 }
 
-/* 아이폰(≤500) — 반경 26 · 안쪽 18/18/12 · 윗줄엔 ‹ + 진행만 · 한 손 막대 · 채점 54/8/16 */
+/* 아이폰(≤500) — 반경 26 · 안쪽 18/18/12 · 윗줄 = ‹ | 진행 | ⏸ ↶ ⋯(09-25 한 손 막대 은퇴) · 채점 54/8/16 */
 @media (max-width:500px){
-  #topbar{grid-template-columns:44px minmax(0,1fr) 44px;padding-top:4px;height:48px;gap:8px;}
-  #topbar .tb-r{display:none;}
+  #topbar{grid-template-columns:44px minmax(0,1fr) auto;padding-top:4px;height:48px;gap:8px;}
   #tbProg{background:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;height:44px;padding:0;gap:4px 8px;
     flex-wrap:wrap;justify-content:center;align-content:center;}
   #tbSess,#tbCounts{font-size:15px;font-weight:600;color:var(--c-label);}
@@ -1417,9 +1417,7 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
   .tb-pbar{flex:0 0 100%;width:auto;max-width:240px;height:5px;order:2;}
   #scrSolve{padding:10px var(--sp-m) 8px;}
   #card{border-radius:26px;padding:18px 18px 12px;}
-  #phaseLine{display:none;}
   #cScope .sc-p:not(.sc-first):not(.sc-last),#cScope .sc-p:not(.sc-first):not(.sc-last)+.sc-chev{display:none;}
-  #ohBar{display:grid;grid-template-columns:44px minmax(0,1fr) 44px 44px;align-items:center;height:48px;border-radius:24px;margin-top:10px;padding:0 6px;flex:0 0 auto;}
   #gradeBar,#gradeBar.on{margin-top:10px;gap:8px;}
   .gbtn .gl,#revealBtn{font-size:16px;}
 }
@@ -7828,9 +7826,10 @@ function counts(){ // 상단 바 — 남은 수는 현재 세션 큐 · 「내�
   let bd=done, bt=tot;
   if(curSess){ const n=(curSess.pg&&curSess.pg.day===todayKey())?(curSess.pg.n||0):0; bd=n; bt=n+rest.filter(c=>!c._re).length; }
   $('tbSess').textContent = curSess ? curSess.name : (curPreset ? '풀이' : '');
-  $('tbCounts').textContent = curPreset ? `${rest.length.toLocaleString()}장 남음` : '';
+  /* 🔴 숫자 = 진행 막대의 분모(오늘 이 세션 몫 · 동하 09-25 「남은 카드 수 대신 분모」) — 남은 수는 막대가 이미 말한다. 라벨 없이 「n장」(폰 폭). */
+  $('tbCounts').textContent = curPreset ? `${bt.toLocaleString()}장` : '';
   $('tbBar').style.width = bt ? Math.round(bd/bt*100)+'%' : '0%';
-  $('tbProg').title = curPreset ? `${label} ${rest.length} · 오늘 ${todayRated()} · 내일 ~${tomorrowCount(null)}` : '';
+  $('tbProg').title = curPreset ? `${bd}/${bt}장 · ${label} ${rest.length} · 오늘 ${todayRated()} · 내일 ~${tomorrowCount(null)}` : '';
 }
 /* ═══ 표 카드 (동하 2026-08-29 · QC `table` 규약) ═══════════════════════════════
    카드 하나가 표 하나를 싣는다. 앞면 = 값 칸만 가림(탭하면 하나씩 드러남) · 뒷면 = 전량 공개.

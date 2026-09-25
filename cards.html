@@ -1249,7 +1249,7 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 .tb-l{display:flex;align-items:center;gap:8px;}
 .tb-r{justify-self:end;display:flex;align-items:center;border-radius:22px;height:44px;}
 @media (min-width:1120px) and (orientation:landscape){   /* 레일이 떠 있는 폭에서만 — 좁은 화면은 서랍 */
-  #main.railed #topbar{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) calc(var(--insp-w) + var(--sp-m));}
+  #main.railed #topbar{column-gap:0;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) calc(var(--insp-w) + var(--sp-m));}   /* gap 10이 알약을 카드 중심에서 5px 왼쪽으로 밀었다(리뷰 09-25 · 아이패드 457 vs 462) */
   #main.railed .tb-r{grid-column:4;}
   #main.railed #btnMore{display:none;}
   #main.railed #scrSolve{padding-right:calc(var(--sp-m) + var(--insp-w) + var(--sp-m));}
@@ -7839,8 +7839,8 @@ function renderTable(c, back){
      표 모서리의 `\`는 관례가 「앞=행 · 뒤=열」이다. 읽으면 학자가 열 축이 되고 O/X 열은 이름을 잃는다.
      같은 쪽 축은 `·`로 잇고, 행/열 구분은 **칸을 나누는 것**으로 한다. */
   // 행 축 이름은 머리 전체를 세로로 덮는다 — 안 그러면 그 아래에 빈 칸이 하나 생긴다
-  h+='<tr>'+(L.rows.length?`<th colspan="${L.rows.length}" rowspan="${L.cols.length+1}" class="axl">${esc(L.rows.join(' · '))}</th>`:'')   // 행 축이 다 빠졌으면(1×n) 모서리 칸 없음
-     +`<th colspan="${colTuples.length}" class="axl">${esc(L.cols.join(' · '))}</th></tr>`;
+  if(L.cols.length) h+='<tr>'+(L.rows.length?`<th colspan="${L.rows.length}" rowspan="${L.cols.length+1}" class="axl">${esc(L.rows.join(' · '))}</th>`:'')   // 행 축이 다 빠졌으면(1×n) 모서리 칸 없음
+     +`<th colspan="${colTuples.length}" class="axl">${esc(L.cols.join(' · '))}</th></tr>`;   // 열 축이 다 빠졌으면(n×1) 축 이름 줄 자체를 안 그린다 — 「구분 | (빈칸)」 머리가 남았다(리뷰 09-25)
   // 열 머리 (바깥 → 안쪽). 바깥 축은 안쪽 개수만큼 colspan
   for(let ci=0; ci<L.cols.length; ci++){
     const inner=L.cols.slice(ci+1).reduce((a,n)=>a*(t.axes[n]||[]).length, 1);

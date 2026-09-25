@@ -8358,7 +8358,20 @@ function doUndo(){
 }
 function showSummaryOrNew(){ finishSess(); }
 /* ═══════════════ 사이드바 ═══════════════ */
+/* 🔴 메모 칸은 카드를 넘기기 전에 **그 카드에** 저장한다(리뷰 09-25 L0-5) — 저장은 `change`에서만 됐는데,
+   게임패드 채점은 document로 합성 keydown을 보내 초점이 칸에 남은 채 다음 카드로 넘어가고, syncRail이 칸을 덮어 `change`가 영영 안 떴다.
+   칸에 보여 준 카드(memoFor)와 그때 값(memoWas)을 들고 있다가, 값이 다르면 덮기 전에 그 카드로 넣는다. */
+let memoFor=null, memoWas='';
+function commitMemo(){
+  const id=memoFor; if(!id) return false;
+  const v=$('flagMemo').value; if(v===memoWas) return false;
+  memoWas=v; const s=st(id);
+  if(s.flag!=null){ s.flag=v; touchFb(s); cacheState(); return false; }
+  if(v.trim()){ s.flag=v; touchFb(s); cacheState(); return true; }   // 메모 칸이 늘 보인다(09-24) — 플래그 없이 쓰면 그 메모로 플래그
+  return false;
+}
 function syncRail(){
+  commitMemo();
   const c=cur(); const s=c?state.cards[c.id]:null;
   const ann=(s&&s.ann)||[];
   document.querySelectorAll('.rbtn.ann').forEach(b=>{
@@ -8368,7 +8381,7 @@ function syncRail(){
   $('rOff').classList.toggle('on', !!(s&&s.ann&&s.ann.includes('끄기')));
   { const n=c?blSiblings(c).length:0; $('rOffAll').style.display=n?'':'none'; $('rOffAllLab').textContent='형제 '+(n+1)+'장 끄기'; }
   $('flagMemoRow').classList.toggle('on', !!(s&&s.flag!=null));
-  $('flagMemo').value = (s&&s.flag)||'';
+  $('flagMemo').value = memoWas = (s&&s.flag)||''; memoFor=c?c.id:null;
   renderFlagChips(s);
 }
 /* 칩은 **플래그 전에도 보인다** — 안 그러면 「플래그 → 칩」 두 번이 된다.
@@ -8396,17 +8409,13 @@ document.querySelectorAll('.rbtn.ann').forEach(b=>{
   b.onclick=()=>toggleAnn(b.dataset.ann);
 });
 $('rFlag').onclick=()=>{
+  commitMemo();                     // 쳐 둔 메모부터 넣고 토글한다 — 뒤에 넣으면 방금 끈 플래그가 메모로 다시 켜진다(L0-5)
   const c=cur(); if(!c)return;
   const s=st(c.id);
   if(s.flag!=null){ s.flag=null; s.ft=[]; } else { s.flag=''; }   // 해제하면 사유도 같이 내린다
   touchFb(s); cacheState(); syncRail();
 };
-$('flagMemo').addEventListener('change',()=>{
-  const c=cur(); if(!c)return; const s=st(c.id);
-  const v=$('flagMemo').value;
-  if(s.flag!=null){ s.flag=v; touchFb(s); cacheState(); }
-  else if(v.trim()){ s.flag=v; touchFb(s); cacheState(); syncRail(); }   // 메모 칸이 늘 보인다(09-24) — 플래그 없이 쓰면 그 메모로 플래그
-});
+$('flagMemo').addEventListener('change',()=>{ if(commitMemo()) syncRail(); });
 function dropFromQueue(id){ for(let i=queue.length-1;i>qPos;i--){ if(queue[i].id===id)queue.splice(i,1); } }
 $('rBury').onclick=()=>{
   if(tooSoon()) return;                       // 카드 바뀐 직후 더블탭

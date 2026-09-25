@@ -1601,7 +1601,17 @@ input,select{border-radius:10px;}
 /* 09-24 세션 화면 한 열(동하 「헤더만 밑으로 내려와 UI가 움직이는 것처럼」 · 「기능 배열이 난잡」)
    사이드바가 보이는 폭: ‹ 숨김(「오늘」 타일이 돌아가는 길 · 세션 화면에서도 켜짐) · 큰 제목과 ✎를 한 줄에 → 제목 윗선 = 통계·설정 제목 윗선. 문풀 오늘도 같다. */
 @media (min-width:760px){
-  #scrSession .sub-head>.tb-btn:first-child,#scrYmToday .sub-head>.tb-btn:first-child{display:none;}
+  #scrYmToday .sub-head>.tb-btn:first-child{display:none;}
+  /* 🔴 세션 화면 = 제목 위 「‹ 오늘」 링크(동하 09-25 「세션에서 홈으로 갈 방법이 애매 · 헤더 위치가 홈과 달라」) — 아이폰 기본 앱의 큰 제목 위 뒤로 링크.
+     제목 윗선 = 홈 「오늘」 제목 윗선(71 · 전엔 57로 14px 위) · 가로 위치도 홈과 같다(‹를 제목 옆에 붙이면 제목이 밀린다). 링크는 제목 위 빈자리에. */
+  #scrSession .sub-head{position:relative;padding-top:30px;}
+  /* 사이드바 칸의 첫 화면들도 제목 윗선 = 홈 「오늘」(71 · 동하 09-25 「홈이랑 헤더 위치가 달라」) — 통계·라이브러리 55 · 문풀 오늘 57이었다 */
+  #scrStats .sub-head,#scrList .sub-head{padding-top:32px;}
+  #scrYmToday .sub-head{padding-top:30px;}
+  #scrSession .sub-head>.tb-btn:first-child{position:absolute;left:var(--sp-m);top:-8px;width:auto;height:40px;padding:0 10px 0 0;margin:0;gap:2px;border-radius:0;
+    background:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;color:var(--c-acc);font-size:17px;font-weight:400;display:flex;align-items:center;}
+  #scrSession .sub-head>.tb-btn:first-child svg{width:22px;height:22px;margin-left:-6px;}
+  #scrSession .sub-head>.tb-btn:first-child::after{content:"오늘";}
   #scrSession .sub-title,#scrYmToday .sub-title{order:0;flex:1 1 auto;min-width:0;margin-top:0;}
 }
 details.gr-fold{display:block;}
@@ -1807,7 +1817,7 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
 #ovlSettings{z-index:59;}   /* 설정에서 여는 시트(GitHub 연결 ovlSetup 등 · z 60)가 설정 밑에 깔렸다 — DOM 순서가 앞이라 */
 #ovlSettings.page{left:var(--set-left,0px);background:var(--c-bg);align-items:stretch;justify-content:stretch;padding:0;}
 #ovlSettings.page .sheet{max-width:none;width:100%;max-height:none;height:100%;border-radius:0;box-shadow:none;background:var(--c-bg);padding:calc(var(--set-top,0px) + 16px) var(--sp-m) 32px;overflow-y:auto;}   /* 제목 윗선 = 사이드바 「카드」 제목 윗선 */
-#ovlSettings.page .sheet>h2{font-size:34px;font-weight:700;letter-spacing:-.025em;line-height:41px;margin:0 0 16px 4px;}
+#ovlSettings.page .sheet>h2{font-size:34px;font-weight:700;letter-spacing:-.025em;line-height:41px;margin:0 0 16px 0;}   /* 왼끝 = 홈 제목(09-25 · 4px 어긋남 정리) */
 #ovlSettings.page .sheet-x,#ovlSettings.page .sheet>.btn-row{display:none;}
 #hSide.set-on .hs-row.on:not(#btnSettings){background:none;color:var(--c-label);font-weight:400;}   /* 설정을 연 동안 강조는 「설정」 줄 하나 */
 #hSide.set-on .hs-tile.on{background:var(--c-tile);color:var(--c-label);} #hSide.set-on .hs-tile.on .ht-ic{background:var(--tc);} #hSide.set-on .hs-tile.on .ht-l{color:var(--c-sec);}
@@ -7826,8 +7836,8 @@ function counts(){ // 상단 바 — 남은 수는 현재 세션 큐 · 「내�
   let bd=done, bt=tot;
   if(curSess){ const n=(curSess.pg&&curSess.pg.day===todayKey())?(curSess.pg.n||0):0; bd=n; bt=n+rest.filter(c=>!c._re).length; }
   $('tbSess').textContent = curSess ? curSess.name : (curPreset ? '풀이' : '');
-  /* 🔴 숫자 = 진행 막대의 분모(오늘 이 세션 몫 · 동하 09-25 「남은 카드 수 대신 분모」) — 남은 수는 막대가 이미 말한다. 라벨 없이 「n장」(폰 폭). */
-  $('tbCounts').textContent = curPreset ? `${bt.toLocaleString()}장` : '';
+  /* 🔴 숫자 = 푼 수/오늘 이 세션 몫(진행 막대의 분자/분모 · 동하 09-25 「110/159 식」) — 라벨 없이(폰 폭). */
+  $('tbCounts').textContent = curPreset ? `${bd.toLocaleString()}/${bt.toLocaleString()}` : '';
   $('tbBar').style.width = bt ? Math.round(bd/bt*100)+'%' : '0%';
   $('tbProg').title = curPreset ? `${bd}/${bt}장 · ${label} ${rest.length} · 오늘 ${todayRated()} · 내일 ~${tomorrowCount(null)}` : '';
 }

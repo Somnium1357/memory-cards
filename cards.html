@@ -8897,7 +8897,14 @@ function dueTodayParts(cached){   // cached = 라이브러리 줄마다 부르�
     if(buried(c)){ buriedIn++; continue; }
     if(inQs) inQ.push(c);                                    // 어느 세션이든 오늘 큐에 있다
     else restDue.push(c); }     // 오늘 스스로 채워질 범위만
-  const today=[...dropSettled(inQ), ...gateIn(restDue, inQ)];
+  /* 🔴 큐에 든 카드도 **세션 줄과 같은 문**으로 센다(동하 09-25 21:36 「세션은 비었는데 오늘이 차 있어」) — 예전엔 dropSettled만 해서,
+     아침에 큐에 들었다가 낮에 푼 카드와 겹쳐 격리 보류된 카드(일일 복습 4장 · 3차 1장)가 「오늘」에만 남았다. 세션 줄(sessRemain)은 gateIn을 거쳐 0 = 「오늘 끝」.
+     푸는 중인 세션은 화면 큐 그대로(sessRemain과 같다). 보류분은 later로 간다. */
+  const pass=new Set();
+  for(const sx of sessions){ if(!sx) continue;
+    const list=(curSess&&curSess.id===sx.id) ? queue.slice(qPos).filter(c=>!c._re) : gateIn(sessCards(sx), null);
+    for(const c of list) pass.add(c.id); }
+  const today=[...dropSettled(inQ).filter(c=>pass.has(c.id)), ...gateIn(restDue, inQ)];
   _dueParts={sig, t:Date.now(), today, ids:new Set(today.map(c=>c.id)), later:(inQ.length+restDue.length-today.length)+buriedIn, out};
   return _dueParts;
 }
@@ -9388,8 +9395,11 @@ function renderSession(){
      그 조건에만 건다. 범위를 담은 세션은 자동이든 직접이든 담은 단위를 다 보여 준다. */
   const scoped=((sx.scope.units||[]).length||(sx.scope.mids||[]).length);
   if(scoped){
-    for(const k of (sx.scope.units||[])) if(!seen[k])keys.push(k);
-    for(const mk of (sx.scope.mids||[])) if(!seen[mk]&&!keys.includes(mk))keys.push(mk);
+    /* 🔴 빼 둔 것(scope.ex)은 다시 그리지 않는다(동하 09-25 「세션 단위 빼기가 안 돼」) — 09-24 「빼기」 통일 뒤 자동 세션의 빼기는 ex에 들어가
+       범위(units)에는 남는다. 그래서 뺀 단위 행이 「이 세션 n」만 사라진 채 그대로 남아 안 빠진 것처럼 보였다(큐는 실제로 빠졌다). */
+    const exU=new Set((sx.scope.ex&&sx.scope.ex.units)||[]), exM=new Set((sx.scope.ex&&sx.scope.ex.mids)||[]);
+    for(const k of (sx.scope.units||[])) if(!seen[k]&&!exU.has(k))keys.push(k);
+    for(const mk of (sx.scope.mids||[])) if(!seen[mk]&&!keys.includes(mk)&&!exM.has(mk))keys.push(mk);
   }
   /* 🔴 **상한 8을 없앴다** (동하 09-09 실기: 일일 복습이 「이 세션의 단위 8개」로 떴는데 실제 큐 단위는 79종이었다).
      수가 거짓말을 하고 있었다. 대신 **접혀 있으면 아예 안 그린다** — 통계판(`rowStats`)과 79줄 조립이

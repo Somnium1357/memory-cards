@@ -4994,8 +4994,13 @@ function st(id){ // 카드 상태 엔트리 (없으면 생성)
   if(!Array.isArray(s.ann)) s.ann=[];
   return s;
 }
-function touch(s){ s.u=new Date().toISOString(); markDirty('marks'); }   // 로그로 복원 안 되는 조작 = 바로 올린다
-function touchFb(s){ s.u=new Date().toISOString(); markDirty('fb'); }
+/* 🔴 마크·피드백은 시각을 따로 든다(리뷰 09-25 L0-2) — `mu` = 마크 파일의 u · `fu` = 피드백 파일의 u · `u` = 둘 중 늦은 것(reap·캐시가 쓰는 「이 카드 뭔가 바뀜」).
+   예전엔 `u` 하나를 같이 써서, 다른 기기가 끈 카드에 이 기기가 메모만 달아도 마크 병합에서 「더 새로움」으로 읽혀 끄기가 풀렸다.
+   파일 형식은 그대로다(각 파일 엔트리의 `u`). mu/fu가 없는 옛 메모리 엔트리는 `u`로 읽는다(muOf·fuOf) — 처음 한쪽을 만질 때 다른 쪽을 옛 u로 고정한다. */
+function muOf(s){ return s.mu!==undefined ? (s.mu||'') : (s.u||''); }
+function fuOf(s){ return s.fu!==undefined ? (s.fu||'') : (s.u||''); }
+function touch(s){ if(s.fu===undefined) s.fu=s.u||''; s.u=s.mu=new Date().toISOString(); markDirty('marks'); }   // 로그로 복원 안 되는 조작 = 바로 올린다
+function touchFb(s){ if(s.mu===undefined) s.mu=s.u||''; s.u=s.fu=new Date().toISOString(); markDirty('fb'); }
 function isDue(c){ const s=state.cards[c.id];
   if(!(s && s.fsrs && !s.retired)) return false;
   return effDueKey(dayKey(new Date(s.fsrs.due)), c.id) <= todayKey(); }   // 휴식일 분산 반영
@@ -5183,8 +5188,8 @@ function cacheStateNow(){ // 파일 단위로 나눠 담는다 — 쿼터가 모
      엔트리가 없으면 해제가 전파되지 않아 원격 값(은퇴·미룸·플래그)으로 되돌아갔다. mergeMarksInto는 u가 더 새로우면 「없는 키 = 해제」로
      읽으므로 툼스톤이 그대로 해제로 반영된다. 파일에 실리는 splitState()는 그대로다(툼스톤은 캐시 사본에만). */
   for(const id in state.cards){ const c=state.cards[id]; if(!c||!c.u) continue;
-    if(!parts.marks.cards[id]) parts.marks.cards[id]={u:c.u};
-    if(!parts.fb.cards[id]) parts.fb.cards[id]={flag:null, ann:[], u:c.u}; }
+    if(!parts.marks.cards[id] && muOf(c)) parts.marks.cards[id]={u:muOf(c)};   // 파일별 시각(L0-2)
+    if(!parts.fb.cards[id] && fuOf(c)) parts.fb.cards[id]={flag:null, ann:[], u:fuOf(c)}; }
   let ok = lsSet(K_MARKS, JSON.stringify(parts.marks)) && lsSet(K_FB, JSON.stringify(parts.fb));
   /* 로그 캐시는 **바뀐 주만** 쓴다(전층 감사 F0-5 일부) — 예전엔 채점마다 전 주차를 통째로 다시 썼다(플러시당 ≈62만 자).
      이번 주 + dirty인 주만. 🔴 **이번 주만 `ok`에 곱한다** — 지난 주는 IDB행(비동기)이라 동기 쿼터 판정에 못 넣는다.
@@ -5292,9 +5297,9 @@ function splitState(){               // 메모리 state → 파일 두 벌 (마�
     }
     // 🔴 마크가 하나도 없으면 엔트리를 만들지 마라. 예전 조건은 {u:""}(채점만 하고 조작은 없는 카드)를
     //    통과시켜 이관 직후 빈 엔트리가 183개 실렸다.
-    if(Object.keys(e).length){ e.u=c.u||''; marks[id]=e; }
+    if(Object.keys(e).length){ e.u=muOf(c); marks[id]=e; }
     if(c.flag!=null || (c.ann&&c.ann.length)){
-      fb[id]={flag:c.flag!==undefined?c.flag:null, ann:c.ann||[], u:c.u||''};
+      fb[id]={flag:c.flag!==undefined?c.flag:null, ann:c.ann||[], u:fuOf(c)};
       const ft=flagTypes(c); if(ft.length) fb[id].type=ft.slice();   // 사유 프리셋 (기계 판독용 · 없으면 안 적는다)
     }
   }
@@ -5303,10 +5308,11 @@ function splitState(){               // 메모리 state → 파일 두 벌 (마�
 function applyFiles(marksFile, fbFile){   // 파일 두 벌 → 메모리 state.cards (일정은 뒤에서 재계산)
   const cards={};
   const sc=(marksFile&&marksFile.cards)||{};
-  for(const id in sc) cards[id]=Object.assign({fsrs:null,miss:0,retired:false,flag:null,ann:[],u:'',d:''}, sc[id]);
+  for(const id in sc) cards[id]=Object.assign({fsrs:null,miss:0,retired:false,flag:null,ann:[],u:'',d:'',fu:''}, sc[id], {mu:sc[id].u||''});
   const fc=(fbFile&&fbFile.cards)||{};
   for(const id in fc){
-    const e=cards[id]||(cards[id]={fsrs:null,miss:0,retired:false,flag:null,ann:[],u:'',d:''});
+    const e=cards[id]||(cards[id]={fsrs:null,miss:0,retired:false,flag:null,ann:[],u:'',d:'',mu:''});
+    e.fu=fc[id].u||'';
     e.flag=fc[id].flag!==undefined?fc[id].flag:null;
     e.ft=Array.isArray(fc[id].type)?fc[id].type.slice():[];
     e.ann=fc[id].ann||[];
@@ -5619,16 +5625,19 @@ function mergeMarksInto(remote, base){ // 마크: 카드별 엔트리 통째 u �
     const mine=state.cards[id];
     // base가 있으면 = 로컬 캐시를 원격 위에 얹는 경우다. 원격에 없는 오래된 엔트리는 되살리지 않는다
     if(!mine && base && (rc[id].u||'') <= base) continue;
-    if(!mine){ state.cards[id]=Object.assign({fsrs:null,miss:0,retired:false,flag:null,ann:[],u:'',d:''}, rc[id]); continue; }
+    if(!mine){ state.cards[id]=Object.assign({fsrs:null,miss:0,retired:false,flag:null,ann:[],u:'',d:'',fu:''}, rc[id], {mu:rc[id].u||''}); continue; }
     /* 원격이 최신이면 마크 키를 통째로 교체한다 — splitState가 해제된 마크(retired:false 등)를
        파일에 싣지 않으므로, 원격 엔트리에 「없는 키」는 해제된 것이다. 키별 덮어쓰기(!==undefined일 때만)로는
        해제가 전파되지 않아 옛 마크가 되살아났다. fsrs·flag 등 마크 아닌 필드는 건드리지 않는다. */
-    if((rc[id].u||'')>(mine.u||'')){
+    if((rc[id].u||'')>muOf(mine)){      // 마크 시각끼리만 비교한다(L0-2 · 피드백 시각은 안 본다)
       const b0=JSON.stringify(mine.base||null);
+      if(mine.fu===undefined) mine.fu=mine.u||'';
       for(const k of MARK_KEYS){
+        if(k==='u') continue;
         if(rc[id][k]!==undefined) mine[k]=rc[id][k];
         else delete mine[k];
       }
+      mine.mu=rc[id].u||''; if(mine.mu>(mine.u||'')) mine.u=mine.mu;
       // 🔴 `base`가 바뀌면 그 카드의 일정이 파생된 밑판이 달라진다 — 재계산이 필요하다(F1-7 · F1-5와 같은 처방)
       if(JSON.stringify(mine.base||null)!==b0) mergedSched=true;
     }
@@ -5649,7 +5658,7 @@ function reapFb(remoteFb){           // 원격에서 사라진 소진분을 로�
     const s=state.cards[id]; if(!s) continue;
     if(!(s.flag!=null || (s.ann&&s.ann.length))) continue;   // 피드백이 없는 카드는 볼 것 없다
     if(rc[id]) continue;                                     // 원격에 살아 있다
-    if((s.u||'') > base) continue;                           // 마지막 push 뒤에 새로 단 것 — 지킨다
+    if(fuOf(s) > base) continue;                             // 마지막 push 뒤에 새로 단 것 — 지킨다(피드백 시각 · L0-2)
     s.flag=null; s.ann=[]; s.ft=[]; n++;
   }
   if(n) console.log('소진된 피드백 정리', n, '건');
@@ -5662,7 +5671,7 @@ function reapMarks(remoteMarks){     // 원격에서 사라진 해제분(다시 
     const s=state.cards[id]; if(!s) continue;
     if(!(s.retired || s.by || (Array.isArray(s.t)&&s.t.length) || s.base)) continue;  // 실릴 마크가 없는 카드는 볼 것 없다
     if(rc[id]) continue;                                     // 원격에 살아 있다
-    if((s.u||'') > base) continue;                           // 마지막 push 뒤에 새로 단 것 — 지킨다
+    if(muOf(s) > base) continue;                             // 마지막 push 뒤에 새로 단 것 — 지킨다(마크 시각 · L0-2)
     s.retired=false; s.by=''; s.t=[]; delete s.base; n++;    // fsrs·flag·ann·ft·u는 건드리지 않는다
   }
   if(n) console.log('해제된 마크 정리', n, '건');
@@ -5674,8 +5683,10 @@ function mergeFbInto(remote, base){   // 피드백: u 최신 엔트리가 통째
     const r=rc[id];
     // base가 있으면 = 로컬 캐시를 원격 위에 얹는 경우다. 원격에 없는 오래된 키는 되살리지 않는다
     if(base && !state.cards[id] && (r.u||'') <= base) continue;
-    const mine=state.cards[id]||(state.cards[id]={fsrs:null,miss:0,retired:false,flag:null,ann:[],u:'',d:''});
-    if((r.u||'')>(mine.u||'')){        // 메모·사유·주석은 한 몸이라 같이 최신이 이긴다
+    const mine=state.cards[id]||(state.cards[id]={fsrs:null,miss:0,retired:false,flag:null,ann:[],u:'',d:'',mu:''});
+    if((r.u||'')>fuOf(mine)){          // 메모·사유·주석은 한 몸이라 같이 최신이 이긴다 · 피드백 시각끼리만(L0-2)
+      if(mine.mu===undefined) mine.mu=mine.u||'';
+      mine.fu=r.u||''; if(mine.fu>(mine.u||'')) mine.u=mine.fu;
       mine.flag=r.flag!==undefined?r.flag:null;
       mine.ft=Array.isArray(r.type)?r.type.slice():[];
       mine.ann=(r.ann||[]).slice();    // 합집합이면 다른 기기의 주석 제거가 여기서 부활한다 — 최신 것으로 교체
@@ -5690,7 +5701,7 @@ function mergeFbInto(remote, base){   // 피드백: u 최신 엔트리가 통째
        마지막 성공 push 시각(`fbBase`)보다 **오래된** 엔트리는 이미 원격에 갔던 것이다 —
        그 뒤 루틴이 소진해 지웠는데 낡은 사본이 그것을 도로 붙이면, `reapFb`는 「원격에 살아 있다」로 보고
        **영영 못 걷는다**(같은 카드에 새 플래그가 달려 `u`가 갱신된 조합에서만 나던 마지막 구멍이다). */
-    else if((r.u||'') < (mine.u||'')){
+    else if((r.u||'') < fuOf(mine)){
       const sync=(base!==undefined&&base!==null&&base!=='') ? base : fbBase();
       if(!sync || (r.u||'') > sync) mine.ann=[...new Set([...(mine.ann||[]), ...(r.ann||[])])];
     }
@@ -8299,10 +8310,11 @@ function doUndo(){
   //    「원격이 더 새것」이라 판단해 되돌린 것을 도로 덮는다.
   /* 🔴 기록이 없던 카드를 되돌릴 때 **지우지 않고 해제 기록을 남긴다**(리뷰 09-23 R4) — 지우면 원격에 남은 `retired:true`가 병합 한 번에 도로 들어와
      형제 끄기를 되돌린 낱장이 다시 은퇴했다(끈 목록에도 안 보임). 채점 되돌리기는 로그가 정본이라 종전대로 지운다(마크 파일에 흔적을 안 늘린다). */
-  const relRec=()=>({fsrs:null,miss:0,retired:false,flag:null,ann:[],u:new Date().toISOString(),d:'',lt:0});
+  const relRec=()=>{ const t=new Date().toISOString(); return {fsrs:null,miss:0,retired:false,flag:null,ann:[],u:t,mu:t,fu:t,d:'',lt:0}; };
+  const bump=p=>{ p.u=p.mu=p.fu=new Date().toISOString(); return p; };   // 되돌림은 마크·피드백 둘 다 바꿀 수 있다 — 두 시각 다 올린다(L0-2)
   if(sn.prev===null){ if(sn.k==='rate') delete state.cards[sn.id]; else state.cards[sn.id]=relRec(); }
-  else { sn.prev.u=new Date().toISOString(); state.cards[sn.id]=sn.prev; }
-  if(sn.also) for(const a of sn.also){ if(a.prev===null) state.cards[a.id]=relRec(); else { a.prev.u=new Date().toISOString(); state.cards[a.id]=a.prev; } }   // 형제 끄기 되돌림(09-16)
+  else state.cards[sn.id]=bump(sn.prev);
+  if(sn.also) for(const a of sn.also){ if(a.prev===null) state.cards[a.id]=relRec(); else state.cards[a.id]=bump(a.prev); }   // 형제 끄기 되돌림(09-16)
   if(sn.k==='rate'){
     if(sn.pg){ const t=sessions.find(x=>x.id===sn.pg); if(t) pgBump(t, -1); }   // 진행 막대 카운터도 무른다(09-24)
     dropLogEntry(sn.entry);        // 2) 로그에서 그 채점만 제거

@@ -7589,7 +7589,8 @@ function finishSess(){         // 큐 소진 = 세션 화면으로 복귀 (성�
   if(curSess && curSess.lastScore && Date.now()-(curSess.lastScore.at||0)<5000) showSessEnd(curSess);   // 방금 끝낸 런이면 세션 끝 화면(09-24 · UX §7)
 }
 /* ═══ 세션 끝 화면 (UX 정리안 §7 「완료 순간을 보여 준다」 · 09-24) ═══
-   유지율 고리(첫 채점 기준 유지 = 「다시」 아닌 비율 · 세션 화면 「마지막 성적」과 같은 식) + 채점 · 시간 · 카드당 + 「다음: ○○ n장」 + 오늘로.
+   정답률 고리(첫 채점 기준 = 「다시」 아닌 비율 · 세션 화면 「마지막 성적」과 같은 식) + 채점 · 응답 시간 · 장당 응답 + 「다음: ○○ n장」 + 오늘로.
+   🔴 「유지율」이라 부르지 마라(리뷰 09-25 L4-5) — 신규 첫 대면이 섞여 통계의 유지율(신규·재출 제외)과 다른 수다. 시간도 응답 시간 합이라 「다음 … 약 m분」(실경과 perCardMs)과 다르다.
    🔴 아무것도 새로 저장하지 않는다 — lastScore(finishSess가 방금 쓴 것)를 보여 줄 뿐이다. */
 function showSessEnd(sx){
   const sc=sx.lastScore; if(!sc||!sc.n) return;
@@ -7599,7 +7600,7 @@ function showSessEnd(sx){
   $('endBody').innerHTML=`<div class="end-top"><svg class="end-ring" viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="22" fill="none" stroke="var(--c-fill)" stroke-width="7"/>
       <circle cx="26" cy="26" r="22" fill="none" stroke="var(--c-green)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 26 26)"/></svg>
     <div class="end-h"><span class="end-k">세션 끝</span><span class="end-t">${esc(sx.name)}</span></div></div>
-    <div class="end-stats"><div><b>${hit}%</b><small>유지율</small></div><div><b>${sc.n.toLocaleString()}</b><small>채점</small></div><div><b>${esc(fmtMin(sc.ms))}</b><small>시간</small></div><div><b>${per}초</b><small>카드당</small></div></div>
+    <div class="end-stats"><div><b>${hit}%</b><small>정답률</small></div><div><b>${sc.n.toLocaleString()}</b><small>채점</small></div><div><b>${esc(fmtMin(sc.ms))}</b><small>응답 시간</small></div><div><b>${per}초</b><small>장당 응답</small></div></div>
     ${next?`<button class="end-next" id="endNext"><span>다음: ${esc(next.name)}</span><small>${sessRemain(next).toLocaleString()}장 · ${esc(fmtEst(sessRemain(next)))}</small></button>`:''}
     <div class="btn-row"><button class="btn-ghost" id="endSess">세션 화면</button><button class="btn-primary" id="endHome">오늘로</button></div>`;
   $('ovlEnd').classList.add('show');
@@ -9099,7 +9100,7 @@ function trendHtml(sx){   /* 09-24 동하 「최근 n을 2주 이상으로」 �
       const hit=Math.round((e.n-e.a)/e.n*100);
       return `<span title="${md} · ${e.n}장"><i style="height:${Math.max(2,Math.round(hit*.22))}px"></i>${hit}</span>`;   // 100% = 22px
     }).join('')+`</div>
-    <div class="why">최근 <b>2주</b> 날마다 유지율${first>days[0]?` · 기록은 ${first.slice(5).replace('-','/')}부터`:''}</div>`;
+    <div class="why">최근 <b>2주</b> 날마다 정답률${first>days[0]?` · 기록은 ${first.slice(5).replace('-','/')}부터`:''}</div>`;
 }
 function unitStatsAll(){   // 단위별 집계 한 번에 (DATA 1회 순회)
   const LR=lastRevMap(), m={};
@@ -9220,14 +9221,14 @@ function renderSession(){
       </section>
       <div class="grp-h a-sh">기록</div>
       <section class="ss-panel a-pnl">${(sx.lastScore&&sx.lastScore.n)?(()=>{ const sc=sx.lastScore, hit=Math.round((sc.n-sc.r[1])/sc.n*100);
-          return `<span class="ssp-k">마지막 성적${sx.lastAt?` · ${esc(fmtAgo(sx.lastAt))}`:''}</span><span class="ssp-n">${hit}%</span><span class="ssp-d">${sc.n.toLocaleString()}회 · ${fmtMin(sc.ms)} · 누적 ${(sx.done||0).toLocaleString()}회</span>`; })():`<span class="ssp-k">아직 성적이 없어요</span><span class="ssp-d">누적 ${(sx.done||0).toLocaleString()}회</span>`}</section>
+          return `<span class="ssp-k">마지막 성적${sc.at?` · ${esc(fmtAgo(sc.at))}`:''}</span><span class="ssp-n">${hit}%</span><span class="ssp-d">${sc.n.toLocaleString()}회 · ${fmtMin(sc.ms)} · 누적 ${(sx.done||0).toLocaleString()}회</span>`; })():`<span class="ssp-k">아직 성적이 없어요</span><span class="ssp-d">누적 ${(sx.done||0).toLocaleString()}회</span>`}</section>
       ${(sx.lastScore&&sx.lastScore.n)?`<details class="gr-fold grp a-det"${sx.lastScore.run===undoRun&&Date.now()-(sx.lastScore.at||0)<10*60*1000?' open':''}><summary class="gr-row"><span class="gr-b"><span class="gr-t">자세히</span></span>${CHEV}</summary><div class="gr-in">${scoreHtml(sx.lastScore)}${trendHtml(sx)}</div></details>`:''}
       <div class="a-rest">
       <details class="grp gr-fold" id="ssUnitFold"><summary class="gr-row"><span class="gr-b"><span class="gr-t" id="ssUnitSum">이 세션의 단위</span></span>${CHEV}</summary>
         <div id="ssUnits"></div></details>
       <div class="a-rec"><div class="grp-h">기록</div>
       <section class="grp">${(sx.lastScore&&sx.lastScore.n)?(()=>{ const sc=sx.lastScore, hit=Math.round((sc.n-sc.r[1])/sc.n*100);
-          return `<div class="gr-row static"><span class="gr-b"><span class="gr-t">마지막 성적</span><span class="gr-s">${sx.lastAt?`${esc(fmtAgo(sx.lastAt))} · `:''}${sc.n.toLocaleString()}회 · ${fmtMin(sc.ms)}</span></span><span class="gr-r ok">${hit}%</span></div>`; })():'<div class="gr-row static"><span class="gr-b"><span class="gr-t">아직 성적이 없어요</span></span></div>'}
+          return `<div class="gr-row static"><span class="gr-b"><span class="gr-t">마지막 성적</span><span class="gr-s">${sc.at?`${esc(fmtAgo(sc.at))} · `:''}${sc.n.toLocaleString()}회 · ${fmtMin(sc.ms)}</span></span><span class="gr-r ok">${hit}%</span></div>`; })():'<div class="gr-row static"><span class="gr-b"><span class="gr-t">아직 성적이 없어요</span></span></div>'}
         <div class="gr-row static"><span class="gr-b"><span class="gr-t">누적</span></span><span class="gr-r">${(sx.done||0).toLocaleString()}회</span></div>
         ${(sx.lastScore&&sx.lastScore.n)?`<details class="gr-fold"${sx.lastScore.run===undoRun&&Date.now()-(sx.lastScore.at||0)<10*60*1000?' open':''}><summary class="gr-row"><span class="gr-b"><span class="gr-t">자세히</span></span>${CHEV}</summary><div class="gr-in">${scoreHtml(sx.lastScore)}${trendHtml(sx)}</div></details>`:''}
       </section><div class="grp-f"></div></div>
@@ -10944,7 +10945,7 @@ function median(a){ if(!a.length)return 0; const b=a.slice().sort((x,y)=>x-y);
    영원히 0이 되어 **이 기능이 하는 일이 없어진다.** 중앙값은 몰아 푼 날에 안 흔들린다. */
 function dailyThroughput(){        // 실측 하루 처리량 — 「푼 날」의 중앙값
   const by=dailyStats(), v=[];
-  for(let i=1;i<=28;i++){ const e=by[dayKeyOffset(-i)]; if(e&&e.n>0) v.push(e.n); }
+  for(let i=1;i<=28;i++){ const e=by[dayKeyOffset(-i)]; if(e&&e.cards>0) v.push(e.cards); }   // 장(재출 제외) — 예보 막대가 장이라 기준선도 장이다(리뷰 09-25 L4-6 · 회로 세면 재출만큼 부풀어 이월을 과소 예보)
   return v.length? Math.max(20, median(v)) : 150;
 }
 /* 🔴 **예보가 이월을 알아야 한다**(감사 S3). 예전 예보는 「그날 새로 due가 되는 수」였다 —
@@ -11051,6 +11052,8 @@ function statInputs(){
   let fN=0,fOK=0,rN=0,rOK=0; const mix=[0,0,0,0,0];
   for(const e of state.log){ const first=!seen.has(e[0]); seen.add(e[0]);
     if(logTs(e)<cut) continue;                 // 🔴 logTs는 이미 ms다 — `*1000`을 곱하면 30일 창이 통째로 무력화된다
+    if(e[3]&&e[3].re) continue;                // 재출 제외 — 통계의 다른 유지율(retentionSplit)과 정의를 맞춘다(리뷰 09-25 L4-7 · R22 잔존 · seen 갱신 뒤)
+    if(!BYID[e[0]]) continue;                  // 없어진 카드도 retentionSplit처럼 뺀다 — 둘이 같은 수가 되게(실측 재출만 빼면 0.846 vs 0.860)
     if(first){ fN++; if(e[2]>1) fOK++; } else { rN++; if(e[2]>1) rOK++; }
     if(e[2]>1) mix[e[2]]++; }
   const mixTot=mix[2]+mix[3]+mix[4]||1;

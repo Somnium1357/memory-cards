@@ -7374,20 +7374,50 @@ function cycKeys(c){
           for(const id of [a.id,b.id]){ if(!_cycMemo.has(id)) _cycMemo.set(id,[]); if(!_cycMemo.get(id).includes(k)) _cycMemo.get(id).push(k); } } } } }
   return _cycMemo.get(c.id)||[];
 }
+/* 🔴 **09-25 몰린 낱장 묶음만 — 같은 열거 하루 2장** (동하 09-25 23시 「이번 앞에 몰린 묶음만 일 n장 규칙으로 · 2장까지」).
+   09-24 「낱장 = 부모 층」으로 안 본 낱장 378장이 신규 앞줄에 몰려, 다음 진도 한 번에 열거 26개의 조각이 2~5장씩 같이 나왔다(23:04~23:27 신규 88 중 75).
+   **일반 규칙이 아니다** — 09-25 23:40 기준 안 본 낱장이 남은 열거 86개(부모 id 고정 목록)에만 건다. 새로 들어오는 낱장은 종전대로.
+   세는 것 = 오늘 처음 본 그 열거의 낱장(로그) + 오늘 큐에 든 그 열거의 안 본 낱장. 복습 중인 낱장·일정·로그 무변 · 신규 들어오는 날만 나뉜다(최대 3일).
+   대가 = 그 부모 통짜의 게이트가 늦게 열린다(09-24 문제의 작은 판 · 동하 수용). 묶음이 다 들어오면 저절로 무효 — 그때 이 목록을 지워도 된다. */
+const ELCOH_DAY_MAX=2, ELCOH_PARENTS=new Set([
+  '0201fa4022a06afa', '0251b532397fe0ee', '02e375fb3fc21624', '0562bbb4afd8c8f6', '14161d6a517a67b2', '1a47322ae20c9560',
+  '2253669dc51813d4', '2c7e74db89d84dd8', '304806e2b66441ef', '31836d034b988c23', '33c7171eddbe2b0b', '386daf418aae8b3e',
+  '38fc9c29bc8f52a3', '3996ea6f38a5504c', '3e8e2892759f12d0', '42149698ab756110', '43ad2d2b53732f14', '441bc81ba66367f2',
+  '4a563a27b2ab9e1b', '4ade2c0a0898a9c7', '4cd10aa62da11235', '4cebe69902ce88c6', '53da54992c7b103e', '558ad93d56e966ff',
+  '56b1feffea336cbe', '58de1ff656e11eda', '5a09a0af03150e16', '5c52602730f0e483', '60280a294acf64cf', '61ed0c7f68af52e1',
+  '62952b2ad2a01995', '640ed054959f88b7', '666b6228107d7b98', '67f2e9d6baf56e6b', '692011a7e5ce3a2b', '6c1fb2f571b4baab',
+  '6e4263a9021a7eef', '726192a0b5e13207', '78d4556ce8478129', '7b732ea5257ac2a2', '7da974d3e8be9554', '807afdbaed1512d3',
+  '8293a09bd71e9a4e', '83ad5b1feab97cc1', '866dc78a81eca64f', '867aaeccdc273716', '882c48413bbe701d', '8e8d49f0b32a1892',
+  '910c36a70302e63a', '91630d3b8d953a78', '927553ff624a5e25', '9373e6a765c872a0', '95c1b67df088d7b9', '95dfdd9925ada717',
+  '992e0cfe999cf438', '99ac79c882b0baaf', '99bb0abfc3c28965', '9e54f3de68477312', '9ee7e349f8240a9e', 'a2509dcf7de2f743',
+  'a2ed476949b7e90e', 'a43ba7cb06d126ce', 'a8195238de54390f', 'a891a00bf9a15dc3', 'abfed17e7cd4ff43', 'ad5261e39dc8431a',
+  'ad64086ed6c87eb1', 'b06b237fec4bcdb0', 'b72c05a8256a415e', 'c2b4184bdeea0bc5', 'c41a079ba91d32a0', 'c86deedfa176d96b',
+  'cb328af6c3ab4fed', 'cb9a1bb990832e82', 'cc8ed204ccf6d154', 'ccfe64f2ef542683', 'cd2d4355e94f010d', 'd4113515e858c13a',
+  'df8b31d6269bd6f9', 'e1d568b8eb411bbe', 'e4ce67f163db9b53', 'e72d84a5b84ac8cb', 'ea30611f55362813', 'f09ef302d53edbfa',
+  'f39d3ef884106c52', 'fc32dcdc8bbaf666']);
+let _fst=null, _fstLen=-1, _fstDay='';
+function firstSeenToday(){ const tk=todayKey(); if(_fst && _fstLen===state.log.length && _fstDay===tk) return _fst;
+  const seen=new Set(), out=new Set(); for(const e of state.log){ if(seen.has(e[0])) continue; seen.add(e[0]); if(dayKey(logDate(e))===tk) out.add(e[0]); }
+  _fst=out; _fstLen=state.log.length; _fstDay=tk; return out; }
+function elcohKey(c){ const p=elemParent(c); return (p && ELCOH_PARENTS.has(p.id)) ? 'el:'+p.id : null; }
 function prIsolate(list, seed){
   const F=prFacts(), taken=new Map(), rated=todayRatings();
   const cyT=new Map();                                            // 순환 열쇠 → 먼저 잡은 카드 id (자기 자신은 안 막는다 — 오늘 「다시」로 남은 카드)
+  const elT=new Map(), fst=firstSeenToday();                      // 09-25 몰린 낱장 묶음 — 그 열거의 오늘 신규 수
+  const elAdd=c=>{ const k=elcohKey(c); if(k) elT.set(k,(elT.get(k)||0)+1); };
   const add=c=>{ prKeys(c).forEach(k=>taken.set(k,(taken.get(k)||0)+1)); cycKeys(c).forEach(k=>{ if(!cyT.has(k)) cyT.set(k,c.id); }); };
-  for(const id in rated){ const c=BYID[id]; if(c) add(c); }   // 오늘 푼 것
-  for(const c of (seed||[])){ if(c) add(c); }                  // 오늘 큐에 든 것
+  for(const id in rated){ const c=BYID[id]; if(c){ add(c); if(fst.has(id)) elAdd(c); } }   // 오늘 푼 것(낱장 묶음은 오늘 처음 본 것만)
+  for(const c of (seed||[])){ if(c){ add(c); if(isNew(c)) elAdd(c); } }                  // 오늘 큐에 든 것
   const out=[];
   for(const c of list){
     if((c.pr && PR_GATED_TYPS.includes(c.typ) && F.hasDef.has(c.pr) && !F.passed.has(c.pr)) || elemGated(c)) continue;  // ② 사례·원소 선행
+    const ek=isNew(c)?elcohKey(c):null;
+    if(ek && (elT.get(ek)||0)>=ELCOH_DAY_MAX) continue;                                                 // ①'' 09-25 몰린 낱장 묶음 — 그 열거 오늘 이미 2장
     const ks=prKeys(c), cy=cycKeys(c);
-    if(!ks.length && !cy.length){ out.push(c); continue; }
+    if(!ks.length && !cy.length){ out.push(c); if(ek) elT.set(ek,(elT.get(ek)||0)+1); continue; }
     if(ks.some(k=>(taken.get(k)||0)>=PR_DAY_MAX)) continue;                                           // ① 그 답이 오늘 이미 3장
     if(cy.some(k=>cyT.has(k) && cyT.get(k)!==c.id)) continue;                                         // ①' 순환 짝이 오늘 이미 자리를 잡았다
-    out.push(c); add(c);
+    out.push(c); add(c); if(ek) elT.set(ek,(elT.get(ek)||0)+1);
   }
   return out;
 }

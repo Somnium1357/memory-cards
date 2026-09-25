@@ -4879,7 +4879,11 @@ function effDueKey(k, id){               // 저장된 due → 화면에 쓰는 �
          🔴 예전 가드 `d<=T`는 「당긴 자리 = 오늘」까지 거부해 **앞당김이 한 번도 작동한 적이 없었다**(전층 감사 F1-1 · 09-06):
          월·화에 「수요일 due」로 보이던 카드가 수요일이 되면 d===T라 금요일로 밀렸다. 목요일 due 전부가 금·토·일로 갔고,
          시험 주엔 11-05 due의 1/3이 시험 뒤(11-08)로 갔다. 이제 d<T(진짜 과거)이거나 오늘 채점한 카드만 뒤로. */
-      if(d<T || (d===T && ratedToday)) d=restWalk(k,1,off);
+      /* 🔴 **휴식일 전(T<k)에 당긴 자리를 놓친 카드는 오늘 그대로 둔다**(리뷰 09-25 L1-1). 예전엔 d<T면 무조건 휴식일 뒤로 보내서,
+         월요일로 당긴 카드를 월요일에 못 풀면 화·수에는 사라졌다가 일요일에 나왔다(앞당기려던 카드가 FSRS보다 3일 늦게).
+         오늘이 원래 due보다 이르므로 여전히 「앞당김」이다. 휴식일 당일·이후(T>=k)와 오늘 채점한 카드(되돌이 가드)는 예전대로 뒤로. */
+      if(d<T && T<k && !ratedToday && !isRestDay(T)) d=T;
+      else if(d<T || (d===T && ratedToday)) d=restWalk(k,1,off);
     } else {
       d=restWalk(k,1,off);               // 직접 추가한 날 = 뒤 3일 (과거로 못 보낸다)
     }
@@ -5737,7 +5741,8 @@ function mergeSessInto(remote){
     fsrsCfg.w=remote.fw||null; fsrsCfg.wAt=remote.fwAt||''; buildEngine(); mergedSched=true; }
   /* 휴식일도 「더 새것이 이긴다」 — cap과 같은 규칙. 🔴 목록을 합집합으로 합치면 **지운 날이 되살아난다.** */
   if(remote && remote.rest && (remote.restAt||0) > (rest.at||0)){
-    rest.dow=remote.rest.dow; rest.days=remote.rest.days||[]; rest.skip=remote.rest.skip||[]; rest.at=remote.restAt; restReset(); }
+    rest.dow=remote.rest.dow; rest.days=remote.rest.days||[]; rest.skip=remote.rest.skip||[]; rest.at=remote.restAt; restReset();
+    mergedSched=true; }   // 🔴 실효 due가 통째로 움직인다 — push 409 병합 뒤에도 오늘 큐를 맞추게(리뷰 09-25 L1-4 · R16의 원격 쪽)
   if(remote && remote.ivShow && (remote.ivShowAt||0) > (ivShow.at||0)){
     ivShow.v=!!remote.ivShow.v; ivShow.at=remote.ivShowAt; lsSet(K_IVSHOW, JSON.stringify(ivShow)); applyIv(); }
   if(remote && remote.reshow && (remote.reshowAt||0) > (reshow.at||0)) setReshow(remote.reshow.v, remote.reshowAt, true);
@@ -5854,6 +5859,9 @@ setInterval(()=>{ if(hasPending() && Date.now()-lastPushAt>PUSH_EVERY_MS) push()
   if(document.visibilityState==='visible' && Date.now()-lastVerAt>30*60*1000){ lastVerAt=Date.now(); checkNewVersion(); }
 }, 30*1000);
 let lastRefreshAt=Date.now(), lastVerAt=Date.now();
+/* 🔴 마지막으로 원격 로그를 받은 주(리뷰 09-25 L1-2) — 켜 둔 채 주가 바뀌면 refreshRemote가 **이번 주 파일만** 받아서,
+   다른 기기가 일요일 밤에 푼 채점(지난 주 파일)이 재부팅 전까지 안 들어왔다(이미 푼 카드 재출제). 주가 바뀌었거나 월요일이면 지난 주도 받는다. */
+let refreshWk=thisWeek();
 let hiddenAt=0;
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){
@@ -5891,9 +5899,14 @@ async function refreshRemote(){     // 포그라운드 복귀 시 원격 상태 
          사라진 카드는 옛 객체를 그대로 둔다(풀던 자리를 말없이 빼앗지 않는다 — 정리는 pruneSolvedFromQueues 몫). */
       queue=queue.map(c=>BYID[c.id]||c);
     }
-    const [sc, fb, sess, wk] = await Promise.all([
-      ghGet(MARKS_PATH), ghGet(FB_PATH), ghGet(SESS_PATH), ghGet(logPath(thisWeek()))]);
-    if(sc||fb||sess||wk){
+    const tw=thisWeek(), pws=[...new Set([refreshWk, weekKeyOf(new Date(Date.now()-86400000))])].filter(w=>w!==tw);   // 주가 바뀐 뒤 첫 새로고침 · 월요일
+    const [sc, fb, sess, wk, ...pwl] = await Promise.all([
+      ghGet(MARKS_PATH), ghGet(FB_PATH), ghGet(SESS_PATH), ghGet(logPath(tw)), ...pws.map(w=>ghGet(logPath(w)))]);
+    let pwNew=false;
+    pws.forEach((w,i)=>{ const j=pwl[i]; if(!j||!Array.isArray(j.log)) return;
+      const n0=(logWeeks[w]||[]).length; mergeLogInto(j, w); if(logWeeks[w].length!==n0){ pwNew=true; logCacheSet(w, {v:2,week:w,log:logWeeks[w]}); } });
+    refreshWk=tw;
+    if(sc||fb||sess||wk||pwNew){
       if(sc){ mergeMarksInto(sc); reapMarks(sc); }   // 다른 기기의 해제도 그때 걷어낸다
       if(fb){ mergeFbInto(fb); reapFb(fb); }   // 앱을 켜 둔 채로도 루틴이 소진한다 — 그때도 걷어낸다
       if(wk) mergeLogInto(wk, thisWeek()); else rebuildLog();
@@ -9849,9 +9862,13 @@ function setExamRet(v){
    오늘 큐는 옛 기준 그대로였다. 자동 세션마다 큐를 짠 기준을 적어 두고, 홈을 그릴 때 기준이 달라졌으면 한 번 resync한다. */
 function basisKey(){ return [fsrsCfg.ret, curricRet(), fsrsCfg.focusAt||0, examRet(), fsrsCfg.wAt||''].join('|'); }
 function basisCheck(){ const b=basisKey(), tk=todayKey();
+  if(logIncomplete) return;            // 🔴 지난 주 로그를 못 받은 부팅 — 도장은 낡은 채로 둔다(다음 부팅이 맞춘다 · 리뷰 09-25 L1-3)
   if(sessions.some(sx=>!isFixed(sx) && sx.day===tk && sx.basis && sx.basis!==b)) resyncQueues();
   for(const sx of sessions){ if(!isFixed(sx) && sx.day===tk && !sx.basis) sx.basis=b; } }   // 도장 없는 옛 세션은 조용히 찍기만
 function resyncQueues(){
+  /* 🔴 부분 이력(지난 주 로그 수신 실패)으로 오늘 큐를 다시 짜지 않는다(리뷰 09-25 L1-3) — refillSess와 같은 가드(F1-6).
+     익힌 카드가 신규·due로 보여 큐가 부풀고 push로 다른 기기까지 번졌다. 배너(「새로고침하세요」)가 이미 떠 있다. */
+  if(logIncomplete) return {add:0, del:0};
   let add=0, del=0;
   for(const sx of sessions){
     if(isFixed(sx)) continue;

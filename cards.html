@@ -12305,16 +12305,33 @@ function ymEvent(k, m, extra){
   if(!k || YM_MARKS.indexOf(m)<0 && m!=='done' && m!=='skip' && m!=='unskip' && m!=='u') return null;
   const e=Object.assign({i:ymNonce(), t:new Date().toISOString(), k:k, m:m}, extra||{});
   ymAdd([e]); YM.pending.push(e); ymSavePending();
+  if(m!=='u') ymMineAdd(e.i);
   ymDerive(); ymPushSoon();
   return e;
 }
-function ymUndoLast(){                          // 마지막 (안 무른) 이벤트 하나를 무른다 — 이것도 이벤트
+/* 🔴 되돌리기 대상 = **오늘 이 기기에서 한 표시**만(리뷰 09-25 L6-2) — 예전엔 로그 전체(모든 기기·모든 날)의 마지막을 물러서,
+   문풀에 들어오자마자 U 한 번이면 어제 닫은 문항이 다시 열렸고 · 다른 기기 ✓가 당겨져 있으면 남의 것을 무르고 내 것은 남겼다.
+   이 기기가 오늘(4시 경계) 만든 이벤트 id를 localStorage에 들고 있는다(앱을 다시 열어도 오늘 것은 무를 수 있게). */
+const K_YM_MINE='cards_ym_mine_v1';
+function ymMine(){ let o=null; try{ o=JSON.parse(lsGet(K_YM_MINE)||'null'); }catch(e){}
+  return (o && o.d===todayKey() && Array.isArray(o.ids)) ? new Set(o.ids) : new Set(); }
+function ymMineAdd(id){ const s=ymMine(); s.add(id); try{ lsSet(K_YM_MINE, JSON.stringify({d:todayKey(), ids:[...s].slice(-500)})); }catch(e){} }
+/* 연타 가드 350ms(리뷰 09-23 R9 → 09-25 L6-1) — ▽·또 틀림·되돌리기·제외 버튼이 한 시계를 같이 쓴다. 더블탭 = 한 번. */
+function ymTapOk(){ const n=Date.now(); if(n-(window._ymTapAt||0)<350) return false; window._ymTapAt=n; return true; }
+const YM_MARK_NAME={'x':'또 틀림','done':'풀었음','skip':'제외','unskip':'제외 해제'};
+function ymUndoToast(u){                        // 무엇을 물렀는지 보인다(L6-2) — 「되돌렸어요 · 국어 p14/23 ▽」
+  const e=u && YM.ev.find(x=>x.i===u.ref); if(!e){ toast('되돌렸어요'); return; }
+  const k=String(e.k).replace(/^\d+\./,'').replace('/',' ');
+  toast('되돌렸어요 · '+k+' '+(e.g&&e.m!=='done'?'풀었음':(YM_MARK_NAME[e.m]||e.m)));
+}
+function ymUndoLast(){                          // 오늘 이 기기가 한 마지막 (안 무른) 이벤트 하나를 무른다 — 이것도 이벤트
   const undone=new Set(YM.ev.filter(e=>e.m==='u'&&e.ref).map(e=>e.ref));
+  const mine=ymMine();
   for(let i=YM.ev.length-1;i>=0;i--){ const e=YM.ev[i];
-    if(e.m==='u' || undone.has(e.i)) continue;
+    if(e.m==='u' || undone.has(e.i) || !mine.has(e.i)) continue;
     /* 🔴 묶음(g) — 「이 단위 풀었음」은 done + 표시 없던 문항 ○를 한 번에 찍는다. 되돌리기도 **묶음째**(리뷰 09-23 R20 · 13문항 단위 = 14탭이었다).
        각각은 평범한 u 이벤트라 파생·파이썬 참조는 그대로다. */
-    if(e.g){ let last=null; for(const x of YM.ev){ if(x.g===e.g && x.m!=='u' && !undone.has(x.i)) last=ymEvent(x.k,'u',{ref:x.i}); } return last; }
+    if(e.g){ let last=null; for(const x of YM.ev){ if(x.g===e.g && x.m!=='u' && !undone.has(x.i) && mine.has(x.i)) last=ymEvent(x.k,'u',{ref:x.i}); } return last; }
     return ymEvent(e.k,'u',{ref:e.i});
   }
   return null;
@@ -12438,7 +12455,9 @@ function ymPace(src){ const dl=YM_DUE[src]; if(!dl) return null; const tk=todayK
   while(d<=dl && g++<400){ if(!isRestDay(d)) days++; d=dkAdd(d,1); }
   let left=0; for(const u of (YM.cat&&YM.cat.units)||[]){ if(ymSrcOf(u)===src && !ymUnitFinished(u)) left++; }
   return {dl, days, left, per: left ? Math.ceil(left/Math.max(1,days)) : 0}; }
-function ymPaceText(src){ const p=ymPace(src); if(!p) return ''; return p.left ? p.dl.slice(5).replace('-','/')+'까지 하루 '+p.per : '끝'; }
+function ymPaceText(src){ const p=ymPace(src); if(!p) return ''; if(!p.left) return '끝';
+  if(p.dl<todayKey()) return '마감 지남 · 남은 '+p.left+'단위';   // 마감 뒤엔 「하루 = 남은 전부」가 떴다(리뷰 09-25 L6-5 · 마감일 당일은 그대로)
+  return p.dl.slice(5).replace('-','/')+'까지 하루 '+p.per; }
 let ymMode = lsGet(K_MODE)==='ym';
 function ymSetMode(on){ ymMode=!!on; lsSet(K_MODE, ymMode?'ym':'card'); document.documentElement.classList.toggle('ym', ymMode); }
 /* 화면 전환은 앱의 go() 하나를 그대로 쓴다. 연문 화면으로 가면 모드가 켜지고, 카드 화면으로 가면 꺼진다 —
@@ -12480,14 +12499,15 @@ async function ymEnter(){
 }
 /* ═══ 문풀 오늘 — 키·패드 (UX 정리안 §6 · 09-24) ═══
    선택 행 하나(_ymSel = 오늘 목록 안 순번)를 ↑↓로 옮기고 Z = 또 틀림 · C = 닫힘 · U = 되돌리기.
-   패드는 padSynth가 같은 키를 보내므로 따로 배선하지 않는다. 행을 누르면 그 행이 선택된다(탭 동작은 그대로). */
+   패드는 padSynth가 채점 숫자(1=Z · 3=C)와 U를 보낸다 — ymTodayKey가 숫자를 같은 자리로 읽는다. 행을 누르면 그 행이 선택된다(탭 동작은 그대로). */
 let _ymSel=0;
 function ymRows(){ return [...document.querySelectorAll('#ymTodayBody .ym-list > .ym-row[data-ym-item]')]; }
 function ymSelSync(){ const rows=ymRows(); if(_ymSel>=rows.length) _ymSel=Math.max(0,rows.length-1);
   rows.forEach((r,i)=>{ r.classList.toggle('sel', i===_ymSel); r.addEventListener('pointerdown',()=>{ _ymSel=i; ymSelSync(); },{once:true}); }); }
 function ymTodayKey(e){
   if(!$('scrYmToday').classList.contains('on') || document.querySelector('.ovl.show')) return false;
-  const k=keyOf(e), rows=ymRows();
+  let k=keyOf(e); const rows=ymRows();
+  if(k==='1') k='z'; else if(k==='3') k='c';   // 패드는 채점을 숫자로 합성한다 — 다시(1)=Z 자리 · 알맞음(3)=C 자리(리뷰 09-25 L6-4 · 카드 모드와 같은 짝)
   if(e.key==='ArrowDown'||e.key==='ArrowUp'){ if(!rows.length) return false;
     _ymSel=Math.max(0,Math.min(rows.length-1,_ymSel+(e.key==='ArrowDown'?1:-1))); ymSelSync();
     rows[_ymSel].scrollIntoView({block:'nearest'}); return true; }
@@ -12591,15 +12611,14 @@ function ymRenderToday(){
 
   // 진도 한 줄
   const p=ymProgress();
-  const paceSpans=YM_SRC.filter(([k])=>YM_DUE[k] && YM.cat.units.some(u=>ymSrcOf(u)===k)).map(([k,nm])=>{ const q=ymPace(k); return '<span>'+nm+' '+(q.left?q.dl.slice(5).replace('-','/')+'까지 하루 <b>'+q.per+'</b>':'<b>끝</b>')+'</span>'; }).join('');   // 소스별(메타 09-23)
+  const paceSpans=YM_SRC.filter(([k])=>YM_DUE[k] && YM.cat.units.some(u=>ymSrcOf(u)===k)).map(([k,nm])=>{ const q=ymPace(k); return '<span>'+nm+' '+(!q.left?'<b>끝</b>':q.dl<todayKey()?'마감 지남 · 남은 <b>'+q.left+'</b>단위':q.dl.slice(5).replace('-','/')+'까지 하루 <b>'+q.per+'</b>')+'</span>'; }).join('');   // 소스별(메타 09-23)
   h+='<div class="ym-prog ymg-foot"><span>단위 <b>'+p.units.toLocaleString()+'</b>/'+p.unitsN.toLocaleString()+(p.skipped?' <small>(제외 '+p.skipped+')</small>':'')+'</span><span>문항 <b>'+p.items.toLocaleString()+'</b>/'+p.itemsN.toLocaleString()+(p.itemsSkipped?' <small>(제외 '+p.itemsSkipped+')</small>':'')+'</span>'
     +paceSpans+'<span>재풀이 잔여 <b>'+p.redo+'</b></span></div>';
   body.innerHTML=h;
   /* 🔴 연타 가드 350ms(리뷰 09-23 R9) — 누르면 곧바로 다시 그려 다음 행이 같은 자리로 올라와, 더블탭이 **다음 문항까지 닫았다.** 카드 채점 가드와 같은 값. */
-  const ymTapOk=()=>{ const n=Date.now(); if(n-(window._ymTapAt||0)<350) return false; window._ymTapAt=n; return true; };
   body.querySelectorAll('[data-ym-close]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); if(!ymTapOk()) return; ymEvent(b.dataset.ymClose,'▽'); toast('닫았어요 — 잘못 눌렀으면 되돌리기'); ymRenderToday(); });
   body.querySelectorAll('[data-ym-x]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); if(!ymTapOk()) return; ymEvent(b.dataset.ymX,'x'); toast('또 틀림 — 7일 뒤 · 잘못 눌렀으면 되돌리기'); ymRenderToday(); });
-  const ub=$('ymTodayUndo'); if(ub) ub.onclick=ev=>{ ev.stopPropagation(); if(ymUndoLast()){ toast('되돌렸어요'); ymRenderToday(); } else toast('되돌릴 것이 없어요'); };
+  const ub=$('ymTodayUndo'); if(ub) ub.onclick=ev=>{ ev.stopPropagation(); if(!ymTapOk()) return; const r=ymUndoLast(); if(r){ ymUndoToast(r); ymRenderToday(); } else toast('오늘 이 기기에서 되돌릴 것이 없어요'); };
   ymSelSync();
   body.querySelectorAll('[data-ym-unit]').forEach(r=>r.onclick=()=>ymOpenUnit(r.dataset.ymUnit));
   body.querySelectorAll('[data-ym-item]').forEach(r=>r.onclick=()=>{ const it=YM.cat.items.find(x=>x.id===r.dataset.ymItem); if(it) ymOpenUnit(it.unit); });
@@ -12669,11 +12688,11 @@ function ymRenderUnit(id){
     const s=YM.st.items[it.id]; if(s&&s.skip){ toast('제외된 문항 — 「해제」를 누르면 다시 셈'); return; } ymCycle(it); ymRenderUnit(id); });
   /* 문항 「제외」(동하 09-18 「단위 제외가 아니라 문항 제외」) — 이 문항은 안 푼다: 오늘 다시 풀 목록·진도 분모·재풀이 잔여에서 빠진다. 표시(✓△…)는 남고, 해제하면 그대로 돌아온다. */
   body.querySelectorAll('[data-ym-skip]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); const k=b.dataset.ymSkip; const s=YM.st.items[k]; const sk=!!(s&&s.skip);
-    ymEvent(k, sk?'unskip':'skip'); toast(sk?'제외를 풀었어요':'이 문항을 제외했어요'); ymRenderUnit(id); });
+    if(!ymTapOk()) return; ymEvent(k, sk?'unskip':'skip'); toast(sk?'제외를 풀었어요':'이 문항을 제외했어요'); ymRenderUnit(id); });
   ymBindSubs(body, ()=>ymRenderUnit(id));
-  $('ymUndoBtn').onclick=()=>{ if(ymUndoLast()){ toast('되돌렸어요'); ymRenderUnit(id); } else toast('되돌릴 것이 없어요'); };
+  $('ymUndoBtn').onclick=()=>{ if(!ymTapOk()) return; const r=ymUndoLast(); if(r){ ymUndoToast(r); ymRenderUnit(id); } else toast('오늘 이 기기에서 되돌릴 것이 없어요'); };
   /* 「제외」(동하 09-16) = 이 단위는 안 푼다 — 다음 차례·진도 분모에서 빠진다. 문항 표시·재풀이 due는 안 건드린다. 해제도 이벤트(마지막 것이 이긴다). */
-  $('ymSkipBtn').onclick=()=>{ ymEvent(u.id, skip?'unskip':'skip'); toast(skip?'제외를 풀었어요':'제외했어요 — 다음 차례에서 빠져요'); ymRenderUnit(id); };
+  $('ymSkipBtn').onclick=()=>{ if(!ymTapOk()) return; ymEvent(u.id, skip?'unskip':'skip'); toast(skip?'제외를 풀었어요':'제외했어요 — 다음 차례에서 빠져요'); ymRenderUnit(id); };
   $('ymDoneBtn').onclick=()=>{
     if(done) return;
     /* 「이 단위 풀었음」 = 초회 완료 날짜 + 그때 표시 없는 문항 전부에 ○를 **실제 이벤트로** 저장(§3-2 · 해석 규칙이 아니라 데이터) */

@@ -6935,6 +6935,38 @@ function refillSess(sx){ // 전체 범위 세션은 날이 바뀌면 스스로 �
 function sessRemain(sx){ return (curSess&&curSess.id===sx.id)
   ? queue.slice(qPos).filter(c=>!settledToday(c)&&!buried(c)&&!retired(c)&&!offed(c)).length   // 끈 카드 제외(F3-8)
   : gateIn(sessCards(sx), null).length; }   // 🔴 격리분(사슬·짝 키·방향) 전부 빼고 센다 — 숫자와 실제가 어긋나면 안 된다(F3-3: 사슬만 세던 것)
+/* 범위 피커의 시작 선택 = 지금 범위에서 빼 둔 것(ex)을 뺀 것. ex가 단위 안쪽(중주제·3층)만 뺐으면 그 단위를 한 층 풀어서 나머지를 체크한다. */
+function scopeEffSel(sx){
+  const sc=sx.scope||{}, ex=sc.ex||{}, exU=new Set(ex.units||[]), exM=new Set(ex.mids||[]);
+  const units=[], mids=[];
+  const under=(k)=>[...exM].some(x=>x.startsWith(k+'||'));
+  const midOut=(mk)=>{ if(exM.has(mk)) return; if(!under(mk)){ mids.push(mk); return; } for(const sk of subsOfMid(mk)) if(!exM.has(sk)) mids.push(sk); };
+  for(const u of (sc.units||[])){ if(exU.has(u)) continue; if(!under(u)){ units.push(u); continue; } for(const mk of midsOfUnit(u)) midOut(mk); }
+  for(const m of (sc.mids||[])){ if(exU.has(rowUnit(m)) || units.includes(rowUnit(m))) continue; if(isSubRow(m)){ if(!exM.has(m)) mids.push(m); continue; } midOut(m); }
+  return {units:[...new Set(units)], mids:[...new Set(mids)]};
+}
+function applyScopePick(sx, eff0, sel){
+  const u0=new Set(eff0.units), m0=new Set(eff0.mids);
+  const addU=sel.units.filter(k=>!u0.has(k)), addM=sel.mids.filter(k=>!m0.has(k) && !u0.has(rowUnit(k)));
+  const oldU=sx.scope.units||[], oldM=sx.scope.mids||[];
+  const gone=[...oldU.filter(k=>!sel.units.includes(k)), ...oldM.filter(k=>!sel.mids.includes(k))];
+  const before=new Set(DATA.filter(c=>inScope(c, asPreset(sx).scope)).map(c=>c.id));
+  const exB=JSON.parse(JSON.stringify(sx.scope.ex||{}));
+  sx.scope.units=sel.units.slice(); sx.scope.mids=sel.mids.slice();
+  if((exB.units||[]).length || (exB.mids||[]).length){ sx.scope.ex={units:[],mids:[]}; exStamp(sx, exB); }
+  if(gone.length) scShrink(sx, gone);
+  scGrow(sx);
+  const sc=sx.scope, q0=sx.q.slice();
+  if(gone.length || (exB.units||[]).length || (exB.mids||[]).length){   // 뺀 것이 있을 때만 거른다 — 직접 세션이 낱장으로 담은 카드(범위 밖)를 넣기만 했는데 지우면 안 된다
+    sx.q=sx.q.filter(id=>{ const c=BYID[id]; return c && scopeMatch(c, {units:sc.units, mids:sc.mids, ex:sc.ex, subj:[], tags:[], typ:[]}); });
+    const dropped=q0.filter(id=>!sx.q.includes(id)); if(dropped.length) qShrink(sx, dropped); }
+  let added=0; if(addU.length||addM.length) added=addScopeToSess(sx, {units:addU, mids:addM});
+  const after=new Set(DATA.filter(c=>inScope(c, asPreset(sx).scope)).map(c=>c.id));
+  let inN=0, outN=0; for(const id of after) if(!before.has(id)) inN++; for(const id of before) if(!after.has(id)) outN++;
+  if(curSess&&curSess.id===sx.id){ curPreset=asPreset(sx); requeueLive(sx); counts(); }
+  saveSessionsFlush(); renderSession();
+  toast(!inN&&!outN ? '범위 그대로예요' : [inN?`${inN.toLocaleString()}장 넣음`:'', outN?`${outN.toLocaleString()}장 뺌`:''].filter(Boolean).join(' · ')+(added?` — 오늘 큐 +${added}`:''));
+}
 function addScopeToSess(sx, sel){ // 내용 추가 — sel={units:[],mids:[]}
   const have=new Set(sx.q);
   const p=asPreset(sx);
@@ -9345,7 +9377,7 @@ function renderSession(){
       <section class="grp a-rng">
         ${(refillQ&&refillQ.length)?row('ssRefill',IC('<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/>','var(--c-green)'),'이어서 채우기',esc(comp.replace(/^ · /,'')),`${refillQ.length.toLocaleString()}장`):''}
         ${nt?row('ssNew',IC('<circle cx="12" cy="12" r="8"/><path d="M12 8.5v7M8.5 12h7"/>','var(--c-acc)'),'다음 진도 넣기','',`${nt.mixed?`${nt.subs}과목`:esc(String(nt.label||'').split(' · ')[0])} · ${ntU.fresh.length.toLocaleString()}장`):''}
-        ${row('ssAdd',IC('<path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/>','var(--c-indigo)'),'범위 넓히기','',null)}
+        ${row('ssAdd',IC('<path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/>','var(--c-indigo)'),((sx.scope.units||[]).length||(sx.scope.mids||[]).length||isFixed(sx))?'범위 고르기':'범위 넓히기','',null)}
         ${row('ssEx',IC('<circle cx="12" cy="12" r="8"/><path d="M8.5 12h7"/>','var(--c-sec)'),'주제 빼 두기','',exN?`${exN}개 · ${exCards.toLocaleString()}장`:null)}
       </section>
       <div class="grp-h a-sh">기록</div>
@@ -9403,7 +9435,14 @@ function renderSession(){
       saveSessionsFlush(); renderSession();
       toast(exCount(sx)?`${exCount(sx)}장을 이 세션에서 빼 뒀어요`:'제외를 지웠어요'); }});
   const growsScope = isFixed(sx) || (sx.scope.units||[]).length || (sx.scope.mids||[]).length;
-  $('ssAdd').onclick=()=>openUnitPick({title:'내용 추가',
+  /* 🔴 **범위를 담은 세션 = 넣기·빼기를 한 피커로** (동하 09-25 「피커에서 넣고 빼고 둘 다 · 하위 다 선택되면 상위도 체크」).
+     지금 범위(빼 둔 것 제외)가 체크된 채로 열리고, 켜면 넣고 끄면 뺀다. 확인 = 달라진 것만 반영.
+     빼기는 범위에서 직접 걷고 툼스톤(scShrink · 병합에 산다 · 09-24 전 경로) · 저장 큐에서도 걷는다(qShrink).
+     빼 둔 주제(ex)는 이 피커가 곧 진실이 되므로 비운다(exStamp 툼스톤). 전 범위 세션(범위 없음)은 종전 「내용 추가」 그대로. */
+  if(growsScope){ $('ssAdd').onclick=()=>{ const eff0=scopeEffSel(sx);
+    openUnitPick({title:'범위 고르기', desc:'체크된 것이 이 세션 범위예요 — 켜면 넣고, 끄면 빠져요', selected:eff0, collapsed:true,
+      onOk:(sel)=>applyScopePick(sx, eff0, sel)}); }; }
+  else $('ssAdd').onclick=()=>openUnitPick({title:'내용 추가',
     desc:isFixed(sx)?'고른 범위가 이 세션에 들어오고, 못 푼 잔량은 다음날로 이월됩니다.'
         :growsScope?'고른 범위가 이 세션에 들어옵니다 — 날이 바뀌어도 계속 채워져요.'
                     :'전 범위 세션이라 오늘 큐에만 얹습니다 (범위는 그대로).',
@@ -9470,7 +9509,7 @@ function renderSession(){
     const inQ=seen[k]||0;
     const kids=kidsOf(k), subMids = kids.length>1 ? kids : null;
     const row=unitRow(k, stats[k]||{n:0,due:0,nw:0,last:0},
-      {inQ, action2:'빼기',
+      {inQ,   /* 빼기 버튼은 뺐다(동하 09-26 「피커랑 작동이 똑같다」) — 넣고 빼기 = 「범위 고르기」·「주제 빼 두기」 */
        expandable:!!subMids, expanded:ssOpen.has(k),
        onExpand:(kk)=>{ ssOpen.has(kk)?ssOpen.delete(kk):ssOpen.add(kk); renderSession(); },
        rerender:renderSession,
@@ -9491,7 +9530,7 @@ function renderSession(){
       for(const mk of subMids){
         const subSubs=(!kidIsSub)?subsOfMid(mk):[];
         box.appendChild(unitRow(mk, kidStats[mk]||{n:0,due:0,nw:0,last:0},
-          {inQ:seenKid[mk]||0, action2:'빼기', rerender:renderSession,
+          {inQ:seenKid[mk]||0, rerender:renderSession,
            expandable:subSubs.length>0, expanded:ssOpen.has(mk),
            onExpand:(kk)=>{ ssOpen.has(kk)?ssOpen.delete(kk):ssOpen.add(kk); renderSession(); },
            onName:(kk)=>playUnitFirst(sx,kk),
@@ -9500,7 +9539,7 @@ function renderSession(){
           const seenSub=countBy(qIds(), cardSubKey, subSubs);
           const b2=document.createElement('div'); b2.className='u-sub';
           for(const sk of subSubs) b2.appendChild(unitRow(sk, subStats[sk]||{n:0,due:0,nw:0,last:0},
-            {inQ:seenSub[sk]||0, action2:'빼기', rerender:renderSession,
+            {inQ:seenSub[sk]||0, rerender:renderSession,
              onName:(kk)=>playUnitFirst(sx,kk),
              onAction2:(kk)=>removeUnitFromSess(sx,kk)}));
           box.appendChild(b2);
@@ -9770,7 +9809,7 @@ function openUnitPick(o){
      🔴 「이미 들어 있는 것」(pkHave)은 펼치지 **않는다** (동하 09-12 「내용 추가 피커, 닫았다 열면 다 접혀 있게」) —
      09-09에 held 표시를 넣으며 같이 펼쳤더니 넓은 세션에선 전 과목이 펼쳐진 채로 열렸다. 흐린 ✓는 펼치면 보인다. */
   pkOpen={};
-  if(pkMode!=='sessions') for(const node of buildTree()){
+  if(pkMode!=='sessions' && !o.collapsed) for(const node of buildTree()){
     if(node.units.some(u=>pkSel.units.includes(u.key)||pkSel.mids.some(m=>m.startsWith(u.key+'||'))))
       pkOpen[node.subj]=true;
   }

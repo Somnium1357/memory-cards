@@ -1530,7 +1530,9 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 .sub-title{order:9;flex:0 0 100%;font-family:var(--font);font-size:34px;font-weight:700;letter-spacing:-.025em;line-height:41px;margin-top:8px;}
 .sub-head>.tb-btn:first-child+.sub-title+*{margin-left:auto;}
 @media (min-width:760px){ #scrList .sub-head>.tb-btn:first-child,#scrStats .sub-head>.tb-btn:first-child{display:none;} #scrList .sub-title,#scrStats .sub-title{margin-top:0;} }
-.sub-body{padding:16px var(--sp-m) 24px;}
+.sub-body{padding:16px var(--sp-m) 24px;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 16px);mask-image:linear-gradient(to bottom,transparent 0,#000 16px);}   /* 내리면 제목 밑에서 칼같이 잘리던 것 → 윗여백 16에서 흐려지며 사라진다(동하 09-26 「헤더랑 간격이 붙었다」) · 평소엔 그 16이 빈 여백이라 무변 */
+.sub-head{padding-bottom:8px;}   /* 제목과 본문 사이 8 더(동하 09-26 「좀만 간격 벌려줘」) — 제목 윗선은 안 움직인다 */
 .sub-inner{max-width:none;}
 @media (hover:hover) and (pointer:fine) and (min-width:1300px){ .sub-inner{max-width:var(--read-max);margin:0 auto;} }
 /* 그룹 카드 — inset grouped(반경 22 · card 면 · 옅은 그림자) */
@@ -1620,6 +1622,17 @@ details.gr-fold>summary::-webkit-details-marker{display:none;}
 details.gr-fold>summary .s2-chev{transition:transform .18s;}
 details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
 #ssUnitFold{margin:0 0 22px;} #ssUnits{padding:0 12px 12px;}
+/* 세션 단위 나무 목록(09-26) — 과목 → 단위 → 중주제 → 3층 · 층마다 16씩 들여쓰기 · 오늘 0장 = 흐림 */
+#ssUnits{padding:4px 0 8px;position:relative;}
+#ssUnits>.us-row:first-child::before{content:"";position:absolute;left:20px;right:20px;top:-4px;height:1px;transform:scaleY(.5);background:var(--c-sep);}   /* 요약 줄과 첫 과목 줄 사이 — 목록 구분선과 같은 규칙(09-26 동하 「헤더랑 간격이 붙었다」) */
+.us-row{min-height:44px;gap:10px;padding-top:4px;padding-bottom:4px;}
+.us-l0 .gr-t{font-weight:600;} .us-l1{padding-left:36px;} .us-l2{padding-left:52px;} .us-l3{padding-left:68px;}
+.us-l1 .gr-t,.us-l2 .gr-t,.us-l3 .gr-t{font-size:15px;line-height:20px;}
+.us-nm{text-align:left;min-width:0;} .us-nm .gr-t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;}
+.us-n{font-size:15px;} .us-dim .gr-t,.us-dim .us-n{color:var(--c-ter);}
+.us-hd{font-size:15px;color:var(--c-sec);padding:8px 4px;text-decoration:none;}
+.us-cv{width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:var(--c-ter);flex:0 0 28px;}
+.us-cv svg{transition:transform .18s;} .us-cv.open svg{transform:rotate(90deg);}
 .grp>details.gr-fold{position:relative;}
 .grp>*+details.gr-fold::before{content:"";position:absolute;left:20px;right:20px;top:0;height:1px;transform:scaleY(.5);background:var(--c-sep);}
 .gr-row.static:active{background:none;}
@@ -9489,66 +9502,52 @@ function renderSession(){
     };
   }
   if(!foldOpen){ ub.innerHTML=''; return; }
-  const stats=rowStats(midSet);
-  /* ssOpen에는 이제 대주제 키와 중주제 키가 섞여 있다 — 층마다 통계 판을 따로 만든다 */
-  /* 한 행의 자식은 — 대주제면 중주제들(하나뿐이면 그 3층), 중주제면 3층들, 3층이면 없음 */
-  const kidsOf=(k)=>{
-    if(!isMidRow(k)){ const ms=midsOfUnit(k);
-      return ms.length>=2 ? ms : (ms.length===1 ? subsOfMid(ms[0]) : []); }
-    return isSubRow(k) ? [] : subsOfMid(k);
+  /* 🔴 **나무 목록** (동하 09-26 「130줄짜리 정리 안 된 목록이라 실용성이 없다」 → 정리안 「ㅇㅇ」).
+     과목 → 단위 → 중주제 → 3층을 접어 둔다(처음엔 과목 줄만). 줄 = 이름 · 오늘 n장 · 회독본 ↗ · 펼치기.
+     이름 탭 = 먼저 풀기 · 오늘 0장인 줄은 과목 안 맨 아래에 흐리게. 통계 글자·읽음·빼기는 뺐다(넣고 빼기 = 「범위 고르기」·「주제 빼 두기」). */
+  const usIds=(live?queue.slice(qPos):sessCards(sx)).filter(c=>c&&!c._re&&!settledToday(c));
+  const usCnt={}; const usBump=k=>{ usCnt[k]=(usCnt[k]||0)+1; };
+  for(const c of usIds){ const u=tagKey(c), mk=midKey(u,(c.tags||[])[1]||'(기타)'); usBump('S:'+c.subj); usBump(u); usBump(mk); usBump(cardSubKey(c)); }
+  const usExU=new Set((sx.scope.ex&&sx.scope.ex.units)||[]), usExM=new Set((sx.scope.ex&&sx.scope.ex.mids)||[]);
+  const usUnits=new Set(keys.map(rowUnit).filter(u=>TAGMETA[u]));
+  const usBySubj={}; for(const u of usUnits){ const sj=u.split('|')[0]; (usBySubj[sj]=usBySubj[sj]||[]).push(u); }
+  const usSubjNum=sj=>parseInt(sj,10)||99;
+  const usTot=usIds.length;
+  if(sumEl) sumEl.textContent=`이 세션의 단위 ${usUnits.size}개 · 오늘 ${usTot.toLocaleString()}장`;
+  const usMids=(u)=>{ const whole=(sx.scope.units||[]).includes(u) || !scoped;
+    return midsOfUnit(u).filter(mk=>!usExM.has(mk) && (usCnt[mk] || (whole && !usExU.has(u)) || (sx.scope.mids||[]).some(k=>k===mk||k.startsWith(mk+'||')))); };
+  const usRow=(k, label, n, lvl, kids, isSubj)=>{
+    const el=document.createElement('div'); el.className='gr-row us-row us-l'+lvl+(n?'':' us-dim');
+    const open=ssOpen.has(k);
+    const uri=isSubj?null:hoedokURI(k);
+    el.innerHTML=`<button class="gr-b us-nm"><span class="gr-t">${esc(label)}</span></button>
+      <span class="gr-r us-n">${n?n.toLocaleString()+'장':'—'}</span>
+      ${uri?`<a class="us-hd" href="${uri.replace(/&/g,'&amp;')}" aria-label="회독본">↗</a>`:''}
+      ${kids?`<button class="us-cv${open?' open':''}" aria-label="펼치기">${CHEV}</button>`:'<span class="us-cv"></span>'}`;
+    const tog=()=>{ open?ssOpen.delete(k):ssOpen.add(k); renderSession(); };
+    el.querySelector('.us-nm').onclick = isSubj ? tog : ()=>playUnitFirst(sx,k);
+    const cv=el.querySelector('button.us-cv'); if(cv) cv.onclick=(e)=>{ e.stopPropagation(); tog(); };
+    const a=el.querySelector('.us-hd'); if(a) a.onclick=(e)=>e.stopPropagation();
+    ub.appendChild(el); return open;
   };
-  const allKids=[...ssOpen].flatMap(kidsOf);
-  const midStats=rowStats(new Set(allKids.filter(x=>!isSubRow(x))));
-  const subStats=rowStats(new Set(allKids.filter(isSubRow)));
-  const qIds=()=>(live?queue.slice(qPos).map(c=>c.id):sx.q);
-  const countBy=(ids,keyOf,want)=>{ const m={};
-    for(const id of ids){ const c=BYID[id]; if(!c)continue; const kk=keyOf(c);
-      if(want.includes(kk)) m[kk]=(m[kk]||0)+1; }
-    return m; };
-  for(const k of keys){
-    const inQ=seen[k]||0;
-    const kids=kidsOf(k), subMids = kids.length>1 ? kids : null;
-    const row=unitRow(k, stats[k]||{n:0,due:0,nw:0,last:0},
-      {inQ,   /* 빼기 버튼은 뺐다(동하 09-26 「피커랑 작동이 똑같다」) — 넣고 빼기 = 「범위 고르기」·「주제 빼 두기」 */
-       expandable:!!subMids, expanded:ssOpen.has(k),
-       onExpand:(kk)=>{ ssOpen.has(kk)?ssOpen.delete(kk):ssOpen.add(kk); renderSession(); },
-       rerender:renderSession,
-       onName:(kk)=>playUnitFirst(sx,kk),
-       onAction2:(kk)=>{
-         const n=seen[kk]||0;
-         if(n>=UNIT_ASK) askConfirm('단위 빼기', `${rowLabel(kk)} ${n}장이 이 세션에서 빠집니다. ${isFixed(sx)?'[＋ 내용 추가]로 다시 넣을 수 있어요.':'다시 넣으려면 「주제 빼 두기」에서 풀어요.'}`,   // 자동 세션은 ex에 들어가 「내용 추가」로는 0장(리뷰 09-25 L4-3 · 동하 문구만)
-           '빼기', ()=>removeUnitFromSess(sx,kk));
-         else removeUnitFromSess(sx,kk);
-       }});
-    ub.appendChild(row);
-    if(subMids && ssOpen.has(k)){          // 펼치면 한 층 아래(중주제 · 3층)로 낱개로 뺄 수 있다
-      const kidIsSub=isSubRow(subMids[0]);   // 자식이 3층인가 (중주제 한 개짜리 대주제도 여기로 온다)
-      const kidKey=kidIsSub?cardSubKey:(c=>midKey(tagKey(c),(c.tags||[])[1]||'(기타)'));
-      const kidStats=kidIsSub?subStats:midStats;
-      const seenKid=countBy(qIds(), kidKey, subMids);
-      const box=document.createElement('div'); box.className='u-sub';
-      for(const mk of subMids){
-        const subSubs=(!kidIsSub)?subsOfMid(mk):[];
-        box.appendChild(unitRow(mk, kidStats[mk]||{n:0,due:0,nw:0,last:0},
-          {inQ:seenKid[mk]||0, rerender:renderSession,
-           expandable:subSubs.length>0, expanded:ssOpen.has(mk),
-           onExpand:(kk)=>{ ssOpen.has(kk)?ssOpen.delete(kk):ssOpen.add(kk); renderSession(); },
-           onName:(kk)=>playUnitFirst(sx,kk),
-           onAction2:(kk)=>removeUnitFromSess(sx,kk)}));
-        if(subSubs.length && ssOpen.has(mk)){       // 중주제 아래 3층
-          const seenSub=countBy(qIds(), cardSubKey, subSubs);
-          const b2=document.createElement('div'); b2.className='u-sub';
-          for(const sk of subSubs) b2.appendChild(unitRow(sk, subStats[sk]||{n:0,due:0,nw:0,last:0},
-            {inQ:seenSub[sk]||0, rerender:renderSession,
-             onName:(kk)=>playUnitFirst(sx,kk),
-             onAction2:(kk)=>removeUnitFromSess(sx,kk)}));
-          box.appendChild(b2);
-        }
+  for(const sj of Object.keys(usBySubj).sort((a,b)=>usSubjNum(a)-usSubjNum(b))){
+    const us=usBySubj[sj].sort((a,b)=>(!usCnt[a])-(!usCnt[b]) || planRank(a)-planRank(b));
+    if(!usRow('S:'+sj, sj.replace(/^\d+\./,'')+` · 단위 ${us.length}`, usCnt['S:'+sj]||0, 0, true, true)) continue;
+    for(const u of us){
+      const ms=usMids(u), solo=ms.length===1?ms[0]:null, subsSolo=solo?subsOfMid(solo):[];
+      const kids=ms.length>1 ? ms : subsSolo;
+      const tg=(TAGMETA[u].tag||u).replace(/^[^·]+· /,''), tp=tg.split(' — ');   // 「듣기·말하기 — 듣기·말하기」처럼 앞뒤가 같으면 한 번만
+      if(!usRow(u, (tp.length===2&&tp[0]===tp[1])?tp[0]:tg, usCnt[u]||0, 1, kids.length>1)) continue;
+      if(kids.length<2) continue;
+      for(const mk of kids.sort((a,b)=>(!usCnt[a])-(!usCnt[b]))){
+        const subs=isSubRow(mk)?[]:subsOfMid(mk);
+        const lab=isSubRow(mk)?mk.split('||')[2]:(rowMid(mk)||'(기타)');
+        if(!usRow(mk, lab, usCnt[mk]||0, 2, subs.length>1)) continue;
+        for(const sk of subs.sort((a,b)=>(!usCnt[a])-(!usCnt[b]))) usRow(sk, sk.split('||')[2]||sk, usCnt[sk]||0, 3, false);
       }
-      ub.appendChild(box);
     }
   }
-  if(!keys.length)ub.innerHTML='<div class="empty-note" style="padding:16px">아직 내용이 없어요 — 위 「＋ 범위 넓히기」로 넣으세요</div>';
+  if(!usUnits.size)ub.innerHTML='<div class="empty-note" style="padding:16px">아직 내용이 없어요 — 위 「범위 고르기」·「내용 추가」로 넣으세요</div>';
 }
 /* 🔴 `inScope`의 부정으로 세면 안 된다 — 그 함수는 은퇴·끄기·미룸에도 false를 준다.
    실측(08-28): 총창 6단위 제외인데 **196장**으로 떴다(실제 177 + 딴 데의 19장). 직접 대조한다. */
@@ -9620,8 +9619,8 @@ function playUnitFirst(sx, k){   // 세션 큐에서 그 단위를 앞으로 끌
   const live=curSess&&curSess.id===sx.id;
   /* 🔴 목표 행 키를 midSet에 넣어야 한다 — 3층 행은 세션 범위(scope.mids)에 없을 수 있고,
      그러면 cardRowKey가 중주제로 되돌려 「남은 카드가 없다」가 된다. */
-  const midSet=new Set([...(sx.scope.mids||[]), k]);
-  const hit=c=>cardRowKey(c,midSet)===k;
+  /* 09-26 나무 목록 — 줄 키가 층(단위 · 중주제 · 3층)이다. 단위 줄 = 그 단위 카드 전부(범위가 중주제로 담겼어도) · 중주제 줄 = 그 중주제 · 3층 줄 = 그 3층 */
+  const hit=c=>{ const u=tagKey(c); if(!isMidRow(k)) return u===k; const mk=midKey(u,(c.tags||[])[1]||'(기타)'); return isSubRow(k) ? cardSubKey(c)===k : mk===k; };
   // 잔량부터 본다 — 빈 단위인데 playSess가 먼저 돌면 엉뚱한 카드로 풀이 화면이 열린다
   // (이름 탭이 생기면서 「먼저 풀기」 버튼과 달리 빈 단위도 눌리게 됐다)
   const has = live ? queue.slice(qPos).some(hit)

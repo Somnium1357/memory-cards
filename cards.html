@@ -9144,6 +9144,11 @@ function perCardMs(){
 function fmtEst(n){ if(!n) return '';
   let m=Math.max(5, Math.round(n*perCardMs()/60000/5)*5);
   if(m<60) return `약 ${m}분`; const h=Math.floor(m/60); m=m%60; return m?`약 ${h}시간 ${m}분`:`약 ${h}시간`; }
+function todayElapsedMs(){ const tk=todayKey(), L=state.log; let sum=0, next=null;   // 오늘 채점 사이 간격 합(5분 넘는 틈 제외) — 뒤에서부터 오늘까지만
+  for(let i=L.length-1;i>=0;i--){ const e=L[i]; if(!e) continue; const t=logTs(e); if(dayKey(new Date(t))!==tk) break;
+    if(next!=null){ const dt=next-t; if(dt>0 && dt<300000) sum+=dt; } next=t; }
+  return sum; }
+function fmtHM(ms){ const m=Math.round(ms/60000); if(m<60) return m+'분'; const h=Math.floor(m/60), r=m%60; return r?`${h}시간 ${r}분`:`${h}시간`; }
 function daysToExam(){ return Math.round((new Date(EXAM_DAY+'T12:00:00')-new Date(todayKey()+'T12:00:00'))/86400000); }
 function solvedTodayCount(){ const LR=lastRevMap(), tk=todayKey(); let n=0; for(const id in LR){ if(dayKey(new Date(LR[id][0]))===tk) n++; } return n; }
 let _ymHomeLoad=false;
@@ -9162,7 +9167,8 @@ function renderHomeHead(due, restToday){
   const parts=[];   // 날짜는 뺐다(동하 09-24 「너무 길어 · 어차피 다른 데도 나오니까」) — 오늘 신규·남은 신규가 들어오며 줄이 길어졌다
   if(dd>=0) parts.push(`시험까지 ${dd}일`);
   /* 신규 두 수(동하 09-24 「홈 어딘가에 오늘 신규/남은 신규 · 디자인 해치지 않는 선」) — 오늘 = dailyStats의 그날 처음 본 장수(통계 「처음 본 카드」와 같은 정본) · 남은 = 학습 진입의 나머지(은퇴 제외) */
-  { const t=(dailyStats()[todayKey()]||emptyDay()); parts.push(`오늘 신규 ${(t.nw||0).toLocaleString()}`, `남은 ${Math.max(0,live-learned).toLocaleString()} (진입 ${live?Math.round(learned/live*100):0}%)`); }   /* 학습 진입 %는 따로 쓰지 않고 남은 신규에 붙인다(동하 09-24) · 「남은 신규」→「남은」(바로 앞이 「오늘 신규」) — 폰 한 줄: 실측 350/370px */
+  { const t=(dailyStats()[todayKey()]||emptyDay()), tm=todayElapsedMs();   /* 오늘 푼 시간(09-26 · 디자인 이식 때 옛 「오늘」 상자와 함께 빠졌던 것) = 실제 경과 — 채점 사이 5분 넘는 틈은 뺀다(perCardMs와 같은 규칙) */
+    parts.push(...(tm>=60000 ? [`오늘 ${fmtHM(tm)}`, `신규 ${(t.nw||0).toLocaleString()}`] : [`오늘 신규 ${(t.nw||0).toLocaleString()}`]), `남은 ${Math.max(0,live-learned).toLocaleString()} (진입 ${live?Math.round(learned/live*100):0}%)`); }   /* 학습 진입 %는 따로 쓰지 않고 남은 신규에 붙인다(동하 09-24) · 「남은 신규」→「남은」(바로 앞이 「오늘 신규」) — 폰 한 줄: 실측 350/370px */
   if(restToday) parts.push('오늘은 쉬는 날');
   $('hSub').innerHTML=parts.map(x=>'<span style="white-space:nowrap">'+esc(x)+'</span>').join(' · ');   /* 폰에서 줄이 바뀌어도 「오늘 / 신규 0」처럼 한 토막이 갈리지 않게 */
   $('hDday').textContent = dd>0?`D-${dd}`:dd===0?'D-day':''; $('hDday').style.display=dd>=0?'':'none';

@@ -134,12 +134,14 @@ def main():
         star = label.startswith("★")
         label_clean = label.lstrip("★").strip()
         name = unit_file[:-4] if unit_file.endswith(".txt") else unit_file
+        if split:
+            name = name + " — " + label.lstrip("★").strip()   # 조각은 화면 제목(ymLabel = name)이 소제목까지 말하게 — 다섯 조각이 다 「측정 각론」이던 것
         nodes = []
         for x in spec_nodes.split(";"):
             x = x.strip()
             if x and x not in nodes:
                 nodes.append(x)
-        for it in its:
+        for it in ([] if split else its):   # 소제목 조각은 QC가 줄마다 고른 노드만(인덱스의 문항별 노드는 단원 전체로 달려 있어 조각마다 잡음이 된다 · 09-26)
             for x in it["nodes"]:
                 if x not in nodes:
                     nodes.append(x)

@@ -101,14 +101,36 @@ def main():
     units = []
     empty_units = []
     seq_by_subj = collections.Counter()
+    # 🔴 **한 단원파일이 여러 줄이면 = 소제목 조각** (동하 09-26 「쪼개라 해」 · 메타 인계 · 경계 = QC 매핑표의 줄별 면범위).
+    #    조각은 부모 번호 하나를 같이 쓰고 id = 과목/NN-k(1부터) · 다른 단위 번호는 안 밀린다(done·skip 이벤트가 단위 키에 붙어 있다).
+    #    문항 배정 = 문제면(q)이 그 줄 면범위 안. 한 줄뿐이면 종전 그대로(id 과목/NN).
+    file_rows = collections.Counter((r + [""] * 6)[0] + "|" + (r + [""] * 6)[2] for r in mp[1:])
+    group_seq, group_k = {}, collections.Counter()
+    def in_pages(q, pages):
+        try:
+            a_, b_ = (pages.split("-") + [pages])[:2]
+            return int(a_) <= int(q) <= int(b_)
+        except Exception:
+            return False
     for r in mp[1:]:
         subj, _src, unit_file, label, pages, spec_nodes = (r + [""] * 6)[:6]
         its = [it for it in items_by_subj.get(subj, []) if it["unit_file"] == unit_file]
+        gk = subj + "|" + unit_file
+        split = file_rows[gk] > 1
+        if split:
+            its = [it for it in its if in_pages(it["q"], pages)]
         if not its:
-            empty_units.append(subj + " | " + unit_file)
+            empty_units.append(subj + " | " + unit_file + ((" | " + pages) if split else ""))
             continue
-        seq_by_subj[subj] += 1
-        uid = subj + "/" + ("%02d" % seq_by_subj[subj])
+        if split:
+            if gk not in group_seq:
+                seq_by_subj[subj] += 1
+                group_seq[gk] = seq_by_subj[subj]
+            group_k[gk] += 1
+            uid = subj + "/" + ("%02d" % group_seq[gk]) + "-" + str(group_k[gk])
+        else:
+            seq_by_subj[subj] += 1
+            uid = subj + "/" + ("%02d" % seq_by_subj[subj])
         star = label.startswith("★")
         label_clean = label.lstrip("★").strip()
         name = unit_file[:-4] if unit_file.endswith(".txt") else unit_file
@@ -121,7 +143,7 @@ def main():
             for x in it["nodes"]:
                 if x not in nodes:
                     nodes.append(x)
-        units.append({"id": uid, "subj": subj, "seq": seq_by_subj[subj], "name": name, "label": label_clean,
+        units.append({"id": uid, "subj": subj, "seq": (group_seq[gk] + group_k[gk] / 100.0) if split else seq_by_subj[subj], "name": name, "label": label_clean,
                       "star": star, "pages": pages, "kind": "topic" if subj in TOPIC_SUBJ else "range",
                       "range": printed(its[0]["no"]) + "~" + printed(its[-1]["no"]), "nodes": nodes,
                       "items": [item_id(subj, it["q"], it["no"]) for it in its]})

@@ -52,6 +52,8 @@ td.k2{font-weight:600;padding-left:0}
 .c.h{background:var(--fill);color:transparent}
 .c.h::selection{background:transparent}
 .nil{color:var(--ter)}
+.nm{color:var(--sec);font-size:13px;font-variant-numeric:tabular-nums;margin-right:6px}   /* 번호((가)·①)는 늘 보이고 문구만 가린다 */
+.it>.c{padding:1px 2px}
 @media (max-width:640px){
   h1{font-size:28px;line-height:34px}
   .card{padding:4px 14px 8px;border-radius:18px}
@@ -73,6 +75,7 @@ td.k2{font-weight:600;padding-left:0}
     <button data-mode="g34">3~4 가리기</button>
     <button data-mode="proc">과정·기능 가리기</button>
     <button data-mode="ex" hidden>예시 가리기</button>
+    <button data-mode="tl" hidden>교수·평가 가리기</button>
     <button data-mode="all">전부 가리기</button>
   </div>
 </div>
@@ -153,6 +156,22 @@ const PE_EX = {
             ["현대 표현 활동", [[null,"라인댄스 활동, 댄스스포츠 활동, 스트리트댄스 활동 등"]]]]
   }
 };
+/* 체육 교수·학습 및 평가 (교육과정 「3. 교수·학습 및 평가」 · 굿노트 체육 교육과정 정리 7쪽 · 09-27 메타 발주 = 동하 지시 · 제목 전문 암기)
+   대항목 → [[중항목, [[번호, 항목, [[번호, 세부] …]] …]] …] · 세부가 없으면 [] */
+const PE_TL = {
+  "가. 교수·학습": [
+    ["(1) 교수·학습의 방향", [["(가)","신체활동 역량 함양을 위한 교수·학습",[]],["(나)","움직임의 체계적 발달을 위한 교수·학습",[]],["(다)","자기 주도적 학습을 위한 맞춤형 교수·학습",[]],
+      ["(라)","신체활동의 시간적·공간적 확장을 위한 교수·학습",[]],["(마)","디지털 기술을 활용한 효율적 교수·학습",[]],["(바)","창의성과 인성 함양을 위한 통합적 교수·학습",[]]]],
+    ["(2) 교수·학습 방법", [
+      ["(가)","교육과정의 운영",[["①","학년군 단위 교육과정의 운영"],["②","연간 교육과정 운영"],["③","온·오프라인 연계 교육과정의 운영"]]],
+      ["(나)","단원의 운영",[["①","영역의 특성을 고려한 단원 목표와 학습 활동의 선정"],["②","학습자 수준을 고려한 교수·학습 활동의 다양화"],["③","체육 시설 및 교육환경을 고려한 교수·학습"],["④","차시별 수업 내용의 엄선과 위계적 조직"]]],
+      ["(다)","수업의 운영",[["①","학습 활동의 재구성"],["②","학습 기회의 형평성 제고"],["③","학습자의 효율적 관리와 안전한 수업 분위기 조성"]]]]]
+  ],
+  "나. 평가": [
+    ["(1) 평가의 방향", [["(가)","신체활동 역량 함양을 위한 종합적 평가",[]],["(나)","학습자의 성장 과정을 반영한 다양한 평가",[]],["(다)","학습자의 수준을 고려한 맞춤형 평가",[]]]],
+    ["(2) 평가 방법", [["(가)","평가 내용 선정",[]],["(나)","성취기준 및 성취수준 선정",[]],["(다)","평가 방법 및 도구의 선정",[]],["(라)","평가 결과의 활용",[]]]]
+  ]
+};
 const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const it = (x, g, cat) => `<div class="it c" data-g="${g}" data-cat="${cat}">${esc(x)}</div>`;
 
@@ -186,6 +205,22 @@ function peEx(g){
   }
   return h + '</div>';
 }
+/* 교수·학습 및 평가 — 중항목 | 항목 | 세부 항목 · 세부가 없으면 항목이 두 칸을 쓴다 · 번호는 보이고 문구 칸 단위로 가린다 */
+const nit = (n, x) => `<div class="it"><span class="nm">${n}</span><span class="c" data-g="tl" data-cat="교평">${esc(x)}</span></div>`;
+function peTL(){
+  let h = `<h2>교수·학습 및 평가 <small>3.</small></h2><div class="card">`;
+  for (const [big, mids] of Object.entries(PE_TL)){
+    h += `<h3>${esc(big)}</h3><table><tr><th style="width:22%">중항목</th><th style="width:34%">항목</th><th>세부 항목</th></tr>`;
+    for (const [mid, rows] of mids){
+      rows.forEach(([n, x, subs], i) => {
+        h += '<tr>' + (i === 0 ? `<td class="k2" rowspan="${rows.length}">${esc(mid)}</td>` : '')
+          + (subs.length ? `<td>${nit(n, x)}</td><td>${subs.map(([m, y]) => nit(m, y)).join('')}</td>` : `<td colspan="2">${nit(n, x)}</td>`) + '</tr>';
+      });
+    }
+    h += '</table>';
+  }
+  return h + '</div>';
+}
 function buildBook(){
   let m = '';
   for (const [area, cats] of Object.entries(MUSIC))
@@ -195,7 +230,7 @@ function buildBook(){
   for (const [area, d] of Object.entries(ART))
     a += bookTable(area, [["지식·이해", d.rows.map(r => r[0]), d.rows.map(r => r[2])], ["과정·기능", d.rows.map(r => r[1]), d.rows.map(r => r[3])], ["가치·태도", d.val.map(r => r[0]), d.val.map(r => r[1])]]);
   document.getElementById('bookart').innerHTML = a;
-  document.getElementById('bookpe').innerHTML = peVal() + peEx('34') + peEx('56');
+  document.getElementById('bookpe').innerHTML = peVal() + peEx('34') + peEx('56') + peTL();
 }
 buildBook();
 
@@ -207,13 +242,14 @@ function showSec(){
   /* 체육엔 과정·기능이 없고 예시가 있다 — 단추를 바꿔 끼운다 */
   document.querySelector('[data-mode="proc"]').hidden = (sub === 'pe');
   document.querySelector('[data-mode="ex"]').hidden = (sub !== 'pe');
-  if ((sub === 'pe' && mode === 'proc') || (sub !== 'pe' && mode === 'ex')) setMode('show');
+  document.querySelector('[data-mode="tl"]').hidden = (sub !== 'pe');
+  if ((sub === 'pe' && mode === 'proc') || (sub !== 'pe' && (mode === 'ex' || mode === 'tl'))) setMode('show');
 }
 function apply(){
   document.querySelectorAll('.c').forEach(el => {
     const g = el.dataset.g, cat = el.dataset.cat;
     const hide = mode === 'all' || (mode === 'g56' && g === '56') || (mode === 'g34' && g === '34')
-      || (mode === 'proc' && cat === '과정·기능') || (mode === 'ex' && cat === '예시');
+      || (mode === 'proc' && cat === '과정·기능') || (mode === 'ex' && cat === '예시') || (mode === 'tl' && g === 'tl');
     el.classList.toggle('h', hide);
   });
 }

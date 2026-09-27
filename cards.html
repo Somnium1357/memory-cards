@@ -2191,9 +2191,8 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
             </table>
             <p class="hp-key">둘을 같은 날 주면 앞에서 본 답이 뒤 문제의 정답이 돼요.
             인출한 게 아니라 <b>방금 본 걸 되뇐 것</b>이라 학습이 안 돼요.</p>
-            <p>그래서 <b>전방은 그날 다 나가고, 역방향은 2~3일 뒤</b>에 들어옵니다.
-            카드마다 2일/3일이 고정 배정돼서 하루 분량도 저절로 분산돼요.</p>
-            <p class="hp-key">🔴 <b>2~3일은 「투입된 날」이 아니라 「그 전방 카드를 처음 푼 날」부터예요.</b>
+            <p>그래서 <b>전방은 그날 다 나가고, 역방향은 다음 날</b>부터 들어옵니다.</p>
+            <p class="hp-key">🔴 <b>다음 날은 「투입된 날」이 아니라 「그 전방 카드를 처음 푼 날」부터예요.</b>
             그래서 <b>전방을 아직 안 풀었으면 역방향은 며칠이 지나도 안 나와요</b> — 기다림이 아니라
             진도 문제라서요. 역방향이 안 보이면 대개 이 경우예요. (짝이 되는 전방이 아예 없는 카드는
             그 역방향이 곧 도입이라 바로 나옵니다.)</p>
@@ -2429,7 +2428,7 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
       <div class="desc" style="margin:6px 2px 0">자동 충전 = 범위 전체에서 매일 다시 채움 · 직접 추가 = 세션 화면에서 넣고 잔량은 이월</div></div>
     <div class="field"><label>유형 (비우면 전체)</label><div class="mini-chips" id="nsTyps"></div></div>
     <div class="field"><label>과목 (비우면 전체)</label><div class="mini-chips" id="nsSubj"></div></div>
-    <div class="tgl-row"><span>방향 분산 (역방향은 도입 +2~3일 뒤)</span><div class="tgl" id="nsBury"></div></div>
+    <div class="tgl-row"><span>방향 분산 (역방향은 도입 다음 날부터)</span><div class="tgl" id="nsBury"></div></div>
     <div class="tgl-row"><span>복습 소진 후 신규 이어가기</span><div class="tgl" id="nsNewAfter"></div></div>
   </details>
   <div class="btn-row"><button class="btn-ghost" id="nsDelete" style="color:var(--again);margin-right:auto;flex:0 0 auto;padding:10px 14px;border-color:transparent">삭제</button><button class="btn-ghost" id="nsCancel">취소</button><button class="btn-primary" id="nsSave">만들기</button></div>
@@ -4824,7 +4823,7 @@ function dkAdd(k, n){                    // 'YYYY-MM-DD'에 n일 — 정오 기�
    그래서 방향을 갈랐다 (동하 지시 원문) —
      · **매주 반복 휴식일** = 미리 아는 날이니 그날 몫을 **앞 3일**에 나눠 미리 낸다
      · **직접 추가한 날**   = 갑자기 쉬는 것이니 **뒤 3일**에 나눠 갚는다 (과거로는 못 보낸다)
-   카드마다 1·2·3일이 **id 해시로 고정** 배정돼 저절로 흩어진다(revDelay와 같은 수법).
+   카드마다 1·2·3일이 **id 해시로 고정** 배정돼 저절로 흩어진다(09-27까지의 revDelay와 같은 수법).
    ⚠ 옮긴 자리가 또 휴식일이면 건너뛴다. ⚠ 실효 due는 **표시 규칙**이고 로그·FSRS는 안 건드린다. */
 let rest={dow:4, days:[], skip:[], at:0};         // dow: 0=일 … 4=목(기본) · null이면 매주 반복 없음
 /* 채점 버튼 밑 「다음 간격」(14일·22일…) 표시 토글 — 동하 결정 09-05(판정대기 「동하 결정」 · 「알맞음 누르기가 좀 무서워」).
@@ -7199,13 +7198,10 @@ function riskSort(pool){ // 선발 기본 = 위험도 우선(R 낮은 순). 신�
   return [...rev.map(x=>x[0]), ...nw.map(x=>x[0])];
 }
 /* 방향 분산 (스펙 2026-08-20 확정 — 노드 단위 이월은 폐기)
-   신규 투입에서 전방(d 없음)은 당일 전부, 역방향(d:"r")만 전방 도입 +2~3일 뒤.
+   신규 투입에서 전방(d 없음)은 당일 전부, 역방향(d:"r")만 전방 도입 +1일 뒤(09-27 동하 「전역방 게이트 하루로」 · 08-20~09-27은 +2~3일).
    ⚠ 카드의 c.d = 방향 필드(생성기), 상태의 s.d = 그날 첫 채점 판정일 — 다른 값이다. */
 function isRev(c){ return c.d==='r'; }
-function revDelay(c){ let h=0; const id=c.id||''; // 카드마다 2일/3일 고정 배정 (부하 분산)
-  for(let i=0;i<id.length;i++) h=(h*31+id.charCodeAt(i))>>>0;
-  return 2+(h%2);
-}
+function revDelay(c){ return 1; }   // 09-27 동하 「하루로 줄여도 될 듯」 — 옛 2/3일 id 해시 분산은 걷었다(당겨진 202장 · 사회 149 실측)
 let firstRevIdx=null, firstRevLog=null, firstRevLen=-1;
 function firstRevMap(){ // 카드별 최초 채점 시각 (도입일 판정용) — 로그 증가분만 반영
   if(firstRevIdx && firstRevLog===state.log && firstRevLen===state.log.length) return firstRevIdx;
@@ -7461,7 +7457,7 @@ function dirIsolate(list, seed){
   const rated=todayRatings();
   for(const id in rated){ const c=BYID[id]; if(c) put(c); }
   for(const c of (seed||[])){ if(c) put(c); }
-  /* 🔴 두 패스 — 「아직 못 들어오는 역방 신규」(전방 도입 2~3일 전 · 방향 분산이 뒤에서 뺀다)는 열쇠를
+  /* 🔴 두 패스 — 「아직 못 들어오는 역방 신규」(전방 도입 다음 날 전 · 방향 분산이 뒤에서 뺀다)는 열쇠를
      **나중에** 잡는다. 문서순 풀에서 그 역방이 전방보다 앞서는 노드가 27개라, 한 패스로 돌리면
      역방이 열쇠만 잡고 뒤에서 빠져 **전방까지 오늘 못 나오는** 헛손실이 난다(실측 09-05). */
   const late=c=>isRev(c)&&isNew(c)&&!revReady(c);

@@ -4621,7 +4621,7 @@ const HINT_TYPES=new Set([...TERM_TYPES, '빈칸','원소', '개념어']);
 const HINT_FREE_TYPS=new Set(['개념어']);
 function hintLocks(c){ return !(c && HINT_FREE_TYPS.has(c.typ)); }
 function hintInScope(c){ return c.subj==='13.총창' || c.subj==='11.통합교과' || c.typ==='개념어'
-  || (((c.tags||[])[0])||'').includes('교육과정'); }
+  || (c.tags||[]).some(t=>String(t).includes('교육과정')); }   // 태그 어디든 — 국어는 [영역, 교육과정] 순서라 tags[0]만 보면 249장이 빠졌다(메타 09-27 · 동하 「국어 교육과정 카드에 초성이 없어」)
 /* 🔴 용어인지는 **조각마다** 잰다 — 빈칸 답은 「성취기준」도 있고 「교과 내 또는 교과 간 연계 지도 방법」도 있다
    (동하 09-05 「얘는 서술인데도 붙었네」). 실측(범위 빈칸 조각 720): 공백 뺀 8자 이하가 87%, 9자부터는 구절이 대부분.
    TERM_TYPES(대응·구성·단계…)는 유형이 곧 용어 답이라 길이를 안 잰다. */

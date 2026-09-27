@@ -496,7 +496,7 @@ input:focus,select:focus{border-color:var(--accent);}
 #flagMemoRow.on{display:block;}
 #flagMemo{width:100%;font-size:16px;padding:8px 10px;}
 /* 플래그 사유 칩 — 한 번 탭이 곧 플래그+사유다 (타이핑 제로 경로) */
-#flagTypes{display:flex;flex-wrap:wrap;gap:5px;padding:6px 2px 2px;}   /* 2열 격자는 칩이 칸을 꽉 채워 큰 타원이 됐다(동하 09-23 「칩 모양이 이상해짐」) — 원래대로 */
+#flagTypes{display:grid;grid-template-columns:repeat(2,max-content);gap:5px;padding:6px 2px 2px;}   /* 늘 2×2(동하 09-27 — 아이폰 280 서랍에서 3+1로 줄바꿈) · 칸은 max-content라 칩이 늘어나지 않는다(09-23 「칩 모양이 이상해짐」 = 1fr로 꽉 채운 격자였다) */
 .ft-chip{font-size:12px;font-weight:600;padding:0 10px;min-height:44px;display:inline-flex;align-items:center;border-radius:999px;line-height:1;
   background:transparent;color:var(--mute);border:1.5px solid var(--line);}
   /* 높이 44px(터치 기준) · 채움 없이 테두리만 — 칩 4개가 늘 펼쳐져 카드보다 먼저 눈에 들어왔다(동하 09-05 비평 5).
@@ -1371,7 +1371,7 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
     top:calc(76px + env(safe-area-inset-top) + var(--sat-extra) + var(--banner-h, 0px));bottom:calc(8px + env(safe-area-inset-bottom));padding:12px;}
 }
 @media (max-width:1119px), (orientation:portrait){
-  #rail{background:var(--c-card);-webkit-backdrop-filter:none;backdrop-filter:none;width:280px;border-radius:var(--r-panel) 0 0 var(--r-panel);}
+  #rail{background:var(--c-card);-webkit-backdrop-filter:none;backdrop-filter:none;width:var(--insp-w);border-radius:var(--r-panel) 0 0 var(--r-panel);}   /* 서랍도 236(아이패드 되짚기와 같게 · 동하 09-27 아이폰 「가로가 좀 길다」) */
 }
 #railFab,#railFab.show{display:none;}
 .rail-grp,.rail-grp:first-child{font-size:13px;font-weight:600;line-height:18px;color:var(--c-sec);margin:0;padding:4px 12px;letter-spacing:0;}

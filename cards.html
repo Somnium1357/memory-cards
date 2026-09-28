@@ -1301,7 +1301,7 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 #cBack .as-row+.as-row{box-shadow:inset 0 .5px 0 var(--c-sep);}
 #cBack .as-k{font-size:13px;font-weight:600;line-height:18px;color:var(--c-sec);margin-bottom:2px;}
 /* 가림 면 — 앞면에서만. 부모가 visibility:hidden이어도 이 면은 visible로 되살린다(답 글자는 계속 숨음) */
-#cCover{grid-area:1/1;position:relative;visibility:visible;background:var(--c-fill);border-radius:20px;
+#cCover{grid-area:1/1;position:relative;visibility:visible;background:transparent;border-radius:20px;   /* 채움 없음(동하 09-28 「네모칸이랑 선이 묘하게 거슬려」 → B안) — 앞면·정답 면이 같은 틀(선 하나)이고 누르면 답 글자만 나타난다 */
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;cursor:pointer;}
 #card.rev #cCover{visibility:hidden;}   /* 답면 = 숨기기만(높이 유지 → 선·버튼 불변) */
 #card.tbl #cCover{display:none;}

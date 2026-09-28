@@ -9273,7 +9273,7 @@ function renderHomeHead(due, restToday){
     {k:'today', n:due, l:'오늘', ic:'<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>', col:'var(--c-acc)', on:true},
     {k:'tmr', n:tomorrowCount(null), l:'내일', ic:'<circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2"/>', col:'var(--c-indigo)'},
     /* 문풀 칩 = 재풀이가 남으면 「오답 n」(✕) · 다 비우면 「푼 문제 n」(체크) — 동하 09-28 「아이콘도 바꿔 · 문풀도 오답으로」 · 누르면 둘 다 문풀 화면 */
-    {k:'ym', n:ymDoneMode?ymS:ym, l:ymDoneMode?'푼 문제':'오답', ic:ymDoneMode?'<path d="m5 12.5 4.5 4.5L19 7.5"/>':'<path d="M7.5 7.5l9 9M16.5 7.5l-9 9"/>', col:'var(--c-green)'},
+    {k:'ym', n:ymDoneMode?ymS:ym, l:ymDoneMode?'푼 문제':'오답', ic:ymDoneMode?'<path d="m5 12.5 4.5 4.5L19 7.5"/>':'<path d="M7.5 7.5l9 9M16.5 7.5l-9 9"/>', col:ymDoneMode?'var(--c-green)':'var(--c-red)'},   // 오답 = 빨강 · 푼 문제 = 초록(동하 09-28 「오답은 색도」)
     {k:'solved', n:solvedTodayCount(), l:'푼 카드', ic:'<rect x="4" y="6" width="13" height="15" rx="2.5"/><path d="M8 3h9.5A2.5 2.5 0 0 1 20 5.5V17"/>', col:'var(--c-teal)'},
   ];
   const html=tiles.map(t=>{ const num=t.n==null?'—':t.n.toLocaleString();

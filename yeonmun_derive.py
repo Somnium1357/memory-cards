@@ -79,9 +79,24 @@ def fold_level(direct, kids):
         return {"m": worst, "t": kt, "from": "kids"}
     return {"m": direct["m"], "t": direct["t"], "from": "direct"} if direct else None
 
-def derive(events):
-    """→ {'items': {key: {m, due, closed, n, at}}, 'units': {key: {done, skip}}}  (앱 ymDerive와 동일 · items[k].skip = 문항 제외)"""
+def alias_key(k, alias):
+    """옛 문항 키 → 새 키 (앱 ymAliasK) — 대문항 부분(마지막 세그먼트의 첫 '.' 앞)만 바꾸고 소문항 꼬리는 그대로 · 단위 키는 안 걸린다."""
+    if not alias or not k:
+        return k
+    i = k.rfind("/")
+    if i < 0:
+        return k
+    tail = k[i + 1:]; j = tail.find(".")
+    base = k[:i + 1] + (tail if j < 0 else tail[:j])
+    to = alias.get(base)
+    return (to + ('' if j < 0 else tail[j:])) if to else k
+
+def derive(events, alias=None):
+    """→ {'items': {key: {m, due, closed, n, at}}, 'units': {key: {done, skip}}}  (앱 ymDerive와 동일 · items[k].skip = 문항 제외)
+    alias = 카탈로그 alias(옛 키 → 새 키 · 09-29) — 로그는 그대로 두고 여기서 읽을 때 바꾼다."""
     ev = sorted([e for e in events if e and e.get("i") and e.get("t") and e.get("k") and e.get("m")], key=sort_key)
+    if alias:
+        ev = [dict(e, k=alias_key(e["k"], alias)) if alias_key(e["k"], alias) != e["k"] else e for e in ev]
     undone = {e["ref"] for e in ev if e["m"] == "u" and e.get("ref")}
     # 오탭 ✓ (앱 ymMistaps · 09-15): ✓ 뒤 같은 문항의 다음 표시가 120초 안이면 그 ✓는 n에 안 센다
     mistap, last_by_k = set(), {}
@@ -160,7 +175,14 @@ def main(argv):
         print(__doc__); return 1
     d = json.load(io.open(argv[1], encoding="utf-8"))
     today = argv[argv.index("--today") + 1] if "--today" in argv else None
-    st = derive(d.get("ev", []))
+    alias = {}
+    try:
+        import os
+        cp = os.path.join(os.path.dirname(os.path.abspath(__file__)), "yeonmun-catalog.json")
+        alias = json.load(io.open(cp, encoding="utf-8")).get("alias") or {}
+    except Exception:
+        pass
+    st = derive(d.get("ev", []), alias)
     due = due_today(st, today)
     print(json.dumps({"today": today or day_key(datetime.datetime.now(KST).isoformat()),
                       "events": len(d.get("ev", [])), "items": len(st["items"]), "units_done": sum(1 for u in st["units"].values() if u["done"]),

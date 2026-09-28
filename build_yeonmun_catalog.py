@@ -44,6 +44,15 @@ PAPER_SOURCES = [   # (소스명, 과목별 문항 수) — 과목 안 순서 = 
     ("강사중등", {"1.국어": 49, "3.영어": 41}),   # 강사 중등기출 선별집(발주 09-22 · 국어 01.~49. · 영어 = 답안지 01~41 정본 · 문제지 등장 순과 첫 5문항 대조 일치) · 합 90
 ]
 PAPER_SRC = PAPER_SOURCES[0][0]
+# 🔴 문항 키 이관(alias) — 인덱스 정정으로 안정 id(과목/p면/번호)가 바뀐 문항의 **옛 키 → 새 키**. 로그(cards-yeonmun.json)는 고치지 않는다 —
+#    파생이 읽을 때 바꾼다(앱 ymAliasK · yeonmun_derive.derive(alias=)) · 소문항 키(…/15.1.2)는 대문항 부분만 바꾸고 꼬리는 그대로.
+#    검증(빌드마다): 옛 키는 카탈로그에 없어야 하고 새 키는 있어야 한다 — 어기면 빌드 실패.
+ALIAS = {
+    # 09-29 QC 「6.과학 열과 우리 생활(단위 19)」 — p98 표 안 숫자 12·15·16을 문항 머리로 오인 · 실측 10·11 p98 · 12·13·14 p99 · 15·16 p100 (13·14 신설)
+    "6.과학/p98/12": "6.과학/p99/12",
+    "6.과학/p98/15": "6.과학/p100/15",
+    "6.과학/p98/16": "6.과학/p100/16",
+}
 
 def rows(path):
     txt = io.open(path, encoding="utf-8").read().split(chr(10))
@@ -259,7 +268,11 @@ def main():
         "paper": paper_stats, "paper_total": {"items": len(paper_items), "units": len(paper_units)},
         "lecture_items": n_lect,
     }
-    cat = {"v": 1, "built": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+    ids = {it["id"] for it in items}
+    bad = [(o, n) for o, n in ALIAS.items() if o in ids or n not in ids]
+    if bad:
+        sys.exit("ALIAS 검증 실패(옛 키가 살아 있거나 새 키가 없다): %s" % bad)
+    cat = {"v": 1, "built": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"), "alias": ALIAS,
            "index_dir": IDX, "subjects": list(items_by_subj.keys()),
            "units": units, "items": items, "stats": stats}
     io.open(OUT, "w", encoding="utf-8", newline=chr(10)).write(json.dumps(cat, ensure_ascii=False, separators=(",", ":")))

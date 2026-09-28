@@ -12928,8 +12928,8 @@ function ymRenderToday(){
     +paceSpans+'<span>재풀이 잔여 <b>'+p.redo+'</b></span></div>';
   body.innerHTML=h;
   /* 🔴 연타 가드 350ms(리뷰 09-23 R9) — 누르면 곧바로 다시 그려 다음 행이 같은 자리로 올라와, 더블탭이 **다음 문항까지 닫았다.** 카드 채점 가드와 같은 값. */
-  body.querySelectorAll('[data-ym-close]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); if(!ymTapOk()) return; ymEvent(b.dataset.ymClose,'▽'); toast('닫았어요 — 잘못 눌렀으면 되돌리기'); ymRenderToday(); });
-  body.querySelectorAll('[data-ym-x]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); if(!ymTapOk()) return; ymEvent(b.dataset.ymX,'x'); toast('또 틀림 — 7일 뒤 · 잘못 눌렀으면 되돌리기'); ymRenderToday(); });
+  body.querySelectorAll('[data-ym-close]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); if(!ymTapOk()) return; ymUnpin(b.dataset.ymClose); ymEvent(b.dataset.ymClose,'▽'); toast('닫았어요 — 잘못 눌렀으면 되돌리기'); ymRenderToday(); });
+  body.querySelectorAll('[data-ym-x]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); if(!ymTapOk()) return; ymUnpin(b.dataset.ymX); ymEvent(b.dataset.ymX,'x'); toast('또 틀림 — 7일 뒤 · 잘못 눌렀으면 되돌리기'); ymRenderToday(); });
   const ub=$('ymTodayUndo'); if(ub) ub.onclick=ev=>{ ev.stopPropagation(); if(!ymTapOk()) return; const r=ymUndoLast(); if(r){ ymUndoToast(r); ymRenderToday(); } else toast('오늘 이 기기에서 되돌릴 것이 없어요'); };
   body.querySelectorAll('[data-ym-unit]').forEach(r=>r.onclick=()=>ymOpenUnit(r.dataset.ymUnit));
   body.querySelectorAll('[data-ym-item]').forEach(r=>r.onclick=()=>{ const it=YM.cat.items.find(x=>x.id===r.dataset.ymItem); if(it) ymOpenUnit(it.unit); });
@@ -12950,7 +12950,10 @@ function ymCycle(it){                             // 탭 순환: 없음→✓→
 }
 /* ── 소문항 판 (09-20 · 동하 ⓑ 두 단) — 문항 행 아래에 「1) 2) …」 칩, 각 소문항 뒤에 「㉠ ㉡ …」 불릿 칩 · ＋로 늘린다.
    수 = 이벤트에 찍힌 최대 번호(＋로 늘린 빈 칸은 이 화면에서만 · 저장 없음). 기본 접힘 · 펼침 상태는 세션 안에서만(_ymSubOpen). */
-const _ymSubOpen=new Set(), _ymRowPos=new Map(), _ymTodayPin=new Set();   // 펼친 문항 · 오늘 목록 행 자리 · 오늘 목록 고정 행(셋 다 화면에 있는 동안만)
+const _ymSubOpen=new Set(), _ymRowPos=new Map(), _ymTodayPin=new Set();
+/* 🔴 ▽ 닫힘 · 또 틀림 = 「이 문항 끝」 — 고정을 푼다(동하 09-28 「오답 수학 16번 안 사라짐」 · 소문항을 펼친 행은 고정이라 ▽를 세 번 눌러도 남았다 · 로그엔 닫힘이 제대로 남았다).
+   고정(09-21)은 소문항을 찍는 동안 행이 사라지지 말라는 것이지 행 자체의 채점을 막으려는 게 아니다. 되돌리기로 무르면 due라 다시 나온다. */
+function ymUnpin(k){ _ymTodayPin.delete(k); _ymSubOpen.delete(k); }   // 펼친 문항 · 오늘 목록 행 자리 · 오늘 목록 고정 행(셋 다 화면에 있는 동안만)
 /* 🔴 소문항·불릿은 **동하가 ＋로 추가한 것만** 있다 — 칸을 미리 깔지 않는다(동하 09-20 「루틴이 이거 보고 복습본 만들어야 되는데 소문항 개수가 꼬인다 · 깔아두는 거 빼고」).
    ＋ = 그 키에 '-'(표시 없음) 이벤트를 찍어 **존재를 저장**한다 → 파일(cards-yeonmun.json)에 남고 루틴·파이썬이 같은 수를 본다. 지우기 = 되돌리기(이벤트 u). */
 function ymSubMax(base, n){ const m=YM.st.subs&&YM.st.subs[base]||{}; let mx=0; for(const k in m){ const kp=ymKeyParts(k); if(n==null){ if(kp.n>mx) mx=kp.n; } else if(kp.n===n && kp.depth===2 && kp.b>mx) mx=kp.b; } return mx; }

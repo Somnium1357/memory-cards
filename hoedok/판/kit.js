@@ -35,20 +35,44 @@
   /* 09-29 동하 「단이랑 위계를 좀 유연하게」(사회 각론 = h3 하나에 h4 수십 · 두 칸이 좁은 칸에서 가로 스크롤):
      ① h4 소단원이 둘 이상인 블록은 h3 레이블을 위에 걸치고 소단원(.sg)을 격자 칸으로 흘린다(.subs = 전폭 · 안쪽도 같은 격자)
      ② 칸 폭은 고정하지 않는다 — 그린 뒤 넘치는 칸만 필요한 만큼 2칸·전폭으로 넓힌다(fitSpans). 전폭 고정은 산문뿐. */
-  document.querySelectorAll('main.wrap .sect > .pg').forEach(function(pg){
-    var kids=[].slice.call(pg.childNodes), blk=null;
-    kids.forEach(function(n){
-      if(n.nodeType===3 && !n.textContent.trim()){ pg.removeChild(n); return; }
-      if(n.nodeType===1 && n.tagName==='H3') blk=null;
-      if(!blk){ blk=document.createElement('div'); blk.className='blk'; pg.insertBefore(blk,n); }
-      blk.appendChild(n);
+  /* 09-30 동하 「어디서는 성취기준별로, 어디서는 중단원별로 끊잖아 — 위계를 맞춰」:
+     ⑤ 쪽 이음새 — 절 안에서 제목(h3) 없이 시작하는 쪽은 앞 칸의 이어짐이다(따로 칸을 세우지 않는다 · 쪽은 display:contents 라 순서 무변)
+     ⑥ 각론 — h4 에 성취기준 코드([4사01-01] 꼴)가 있으면 하나뿐이어도 단원(h3) = 전폭 머리줄 · 성취기준 = 칸(.std).
+        노트가 3학년은 h2 단원 > h3 성취기준, 4학년부터는 h3 단원 > h4 성취기준이라 칸 단위가 섞이던 것을 「칸 = 성취기준」 하나로 */
+  var STD=/\[\d+[가-힣]+\s?\d{2}-\d{2}\]/;
+  document.querySelectorAll('main.wrap .sect').forEach(function(sect){
+    var last=null;
+    sect.querySelectorAll(':scope > .pg').forEach(function(pg){
+      var kids=[].slice.call(pg.childNodes), blk=null, first=true;
+      kids.forEach(function(n){
+        if(n.nodeType===3 && !n.textContent.trim()){ pg.removeChild(n); return; }
+        var h3=n.nodeType===1 && n.tagName==='H3';
+        if(h3) blk=null;
+        if(!blk){
+          if(first && last && !h3) blk=last;
+          else { blk=document.createElement('div'); blk.className='blk'; pg.insertBefore(blk,n); }
+        }
+        first=false;
+        blk.appendChild(n);
+      });
+      var bs=pg.querySelectorAll(':scope > .blk'); if(bs.length) last=bs[bs.length-1];
     });
+  });
+  document.querySelectorAll('main.wrap .sect > .pg').forEach(function(pg){
     pg.querySelectorAll(':scope > .blk').forEach(function(b){
       if(!b.querySelector(':scope > h3')) b.classList.add('nolab');
       if(b.querySelector(':scope > .prose, :scope > * > .prose')) b.classList.add('full');
       var h4s=b.querySelectorAll(':scope > h4:not(.lab)');
-      if(h4s.length>=2){
-        b.classList.add('subs'); var sg=null;
+      var hd=b.firstElementChild;
+      if(hd && hd.tagName==='H3' && !(h4s.length>=2 || [].some.call(h4s, function(h){ return STD.test(h.textContent); }))){
+        /* ③ 과 같은 제목·본문 두 줄 subgrid — 칸 = h3 블록인 곳(3학년 성취기준 등)도 같은 줄 제목 높이를 맞춘다 */
+        var bb=document.createElement('div'); bb.className='blb';
+        while(hd.nextSibling) bb.appendChild(hd.nextSibling);
+        b.appendChild(bb); b.classList.add('ttl');
+      }
+      var std=[].some.call(h4s, function(h){ return STD.test(h.textContent); });
+      if(h4s.length>=2 || std){
+        b.classList.add('subs'); if(std) b.classList.add('std'); var sg=null;
         [].slice.call(b.childNodes).forEach(function(n){
           if(n.nodeType!==1) return;
           if(n.tagName==='H3') return;
@@ -75,6 +99,10 @@
         });
       }
     });
+  });
+  /* 각론 절 안에서 성취기준 대신 다른 줄기로 짠 단원(6-1 「통일, 민주화, 산업화 — 내용 조직 다름」)도 같은 단원 위계로 */
+  document.querySelectorAll('main.wrap .sect').forEach(function(s){
+    if(s.querySelector('.blk.std')) s.querySelectorAll('.blk.subs:not(.std)').forEach(function(b){ if(b.querySelector(':scope > h3')) b.classList.add('std'); });
   });
   function cols(g){ return getComputedStyle(g).gridTemplateColumns.split(' ').length; }
   function splitTall(){

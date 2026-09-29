@@ -383,7 +383,11 @@
       });
       fillRows();
     });
-    /* 「= 이어지는 줄」은 윗줄 「=」와 줄 맞춤(동하 09-30 「명시적 비용·암묵적 비용도 = 뒤니까 = 끼리 줄 맞춰야」) */
+    eqAlign();
+  }
+  /* 「= 이어지는 줄」은 윗줄 「=」와 줄 맞춤(동하 09-30 「명시적 비용·암묵적 비용도 = 뒤니까 = 끼리 줄 맞춰야」) — 구운 배치에도 쓴다 */
+  function eqAlign(){
+    var main=document.querySelector('main.wrap'); if(!main || !main.clientWidth) return;
     var eqX=function(root){ var tw=document.createTreeWalker(root, NodeFilter.SHOW_TEXT), t; while((t=tw.nextNode())){ var i=t.textContent.indexOf('='); if(i>=0){ var r=document.createRange(); r.setStart(t,i); r.setEnd(t,i+1); return r.getBoundingClientRect().left; } } return null; };
     main.querySelectorAll('.eqal').forEach(function(e){ e.style.paddingLeft=''; e.classList.remove('eqal'); });
     main.querySelectorAll('.blk .ind').forEach(function(ind){
@@ -534,14 +538,81 @@
     });
   }
   var relayout = ROLE ? layoutRole : splitTall;
-  relayout();
+  /* ⑫ 09-30 동하 「미리 그려 놓는 건?」 → 배치 굽기: 조립 때 헤드리스 Chrome 으로 구간(판 폭 950↑ = 3 · 700~950 = 2 · 700↓ = 1)마다
+        배치를 계산해 window.PAN_LAYOUT 에 적어 두고(bake.py), 판을 열면 지금 구간의 배치를 옮겨 놓기만 한다(측정 없음 → 사파리·크롬·앱 안 같음).
+        원소 주소 = 구조 잡기(폭 무관·결정적)를 마친 뒤 main.wrap 안 원소 순번. 구간이 바뀔 때만 되돌리고 다시 놓는다. */
+  var MAIN=document.querySelector('main.wrap'), ALL=[], IX=new Map();
+  if(MAIN){ ALL=[].slice.call(MAIN.getElementsByTagName('*')); ALL.forEach(function(e,i){ IX.set(e,i); }); }
+  var bpOf=function(){ var w=document.documentElement.clientWidth||window.innerWidth||0; return w>=950 ? 3 : w>=700 ? 2 : w>0 ? 1 : 0; };
+  var BAKE=/[?&]bake=1/.test(location.search), LAYOUT=(!BAKE && window.PAN_LAYOUT) || null, applied=null;
+  function snapshot(){
+    var sn={sect:[], span:[], cls:{}, sets:[], flows:[]};
+    MAIN.querySelectorAll('.sect').forEach(function(s){ if(s.style.gridTemplateColumns && IX.has(s)) sn.sect.push([IX.get(s), s.style.gridTemplateColumns]); });
+    ALL.forEach(function(e,i){ if(e.style && e.style.gridColumn) sn.span.push([i, e.style.gridColumn]); });
+    ['rowg','flat','flowing','tcells','lead1'].forEach(function(c){ sn.cls[c]=ALL.filter(function(e){ return e.classList.contains(c); }).map(function(e){ return IX.get(e); }); });
+    MAIN.querySelectorAll('.colset').forEach(function(cs){
+      sn.sets.push({p:IX.get(cs.parentNode), c:cs.className, m:cs.style.getPropertyValue('--m'), items:(cs._items||[]).map(function(x){ return IX.get(x); }),
+        cols: cs.classList.contains('gridset') ? null : [].map.call(cs.children, function(col){ return [].map.call(col.children, function(x){ return IX.get(x); }); })});
+    });
+    MAIN.querySelectorAll('.flow').forEach(function(fl){
+      sn.flows.push({tr:IX.get(fl.parentNode), m:fl.style.getPropertyValue('--m'), cols:[].map.call(fl.children, function(col){
+        var cr=col.querySelector(':scope > .crumb');
+        return {crumb: cr ? cr.textContent : '', items:[].filter.call(col.children, function(x){ return !x.classList.contains('crumb'); }).map(function(x){ return [IX.get(x), x.style.paddingLeft, x.classList.contains('fhead')?1:0]; })};
+      })});
+    });
+    return sn;
+  }
+  var mv=function(el, into){ if(!el._ph){ var ph=document.createComment('p'); el.parentNode.insertBefore(ph, el); el._ph=ph; } into.appendChild(el); };
+  function unapply(){
+    if(!applied) return;
+    ALL.forEach(function(el){ if(el._ph){ if(el._ph.parentNode) el._ph.parentNode.replaceChild(el, el._ph); el._ph=null; } });
+    MAIN.querySelectorAll('.colset, .flow').forEach(function(x){ x.remove(); });
+    applied.sect.forEach(function(r){ ALL[r[0]].style.gridTemplateColumns=''; });
+    applied.span.forEach(function(r){ ALL[r[0]].style.gridColumn=''; });
+    Object.keys(applied.cls).forEach(function(c){ applied.cls[c].forEach(function(i){ ALL[i].classList.remove(c); }); });
+    applied.flows.forEach(function(f){ f.cols.forEach(function(col){ col.items.forEach(function(it){ ALL[it[0]].style.paddingLeft=''; ALL[it[0]].classList.remove('fhead'); }); }); });
+    applied=null;
+  }
+  function applySnap(sn){
+    unapply();
+    sn.sect.forEach(function(r){ ALL[r[0]].style.gridTemplateColumns=r[1]; });
+    sn.span.forEach(function(r){ ALL[r[0]].style.gridColumn=r[1]; });
+    Object.keys(sn.cls).forEach(function(c){ sn.cls[c].forEach(function(i){ ALL[i].classList.add(c); }); });
+    sn.sets.forEach(function(s){
+      var p=ALL[s.p], first=ALL[s.items[0]]; if(!p || !first) return;
+      var cs=document.createElement('div'); cs.className=s.c; cs.style.setProperty('--m', s.m); p.insertBefore(cs, first);
+      cs._items=s.items.map(function(i){ return ALL[i]; });
+      if(s.cols) s.cols.forEach(function(ids){ var col=document.createElement('div'); col.className='col'; cs.appendChild(col); ids.forEach(function(i){ mv(ALL[i], col); }); });
+      else cs._items.forEach(function(x){ mv(x, cs); });
+    });
+    sn.flows.forEach(function(f){
+      var tr=ALL[f.tr]; if(!tr) return;
+      var fl=document.createElement('div'); fl.className='flow'; fl.style.setProperty('--m', f.m); tr.insertBefore(fl, tr.firstChild);
+      f.cols.forEach(function(c){ var col=document.createElement('div'); col.className='col'; fl.appendChild(col);
+        if(c.crumb){ var cr=document.createElement('div'); cr.className='crumb'; cr.setAttribute('aria-hidden','true'); cr.textContent=c.crumb; col.appendChild(cr); }
+        c.items.forEach(function(it){ var el=ALL[it[0]]; if(!el) return; mv(el, col); el.style.paddingLeft=it[1]; if(it[2]) el.classList.add('fhead'); });
+      });
+    });
+    applied=sn;
+  }
+  var eqAlignFn=eqAlign;   /* 「=」 줄 맞춤 — 구운 배치에도 따로 돈다(글자 위치 1회 측정) */
+  var place=function(){
+    if(LAYOUT){ var b=bpOf(); if(!b) return false; var sn=LAYOUT[b]; if(sn){ if(!applied || applied!==sn) applySnap(sn); if(eqAlignFn) eqAlignFn(); return true; } }
+    relayout(); return true;
+  };
+  place();
+  if(BAKE){
+    var dump=function(){ relayout(); var pre=document.getElementById('pan-bake') || document.body.appendChild(Object.assign(document.createElement('pre'), {id:'pan-bake'})); pre.style.display='none'; pre.textContent=JSON.stringify({bp:bpOf(), w:document.documentElement.clientWidth, layout:snapshot()}); };
+    window.addEventListener('load', function(){ if(document.fonts && document.fonts.ready) document.fonts.ready.then(dump); else dump(); });
+  }
   /* 재배치가 끝난 뒤 꺾쇠·눈금(resize 로 재는 스크립트들)을 다시 재게 한다 — 09-30 「묶음표 깨짐」: 재배치(지연)보다 꺾쇠가 먼저 재던 것 */
   /* 09-30 동하 「퍼포먼스 문제 안 생김?」 — 배치 한 번 = PC 사회 70ms·국어 100ms(패드 2~4배). 열 때 서너 번 + 사파리는 스크롤 중
      주소창이 접히며 resize(높이만)를 쏜다 → 폭·폰트 상태가 지난 배치와 같으면 다시 계산하지 않는다 */
   /* 키 = 본문 폭만(웹폰트는 글자가 보일 때마다 조각을 받아 fonts.status 가 수시로 바뀐다 — 키에 넣으면 건너뛰기가 안 먹음, 09-30 실측) */
-  var layKey=function(){ var mw3=document.querySelector('main.wrap'); return String(mw3 ? mw3.clientWidth : 0); };
+  /* 구운 배치가 있으면 키 = 구간(구간이 바뀔 때만 다시 놓음) */
+  var layKey=function(){ if(LAYOUT) return 'bp'+bpOf(); var mw3=document.querySelector('main.wrap'); return String(mw3 ? mw3.clientWidth : 0); };
   var lastKey=layKey();   /* 위 첫 배치의 키 */
-  var t=null, busy=false; function again(force){ var k=layKey(); if(force!==true && k===lastKey) return; lastKey=k; relayout(); busy=true; window.dispatchEvent(new Event('resize')); busy=false; }
+  var t=null, busy=false; function again(force){ var k=layKey(); if(force!==true && k===lastKey) return; lastKey=k; place(); busy=true; window.dispatchEvent(new Event('resize')); busy=false; }
   window.addEventListener('load', function(){ again(true); });   /* 로딩 끝·폰트 준비 = 글자 폭이 바뀌니 한 번씩 강제 */
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ again(true); });
   window.addEventListener('resize', function(){ if(busy) return; clearTimeout(t); t=setTimeout(again,120); });

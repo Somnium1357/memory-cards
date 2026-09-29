@@ -88,6 +88,31 @@
      제목 id → 대단/절/머리줄/칸/안)를 실어 주면 제목 태그가 아니라 그 역할로 칸을 세운다.
      절·머리줄·대단 = 전폭 머리줄(.hrow) · 칸 = 제목 + 본문(.blb) · 안·표에 없는 제목·글 = 지금 칸에 그대로 · 쪽 이음새는 앞 칸에 잇는다 */
   var ROLE=window.PAN_ROLE;
+  /* ⑨ 09-30 동하 「단계가 어디는 세로 어디는 가로 제각각」 → 「설명 있으면 세로, 없으면 가로」:
+     · 화살표로 잇는 가로 줄(.line)에 설명(.up/.down)이 있으면 = 세로 사슬(단계 | 설명)로 세움(원래 줄은 숨겨 둔다 — 글자·화살표 보존)
+     · 설명 없는 세로 사슬(.vchain)·번호 목록(ol.steps) = 가로 화살표 줄(.hz) */
+  document.querySelectorAll('main.wrap .line').forEach(function(line){
+    var cols=[].slice.call(line.children);
+    var arrow=cols.some(function(c){ var m=c.querySelector('.mid.mk'); return m && /[→⇒⟶]/.test(m.textContent); });
+    var ann=[].some.call(line.querySelectorAll('.up,.down'), function(x){ return x.textContent.trim(); });
+    if(!arrow || !ann) return;
+    var v=document.createElement('div'); v.className='vchain conv'; var first=true;
+    cols.forEach(function(c){
+      var mid=c.querySelector('.mid'); if(!mid || mid.classList.contains('mk')) return;
+      if(!first){ var a=document.createElement('div'); a.className='arw'; a.textContent='↓'; a.setAttribute('aria-hidden','true'); v.appendChild(a); }
+      first=false;
+      var s=document.createElement('div'); s.className='stp'; s.appendChild(mid); v.appendChild(s);
+      var an=[].filter.call(c.querySelectorAll('.up,.down'), function(x){ return x.textContent.trim(); });
+      if(an.length){ var d=document.createElement('div'); d.className='ann'; an.forEach(function(x){ d.appendChild(x); }); v.appendChild(d); }
+    });
+    line.parentNode.insertBefore(v, line); line.style.display='none';   /* hidden 속성은 스킨 display:flex 에 진다 */
+  });
+  document.querySelectorAll('main.wrap .vchain:not(.conv)').forEach(function(v){
+    if(![].some.call(v.querySelectorAll('.ann'), function(x){ return x.textContent.trim(); })) v.classList.add('hz');
+  });
+  document.querySelectorAll('main.wrap ol.steps').forEach(function(o){
+    if(![].some.call(o.querySelectorAll('.an'), function(x){ return x.textContent.trim(); })) o.classList.add('hz');
+  });
   if(ROLE){
     var RC={'대단':'r-dae','절':'r-jeol','머리줄':'r-head','칸':'r-cell','글칸':'r-cell','안':'r-in','숨김':'r-hide'};   /* 숨김 = 화면에서만 접음(id·목차 링크는 산다 · 사회 학기 구분 — 동하 09-30) */
     document.querySelectorAll('main.wrap h2[id], main.wrap h3[id], main.wrap h4[id]').forEach(function(h){ var r=ROLE[h.id]; if(RC[r]) h.classList.add(RC[r]); });
@@ -280,10 +305,11 @@
         var fs=parseFloat(getComputedStyle(c).fontSize)||16, m=Math.floor((c.getBoundingClientRect().width+2.2*fs)/(21.2*fs)); if(m<2) return;
         var tr=[].find.call(c.querySelectorAll('.bracket, .kids'), function(x){ return x.children.length>=2 && (x._th||0)>360; });
         /* 동하 09-30 결정: 보통 길이 = 6사08-02 꼴(바깥 가지를 통째로 나란히 · 한 층만 · 가지 안 끊음) / 너무 긴 것(한 줄기 900px↑) = 3단으로 잘라 흘림 */
-        var TM0=window.PAN_TREE||((tr && (tr._th||0)>900) ? 'flow' : 'one');
+        var TM0=window.PAN_TREE||((tr && (tr._th||0)>Math.min(innerHeight,820)*2/3) ? 'flow' : 'one');   /* 기준 = 패드 가로 화면 2/3(동하 「픽셀 말고 아이패드 가로에서 어느 정도로」 · 「820도 좀 긴데」) */
         if(tr && TM0==='none') return;
         if(tr && TM0==='cells'){ tr.classList.add('tcells','flat'); tr.style.setProperty('--m', m); return; }   /* 바깥 가지 = 작은 칸 격자 */
-        if(tr && TM0==='flow'){ flowTree(tr, m); return; }
+        /* 단 수는 길이에 맞춰 — 한 단이 화면 2/3 안에 들도록 필요한 만큼만(동하 「꼭 3단일 필요 없고 알아서」) */
+        if(tr && TM0==='flow'){ var thr=Math.min(innerHeight,820)*2/3; flowTree(tr, Math.min(m, Math.max(2, Math.ceil((tr._th||0)/thr)))); return; }
         if(tr){
           var TM=TM0;   /* 나무 모양 샘플 비교(09-30 동하 「모양이 너무 제각각」): bal(균형·내려가기) / one(바깥 가지만) / rows(바깥 가지마다 한 줄 + 그 아래 가지만 단) */
           if(TM==='one') balance(tr, [].slice.call(tr.children), m, 99);

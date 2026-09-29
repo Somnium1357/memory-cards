@@ -536,6 +536,20 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .grp{display:flex;flex-direction:column;gap:3px;min-width:0;}
 /* 09-30 layoutRole ⑤ — 넓어진 칸의 갈래 단(순서대로 · 단 높이 균형) */
 :root.v2 .colset{display:grid;grid-template-columns:repeat(var(--m,2),minmax(0,1fr));gap:0 2.2em;align-items:start;}
+/* ⑨ 단계 모양 통일(동하 09-30 「설명 있으면 세로, 없으면 가로」) — 설명 없는 세로 사슬·번호 목록 = 가로 화살표 줄 */
+:root.v2 .vchain.hz{display:flex !important;flex-wrap:wrap;align-items:center;gap:4px 8px;border-left:0;padding-left:0;}
+:root.v2 .vchain.hz>.arw{display:none;}
+:root.v2 .vchain.hz>.arw+.stp::before{content:'→';margin-right:8px;color:var(--v2faint);font-weight:400;}
+:root.v2 ol.steps.hz{display:flex !important;flex-wrap:wrap;align-items:center;gap:4px 8px;border-left:0;margin-left:0;padding-left:0;}
+:root.v2 ol.steps.hz>li{display:inline-flex !important;padding:0;margin:0;}
+:root.v2 ol.steps.hz>li::before{display:none;}
+:root.v2 ol.steps.hz>li+li::after{display:none;}
+:root.v2 ol.steps.hz>li+li>:first-child::before{content:'→';margin-right:8px;color:var(--v2faint);font-weight:400;}
+:root.v2 ol.steps.hz .an{display:none;}
+/* 설명 있는 가로 줄을 세운 세로 사슬(.conv) — 기존 세로 사슬과 같은 모양 */
+:root.v2 .vchain.conv .stp .mid{font-weight:600;white-space:normal;}
+:root.v2 .vchain.conv .ann .up,:root.v2 .vchain.conv .ann .down{display:inline;font-size:1em;color:inherit;}
+:root.v2 .vchain.conv .ann>*+*::before{content:' · ';}
 /* 가로 나무 = 바깥 가지 작은 칸(샘플 cells) */
 :root.v2 .tcells{display:grid !important;grid-template-columns:repeat(var(--m,3),minmax(0,1fr));gap:1em 2.2em;align-items:start;}
 :root.v2 .tcells>*{padding-left:0 !important;}

@@ -6,7 +6,7 @@
   var main=document.querySelector('main.wrap'); if(!main) return;
   var pgs=[].slice.call(main.querySelectorAll(':scope > section.pg')); if(!pgs.length) return;
   var foot=main.querySelector(':scope > .foot');
-  var card=null;
+  var card=null, inRun=false;
   pgs.forEach(function(pg){
     var nodes=[].slice.call(pg.childNodes);
     while(pg.firstChild) pg.removeChild(pg.firstChild);
@@ -14,11 +14,17 @@
     var host=null, used=false;
     nodes.forEach(function(n){
       if(n.nodeType===3 && !n.textContent.trim()) return;
-      var head=n.nodeType===1 && (n.tagName==='H2' || n.classList.contains('part'));
+      /* 09-30 판정 표가 h2 에 칸·글칸·안을 준 곳(체육 5~6 스포츠 · 실과 교수·학습 방법 등 짧은 절 여럿)은 카드를 끊지 않는다 — 앞 절 격자의 칸 */
+      var RL=window.PAN_ROLE, r2=(RL && n.nodeType===1 && n.tagName==='H2') ? RL[n.id] : '';
+      var head=n.nodeType===1 && ((n.tagName==='H2' && !(r2==='칸' || r2==='글칸' || r2==='안')) || n.classList.contains('part'));
       if(head){
         if(!used){ main.insertBefore(pg, foot); used=true; }   /* 제목만 있는 쪽 — 쪽 id 는 빈 표지로 남긴다 */
-        main.insertBefore(n, foot); card=null; host=null; return;
+        main.insertBefore(n, foot); card=null; host=null; inRun=false; return;
       }
+      /* 칸 h2 가 연달아 시작되는 곳 = 새 격자(제목 없이) — 앞 절 격자에 이어 붙어 그 절 소속처럼 보이던 것(체육 5~6 스포츠 09-30) */
+      var isCellH2 = n.nodeType===1 && n.tagName==='H2' && (r2==='칸' || r2==='글칸');
+      if(isCellH2 && !inRun){ card=null; host=null; }
+      if(isCellH2) inRun=true; else if(n.nodeType===1 && /^H[34]$/.test(n.tagName) && RL && (RL[n.id]==='절' || RL[n.id]==='머리줄')) inRun=false;
       if(!card){ card=document.createElement('div'); card.className='sect'; main.insertBefore(card, foot); host=null; }
       if(!host){ if(used){ host=pg.cloneNode(false); host.removeAttribute('id'); } else { host=pg; used=true; } card.appendChild(host); }
       host.appendChild(n);
@@ -42,13 +48,41 @@
   var STD=/\[\d+[가-힣]+\s?\d{2}-\d{2}\]/;
   /* 본문 최상위 갈래(레이블 + 들여쓴 하위)를 .grp 로 묶어 둔다 — 평소 display:contents · 긴 칸만 .split 때 단으로 */
   function wrapGrps(cell, body){
-    var st=body.querySelector(':scope > .ind2 > .stack, :scope > .stack'); if(!st) return;
-    var g=null, k=0;
+    /* 쪽 이음새로 끊긴 같은 겉싸개(.ind2>.stack · .ind2 · .stack)를 하나로 — 6사03-01 「인권」이 다음 쪽(p19)에서 새 겉싸개로 시작 */
+    var sig=function(e){ if(!e || e.nodeType!==1) return ''; var s=e.className; if(e.children.length===1 && e.firstElementChild.classList.contains('stack')) s+='>stack'; return s; };
+    [].slice.call(body.children).forEach(function(e){
+      var p=e.previousElementSibling;
+      if(!p || !/^(ind2|stack)(>stack)?$/.test(sig(e)) || sig(p)!==sig(e)) return;
+      var from=/>stack$/.test(sig(e)) ? e.firstElementChild : e, to=/>stack$/.test(sig(p)) ? p.firstElementChild : p;
+      while(from.firstChild) to.appendChild(from.firstChild);
+      e.remove();
+    });
+    /* 갈래 담는 줄기 — .ind2>.stack · .stack · .ind2(4사05-01처럼 stack 없이 바로) · .ind>.stack · .ind 중 자식 둘 이상인 첫 것 */
+    var st=null;
+    [':scope > .ind2 > .stack', ':scope > .stack', ':scope > .ind2', ':scope > .ind > .stack', ':scope > .ind'].some(function(q){
+      var x=body.querySelector(q); if(x && x.children.length>=2){ st=x; return true; } return false; });
+    if(!st) return;
+    var g=null, k=0, n0=0;
     [].slice.call(st.children).forEach(function(n){
       if(n.classList.contains('ind') && g){ if(!g.classList.contains('k')){ g.classList.add('k'); k++; } g.appendChild(n); return; }
-      g=document.createElement('div'); g.className='grp'; st.insertBefore(g,n); g.appendChild(n);
+      g=document.createElement('div'); g.className='grp'; st.insertBefore(g,n); g.appendChild(n); n0++;
     });
-    if(k>=2){ cell.classList.add('cansplit'); st.classList.add('grps'); }
+    st.classList.add('grps');
+    if(k>=2) cell.classList.add('cansplit');
+    /* 안쪽 갈래도 「레이블 + 들여쓴 내용」을 한 덩어리로(단에 나눌 때 레이블만 떨어지던 것 — 6사03-01 「위계」·11-01 「경제」) · 두 겹까지 */
+    (function nest(parent, d){
+      if(d>2) return;
+      parent.querySelectorAll(':scope > .grp.k').forEach(function(gp){
+        var inner=gp.querySelector(':scope > .ind > .stack') || gp.querySelector(':scope > .ind'); if(!inner || inner.children.length<2) return;
+        var g2=null, has=false;
+        [].slice.call(inner.children).forEach(function(x){
+          if(x.classList.contains('ind') && g2){ g2.classList.add('k'); has=true; g2.appendChild(x); return; }
+          g2=document.createElement('div'); g2.className='grp'; inner.insertBefore(g2,x); g2.appendChild(x);
+        });
+        inner.classList.add('grps2'); gp._inner=inner;
+        nest(inner, d+1);
+      });
+    })(st, 1);
   }
   /* ⑦ 09-30 동하 「기계적으로 자르지 말고 모델이 훑어보고 위계 맞춰 재조직」 — 조립기가 모델 판정 표(window.PAN_ROLE ·
      제목 id → 대단/절/머리줄/칸/안)를 실어 주면 제목 태그가 아니라 그 역할로 칸을 세운다.
@@ -71,6 +105,57 @@
           body.appendChild(n);
         });
       });
+      /* 같은 격자 칸 제목들이 「○○ - 」 앞머리를 되풀이하면 그 앞머리를 span.pfx 로 감싼다(글자 무변 · 모양은 CSS) — 09-30 체육 스포츠·실과 교수·학습 */
+      var heads=[].map.call(sect.querySelectorAll('.blk.cell'), function(c){ return c.firstElementChild; });
+      var cnt={}; heads.forEach(function(h){ var t=h.textContent.trim(), i=t.indexOf(' - '); if(i>0){ var p=t.slice(0,i+3); cnt[p]=(cnt[p]||0)+1; h._pfx=p; } });
+      heads.forEach(function(h){
+        if(!h._pfx || cnt[h._pfx]<2) return;
+        var w=document.createTreeWalker(h, NodeFilter.SHOW_TEXT), n;
+        while((n=w.nextNode())){ if(!n.textContent.trim() || (n.parentElement && n.parentElement.classList.contains('num'))) continue;
+          var s=n.textContent, j=s.indexOf(h._pfx.trim().split(' - ')[0]); if(j<0) break;
+          var k=s.indexOf(' - ', j); if(k<0) break;
+          var rest=n.splitText(k+3); var pre=n; if(j>0) pre=n.splitText(j);
+          var sp=document.createElement('span'); sp.className='pfx'; pre.parentNode.insertBefore(sp, pre); sp.appendChild(pre); break; }
+      });
+      /* 본문 없는 칸(내용이 제목에만 — 국어 평가 「선다형 평가」 등) 처리 방식 PAN_EMPTY: gather(단원의 빈 칸끼리 한 칸에 모음 · 단원 끝) /
+         attach(앞 칸 끝에 이름표로) / label(이름표만 크게) / 없음(그대로). 09-30 동하 샘플 비교 중 */
+      var EM=window.PAN_EMPTY!=null ? window.PAN_EMPTY : 'gather';   /* 동하 09-30 「빈칸은 모으는 쪽으로」 */
+      if(EM){
+        var isEmpty=function(c){ var b=c.querySelector(':scope > .blb'); return b && !b.textContent.trim() && !b.querySelector('img,svg,table'); };
+        var units=[], u=[];
+        [].forEach.call(sect.querySelectorAll(':scope > .pg > .blk'), function(b){ if(b.classList.contains('cell') && !b.classList.contains('full')) u.push(b); else { if(u.length) units.push(u); u=[]; } });
+        if(u.length) units.push(u);
+        units.forEach(function(un){
+          var em=un.filter(isEmpty); if(!em.length) return;
+          if(EM==='label'){ em.forEach(function(c){ c.classList.add('emptyc'); }); return; }
+          if(EM==='attach'){
+            em.forEach(function(c){
+              var i=un.indexOf(c), host=null;
+              for(var j=i-1;j>=0;j--) if(!isEmpty(un[j])){ host=un[j]; break; }
+              if(!host) for(j=i+1;j<un.length;j++) if(!isEmpty(un[j])){ host=un[j]; break; }
+              if(!host) return;
+              var h=c.firstElementChild; h.classList.add('att'); var hb=host.querySelector(':scope > .blb');
+              if(un.indexOf(host)<i) hb.appendChild(h); else hb.insertBefore(h, hb.firstChild);
+              c.remove();
+            });
+            return;
+          }
+          if(EM==='gather' && em.length>=2){
+            var last=un[un.length-1], g=document.createElement('div'); g.className='blk cell ttl gathered';
+            var hd=document.createElement('div'); hd.className='ghead'; g.appendChild(hd);
+            var gb=document.createElement('div'); gb.className='blb'; g.appendChild(gb);
+            last.parentNode.insertBefore(g, last.nextSibling);   /* 먼저 넣는다 — 끝 칸이 빈 칸이면 지운 뒤엔 자리가 없다 */
+            em.forEach(function(c){ var h=c.firstElementChild; h.classList.add('att'); gb.appendChild(h); c.remove(); });
+          }
+        });
+      }
+      /* 칸 h2 연달음으로 시작한 격자 = 숨긴 앞머리를 절 표시로 한 번(동하 09-30 「위에 절 표시 만들면 되잖아」) — 제목 태그 아님(id 없음) */
+      var fb=sect.querySelector(':scope > .pg > .blk'), fh=fb && fb.classList.contains('cell') ? fb.firstElementChild : null;
+      if(fh && fh.tagName==='H2' && fh.querySelector('.pfx')){
+        var rh=document.createElement('div'); rh.className='blk full hrow runhead';
+        var t=document.createElement('div'); t.className='rh'; t.textContent=fh.querySelector('.pfx').textContent.replace(/\s*-\s*$/,''); rh.appendChild(t);
+        fb.parentNode.insertBefore(rh, fb);
+      }
       sect.querySelectorAll('.blk.cell').forEach(function(c){
         var b=c.querySelector(':scope > .blb');
         if(b.querySelector('.prose')) c.classList.add('full');
@@ -136,6 +221,162 @@
   if(!ROLE) document.querySelectorAll('main.wrap .sect').forEach(function(s){
     if(s.querySelector('.blk.std')) s.querySelectorAll('.blk.subs:not(.std)').forEach(function(b){ if(b.querySelector(':scope > h3')) b.classList.add('std'); });
   });
+  /* ⑧ 09-30 역할 판정 격자 배치(layoutRole) — 동하 「4사05-02·6사11-01 편집 중구난방 · 6사08-02 느낌으로 · 4사05-01·6사03-01 너무 김 ·
+        국가유산처럼 둘뿐이면 3단 흉내 말고 반응형」:
+     ① 절 격자 = 기본 단 n(1~3, 칸 최소 16.5em) × 2 트랙 · 칸 = 2 트랙
+     ② 단원(머리줄·절 사이) 칸 수 k < n 이면 폭을 나눠 채움(k=2 → 3트랙씩 · k=1 → 전폭)
+     ③ 형제 칸보다 훨씬 긴 칸(2.2배 ∧ 540px↑) = 전폭 · ④ 넘치는 칸은 2트랙씩 넓힘
+     ⑤ 넓어진 칸 = 최상위 갈래를 순서대로 m 단에 담되 단 높이가 비슷하게 끊음(6사08-02 꼴) ·
+        혼자 한 단 몫보다 훨씬 긴 갈래는 그 레이블을 머리로 두고 하위 가지를 같은 식으로 단에 담음(한 번 더까지) */
+  function layoutRole(){
+    var main=document.querySelector('main.wrap');
+    main.querySelectorAll('.colset').forEach(function(cs){ (cs._items||[]).forEach(function(it){ cs.parentNode.insertBefore(it, cs); }); cs.remove(); });
+    main.querySelectorAll('.rowg').forEach(function(g){ g.classList.remove('rowg'); });
+    main.querySelectorAll('.flowing').forEach(unflow);
+    main.querySelectorAll('.flat').forEach(function(g){ g.classList.remove('flat'); });
+    main.querySelectorAll('.tcells').forEach(function(g){ g.classList.remove('tcells'); });
+    main.querySelectorAll('.kids.kgrid').forEach(function(k){ k.classList.remove('kgrid'); });
+    var sects=[].filter.call(main.querySelectorAll('.sect'), function(s){ return s.querySelector(':scope > .pg > .blk.cell'); });
+    sects.forEach(function(s){
+      var fs=parseFloat(getComputedStyle(s).fontSize)||16, gap=2.2*fs, minc=16.5*fs;
+      var n=Math.max(1, Math.min(3, Math.floor((s.clientWidth+gap)/(minc+gap))));
+      s._n=n; s.style.gridTemplateColumns='repeat('+(2*n)+',minmax(0,1fr))';
+      s.querySelectorAll(':scope > .pg > .blk.cell:not(.full)').forEach(function(c){ c.style.gridColumn='span 2'; });
+    });
+    /* 좁은(기본 폭) 상태에서 높이를 잰다 — 단에 담을 때 단 폭 ≈ 기본 칸 폭 */
+    main.querySelectorAll('.grps .grp').forEach(function(g){ g._h=g.getBoundingClientRect().height; });
+    /* 나무 — 가지 묶음 높이(_th) · 가지 높이(_h) · 가지의 하위 묶음(_inner) */
+    main.querySelectorAll('.blk.cell .bracket, .blk.cell .kids').forEach(function(x){
+      x._th=x.getBoundingClientRect().height;
+      [].forEach.call(x.children, function(k){ k._h=k.getBoundingClientRect().height; if(!k._inner) k._inner=k.querySelector(':scope > .kids, :scope > .bracket'); });
+    });
+    sects.forEach(function(s){
+      var n=s._n, blks=[].slice.call(s.querySelectorAll(':scope > .pg > .blk')), unit=[];
+      var bodyH=function(c){ var b=c.querySelector(':scope > .blb'); return b ? b.getBoundingClientRect().height : 0; };
+      var cells=blks.filter(function(b){ return b.classList.contains('cell') && !b.classList.contains('full'); });
+      var hs=cells.map(bodyH).sort(function(a,b){ return a-b; }), med=hs.length ? hs[Math.floor(hs.length/2)] : 0;
+      var flush=function(){ var k=unit.length; if(k && k<n){ var sp=Math.floor(2*n/k); unit.forEach(function(c){ c.style.gridColumn='span '+sp; }); } unit=[]; };
+      blks.forEach(function(b){ if(b.classList.contains('cell') && !b.classList.contains('full')) unit.push(b); else flush(); });
+      flush();
+      cells.forEach(function(c){ var h=bodyH(c); if(cells.length>1 && h>2.2*med && h>540) c.style.gridColumn='1/-1'; });
+      /* 넘침 → 2트랙씩 넓힘 */
+      cells.forEach(function(c){
+        var need=c.scrollWidth-c.clientWidth;
+        c.querySelectorAll('.cols,.wide,.line,table,.lanes,.vchain,ol.steps,.fork,.branch').forEach(function(e){ need=Math.max(need, e.scrollWidth-e.clientWidth); });
+        if(need>2){ var one=(s.clientWidth-(2*n-1)*0)/(2*n), cur=c.getBoundingClientRect().width;
+          var tr=Math.min(2*n, 2*Math.ceil((cur+need)/(2*one))); c.style.gridColumn= tr>=2*n ? '1/-1' : 'span '+tr; }
+      });
+      /* 넓어진 칸 = 갈래를 단에 담음 */
+      cells.forEach(function(c){
+        var st=c.querySelector('.grps'); if(!st) return;
+        var w=c.getBoundingClientRect().width, colw=19*(parseFloat(getComputedStyle(c).fontSize)||16), g2=2.2*(parseFloat(getComputedStyle(c).fontSize)||16);
+        var m=Math.floor((w+g2)/(colw+g2)); if(m<2) return;
+        balance(st, [].slice.call(st.children), m, 0);
+      });
+      /* 넓은 칸인데 갈래 단이 안 선 곳의 키 큰 나무(국어 「읽기 능력 구조」·「소설」) = 가장 바깥 가지 묶음(.bracket/.kids)을 같은 균형 배치로
+         (혼자 긴 가지는 레이블 아래 하위 가지를 단에) · 단으로 옮긴 가지는 잇는 선 없음(동하 09-30 「가로 트리라고 트리 구조 유지할 필요 없음」) */
+      cells.forEach(function(c){
+        if(c.querySelector('.colset')) return;
+        var fs=parseFloat(getComputedStyle(c).fontSize)||16, m=Math.floor((c.getBoundingClientRect().width+2.2*fs)/(21.2*fs)); if(m<2) return;
+        var tr=[].find.call(c.querySelectorAll('.bracket, .kids'), function(x){ return x.children.length>=2 && (x._th||0)>360; });
+        /* 동하 09-30 결정: 보통 길이 = 6사08-02 꼴(바깥 가지를 통째로 나란히 · 한 층만 · 가지 안 끊음) / 너무 긴 것(한 줄기 900px↑) = 3단으로 잘라 흘림 */
+        var TM0=window.PAN_TREE||((tr && (tr._th||0)>900) ? 'flow' : 'one');
+        if(tr && TM0==='none') return;
+        if(tr && TM0==='cells'){ tr.classList.add('tcells','flat'); tr.style.setProperty('--m', m); return; }   /* 바깥 가지 = 작은 칸 격자 */
+        if(tr && TM0==='flow'){ flowTree(tr, m); return; }
+        if(tr){
+          var TM=TM0;   /* 나무 모양 샘플 비교(09-30 동하 「모양이 너무 제각각」): bal(균형·내려가기) / one(바깥 가지만) / rows(바깥 가지마다 한 줄 + 그 아래 가지만 단) */
+          if(TM==='one') balance(tr, [].slice.call(tr.children), m, 99);
+          else if(TM==='rows') [].slice.call(tr.children).forEach(function(x){
+            x.classList.add('rowg'); var inn=x._inner; if(inn && inn.children.length>=2) balance(inn, [].slice.call(inn.children), m, 99);
+          });
+          else balance(tr, [].slice.call(tr.children), m, 0);
+          if(tr.querySelector('.colset') || TM==='rows') tr.classList.add('flat');
+        }   /* 가로로 편 나무 = 선 없는 단 형식(동하 09-30) */
+      });
+      /* 마무리 — 아직 넘치는 칸은 2트랙씩 더 넓힘(두 번까지) */
+      for(var pass=0; pass<2; pass++) cells.forEach(function(c){
+        if(!overflows(c) && c.scrollWidth-c.clientWidth<=2) return;
+        var cur=(c.style.gridColumn.match(/span (\d+)/)||[0,2])[1]*1; if(c.style.gridColumn==='1 / -1' || cur>=2*n) return;
+        var nx=Math.min(2*n, cur+2); c.style.gridColumn= nx>=2*n ? '1/-1' : 'span '+nx;
+      });
+    });
+  }
+  /* 가로 나무 = 단 높이 고르게(동하 09-30 「길이가 들쭉날쭉」) — 가지를 순서대로 이어 붙여 높이가 비슷한 자리에서 끊는다.
+     큰 가지는 레이블 줄 + 하위 가지로 풀어 그 안에서도 끊을 수 있게(깊이 3까지) · 층 = 들여쓰기 · 단 첫머리가 가지 중간이면
+     윗 레이블 경로를 흐리게(「구성(플롯) › 구성 요소」) · 선 없음 · 옮긴 자리는 주석 표지로 남겨 되돌린다 */
+  function flowTree(tr, m){
+    var target=(tr._th||tr.getBoundingClientRect().height)/m, units=[];
+    var lab=function(el){ var t=el.querySelector('.term'); return (t ? t.textContent : el.textContent).trim(); };
+    (function walk(list, depth, anc){
+      list.forEach(function(el){
+        var h=el._h||el.getBoundingClientRect().height;
+        var inner=el.classList.contains('branch') ? el.querySelector(':scope > .kids, :scope > .bracket') : null;
+        /* 끝가지만 달린 가지(「인지 → 사실·추론·비판…」)는 쪼개지 않는다 */
+        var leafy=inner && [].every.call(inner.children, function(k){ return !(k.classList.contains('branch') && k.querySelector(':scope > .kids, :scope > .bracket')); });
+        if(!inner || !inner.children.length || leafy || h<=target*0.45 || depth>=3){ units.push({el:el, d:depth, anc:anc, h:h}); return; }
+        var head=el.firstElementChild; units.push({el:head, d:depth, anc:anc, h:head.getBoundingClientRect().height+4, head:true});
+        walk([].slice.call(inner.children), depth+1, anc.concat([lab(head)]));
+      });
+    })([].slice.call(tr.children), 0, []);
+    if(units.length<2) return;
+    var fl=document.createElement('div'); fl.className='flow'; fl.style.setProperty('--m', m);
+    var rs=part(units.map(function(u){ return u.h; }), Math.min(m, units.length));
+    /* 레이블이 단 끝에 혼자 남지 않게 — 다음 단 첫머리로 넘긴다(「해독」이 단 끝, 내용은 다음 단이던 것) */
+    for(var ri=0; ri<rs.length-1; ri++) while(rs[ri][1]-1>rs[ri][0] && units[rs[ri][1]-1].head){ rs[ri][1]--; rs[ri+1][0]--; }
+    rs.forEach(function(r){
+      var col=document.createElement('div'); col.className='col'; fl.appendChild(col);
+      var first=units[r[0]];
+      if(first && first.d>0 && first.anc.length){ var cr=document.createElement('div'); cr.className='crumb'; cr.setAttribute('aria-hidden','true'); cr.textContent=first.anc.join(' › '); col.appendChild(cr); }
+      units.slice(r[0], r[1]).forEach(function(u){
+        var ph=document.createComment('flow'); u.el.parentNode.insertBefore(ph, u.el); u.el._ph=ph;
+        u.el.style.paddingLeft=(u.d*1.1)+'em'; if(u.head) u.el.classList.add('fhead');
+        col.appendChild(u.el);
+      });
+    });
+    tr.insertBefore(fl, tr.firstChild); tr.classList.add('flowing','flat'); tr._flow=units;
+  }
+  function unflow(tr){
+    (tr._flow||[]).slice().reverse().forEach(function(u){ var ph=u.el._ph; if(ph && ph.parentNode){ ph.parentNode.replaceChild(u.el, ph); } u.el.style.paddingLeft=''; u.el.classList.remove('fhead'); u.el._ph=null; });
+    var fl=tr.querySelector(':scope > .flow'); if(fl) fl.remove(); tr.classList.remove('flowing'); tr._flow=null;
+  }
+  function part(hs, k){   /* 순서 유지 k 묶음 — 최대 합 최소(작은 DP) */
+    var n=hs.length, pre=[0]; hs.forEach(function(h,i){ pre.push(pre[i]+h); });
+    var INF=1e18, dp=[], cut=[];
+    for(var j=0;j<=k;j++){ dp.push([]); cut.push([]); for(var i=0;i<=n;i++){ dp[j].push(INF); cut[j].push(0); } }
+    dp[0][0]=0;
+    for(j=1;j<=k;j++) for(i=1;i<=n;i++) for(var p=j-1;p<i;p++){ var v=Math.max(dp[j-1][p], pre[i]-pre[p]); if(v<dp[j][i]){ dp[j][i]=v; cut[j][i]=p; } }
+    var out=[], e=n; for(j=k;j>=1;j--){ var b=cut[j][e]; out.unshift([b,e]); e=b; } return out;
+  }
+  var WIDE='.cols,.wide,.line,table,.lanes,.vchain,ol.steps,.fork,.branch,.converge';
+  function overflows(root){ return [].some.call(root.querySelectorAll(WIDE), function(e){ return e.scrollWidth-e.clientWidth>2; }); }
+  function balance(parent, items, m, depth){
+    var tot=items.reduce(function(a,x){ return a+(x._h||0); },0), target=tot/m, batch=[];
+    var flushB=function(){
+      /* 단 안에서 넓은 부품(대조 표·수렴 도식)이 넘치면 단 수를 줄이고, 끝까지 넘치면 안 나눈다(09-30 실측 — 옆 단 글자와 겹침) */
+      for(var k=Math.min(m, batch.length); batch.length>=2 && k>=2; k--){
+        var cs=document.createElement('div'); cs.className='colset'; cs.style.setProperty('--m', k);
+        parent.insertBefore(cs, batch[0]); cs._items=batch.slice();
+        part(batch.map(function(x){ return x._h||0; }), k).forEach(function(r){
+          var col=document.createElement('div'); col.className='col'; cs.appendChild(col);
+          batch.slice(r[0], r[1]).forEach(function(x){ col.appendChild(x); });
+        });
+        if(!overflows(cs)) break;
+        cs._items.forEach(function(it){ parent.insertBefore(it, cs); }); cs.remove();
+      }
+      batch=[];
+    };
+    items.forEach(function(x){
+      var inner=(x.classList.contains('grp') || x.classList.contains('branch')) ? (x._inner || null) : null;
+      /* 내려가기 = 한 단 몫보다 긴 갈래(∧ 360px↑) · 안쪽에 여러 줄짜리 가지가 있을 때만(한 줄 목록은 쪼개지 않는다 — 4사05-02 행정구역) */
+      var kids=inner ? [].slice.call(inner.children) : [];
+      var rich=kids.length>=2 && kids.some(function(z){ return (z._h||0)>=60; });
+      if(depth<2 && rich && (x._h||0)>Math.max(1.15*target, 360)){
+        flushB(); x.classList.add('rowg'); balance(inner, [].slice.call(inner.children), m, depth+1);
+      } else batch.push(x);
+    });
+    flushB();
+  }
   function cols(g){ return getComputedStyle(g).gridTemplateColumns.split(' ').length; }
   function splitTall(){
     document.querySelectorAll('main.wrap .split').forEach(function(s){ s.classList.remove('split'); });
@@ -147,7 +388,7 @@
       var hs=sgs.map(function(s){ var x=s.querySelector(':scope > .sgb, :scope > .blb'); return x ? x.getBoundingClientRect().height : 0; });
       var med=hs.slice().sort(function(a,c){ return a-c; })[Math.floor(hs.length/2)];
       sgs.forEach(function(s,i){
-        if(s.classList.contains('cansplit') && hs[i]>2.2*med && hs[i]>innerHeight*.6) s.classList.add('split');
+        if(s.classList.contains('cansplit') && hs[i]>2.2*med && hs[i]>Math.min(innerHeight,900)*.6)   /* 창 높이 상한 900 — 전면 캡처(창 3만 px)에서도 패드와 같은 판정 */ s.classList.add('split');
       });
     });
     /* 갈래를 단으로 세운 뒤에도 한 갈래만 훨씬 길면(11-01 「가계와 기업의 역할」) 그 갈래는 전폭 ·
@@ -186,9 +427,10 @@
       }
     });
   }
-  splitTall();
+  var relayout = ROLE ? layoutRole : splitTall;
+  relayout();
   /* 재배치가 끝난 뒤 꺾쇠·눈금(resize 로 재는 스크립트들)을 다시 재게 한다 — 09-30 「묶음표 깨짐」: 재배치(지연)보다 꺾쇠가 먼저 재던 것 */
-  var t=null, busy=false; function again(){ splitTall(); busy=true; window.dispatchEvent(new Event('resize')); busy=false; }
+  var t=null, busy=false; function again(){ relayout(); busy=true; window.dispatchEvent(new Event('resize')); busy=false; }
   window.addEventListener('load', again);
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(again);
   window.addEventListener('resize', function(){ if(busy) return; clearTimeout(t); t=setTimeout(again,120); });

@@ -489,6 +489,9 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .sect{background:none;box-shadow:none;border-radius:0;padding:0;
   display:grid;grid-template-columns:repeat(auto-fill,minmax(min(16.5em,100%),1fr));gap:0 2.2em;align-items:start;}
 :root.v2 .sect>.pg{display:contents;}
+/* 칸 h2 연달음 격자의 절 표시(kit.js runhead) — 절 제목(h2)과 같은 모양 */
+:root.v2 .blk.hrow.runhead>.rh{max-width:none;}
+:root.v2 .runhead>.rh{font-size:1.32em;line-height:1.3;font-weight:700;color:var(--v2ink);margin:2em 0 .9em;padding-bottom:.45em;border-bottom:2px solid var(--v2ink);letter-spacing:-.01em;}
 :root.v2 .blk{min-width:0;margin:0 0 1.6em;}
 :root.v2 .blk.full{grid-column:1/-1;}
 /* 절 바로 아래 레이블 없는 내용 = 그 절 자신의 설명 → 절 제목 밑 전폭 한 줄(하위 갈래 블록들은 그 아래 단으로 · 동하 09-29 「탐학모 설명은 탐학모 바로 아래」) */
@@ -504,6 +507,10 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .blk:not(.ttl),:root.v2 .blb,:root.v2 .sg.lead,:root.v2 .sgb{container-type:inline-size;}
 /* 칸 = h3 블록(.ttl)도 제목·본문 두 줄 subgrid — 같은 줄 칸끼리 제목 높이 맞춤 */
 :root.v2 .blk.ttl{display:grid;grid-row:span 2;grid-template-rows:subgrid;row-gap:0;}
+/* 09-30 동하 「헤더 높이가 또 제각각」 — 부모 격자 align-items:start 때문에 한 줄 제목 칸이 행 바닥으로 내려앉았다 → 칸이 두 행을 꽉 채우고 제목 글자는 위부터 */
+:root.v2 .blk.ttl,:root.v2 .sg:not(.lead){align-self:stretch;}
+:root.v2 .sect>.pg:first-child>.blk:first-child{margin-top:0;}   /* 옛 카드 규칙(첫 쪽 첫 요소 위 여백)이 격자 첫 칸만 내려앉히던 것 */
+:root.v2 .blk.ttl>:first-child,:root.v2 .sg:not(.lead)>h4:first-child{align-self:stretch;}
 :root.v2 .blb{min-width:0;align-self:start;}
 /* 각론(.std) — 칸 = 성취기준 하나로 통일(09-30 동하 「위계를 맞춰」): 단원(h3)은 절 제목(h2)과 같은 머리줄,
    성취기준(h4)은 3학년 성취기준(h3 칸 레이블)과 같은 칸 레이블 */
@@ -511,9 +518,12 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .blk.subs.std>h3{font-size:1.32em;line-height:1.3;font-weight:700;color:var(--v2ink);margin:1.2em 0 .9em;padding-bottom:.45em;border-bottom:2px solid var(--v2ink);letter-spacing:-.01em;}
 :root.v2 .blk.subs.std .sg>h4:first-child{font-size:.92em;line-height:1.45;color:var(--v2acc);margin:0 0 .45em;padding-bottom:4px;border-bottom:1px solid var(--v2rule);}
 @container (max-width:30em){
-  .converge{flex-wrap:wrap;row-gap:4px;}
-  .converge>*{flex:0 1 auto;max-width:100%;min-width:0;}
-  .converge>:last-child{flex:1 1 8em;min-width:0;}
+  /* 09-30 동하 「테레빈유가 화살표 옆으로 가야 하는데 아래로 잘렸다」 — 줄을 바꾸지 않고 칸마다 안에서 글자만 접는다 */
+  .converge{flex-wrap:nowrap;}
+  .converge>*{min-width:0;}
+  .converge>.stack{flex:0 1 auto;}
+  .converge>svg,.converge>.link{flex:none;}
+  .converge>:last-child{flex:1 1 3.5em;}
 }
 /* h3 아래 첫 h4 앞 설명 = 그 h3 자신의 설명 → 레이블 밑 전폭 */
 :root.v2 .sg.lead{grid-column:1/-1;}
@@ -523,7 +533,52 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .sg:not(.lead){display:grid;grid-row:span 2;grid-template-rows:subgrid;row-gap:0;}
 :root.v2 .sgb{min-width:0;align-self:start;}
 /* 형제 칸보다 훨씬 긴 소단원(kit.js splitTall) — 제목 전폭 · 본문 최상위 갈래(.grp)만 단으로 */
-:root.v2 .grp{display:contents;}
+:root.v2 .grp{display:flex;flex-direction:column;gap:3px;min-width:0;}
+/* 09-30 layoutRole ⑤ — 넓어진 칸의 갈래 단(순서대로 · 단 높이 균형) */
+:root.v2 .colset{display:grid;grid-template-columns:repeat(var(--m,2),minmax(0,1fr));gap:0 2.2em;align-items:start;}
+/* 가로 나무 = 바깥 가지 작은 칸(샘플 cells) */
+:root.v2 .tcells{display:grid !important;grid-template-columns:repeat(var(--m,3),minmax(0,1fr));gap:1em 2.2em;align-items:start;}
+:root.v2 .tcells>*{padding-left:0 !important;}
+:root.v2 .tcells>.branch>:first-child{font-size:.92em;color:var(--v2acc);border-bottom:1px solid var(--v2rule);padding-bottom:4px;margin-bottom:.35em;}
+:root.v2 .tcells>.branch>:first-child .term{color:var(--v2acc);}
+/* 가로 나무 흐름(kit.js flowTree) — 단 높이 고르게 · 층 = 들여쓰기(인라인 padding) · 빈 껍데기 숨김 */
+:root.v2 .flowing>:not(.flow){display:none;}
+:root.v2 .flow{display:grid;grid-template-columns:repeat(var(--m,2),minmax(0,1fr));gap:0 2.2em;align-items:start;}
+:root.v2 .flow>.col{display:flex;flex-direction:column;gap:3px;min-width:0;}
+:root.v2 .flow .fhead{margin-top:.45em;}
+:root.v2 .flow .fhead .term,:root.v2 .flow .fhead.term{font-weight:700;color:var(--v2ink);}
+:root.v2 .flow>.col>.fhead:first-child,:root.v2 .flow>.col>.crumb+*{margin-top:0;}
+:root.v2 .flow .crumb{font-size:.8em;color:var(--v2muted);margin-bottom:.25em;}
+:root.v2 .flow .branch>.kids,:root.v2 .flow .branch>.bracket{margin-left:0;}
+/* 가로로 편 나무(.flat) = 선 없는 단 형식 — 잇는 선·꺾쇠 표시 없이 들여쓰기와 굵은 레이블로만 층(동하 09-30 「선 없애고 단 형식으로」) */
+:root.v2 .flat .kids>*,:root.v2 .flat .bracket>*{padding-left:1em;}
+:root.v2 .flat>.colset .col>*{padding-left:0;}
+:root.v2 .flat .kids>*::before,:root.v2 .flat .kids>*::after,:root.v2 .flat .bracket>*::before,:root.v2 .flat .bracket>*::after,
+:root.v2 .kids.flat>*::before,:root.v2 .kids.flat>*::after,:root.v2 .bracket.flat>*::before,:root.v2 .bracket.flat>*::after{display:none;}
+:root.v2 .kids.flat>*,:root.v2 .bracket.flat>*{padding-left:0;}
+:root.v2 .flat .fork>.mkf{display:none;}
+:root.v2 .flat .branch>.kids,:root.v2 .flat .branch>.bracket{margin-left:0;}
+:root.v2 .flat .branch>:first-child .term{font-weight:700;color:var(--v2ink);}
+:root.v2 .flat .kids,:root.v2 .flat .bracket{gap:3px;}
+/* 나무 가지를 단으로 옮긴 묶음 — 선·들여쓰기 없음 · 단 머리 가지 레이블 또렷 */
+:root.v2 .bracket>.colset,:root.v2 .kids>.colset{padding-left:0;margin-left:0;}
+:root.v2 .bracket>.colset::before,:root.v2 .bracket>.colset::after,:root.v2 .kids>.colset::before,:root.v2 .kids>.colset::after{display:none;}
+:root.v2 .colset>.col>.branch>:first-child .term,:root.v2 .colset>.col>.branch>.term:first-child{color:var(--v2ink);font-weight:700;font-size:1.04em;}
+:root.v2 .colset>.col>.branch+.branch{margin-top:.55em;}
+:root.v2 .branch.rowg>:first-child .term{color:var(--v2ink);font-weight:700;font-size:1.04em;}
+:root.v2 .kids.kgrid{display:grid;grid-template-columns:repeat(var(--m,2),minmax(0,1fr));column-gap:2.2em;align-items:start;margin-left:0;}
+/* 가로로 펼친 나무는 첫 가지 잇는 선을 지운다 — 단 제목처럼(동하 09-30 「가로 트리라고 굳이 트리 구조를 유지할 필요 없음」) */
+:root.v2 .kids.kgrid>*{padding-left:0;}
+:root.v2 .kids.kgrid>*::before,:root.v2 .kids.kgrid>*::after{display:none;}
+:root.v2 .kids.kgrid>*>:first-child .term,:root.v2 .kids.kgrid>*>.term:first-child{color:var(--v2ink);font-weight:700;font-size:1.04em;}
+:root.v2 .colset>.col{display:flex;flex-direction:column;gap:3px;min-width:0;}
+/* 09-30 동하 「헤더 아래 항목별(기호와 범례 · 축척) 구분이 잘 안 됨 — 줄로 가르진 말고 선명하게」: 최상위 갈래 사이 간격 + 레이블 또렷 */
+:root.v2 .grps>.grp+.grp,:root.v2 .col>.grp+.grp{margin-top:.55em;}
+:root.v2 .grps>.grp.k>:first-child .term,:root.v2 .col>.grp.k>:first-child .term,:root.v2 .grp.rowg>:first-child .term{color:var(--v2ink);font-weight:700;font-size:1.04em;}
+:root.v2 .grp.rowg>:first-child{margin-bottom:.2em;}
+:root.v2 .grps2>.grp+.grp,:root.v2 .grps2 .col>.grp+.grp{margin-top:.3em;}
+/* 한 겹 안쪽에 든 칸 제목(판 원문이 div 안에 둔 h4 — 사회 영역군) — 앞 내용에 붙어 보이지 않게 위 간격 */
+:root.v2 .blb .r-cell,:root.v2 .hrow>:not(:first-child) .r-cell,:root.v2 .hrow .ind .r-cell{margin-top:1.1em;}
 :root.v2 .split{grid-column:1/-1;}
 /* 09-30 역할 판정(window.PAN_ROLE) — 제목 모양은 태그가 아니라 역할로: 같은 층 = 같은 모양 */
 :root.v2 .blk.hrow{margin:0;}
@@ -533,8 +588,14 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 h3.r-jeol,:root.v2 h4.r-jeol{font-size:1.32em;line-height:1.3;font-weight:700;color:var(--v2ink);margin:1.4em 0 .9em;padding-bottom:.45em;border-bottom:2px solid var(--v2ink);letter-spacing:-.01em;}
 :root.v2 .r-head{font-size:1.02em;line-height:1.35;font-weight:700;color:var(--v2ink);margin:1em 0 .6em;padding-bottom:.3em;border-bottom:1px solid var(--v2ink);}
 :root.v2 h2.r-head{font-size:1.1em;}
-:root.v2 h3.r-cell,:root.v2 h4.r-cell{font-size:.92em;line-height:1.45;font-weight:700;color:var(--v2acc);margin:0 0 .45em;padding-bottom:4px;border-bottom:1px solid var(--v2rule);}
+:root.v2 h2.r-cell,:root.v2 h3.r-cell,:root.v2 h4.r-cell{font-size:.92em;line-height:1.45;font-weight:700;color:var(--v2acc);margin:0 0 .45em;padding-bottom:4px;border-bottom:1px solid var(--v2rule);}
 :root.v2 .blk.prosecell>.blb{max-width:46em;}
+:root.v2 .pfx{display:none;}
+/* 본문 없는 칸(PAN_EMPTY) — 이름표 꼴: 제목 글자를 본문 레이블처럼 */
+:root.v2 .blb>.r-cell.att,:root.v2 .r-cell.att{font-size:1em;font-weight:700;color:var(--v2ink);border:0;padding:0;margin:.55em 0 0;}
+:root.v2 .gathered>.blb>.r-cell.att:first-child{margin-top:0;}
+:root.v2 .gathered>.ghead{border-bottom:1px solid var(--v2rule);margin:0 0 .45em;min-height:1.45em;}
+:root.v2 .blk.emptyc>.r-cell{font-size:1em;color:var(--v2ink);border-bottom:0;}   /* 같은 격자 칸 제목들의 되풀이 앞머리(「실과 교수·학습 방법 - 」) — 화면에서만 숨김(동하 09-30) */
 :root.v2 main.wrap>h2.r-hide,:root.v2 .pg>h2.r-hide,:root.v2 .r-hide{height:0;margin:0;padding:0;border:0;overflow:hidden;}
 :root.v2 h3.r-in{font-size:.9em;line-height:1.4;font-weight:700;color:var(--v2ink);margin:.9em 0 .25em;border:0;padding:0;}
 :root.v2 .split .grps{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(16.5em,100%),1fr));gap:.2em 2.2em;align-items:start;}

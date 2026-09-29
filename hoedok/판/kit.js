@@ -533,9 +533,14 @@
   var relayout = ROLE ? layoutRole : splitTall;
   relayout();
   /* 재배치가 끝난 뒤 꺾쇠·눈금(resize 로 재는 스크립트들)을 다시 재게 한다 — 09-30 「묶음표 깨짐」: 재배치(지연)보다 꺾쇠가 먼저 재던 것 */
-  var t=null, busy=false; function again(){ relayout(); busy=true; window.dispatchEvent(new Event('resize')); busy=false; }
-  window.addEventListener('load', again);
-  if(document.fonts && document.fonts.ready) document.fonts.ready.then(again);
+  /* 09-30 동하 「퍼포먼스 문제 안 생김?」 — 배치 한 번 = PC 사회 70ms·국어 100ms(패드 2~4배). 열 때 서너 번 + 사파리는 스크롤 중
+     주소창이 접히며 resize(높이만)를 쏜다 → 폭·폰트 상태가 지난 배치와 같으면 다시 계산하지 않는다 */
+  /* 키 = 본문 폭만(웹폰트는 글자가 보일 때마다 조각을 받아 fonts.status 가 수시로 바뀐다 — 키에 넣으면 건너뛰기가 안 먹음, 09-30 실측) */
+  var layKey=function(){ var mw3=document.querySelector('main.wrap'); return String(mw3 ? mw3.clientWidth : 0); };
+  var lastKey=layKey();   /* 위 첫 배치의 키 */
+  var t=null, busy=false; function again(force){ var k=layKey(); if(force!==true && k===lastKey) return; lastKey=k; relayout(); busy=true; window.dispatchEvent(new Event('resize')); busy=false; }
+  window.addEventListener('load', function(){ again(true); });   /* 로딩 끝·폰트 준비 = 글자 폭이 바뀌니 한 번씩 강제 */
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ again(true); });
   window.addEventListener('resize', function(){ if(busy) return; clearTimeout(t); t=setTimeout(again,120); });
   /* 09-30 앱 안 판(iframe)이 보이기 전에 불러져 폭 0으로 배치되고, 보일 때 resize 가 안 와서 「1단」 그대로 남던 것
      (동하 패드 「앱 커밋은 바로 반영됐는데 회독이 그대로」) → 본문 폭이 바뀌면(0 → 실제 폭 포함) 다시 배치 */

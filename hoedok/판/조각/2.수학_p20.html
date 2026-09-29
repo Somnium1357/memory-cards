@@ -1,22 +1,20 @@
 <h2>넓이와 부피</h2>
 
-<h3>다각형의 둘레와 넓이</h3>
+<h3 style="font-size:1.24em;border-bottom:0;padding-bottom:0;margin:.3em 0 .1em">다각형의 둘레와 넓이</h3>
 
 <h4>배경지식</h4>
+<h4 id="둘레넓이_배경_넓이의_성질">넓이의 성질</h4>
 <div class="ind2">
 <div class="bracket">
-  <div class="branch">
-    <div><span class="term">넓이의 성질</span></div>
-    <div class="bracket">
       <div><span class="term">보존성</span> : <span class="desc">잘라 붙여도 보존됨</span></div>
       <div><span class="term">가법성</span> : <span class="desc">서로 더할 수 있음 <span class="quiet">(→ 외연량임)</span></span></div>
       <div><span class="term">승법성</span> : <span class="desc">길이의 곱으로 표현됨</span></div>
     </div>
-  </div>
+</div>
 
-  <div class="branch">
-    <div><span class="term">넓이를 구하기<br>위한 조작활동</span></div>
-    <div class="bracket">
+<h4 id="둘레넓이_배경_넓이를_구하기_위한_조작활동">넓이를 구하기 위한 조작활동</h4>
+<div class="ind2">
+<div class="bracket">
       <div><span class="term">단위 반복하기</span> : <span class="desc">단위 넓이의 개수 일일이 세기</span></div>
       <div class="bsub"><div class="converge">
         <div class="stack">
@@ -36,11 +34,11 @@
         </div>
       </div>
     </div>
-  </div>
+</div>
 
-  <div class="branch">
-    <div><span class="term">둘레</span></div>
-    <div class="kids">
+<h4 id="둘레넓이_배경_둘레">둘레</h4>
+<div class="ind2">
+<div class="kids">
       <div class="branch">
         <div><span class="term">정다각형</span></div>
         <div class="bracket">
@@ -70,16 +68,12 @@
         </div>
       </div>
     </div>
-  </div>
-</div>
 </div>
 
 <h4>핵심 각론</h4>
+<h4 id="둘레넓이_핵심_비교">비교</h4>
 <div class="ind2">
-<div class="bracket">
-  <div class="branch">
-    <div><span class="term">비교</span></div>
-    <div class="converge">
+<div class="converge">
       <div class="bracket">
         <div data-b="s"><span class="term">직관적 비교</span></div>
         <div><span class="term">직접 비교</span></div>
@@ -92,72 +86,72 @@
         <div><span class="term">포함×</span> : <span class="desc">공통 부분 잘라내서 반복 <span class="mk">⇒</span> 넓이의 보존성 <span class="quiet">(구체적 조작기)</span></span></div>
       </div>
     </div>
-  </div>
+</div>
 
-  <div class="branch">
-    <div><span class="term">둘레</span></div>
-    <div class="kids">
+<h4 id="둘레넓이_핵심_둘레">둘레</h4>
+<div class="ind2">
+<div class="stack">
         <div class="branch">
           <div><span class="term">임의 단위에 의한<br>직접 측정</span></div>
-          <div class="bracket">
+          <div class="ind"><div class="stack">
             <div class="branch">
               <div><span class="term">불편한 점</span></div>
-              <div class="bracket">
+              <div class="ind"><div class="stack">
                 <div><span class="desc">같은 넓이/다른 단위수</span></div>
                 <div><span class="desc">원처럼 빈틈없이 붙일 수 없는 단위</span></div>
-              </div>
+              </div></div>
             </div>
-          </div>
+          </div></div>
         </div>
 
         <div class="branch">
           <div><span class="term">표준 단위에 의한<br>직접 측정</span></div>
-          <div class="bracket">
+          <div class="ind"><div class="stack">
             <div><span class="desc">1cm²</span></div>
             <div><span class="desc">1m²</span></div>
             <div><span class="desc">1km²</span></div>
-          </div>
+          </div></div>
         </div>
 
         <div class="branch">
           <div><span class="term">측정</span></div>
-          <div class="kids">
+          <div class="ind"><div class="stack">
               <div class="branch">
                 <div><span class="term">직사각형/정사각형</span></div>
-                <div class="bracket">
+                <div class="ind"><div class="stack">
                   <div><span class="term">단위 반복하기</span> : <span class="desc">직접 측정</span></div>
                   <div><span class="term">배열 구조 만들기</span></div>
-                </div>
+                </div></div>
               </div>
 
               <div class="branch">
                 <div><span class="term">평행사변형</span></div>
-                <div class="bracket">
+                <div class="ind"><div class="stack">
                   <div class="branch">
                     <div><span class="term">구성요소</span></div>
-                    <div class="bracket">
+                    <div class="ind"><div class="stack">
                       <div><span class="term">밑변</span> : <span class="desc">평행한 두 변<span class="quiet">(두 쌍)</span></span></div>
                       <div><span class="term">높이</span> : <span class="desc">밑변 사이의 거리</span></div>
-                    </div>
+                    </div></div>
                   </div>
                   <div><span class="term">단위 반복하기</span></div>
                   <div>
                     <div><span class="term">등적 변형</span></div>
                     <div class="sub"><span class="desc">밑변의 길이와 높이가 같은 평행사변형 넓이 비교</span></div>
                   </div>
-                </div>
+                </div></div>
               </div>
 
               <div class="branch">
                 <div><span class="term">삼각형</span></div>
-                <div class="bracket">
+                <div class="ind"><div class="stack">
                   <div class="row"><span class="mk">⇒</span><span class="desc">둔각삼각형의 높이 지도</span></div>
                   <div class="branch">
                     <div><span class="term">구성요소</span></div>
-                    <div class="bracket">
+                    <div class="ind"><div class="stack">
                       <div><span class="term">밑변</span> : <span class="desc">어느 한 변</span></div>
                       <div><span class="term">높이</span> : <span class="desc">밑변과 마주보는 꼭짓점에서 내린 수선의 길이</span></div>
-                    </div>
+                    </div></div>
                   </div>
                   <div><span class="term">단위 반복하기</span></div>
                   <div><span class="term">배적 변형</span> : <span class="desc">평행사변형</span></div>
@@ -165,38 +159,36 @@
                     <div><span class="term">등적 변형</span></div>
                     <div class="sub"><span class="desc">밑변의 길이와 높이가 같은 삼각형 넓이 비교</span></div>
                   </div>
-                </div>
+                </div></div>
               </div>
 
               <div class="branch">
                 <div><span class="term">사다리꼴</span></div>
-                <div class="bracket">
+                <div class="ind"><div class="stack">
                   <div class="branch">
                     <div><span class="term">구성요소</span></div>
-                    <div class="bracket">
+                    <div class="ind"><div class="stack">
                       <div><span class="term">밑변</span> : <span class="desc">평행한 두 변</span></div>
                       <div><span class="term">높이</span> : <span class="desc">밑변 사이의 거리</span></div>
-                    </div>
+                    </div></div>
                   </div>
                   <div><span class="term">단위 반복하기</span></div>
                   <div><span class="term">배적 변형</span> : <span class="desc">평행사변형</span></div>
                   <div><span class="term">등적 변형</span> : <span class="desc">분할 <span class="quiet">(평·사, 삼각형)</span></span></div>
                   <div><span class="term">분할하기</span> : <span class="desc">삼각형 2개 <span class="quiet">(분배법칙 X)</span></span></div>
                   <div><span class="term">제거하기</span></div>
-                </div>
+                </div></div>
               </div>
 
               <div class="branch">
                 <div><span class="term">마름모</span></div>
-                <div class="bracket">
+                <div class="ind"><div class="stack">
                   <div><span class="term">등적 변형</span></div>
                   <div><span class="term">배적 변형</span> : <span class="desc">직사, 삼각</span></div>
                   <div><span class="term">반적 변형</span> : <span class="desc">삼각</span></div>
-                </div>
+                </div></div>
               </div>
-          </div>
+          </div></div>
         </div>
     </div>
-  </div>
-</div>
 </div>

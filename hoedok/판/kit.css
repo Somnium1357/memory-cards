@@ -673,6 +673,10 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2.dae-big .blb h3.r-in,:root.v2.dae-big .blb h4.r-in{font-size:.82em;font-weight:700;color:var(--v2muted);letter-spacing:.03em;margin:.2em 0 .5em;}
 :root.v2.dae-big .blb .r-cell,:root.v2.dae-big .blb h4.r-cell,:root.v2.dae-big .blb h3.r-cell{font-size:1em;color:var(--v2ink);border-bottom:0;padding-bottom:0;margin:1em 0 .3em;}
 :root.v2.dae-big .blb .r-cell .term{color:var(--v2ink);}
+/* 09-30 3차(수학 캡처): 칸 안 나무의 맨 위 가지는 칸 제목 모양 말고 굵은 레이블(칸 안에 칸이 생겨 보이던 것) · h3 절은 카드 제목(h2)보다 한 단계 작게 — 사회 제외 */
+:root.v2.dae-big .blb .ctree>.ccell:not(.cline)>:first-child{font-size:1em;color:var(--v2ink);border-bottom:0;padding-bottom:0;margin-bottom:.15em;}
+:root.v2.dae-big .blb .ctree>.ccell:not(.cline)>:first-child .term{color:var(--v2ink);}
+:root.v2.dae-big h3.r-jeol,:root.v2.dae-big h4.r-jeol{font-size:1.2em;border-bottom-width:1px;}
 /* 역할 「글」 — 제목 태그지만 머리줄 밑 도입 글처럼(동하 09-30) */
 :root.v2 h2.r-line,:root.v2 h3.r-line,:root.v2 h4.r-line{font-size:1em;line-height:1.55;font-weight:400;color:var(--v2ink2);margin:.2em 0 .4em;padding:0;border:0;}
 /* 판단 나무 줄(kit.js .dec) — 「X →」 머리 칸 + 이름 · 설명은 이름 아래(동하 09-30 영어 연습 단계 (가)) */

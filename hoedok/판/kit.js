@@ -419,7 +419,7 @@
       var bodyH=function(c){ var b=c.querySelector(':scope > .blb'); return b ? b.getBoundingClientRect().height : 0; };
       var cells=blks.filter(function(b){ return b.classList.contains('cell') && !b.classList.contains('full'); });
       cells.forEach(function(c){ c._bh=bodyH(c); c._wide=false; });   /* 기본 폭(2트랙)에서의 본문 높이 — 짧은 칸 판정용 */
-      var hs=cells.map(bodyH).sort(function(a,b){ return a-b; }), med=hs.length ? hs[Math.floor(hs.length/2)] : 0;
+      var hs=cells.map(bodyH).sort(function(a,b){ return a-b; }), med=hs.length ? hs[window.PAN_HOIST===false ? Math.floor(hs.length/2) : Math.floor((hs.length-1)/2)] : 0;   /* 아래 중앙값 — 칸 둘이면 짧은 쪽(09-30 수학 약수와 배수 | 수의 범위 · 긴 쪽이 중앙값이 돼 「훨씬 긴 칸 = 전폭」이 안 먹던 것) */
       var spanOf=function(c){ var g=c.style.gridColumn; if(g==='1 / -1' || g==='1/-1' || c.classList.contains('full')) return 2*n; var mm=g.match(/span (\d+)/); return mm ? +mm[1] : 2; };
       var setSpan=function(c,t){ c.style.gridColumn = t>=2*n ? '1/-1' : 'span '+t; };
       /* 칸 넷짜리 단원 = 2×2(동하 09-30 「환경 확대법·3~4학년 설명이 너무 눌림 — 2단×2로」) */
@@ -461,6 +461,15 @@
         close();
       };
       fillRows();
+      /* 같은 줄 옆 칸보다 2배↑ 긴 칸(∧ 540px↑) = 전폭 — 옆이 텅 비지 않게(사회 원칙 「긴 칸 옆 텅 빔 금지」 · 09-30 수학 약수와 배수 | 수의 범위) · 사회 확정 배치는 그대로 */
+      if(window.PAN_HOIST!==false){
+        var rowsBy={}; cells.forEach(function(c){ if(spanOf(c)>=2*n) return; var t=Math.round(c.getBoundingClientRect().top); (rowsBy[t]=rowsBy[t]||[]).push(c); });
+        var chg=false;
+        Object.keys(rowsBy).forEach(function(t){ var r=rowsBy[t]; if(r.length<2) return;
+          var hh=r.map(bodyH), mx=Math.max.apply(null,hh), i=hh.indexOf(mx), rest=hh.filter(function(_,j){ return j!==i; }), m2=Math.max.apply(null,rest);
+          if(mx>540 && mx>2*m2){ setSpan(r[i], 2*n); r[i]._wide=false; chg=true; } });
+        if(chg) fillRows();
+      }
       /* 넓어진 칸 = 갈래를 단에 담음 */
       /* 단으로 안 나누는 칸: 짧은 칸(한 줄기로 화면 1/3 미만 — 6사08-03 미디어) · 세로 단계 사슬(↓)이 든 칸(가치 학습 계보 — 단계는 단을 넘기지 않는다) */
       var noSplit=function(c){

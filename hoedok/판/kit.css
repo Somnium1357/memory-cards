@@ -768,6 +768,10 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 /* bsub(괄호 묶음 낀 가지) 줄머리 선도 v2 들여쓰기(13px)에 맞춘다 — 옛 -17px 그대로라 형제 선과 4px 어긋나 끊겨 보였다(10-01 동하 「시의 내용 줄 깨짐」 · 사회 제외 = dae-big) */
 :root.v2.dae-big .bracket>.bsub>.converge>.stack:first-child>*::before{left:-13px;border-left-color:var(--v2rule);}
 :root.v2.dae-big .bracket>.bsub>.converge>.stack:first-child>*::after{left:-13px;width:7px;border-top-color:var(--v2rule);}
+/* 나무 가지선(├ └) 끔 — 위계는 들여쓰기로 이미 읽힌다(10-01 동하 「불필요한 묶음표 · 이것도 떼야」 · 나무 압축 칸과 같은 꼴) ·
+   수렴 괄호 }·꺾쇠 〈 는 뜻(묶음·분류 기준)이 있어 남긴다 · 사회 포함(동하 10-01 「사회도 해줘」 — 선만 끄고 배치는 무변) */
+:root.v2 .kids>*::before,:root.v2 .kids>*::after,:root.v2 .bracket>*::before,:root.v2 .bracket>*::after,
+:root.v2 .bracket>.bsub>.converge>.stack:first-child>*::before,:root.v2 .bracket>.bsub>.converge>.stack:first-child>*::after{display:none;}   /* 들여쓰기는 v2 13px 그대로(나무 압축·단 형식 칸의 0 들여쓰기를 덮지 않게 padding 은 안 건드림) */
 :root.v2 .fork>.mkf{color:var(--v2rule);}
 :root.v2 .converge>svg,:root.v2 .forkdown>.mkd{color:var(--v2rule);}
 :root.v2 .converge .link,:root.v2 .converge .link b{color:var(--v2ink2);}

@@ -2,7 +2,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>회독본 — 4.사회</title>
-<link rel="stylesheet" href="kit.css?v=edb5e574">
+<link rel="stylesheet" href="kit.css?v=6f2c43b4">
 <script>document.documentElement.classList.add("v2")</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=42dot+Sans:wght@400;500;600;700&display=swap">
@@ -1099,15 +1099,13 @@ p.note,p.sub{max-width:46em;}
 <div class="ind2">
 <div class="sub">역사, 과학, 예술, 생태</div>
 <div class="stack" style="margin-top:8px">
-  <div><span class="term">국가유산</span></div>
+  <!-- 09-30 동하 「물려줄 만한 가치는 국가유산 설명인데 왜 밑으로」 — 설명은 옆에(⇒ 보이게) · 세 유산은 한 묶음(글자 무변 · + 는 표시만 끔) -->
   <div class="branch">
-    <div class="row"><span class="mk">⇒</span><span class="desc">물려줄 만한 가치</span></div>
-    <div class="branch">
-      <div class="bracket">
-        <div><span class="term">문화유산</span> <span class="mk">-</span> <span class="desc">유형</span></div>
-        <div><span class="term">무형유산</span> <span class="mk">-</span> <span class="desc">무형</span></div>
-      </div>
-      <div class="row"><span class="mk">+</span><span class="term">자연유산</span></div>
+    <div><span class="term">국가유산</span> <span class="desc"><span class="mk">⇒</span> 물려줄 만한 가치</span></div>
+    <div class="bracket">
+      <div><span class="term">문화유산</span> <span class="mk">-</span> <span class="desc">유형</span></div>
+      <div><span class="term">무형유산</span> <span class="mk">-</span> <span class="desc">무형</span></div>
+      <div><span class="mk" style="display:none">+</span><span class="term">자연유산</span></div>
     </div>
   </div>
 </div>
@@ -1434,7 +1432,13 @@ p.note,p.sub{max-width:46em;}
           <div><span class="term">평등권</span> : <span class="desc">차별받지 않을 권리</span></div>
         </div>
       </div>
-      <div><span class="term">참여</span> <span class="mk">-</span> <span class="term">참정권</span> <span class="quiet">(정치 참여)</span> : <span class="desc">정치에 참여할 권리</span></div>
+      <!-- 09-30 동하 「참정권만 들여쓰기 없이 옆에 붙어 이상」 — 부작위·작위와 같은 꼴(레이블 → 하위 · 글자 무변 · - 는 표시만 끔) -->
+      <div class="branch">
+        <div><span class="term">참여</span><span class="mk" style="display:none"> -</span></div>
+        <div class="bracket">
+          <div><span class="term">참정권</span> <span class="quiet">(정치 참여)</span> : <span class="desc">정치에 참여할 권리</span></div>
+        </div>
+      </div>
       <div class="branch">
         <div><span class="term">작위</span></div>
         <div class="bracket">
@@ -1460,9 +1464,13 @@ p.note,p.sub{max-width:46em;}
           <div><span class="term">탄핵 심판</span> : <span class="desc">국회가, 탄핵 소추의 정당성</span></div>
           <div><span class="term">정당 해산 심판</span> : <span class="desc">정부가, 위헌 정당 해산 정당성</span></div>
           <div><span class="term">권한 쟁의 심판</span> : <span class="desc">국가기관이, 권한의 범위</span></div>
-          <div>
-            <div><span class="term">헌법 소원 심판</span> : <span class="desc">국민이, 작위·부작위에 의한 기본권 침해 여부 <span class="quiet">(권리구제 목적)</span></span></div>
-            <div class="sub">위헌 법률 심판 제청 각하·기각시 법률의 위헌 여부 <span class="quiet">(규범통제 목적)</span></div>
+          <!-- 09-30 동하 「규범통제/권리구제가 동위인데 규범통제가 하위처럼」 — 헌법 소원 심판 아래 두 목적을 동위로(글자 무변) -->
+          <div class="branch">
+            <div><span class="term">헌법 소원 심판</span> :</div>
+            <div class="bracket">
+              <div><span class="desc">국민이, 작위·부작위에 의한 기본권 침해 여부 <span class="quiet">(권리구제 목적)</span></span></div>
+              <div><span class="desc">위헌 법률 심판 제청 각하·기각시 법률의 위헌 여부 <span class="quiet">(규범통제 목적)</span></span></div>
+            </div>
           </div>
         </div>
       </div>
@@ -1940,4 +1948,4 @@ p.note,p.sub{max-width:46em;}
 </div>
 </section><p class="foot"><a href="3.영어.html">← 3.영어</a> · <a href="index.html">목록</a> · <a href="5.도덕.html">5.도덕 →</a></p></main>
 </div>
-<script src="kit.js?v=edb5e574"></script>
+<script src="kit.js?v=6f2c43b4"></script>

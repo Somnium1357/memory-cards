@@ -107,6 +107,36 @@
     });
     line.parentNode.insertBefore(v, line); line.style.display='none';   /* hidden 속성은 스킨 display:flex 에 진다 */
   });
+  /* ⑩ 09-30 동하 「당구장 표시 같은 각주들은 빼 줘」·「(동하 수정) 이런 것도 빼고」 — 화면에서만 숨김(글자는 남는다):
+        · ※ 로 시작하는 줄은 통째로 · 글 중간의 ※… 는 그 글 끝까지 · 「(동하 …)」 괄호 메모
+     ⑪ 「짧은 연쇄는 줄바꿈 없이」(추체험 학습 「이해 → 재사고 → 표현」·시간 표현·나선형 원리) — 화살표 셋 이하 연쇄를 한 덩어리(.nw)로 */
+  (function(){
+    var main=document.querySelector('main.wrap'); if(!main) return;
+    var wrapRange=function(n, a, b, cls){ var mid=n.splitText(a); mid.splitText(b-a); var sp=document.createElement('span'); sp.className=cls; mid.parentNode.insertBefore(sp, mid); sp.appendChild(mid); return sp; };
+    main.querySelectorAll('div, li').forEach(function(el){
+      if(el.children.length>6) return;
+      var t=el.textContent.trim();
+      if(t.charAt(0)==='※' && !el.querySelector('div, li')) el.classList.add('memo');
+    });
+    var tw=document.createTreeWalker(main, NodeFilter.SHOW_TEXT), list=[], x;
+    while((x=tw.nextNode())) list.push(x);
+    list.forEach(function(n){
+      if(!n.parentNode || (n.parentElement && n.parentElement.closest('.memo, h1, h2, h3, h4, script, style'))) return;
+      var s=n.textContent, m;
+      if((m=/\((?:\s*)동하[^)]*\)/.exec(s))){ wrapRange(n, m.index, m.index+m[0].length, 'memo'); return; }
+      var i=s.indexOf('※'); if(i>0){ wrapRange(n, i, s.length, 'memo'); return; }
+      m=/[^\s→,;()·]+(?:\s[^\s→,;()·]+)?\s*→\s*[^\s→,;()·]+(?:\s*→\s*[^\s→,;()·]+){1,2}/.exec(s);
+      if(m && (m[0].match(/→/g)||[]).length<=3) wrapRange(n, m.index, m.index+m[0].length, 'nw');
+    });
+    main.querySelectorAll('table').forEach(function(t){ var f=t.querySelector('tr > *'); if(f && !f.textContent.trim()) t.classList.add('rh'); });   /* 첫 칸 빈 표 = 행 머리 표 */
+    /* 부품 연쇄(가로 줄·가로로 눕힌 사슬·번호 목록)도 단계 셋 이하면 한 덩어리 */
+    main.querySelectorAll('.line, .vchain.hz, ol.steps.hz, .chain').forEach(function(c){
+      var steps=c.classList.contains('line') ? [].filter.call(c.children, function(k){ var m=k.querySelector('.mid'); return m && !m.classList.contains('mk'); }).length
+              : c.classList.contains('chain') ? c.querySelectorAll(':scope > .arrow').length+1
+              : c.querySelectorAll(':scope > .stp, :scope > li').length;
+      if(steps && steps<=3) c.classList.add('nw');
+    });
+  })();
   document.querySelectorAll('main.wrap .vchain:not(.conv)').forEach(function(v){
     if(![].some.call(v.querySelectorAll('.ann'), function(x){ return x.textContent.trim(); })) v.classList.add('hz');
   });
@@ -280,17 +310,42 @@
       var bodyH=function(c){ var b=c.querySelector(':scope > .blb'); return b ? b.getBoundingClientRect().height : 0; };
       var cells=blks.filter(function(b){ return b.classList.contains('cell') && !b.classList.contains('full'); });
       var hs=cells.map(bodyH).sort(function(a,b){ return a-b; }), med=hs.length ? hs[Math.floor(hs.length/2)] : 0;
-      var flush=function(){ var k=unit.length; if(k && k<n){ var sp=Math.floor(2*n/k); unit.forEach(function(c){ c.style.gridColumn='span '+sp; }); } unit=[]; };
+      var spanOf=function(c){ var g=c.style.gridColumn; if(g==='1 / -1' || g==='1/-1' || c.classList.contains('full')) return 2*n; var mm=g.match(/span (\d+)/); return mm ? +mm[1] : 2; };
+      var setSpan=function(c,t){ c.style.gridColumn = t>=2*n ? '1/-1' : 'span '+t; };
+      /* 칸 넷짜리 단원 = 2×2(동하 09-30 「환경 확대법·3~4학년 설명이 너무 눌림 — 2단×2로」) */
+      var flush=function(){ var k=unit.length; if(k===4 && n===3) unit.forEach(function(c){ setSpan(c,3); }); unit=[]; };
       blks.forEach(function(b){ if(b.classList.contains('cell') && !b.classList.contains('full')) unit.push(b); else flush(); });
       flush();
-      cells.forEach(function(c){ var h=bodyH(c); if(cells.length>1 && h>2.2*med && h>540) c.style.gridColumn='1/-1'; });
-      /* 넘침 → 2트랙씩 넓힘 */
+      cells.forEach(function(c){ var h=bodyH(c); if(cells.length>1 && h>2.2*med && h>540) setSpan(c,2*n); });
+      /* 넘침 → 2트랙씩 넓힘 · 눌린 칸(수렴 도식 오른쪽 글이 좁은 기둥으로 여러 줄 — 가치 학습 계보·환경 확대법)도 넓힘 */
       cells.forEach(function(c){
+        var fs=parseFloat(getComputedStyle(c).fontSize)||16;
         var need=c.scrollWidth-c.clientWidth;
-        c.querySelectorAll('.cols,.wide,.line,table,.lanes,.vchain,ol.steps,.fork,.branch').forEach(function(e){ need=Math.max(need, e.scrollWidth-e.clientWidth); });
-        if(need>2){ var one=(s.clientWidth-(2*n-1)*0)/(2*n), cur=c.getBoundingClientRect().width;
-          var tr=Math.min(2*n, 2*Math.ceil((cur+need)/(2*one))); c.style.gridColumn= tr>=2*n ? '1/-1' : 'span '+tr; }
+        c.querySelectorAll('.cols,.wide,.line,table,.lanes,.vchain,ol.steps,.fork,.branch,.nw').forEach(function(e){ need=Math.max(need, e.scrollWidth-e.clientWidth); });
+        var cw=c.getBoundingClientRect().width;
+        var squeezed=[].some.call(c.querySelectorAll('.converge > :last-child'), function(x){ var r=x.getBoundingClientRect(); return r.width<0.62*cw && r.height>4.5*fs*1.5; });
+        if(squeezed){ setSpan(c, 2*n); return; }   /* 눌린 칸 = 전폭 → 남은 칸끼리 한 줄을 나눈다(가치 학습 계보 → 명료화 | 탐구) */
+        if(need>2){ var one=s.clientWidth/(2*n), cur=c.getBoundingClientRect().width;
+          setSpan(c, Math.max(spanOf(c)+2, Math.min(2*n, 2*Math.ceil((cur+need)/(2*one))))); }
       });
+      /* 줄 채우기(반응형) — 줄에 칸이 혼자거나 빈 자리가 남으면 그 줄 칸들이 폭을 비율대로 나눠 채운다
+         (동하 09-30 「민주주의·선거 옆 단이 비었잖아」 · 「국가유산처럼 둘뿐이면 3단 흉내 말고」) */
+      var fillRows=function(){
+        var row=[], used=0;
+        var close=function(){
+          if(row.length && used<2*n){ var left=2*n, tot=used;
+            row.forEach(function(c,i){ var t= i===row.length-1 ? left : Math.max(2, Math.round(spanOf(c)*2*n/tot)); left-=t; setSpan(c,t); }); }
+          row=[]; used=0; };
+        blks.forEach(function(b){
+          var isCell=b.classList.contains('cell') && !b.classList.contains('full');
+          var t=isCell ? spanOf(b) : 2*n;
+          if(used+t>2*n) close();
+          if(!isCell){ close(); return; }
+          row.push(b); used+=t; if(used>=2*n) close();
+        });
+        close();
+      };
+      fillRows();
       /* 넓어진 칸 = 갈래를 단에 담음 */
       cells.forEach(function(c){
         var st=c.querySelector('.grps'); if(!st) return;
@@ -326,6 +381,16 @@
         var cur=(c.style.gridColumn.match(/span (\d+)/)||[0,2])[1]*1; if(c.style.gridColumn==='1 / -1' || cur>=2*n) return;
         var nx=Math.min(2*n, cur+2); c.style.gridColumn= nx>=2*n ? '1/-1' : 'span '+nx;
       });
+      fillRows();
+    });
+    /* 「= 이어지는 줄」은 윗줄 「=」와 줄 맞춤(동하 09-30 「명시적 비용·암묵적 비용도 = 뒤니까 = 끼리 줄 맞춰야」) */
+    var eqX=function(root){ var tw=document.createTreeWalker(root, NodeFilter.SHOW_TEXT), t; while((t=tw.nextNode())){ var i=t.textContent.indexOf('='); if(i>=0){ var r=document.createRange(); r.setStart(t,i); r.setEnd(t,i+1); return r.getBoundingClientRect().left; } } return null; };
+    main.querySelectorAll('.eqal').forEach(function(e){ e.style.paddingLeft=''; e.classList.remove('eqal'); });
+    main.querySelectorAll('.blk .ind').forEach(function(ind){
+      var d=ind.firstElementChild; if(!d || d.textContent.trim().charAt(0)!=='=') return;
+      var prev=ind.previousElementSibling; if(!prev) return;
+      var a=eqX(prev), b=eqX(ind); if(a==null || b==null) return;
+      var pl=parseFloat(getComputedStyle(ind).paddingLeft)||0; ind.style.paddingLeft=Math.max(0, pl+(a-b))+'px'; ind.classList.add('eqal');
     });
   }
   /* 가로 나무 = 단 높이 고르게(동하 09-30 「길이가 들쭉날쭉」) — 가지를 순서대로 이어 붙여 높이가 비슷한 자리에서 끊는다.

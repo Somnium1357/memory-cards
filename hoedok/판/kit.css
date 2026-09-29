@@ -536,6 +536,18 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .grp{display:flex;flex-direction:column;gap:3px;min-width:0;}
 /* 09-30 layoutRole ⑤ — 넓어진 칸의 갈래 단(순서대로 · 단 높이 균형) */
 :root.v2 .colset{display:grid;grid-template-columns:repeat(var(--m,2),minmax(0,1fr));gap:0 2.2em;align-items:start;}
+/* ⑩ 각주·작업 메모 숨김 · ⑪ 짧은 연쇄 한 덩어리 */
+:root.v2 .memo{display:none !important;}
+:root.v2 .nw{white-space:nowrap;}
+:root.v2 .line.nw,:root.v2 .vchain.hz.nw,:root.v2 ol.steps.hz.nw,:root.v2 .chain.nw{flex-wrap:nowrap !important;}
+/* 단으로 나눈 칸 안 = 선 없는 단 형식(나무 잇는 선 지움 · 들여쓰기만) — 동하 09-30 「가계·기업·정부 묶음선 이상」 */
+:root.v2 .colset .bracket>*::before,:root.v2 .colset .bracket>*::after,:root.v2 .colset .kids>*::before,:root.v2 .colset .kids>*::after,
+:root.v2 .colset .bracket>.bsub>.converge>.stack:first-child>*::before,:root.v2 .colset .bracket>.bsub>.converge>.stack:first-child>*::after{display:none;}
+/* 대등 칸(두세 단 대조) = 칸 폭 같게(동하 「2단이면 2단, 3단이면 3단 — 좌우 간격 멋대로」) */
+:root.v2 .cols.fit{grid-template-columns:repeat(var(--n,2),minmax(0,1fr));}
+/* 표 = 전폭 · 칸 폭 고르게(동하 「바·바스·셔미스 표 쏠림」) — 첫 칸(행 머리)만 좁게 */
+:root.v2 .blk table{width:100%;table-layout:fixed;}
+:root.v2 .blk table.rh tr:first-child>:first-child{width:5.5em;}
 /* ⑨ 단계 모양 통일(동하 09-30 「설명 있으면 세로, 없으면 가로」) — 설명 없는 세로 사슬·번호 목록 = 가로 화살표 줄 */
 :root.v2 .vchain.hz{display:flex !important;flex-wrap:wrap;align-items:center;gap:4px 8px;border-left:0;padding-left:0;}
 :root.v2 .vchain.hz>.arw{display:none;}
@@ -548,6 +560,8 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 ol.steps.hz .an{display:none;}
 /* 설명 있는 가로 줄을 세운 세로 사슬(.conv) — 기존 세로 사슬과 같은 모양 */
 :root.v2 .vchain.conv .stp .mid{font-weight:600;white-space:normal;}
+:root.v2 .vchain{grid-template-columns:minmax(0,max-content) minmax(0,1fr);}   /* 단계 이름도 좁으면 접힌다 — 좁은 칸에서 넘쳐 칸이 넓어지던 것(가치 탐구) */
+:root.v2 .vchain>.stp{min-width:0;max-width:11em;}
 :root.v2 .vchain.conv .ann .up,:root.v2 .vchain.conv .ann .down{display:inline;font-size:1em;color:inherit;}
 :root.v2 .vchain.conv .ann>*+*::before{content:' · ';}
 /* 가로 나무 = 바깥 가지 작은 칸(샘플 cells) */

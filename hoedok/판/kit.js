@@ -537,6 +537,16 @@
   window.addEventListener('load', again);
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(again);
   window.addEventListener('resize', function(){ if(busy) return; clearTimeout(t); t=setTimeout(again,120); });
+  /* 09-30 앱 안 판(iframe)이 보이기 전에 불러져 폭 0으로 배치되고, 보일 때 resize 가 안 와서 「1단」 그대로 남던 것
+     (동하 패드 「앱 커밋은 바로 반영됐는데 회독이 그대로」) → 본문 폭이 바뀌면(0 → 실제 폭 포함) 다시 배치 */
+  if(window.ResizeObserver){
+    var mw=document.querySelector('main.wrap'), lastW=mw ? mw.clientWidth : 0;
+    if(mw) new ResizeObserver(function(){ var w=mw.clientWidth; if(Math.abs(w-lastW)<2) return; lastW=w; if(busy) return; clearTimeout(t); t=setTimeout(again,60); }).observe(mw);
+  }
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden){ clearTimeout(t); t=setTimeout(again,60); } });
+  /* 숨은 프레임에서는 ResizeObserver 알림도 안 온다(09-30 실측) → 폭이 0이면 생길 때까지 0.25초마다 보고 생기면 다시 배치 */
+  (function waitW(){ var mw2=document.querySelector('main.wrap'); if(!mw2 || mw2.clientWidth>0) return;
+    var iv=setInterval(function(){ if(mw2.clientWidth>0){ clearInterval(iv); again(); } }, 250); })();
 })();
 
 /* 꺾쇠 팔 맞추기 — 첫 항목·끝 항목의 세로 중앙에 팔 끝을 붙인다.

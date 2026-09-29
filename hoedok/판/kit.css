@@ -556,6 +556,8 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 /* ⑨ 단계 모양 통일(동하 09-30 「설명 있으면 세로, 없으면 가로」) — 설명 없는 세로 사슬·번호 목록 = 가로 화살표 줄 */
 :root.v2 .vchain.hz{display:flex !important;flex-wrap:wrap;align-items:center;gap:4px 8px;border-left:0;padding-left:0;}
 :root.v2 .vchain.hz>.arw{display:none;}
+/* 긴 단계가 제자리에서 줄어들며 접히던 것 → 줄지 않고 통째로 다음 줄로 넘어간다(10-01 도덕 경험 학습 · 통합 이벤트형·프로젝트형) */
+:root.v2 .vchain.hz>.stp,:root.v2 ol.steps.hz>li{flex-shrink:0;max-width:100%;}
 :root.v2 .vchain.hz>.arw+.stp::before{content:'→';margin-right:8px;color:var(--v2faint);font-weight:400;}
 :root.v2 ol.steps.hz{display:flex !important;flex-wrap:wrap;align-items:center;gap:4px 8px;border-left:0;margin-left:0;padding-left:0;}
 :root.v2 ol.steps.hz>li{display:inline-flex !important;padding:0;margin:0;}

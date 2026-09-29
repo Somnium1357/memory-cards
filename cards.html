@@ -4639,7 +4639,8 @@ function logPath(wk){ return `cards-log-${wk}.json`; }
    그쪽 커밋은 **빌드를 안 만든다.** 실측(최근 7일 1,963커밋) — 시간당 최다 **128 → 26**.
    🔴 **되돌리기는 설정 한 줄** — `cfg.dataBranch=''`이면 전부 예전(main)으로 돌아간다.
 
-   🔴 **`cards-feedback.json`은 옮기지 않는다.** 야간 루틴 3.8이 **`main` 작업 트리에서 읽고 지운다**
+   🔴 (09-30 갱신) **`cards-feedback.json`도 data로 옮겼다** — 루틴 3.8이 data를 읽도록 바꾸는 건 QC가 받았다(아래 옛 사유는 기록으로 둔다).
+   🔴 (09-02) **`cards-feedback.json`은 옮기지 않는다.** 야간 루틴 3.8이 **`main` 작업 트리에서 읽고 지운다**
    (`SKILL.md` L287 「대상 = `repos\memory-cards\cards-feedback.json` · `git pull` 후 처리」).
    옮기면 루틴이 새 피드백을 **영영 못 본다** — 계획서 §3.1의 「앱만 고치면 된다」가 이 파일에서 깨진다.
    그 대가는 최다 19 대신 26이다(실측). 옮기려면 **루틴이 먼저 `data`를 읽도록 바뀌어야 한다.**
@@ -4647,7 +4648,7 @@ function logPath(wk){ return `cards-log-${wk}.json`; }
    ⚠ Pages 상대경로로 읽는 것(`cards-data.json`·`cards-plan.json`·`hoedok/`)은 **그대로 main**이다. */
 const DATA_BRANCH_DEF='data';
 function dataBr(){ const b=(cfg&&cfg.dataBranch!==undefined)?cfg.dataBranch:DATA_BRANCH_DEF; return b||''; }
-function onData(path){ return path===MARKS_PATH || path===SESS_PATH || path===YM_PATH || path==='cards-snapshot.json' || /^cards-log-/.test(path); }   // 스냅숏 = 세션이 읽는 앱 현황(09-28)   // YM_PATH = 연문 상태(data 브랜치)
+function onData(path){ return path===MARKS_PATH || path===SESS_PATH || path===YM_PATH || path===FB_PATH || path==='cards-snapshot.json' || /^cards-log-/.test(path); }   // 피드백도 data(09-30 QC · 동하 「채점이랑 비슷하게」 — main 커밋이 몇 분마다 Pages 배포를 취소시켰다)   // 스냅숏 = 세션이 읽는 앱 현황(09-28)   // YM_PATH = 연문 상태(data 브랜치)
 function refFor(path){ return onData(path) ? dataBr() : ''; }   // '' = 기본 브랜치(main)
 /* 🔴 1단계 = **양쪽 읽기 · 한쪽 쓰기.** 옛 앱을 물고 있는 기기가 `main`에 쓴 것을 여기서 건진다.
    🔴 **2단계(2026-09-05 동하 확인 · 「다 보여」)** — 09-02 이후 `main`에 앱 커밋 0 · 아이패드·PC 모두 새 앱으로 `data`에 저장하는 것을
@@ -6752,7 +6753,7 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
     }
   } else {                        // 토큰 전: 읽기 전용으로라도 최신 상태를 보여준다
     [sc, fb, sess, lg] = await Promise.all([
-      rawGet(MARKS_PATH,refFor(MARKS_PATH)), rawGet(FB_PATH), rawGet(SESS_PATH,refFor(SESS_PATH)), rawGet(logPath(wk),refFor(logPath(wk)))]);
+      rawGet(MARKS_PATH,refFor(MARKS_PATH)), rawGet(FB_PATH,refFor(FB_PATH)), rawGet(SESS_PATH,refFor(SESS_PATH)), rawGet(logPath(wk),refFor(logPath(wk)))]);
     if(rawNetFail){ netFail=true; showBanner('상태 불러오기 실패 — 로컬 캐시로 진행', false, 'boot'); }   // 「못 받았다」를 「없다」로 읽지 않는다(F0-4)
   }
   await fbSentConfirm();           // 🔴 앱을 닫으며 보낸 push가 도착했는지 먼저 확인 → 기준선을 올린다(메타 09-29 · 44건 부활)

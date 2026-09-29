@@ -12308,7 +12308,7 @@ function hdDock(on){
 function hdNavCapture(ev){
   if(!$('ovlHd').classList.contains('show') || !$('ovlHd').classList.contains('dock')) return;
   const b=ev.target.closest && ev.target.closest('button'); if(!b) return;
-  if(b.id==='hsHd' || b.id==='tabHd'){ ev.stopPropagation(); ev.preventDefault(); hdSubjPop(); return; }
+  if(b.id==='hsHd' || b.id==='tabHd'){ ev.stopPropagation(); ev.preventDefault(); if(hdIsPan()) hdSubjPop(); else hdBrowse(); return; }   // 판을 보는 중 = 과목 시트 · 내용 체계표 등 다른 페이지면 회독본을 연다(동하 09-30 「내용체계표 들어갔다가 회독본으로 가면 이상하게 동작」)
   if(b.id==='ctOpen') return;                                   // 내용 체계표도 이 창에서 연다
   closeHoedok();
 }

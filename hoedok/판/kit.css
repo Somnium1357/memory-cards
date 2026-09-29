@@ -681,6 +681,10 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 /* 묶음 괄호 = 묶는 줄 높이만큼(kit.js .brace · 09-30 「묶음선 깨짐 반복」 근본 수리) */
 :root.v2 .bracew{position:relative;flex:0 0 11px;width:11px;align-self:stretch;min-height:1.6em;color:var(--v2rule);}
 :root.v2 .bracew>svg.brace{position:absolute;left:0;top:0;width:100%;height:100% !important;}
+/* 09-30 수학 에이전트 엔진 보고: 칸 안 나무 하위 가지 들여쓰기 · 세로 사슬 위계 번호 끔 · 사슬 단계 사이 간격 — 사회 제외 */
+:root.v2.dae-big .blb .ctree>.ccell>.kids>*,:root.v2.dae-big .blb .ctree>.ccell>.bracket>*{padding-left:1em;}
+:root.v2 .vchain .stp .num{display:none;}
+:root.v2.dae-big .vchain:not(.hz){row-gap:.35em;}
 /* 역할 「글」 — 제목 태그지만 머리줄 밑 도입 글처럼(동하 09-30) */
 :root.v2 h2.r-line,:root.v2 h3.r-line,:root.v2 h4.r-line{font-size:1em;line-height:1.55;font-weight:400;color:var(--v2ink2);margin:.2em 0 .4em;padding:0;border:0;}
 /* 판단 나무 줄(kit.js .dec) — 「X →」 머리 칸 + 이름 · 설명은 이름 아래(동하 09-30 영어 연습 단계 (가)) */

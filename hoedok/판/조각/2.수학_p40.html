@@ -3,6 +3,7 @@
 <h3><span class="num">1.</span> 통계의 기초</h3>
 
 <h4><span class="num">1)</span> 통계의 과정 <span class="quiet">(5단계, 4단계 <span class="mk">⇒</span> 교육과정은 4단계 기준이지만 5단계로 생각한 뒤 매칭)</span></h4>
+<!-- 10-01 동하 「통계의 과정 — 좌(단계)·우(설명) 연결이 명확하지 않음」: 해석·판단의 설명이 단계 칸(좁은 왼쪽 기둥) 안에 접혀 들어가 왼쪽만 길고 오른쪽이 비던 것 → 다섯 단계 모두 단계 | 설명(오른쪽) 한 꼴로(글자 무변) -->
 <div class="ind2">
 <div class="vchain">
   <div class="stp"><span class="term">목적 확인</span> <span class="quiet">(<span class="mk">→</span> 주제 정하기)</span></div>
@@ -23,9 +24,11 @@
     </div>
   </div>
   <div class="arw">↓</div>
-  <div class="stp"><span class="term">해석</span> <span class="quiet">(<span class="mk">→</span> 결과 해석)</span> : <span class="desc">객관적・공정하게 자료 해석 <span class="quiet">(의견 X)</span></span></div>
+  <div class="stp"><span class="term">해석</span> <span class="quiet">(<span class="mk">→</span> 결과 해석)</span></div>
+  <div class="ann"><span class="mk">:</span> <span class="desc">객관적・공정하게 자료 해석 <span class="quiet">(의견 X)</span></span></div>
   <div class="arw">↓</div>
-  <div class="stp"><span class="term">판단</span> <span class="quiet">(<span class="mk">→</span> 결과 해석)</span> : <span class="desc">해석 바탕 예상・예측・판단 <span class="quiet">(의견 O)</span></span></div>
+  <div class="stp"><span class="term">판단</span> <span class="quiet">(<span class="mk">→</span> 결과 해석)</span></div>
+  <div class="ann"><span class="mk">:</span> <span class="desc">해석 바탕 예상・예측・판단 <span class="quiet">(의견 O)</span></span></div>
 </div>
 </div>
 
@@ -46,95 +49,99 @@
     <div class="vchain">
       <div class="stp"><span class="term">주제 정하기</span></div>
       <div class="arw">↓</div>
-      <div class="stp"><span class="term">자료 수집하기</span> <span class="quiet"><span class="mk">⇒</span> 조사하려는 내용에 방법이 알맞은지 생각</span></div>
+      <div class="stp"><span class="term">자료 수집하기</span></div>
+      <div class="ann"><span class="mk">⇒</span> <span class="desc">조사하려는 내용에 방법이 알맞은지 생각</span></div>
       <div class="arw">↓</div>
       <div class="stp"><span class="term">자료 정리하기</span></div>
       <div class="ann">
-        <div class="bracket">
-          <div class="branch">
-            <div><span class="term">표</span> : <span class="desc">수로 정리</span></div>
-            <div class="bracket">
-              <div><span class="term">장점</span> : <span class="desc">전체 수, 자료별 수 알아보기 편리</span></div>
-              <div><span class="term">단점</span> : <span class="desc">한눈에 알아보기 어려움 <span class="mk">→</span> 그래프 필요</span></div>
-              <div class="branch">
-                <div><span class="term">유의점</span></div>
-                <div class="bracket">
-                  <div class="desc">합계 확인</div>
-                  <div class="desc">중복・누락 없이 세는 법 지도</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="branch">
-            <div><span class="term">그래프</span> : <span class="desc">시각적으로 정리</span></div>
-            <div class="bracket">
-              <div><span class="term">장점</span> : <span class="desc">한눈에 알아보고 비교</span></div>
-              <div class="branch">
-                <div><span class="term">유의점</span></div>
-                <div class="bracket">
-                  <div class="desc">기호는 한 칸에 하나씩</div>
-                  <div class="desc">빈칸 없이 순서대로 표시</div>
-                  <div class="desc">기호의 크기와 빈도를 나타내는 수 무관</div>
-                </div>
-              </div>
-            </div>
-          </div>
+        <!-- 10-01: 표·그래프 밑 장점·단점·유의점이 표·그래프와 같은 들여쓰기로 붙어 층이 안 읽히던 것 → 레이블 + 들여쓴 내용 꼴(글자 무변) -->
+        <div class="stack">
+          <div><span class="term">표</span> : <span class="desc">수로 정리</span></div>
+          <div class="ind"><div class="stack">
+            <div><span class="term">장점</span> : <span class="desc">전체 수, 자료별 수 알아보기 편리</span></div>
+            <div><span class="term">단점</span> : <span class="desc">한눈에 알아보기 어려움 <span class="mk">→</span> 그래프 필요</span></div>
+            <div><span class="term">유의점</span> : <span class="desc">합계 확인</span> <span class="quiet">·</span> <span class="desc">중복・누락 없이 세는 법 지도</span></div>
+          </div></div>
+          <div style="margin-top:.6em"><span class="term">그래프</span> : <span class="desc">시각적으로 정리</span></div>
+          <div class="ind"><div class="stack">
+            <div><span class="term">장점</span> : <span class="desc">한눈에 알아보고 비교</span></div>
+            <div><span class="term">유의점</span> : <span class="desc">기호는 한 칸에 하나씩</span> <span class="quiet">·</span> <span class="desc">빈칸 없이 순서대로 표시</span> <span class="quiet">·</span> <span class="desc">기호의 크기와 빈도를 나타내는 수 무관</span></div>
+          </div></div>
         </div>
       </div>
     </div>
   </div>
 </div>
+</div>
+
+<!-- 10-01 동하 「성취기준 해설·적용 시 고려 사항을 단원 단위로 각론에 삽입」: 성취기준 절(p902~905)에서 옮겨 옴(글자 무변 · 원래 자리엔 주석) -->
+<h4 id="성적고_통계의_기초">성취기준 해설 · 적용 시 고려 사항</h4>
+<div class="ind2">
+<div class="prose"><p style="margin:0 0 .3em;font-size:.88em;font-weight:700;color:var(--v2muted,var(--mk))">성취기준 해설</p><p class="sub"><span class="mk" style="display:none">∙</span>[2수04-03<span class="mk" style="display:none"> · 자료의 정리</span>] <span class="key">그래프</span>를 이용하여 자료의 크기를 <span class="key">시각적</span>으로 나타내면, <span class="key">자료의 크기를 한눈에 비교하는 데 편리하다는 점</span>을 통해 수학의 유용성을 인식하게 한다.</p><p style="margin:1.15em 0 .3em;font-size:.88em;font-weight:700;color:var(--v2muted,var(--mk))">적용 시 고려 사항</p><p class="sub">[2수04-01]<span class="mk" style="display:none"> · 자료의 정리)</span> 기준을 정하여 분류할 때는 학생들이 정한 다양한 기준을 존중하되, <span class="key">분명하지 않은 기준으로는 분류하기가 어렵다는 점을 인식하게 한다</span>.</p><p class="sub">[6수04-01]<span class="mk" style="display:none"> · 자료의 수집과 정리)</span> <span class="key">평균을 구하는 방법</span>뿐만 아니라 <span class="key">그 의미</span>를 <span class="key">직관적으로 파악</span>하게 한다.</p><p class="sub"><span class="mk" style="display:none">(적용 시 고려 사항 · </span>[6수04-01]<span class="mk" style="display:none"> · 자료의 수집과 정리)</span> 복잡한 자료의 평균이나 백분율을 구할 때 <span class="key">계산기를 사용하게 할 수 있다</span>.</p></div>
 </div>
 
 <h3><span class="num">2.</span> 여러 가지 그래프</h3>
 
+<!-- 10-01: 그래프 갈래 안 「그리는 법」·「특징」 밑 줄이 레이블과 같은 들여쓰기로 붙어 층이 안 읽히던 것 → 레이블 + 들여쓴 내용 꼴(글자 무변) -->
 <h4><span class="num">1)</span> 비교 그래프 : <span class="desc">양의 크기 비교</span></h4>
 <div class="ind2">
 <div class="stack">
-  <div class="branch">
+  
     <div><span class="term">그림그래프</span></div>
-    <div class="bracket">
+    <div class="ind"><div class="stack">
       <div><span class="term">그리는 법</span> : <span class="desc">그림과 단위 결정 <span class="quiet">; 자료 크기 클 경우 그림 가짓수↑ <span class="mk">⇒</span> 그림 개수 줄어 편리</span></span></div>
       <div><span class="term">특징</span> : <span class="desc">그림의 종류와 개수로 수량 비교</span></div>
       <div><span class="term">유의점</span> : <span class="desc">비비례 모델 사용 <span class="mk">⇒</span> 그림의 개수 많다고 수량 큰 것은 아님을 지도</span></div>
-    </div>
-  </div>
-  <div class="branch">
+    </div></div>
+  
+  
     <div><span class="term">막대그래프</span></div>
-    <div class="bracket">
-      <div class="branch">
+    <div class="ind"><div class="stack">
+      
         <div><span class="term">그리는 법</span></div>
-        <div class="bracket">
+        <div class="ind"><div class="stack">
           <div class="desc">눈금 한 칸의 크기를 적절하게 선택 + 눈금 수 결정 <span class="mk">⇒</span> 수량 차이 표현 위해 세로 눈금 한 칸 크기↓, 물결선 사용</div>
           <div class="desc">양의 크기를 막대의 길이<span class="quiet">(폭 X)</span>로 표현</div>
-        </div>
-      </div>
+        </div></div>
+      
       <div><span class="term">특징</span> : <span class="desc">수량 비교 편리</span></div>
-    </div>
-  </div>
+    </div></div>
+  
 </div>
 </div>
 
 <h4><span class="num">2)</span> 경과 그래프 : <span class="desc">양의 변화 표현</span></h4>
 <div class="ind2">
-<div class="branch">
+
   <div><span class="term">꺾은선 그래프</span></div>
-  <div class="bracket">
-    <div class="branch">
+  <div class="ind"><div class="stack">
+    
       <div><span class="term">그리는 법</span></div>
-      <div class="bracket">
+      <div class="ind"><div class="stack">
         <div class="desc">눈금 한 칸의 크기를 적절하게 선택 + 눈금 수 결정 <span class="mk">⇒</span> 변화 표현 위해 눈금 한 칸 크기↓, 물결선 사용</div>
         <div class="desc">가로축에는 시간의 변화 나타내는 양을 표시 <span class="quiet">(<span class="mk">⇒</span> 시간에 따른 변화 표현 그래프)</span></div>
-      </div>
-    </div>
-    <div class="branch">
+      </div></div>
+    
+    
       <div><span class="term">특징</span></div>
-      <div class="bracket">
+      <div class="ind"><div class="stack">
         <div class="desc">선의 기울어진 정도로 변화 정도 파악</div>
         <div class="desc">중간값 추측・미래 예측 가능</div>
-      </div>
-    </div>
+      </div></div>
+    
     <div><span class="term">유의점</span> : <span class="desc">물결선이 최솟값 아래에 <span class="quiet">(선 가로지르면 기울기 왜곡)</span></span></div>
-  </div>
+  </div></div>
+
 </div>
+
+<!-- 10-01 동하 「여러 가지 그래프 — 비율그래프부터 없음」: 노트(백지인출 p40·전사본·회독본)엔 꺾은선까지만 있음 → 비율그래프 자리를 세우고 교육과정 [6수04-02] 적용 시 고려 사항을 여기로 옮김(노트 내용 아님) -->
+<h4 id="여러가지그래프_비율그래프"><span class="num">3)</span> 비율 그래프 : <span class="desc">띠그래프·원그래프</span></h4>
+<div class="ind2">
+<div class="prose"><p style="margin:0 0 .3em;font-size:.88em;color:var(--v2muted,var(--mk))">노트 없음 — 교육과정 적용 시 고려 사항</p><p class="sub"><span class="mk" style="display:none">(적용 시 고려 사항 · </span>[6수04-02]<span class="mk" style="display:none"> · 자료의 수집과 정리)</span> <span class="key">원그래프</span>를 그릴 때는 <span class="key">눈금이 표시된 원</span>을 사용하게 한다.</p><p class="sub"><span class="mk" style="display:none">(적용 시 고려 사항 · </span>[6수04-02]<span class="mk" style="display:none"> · 자료의 수집과 정리)</span> 띠그래프와 원그래프를 그릴 때 <span class="key">공학 도구를 사용하게 할 수 있다</span>.</p></div>
+</div>
+
+<!-- 10-01 동하 「성취기준 해설·적용 시 고려 사항을 단원 단위로 각론에 삽입」: 성취기준 절(p902~905)에서 옮겨 옴(글자 무변 · 원래 자리엔 주석) -->
+<h4 id="성적고_여러_가지_그래프">성취기준 해설 · 적용 시 고려 사항</h4>
+<div class="ind2">
+<div class="prose"><p style="margin:0 0 .3em;font-size:.88em;font-weight:700;color:var(--v2muted,var(--mk))">성취기준 해설</p><p class="sub"><span class="mk" style="display:none">∙</span>[4수04-03<span class="mk" style="display:none"> · 자료의 <span class="key">수집</span>과 <span class="key">정리</span></span>] 여러 가지 문제를 해결하기 위해 자료를 <span class="key">수집</span>, <span class="key">정리</span>하고 그래프로 나타내어 <span class="key">해석</span>하는 일련의 과정을 직접 경험하게 한다. <span class="key">자료의 크기를 비교</span>할 때는 <span class="key">막대그래프</span>로, <span class="key">시간에 따른 변화의 경향</span>을 알아볼 때는 <span class="key">꺾은선그래프</span>로 나타내는 것이 편리함을 알고, 자료의 특성에 따라 목적에 맞는 적절한 그래프를 선택하게 한다.</p><p class="sub"><span class="mk" style="display:none">∙</span>[6수04-03<span class="mk" style="display:none"> · 자료의 수집과 정리</span>] 해결하고자 하는 <span class="key">문제를 설정</span>하고 그에 맞는 <span class="key">자료를 수집, 정리</span>하여, <span class="key">막대그래프</span>, <span class="key">꺾은선그래프, 띠그래프</span>와 <span class="key">원그래프</span> 중 적절한 그래프로 나타내고 <span class="key">해석</span>하는 일련의 과정을 직접 경험하게 한다.</p><p style="margin:1.15em 0 .3em;font-size:.88em;font-weight:700;color:var(--v2muted,var(--mk))">적용 시 고려 사항</p><p class="sub">[4수04-01]<span class="mk" style="display:none"> · 자료의 수집과 정리)</span> <span class="key">그림그래프</span>를 그릴 때 <span class="key">항목의 이름과 수량의 단위</span>를 명확히 인식하고, 자료의 개수에 따라 <span class="key">그림이 나타내는 단위를 적절히 선택</span>하게 한다.</p><p class="sub"><span class="mk" style="display:none">(적용 시 고려 사항 · </span>[4수04-03]<span class="mk" style="display:none"> · 자료의 수집과 정리)</span> 막대그래프와 꺾은선그래프를 그릴 때는 가로축과 세로축이 각각 무엇을 나타내는지 확인하게 하고 <span class="key">눈금 한 칸이 나타내는 크기</span>를 <span class="key">적절히 선택</span>하게 한다.</p><p class="sub"><span class="mk" style="display:none">(적용 시 고려 사항 · </span>[4수04-03]<span class="mk" style="display:none"> · 자료의 수집과 정리)</span> 막대그래프와 꺾은선그래프를 그릴 때 <span class="key">공학 도구를 사용하게 할 수 있다</span>.</p></div>
 </div>

@@ -302,6 +302,13 @@
             });
             return;
           }
+          /* 빈 칸 하나뿐 = 앞 칸 끝 이름표로(혼자 빈 칸이 떠 있던 것 · 09-30 수학 · 사회 제외) */
+          if(EM==='gather' && em.length===1 && window.PAN_HOIST!==false){
+            var c1=em[0], i1=un.indexOf(c1), host1=null;
+            for(var j1=i1-1;j1>=0;j1--) if(!isEmpty(un[j1])){ host1=un[j1]; break; }
+            if(host1){ var h1=c1.firstElementChild; h1.classList.add('att'); host1.querySelector(':scope > .blb').appendChild(h1); c1.remove(); }
+            return;
+          }
           if(EM==='gather' && em.length>=2){
             var last=un[un.length-1], g=document.createElement('div'); g.className='blk cell ttl gathered';
             var hd=document.createElement('div'); hd.className='ghead'; g.appendChild(hd);
@@ -476,7 +483,7 @@
         var chg=false;
         Object.keys(rowsBy).forEach(function(t){ var r=rowsBy[t]; if(r.length<2) return;
           var hh=r.map(bodyH), mx=Math.max.apply(null,hh), i=hh.indexOf(mx), rest=hh.filter(function(_,j){ return j!==i; }), m2=Math.max.apply(null,rest);
-          if(mx>540 && mx>2*m2){ setSpan(r[i], 2*n); r[i]._wide=false; chg=true; } });
+          if((mx>540 && mx>2*m2) || (mx>300 && mx>3*m2)){   /* 짧아도 옆 칸의 3배↑면(사각형 60 : 350px) */ setSpan(r[i], 2*n); r[i]._wide=false; chg=true; } });
         if(chg) fillRows();
       }
       /* 넓어진 칸 = 갈래를 단에 담음 */

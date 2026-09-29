@@ -57,24 +57,21 @@
 <div style="margin-top:20px"><span class="term">유의</span> : <span class="desc">'곱셈과 나눗셈의 관계' 나오면 일단 역연산 서술</span></div>
 
 <h3><span class="num">4.</span> 분수의 나눗셈 상황 순서도 <span class="quiet">(cf. 카테시안 곱의 역 → 조작활동 X, 계산만)</span></h3>
+<!-- 10-01: 순서도 안쪽 질문(몫 ∈ N ?)이 칸 머리(파란 레이블 + 괘선)로 바뀌어 순서도가 끊겨 보이던 것 → 질문 › Y / (N →) 다음 질문 들여쓰기 꼴 · 「N」 표지만 흐리게 더함(글자 무변) -->
 <div class="ind">
-<div class="wide"><div class="branch">
+<div class="stack">
   <div><span class="term">제수 ∈ N ?</span></div>
-  <div class="bracket">
+  <div class="ind"><div class="stack">
     <div><span class="term">Y</span> : <span class="desc">등분제</span></div>
-    <div class="branch">
-      <div><span class="term">몫 ∈ N ?</span></div>
-      <div class="bracket">
-        <div><span class="term">Y</span> : <span class="desc">포함제</span></div>
-        <div class="branch">
-          <div><span class="term">통분 후 분자끼리 나누기 ?</span></div>
-          <div class="bracket">
-            <div><span class="term">Y</span> : <span class="desc">곱셈의 역</span> <span class="mk">⇒</span> <span class="desc">이중 척도 모델 사용</span></div>
-            <div><span class="desc">제수의 역수 곱하기 - 단위 비율 결정</span> <span class="mk">⇒</span> <span class="desc">이중 수직선 모델 사용</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div></div>
+    <div><span class="quiet">N →</span> <span class="term">몫 ∈ N ?</span></div>
+    <div class="ind"><div class="stack">
+      <div><span class="term">Y</span> : <span class="desc">포함제</span></div>
+      <div><span class="quiet">N →</span> <span class="term">통분 후 분자끼리 나누기 ?</span></div>
+      <div class="ind"><div class="stack">
+        <div><span class="term">Y</span> : <span class="desc">곱셈의 역</span> <span class="mk">⇒</span> <span class="desc">이중 척도 모델 사용</span></div>
+        <div><span class="quiet">N →</span> <span class="desc">제수의 역수 곱하기 - 단위 비율 결정</span> <span class="mk">⇒</span> <span class="desc">이중 수직선 모델 사용</span></div>
+      </div></div>
+    </div></div>
+  </div></div>
+</div>
 </div>

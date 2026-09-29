@@ -15,7 +15,7 @@
   var main=document.querySelector('main.wrap'); if(!main) return;
   var pgs=[].slice.call(main.querySelectorAll(':scope > section.pg')); if(!pgs.length) return;
   var foot=main.querySelector(':scope > .foot');
-  var card=null, inRun=false;
+  var card=null, inRun=false, afterHead=false;
   pgs.forEach(function(pg){
     var nodes=[].slice.call(pg.childNodes);
     while(pg.firstChild) pg.removeChild(pg.firstChild);
@@ -25,15 +25,20 @@
       if(n.nodeType===3 && !n.textContent.trim()) return;
       /* 09-30 판정 표가 h2 에 칸·글칸·안을 준 곳(체육 5~6 스포츠 · 실과 교수·학습 방법 등 짧은 절 여럿)은 카드를 끊지 않는다 — 앞 절 격자의 칸 */
       var RL=window.PAN_ROLE, r2=(RL && n.nodeType===1 && n.tagName==='H2') ? RL[n.id] : '';
-      var head=n.nodeType===1 && ((n.tagName==='H2' && !(r2==='칸' || r2==='글칸' || r2==='안')) || n.classList.contains('part'));
+      /* 09-30 완성: 머리줄 h2 도 카드를 끊지 않는다 — 절 모양으로 크게 나와 한 층 위로 보이던 것(국어 사실적·추론적 읽기 · 사회는 확정 배치라 그대로) */
+      var headRow = r2==='머리줄' && window.PAN_HOIST!==false;
+      var head=n.nodeType===1 && ((n.tagName==='H2' && !(r2==='칸' || r2==='글칸' || r2==='안' || headRow)) || n.classList.contains('part'));
       if(head){
         if(!used){ main.insertBefore(pg, foot); used=true; }   /* 제목만 있는 쪽 — 쪽 id 는 빈 표지로 남긴다 */
         main.insertBefore(n, foot); card=null; host=null; inRun=false; return;
       }
       /* 칸 h2 가 연달아 시작되는 곳 = 새 격자(제목 없이) — 앞 절 격자에 이어 붙어 그 절 소속처럼 보이던 것(체육 5~6 스포츠 09-30) */
       var isCellH2 = n.nodeType===1 && n.tagName==='H2' && (r2==='칸' || r2==='글칸');
-      if(isCellH2 && !inRun){ card=null; host=null; }
-      if(isCellH2) inRun=true; else if(n.nodeType===1 && /^H[34]$/.test(n.tagName) && RL && (RL[n.id]==='절' || RL[n.id]==='머리줄')) inRun=false;
+      /* 단, 바로 앞이 절·머리줄 제목이면 그 절의 칸이다(체육 전략형 절 밑 야구형~승마 · 09-30 완성 · 사회 제외) */
+      if(isCellH2 && !inRun && !(afterHead && window.PAN_HOIST!==false)){ card=null; host=null; }
+      var isHeadRole=n.nodeType===1 && /^H[234]$/.test(n.tagName) && RL && (RL[n.id]==='절' || RL[n.id]==='머리줄');
+      if(isCellH2) inRun=true; else if(isHeadRole && n.tagName!=='H2') inRun=false;
+      if(n.nodeType===1) afterHead=isHeadRole;
       if(!card){ card=document.createElement('div'); card.className='sect'; main.insertBefore(card, foot); host=null; }
       if(!host){ if(used){ host=pg.cloneNode(false); host.removeAttribute('id'); } else { host=pg; used=true; } card.appendChild(host); }
       host.appendChild(n);
@@ -238,6 +243,7 @@
       }
     });
     document.querySelectorAll('main.wrap h2[id], main.wrap h3[id], main.wrap h4[id]').forEach(function(h){ var r=ROLE[h.id]; if(RC[r]) h.classList.add(RC[r]); });
+    if(window.PAN_HOIST!==false) document.documentElement.classList.add('dae-big');   /* 대단 h2 = 대주제 배너(.part)와 같은 모양(09-30 완성 · 사회는 작은 레이블 그대로) */
     var mk=function(cls, pg, before){ var d=document.createElement('div'); d.className=cls; pg.insertBefore(d, before); return d; };
     document.querySelectorAll('main.wrap .sect').forEach(function(sect){
       var cur=null, body=null;

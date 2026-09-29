@@ -40,7 +40,44 @@
      ⑥ 각론 — h4 에 성취기준 코드([4사01-01] 꼴)가 있으면 하나뿐이어도 단원(h3) = 전폭 머리줄 · 성취기준 = 칸(.std).
         노트가 3학년은 h2 단원 > h3 성취기준, 4학년부터는 h3 단원 > h4 성취기준이라 칸 단위가 섞이던 것을 「칸 = 성취기준」 하나로 */
   var STD=/\[\d+[가-힣]+\s?\d{2}-\d{2}\]/;
-  document.querySelectorAll('main.wrap .sect').forEach(function(sect){
+  /* 본문 최상위 갈래(레이블 + 들여쓴 하위)를 .grp 로 묶어 둔다 — 평소 display:contents · 긴 칸만 .split 때 단으로 */
+  function wrapGrps(cell, body){
+    var st=body.querySelector(':scope > .ind2 > .stack, :scope > .stack'); if(!st) return;
+    var g=null, k=0;
+    [].slice.call(st.children).forEach(function(n){
+      if(n.classList.contains('ind') && g){ if(!g.classList.contains('k')){ g.classList.add('k'); k++; } g.appendChild(n); return; }
+      g=document.createElement('div'); g.className='grp'; st.insertBefore(g,n); g.appendChild(n);
+    });
+    if(k>=2){ cell.classList.add('cansplit'); st.classList.add('grps'); }
+  }
+  /* ⑦ 09-30 동하 「기계적으로 자르지 말고 모델이 훑어보고 위계 맞춰 재조직」 — 조립기가 모델 판정 표(window.PAN_ROLE ·
+     제목 id → 대단/절/머리줄/칸/안)를 실어 주면 제목 태그가 아니라 그 역할로 칸을 세운다.
+     절·머리줄·대단 = 전폭 머리줄(.hrow) · 칸 = 제목 + 본문(.blb) · 안·표에 없는 제목·글 = 지금 칸에 그대로 · 쪽 이음새는 앞 칸에 잇는다 */
+  var ROLE=window.PAN_ROLE;
+  if(ROLE){
+    var RC={'대단':'r-dae','절':'r-jeol','머리줄':'r-head','칸':'r-cell','안':'r-in'};
+    document.querySelectorAll('main.wrap h2[id], main.wrap h3[id], main.wrap h4[id]').forEach(function(h){ var r=ROLE[h.id]; if(RC[r]) h.classList.add(RC[r]); });
+    var mk=function(cls, pg, before){ var d=document.createElement('div'); d.className=cls; pg.insertBefore(d, before); return d; };
+    document.querySelectorAll('main.wrap .sect').forEach(function(sect){
+      var cur=null, body=null;
+      sect.querySelectorAll(':scope > .pg').forEach(function(pg){
+        [].slice.call(pg.childNodes).forEach(function(n){
+          if(n.nodeType===3 && !n.textContent.trim()){ pg.removeChild(n); return; }
+          var r=(n.nodeType===1 && /^H[234]$/.test(n.tagName)) ? (ROLE[n.id]||'') : '';
+          if(r==='대단' || r==='절' || r==='머리줄'){ cur=mk('blk full hrow', pg, n); cur.appendChild(n); body=cur; return; }
+          if(r==='칸'){ cur=mk('blk cell ttl', pg, n); cur.appendChild(n); body=document.createElement('div'); body.className='blb'; cur.appendChild(body); return; }
+          if(!cur){ cur=mk('blk nolab', pg, n); body=cur; }
+          body.appendChild(n);
+        });
+      });
+      sect.querySelectorAll('.blk.cell').forEach(function(c){
+        var b=c.querySelector(':scope > .blb');
+        if(b.querySelector('.prose')) c.classList.add('full');
+        wrapGrps(c, b);
+      });
+    });
+  }
+  if(!ROLE) document.querySelectorAll('main.wrap .sect').forEach(function(sect){
     var last=null;
     sect.querySelectorAll(':scope > .pg').forEach(function(pg){
       var kids=[].slice.call(pg.childNodes), blk=null, first=true;
@@ -58,7 +95,7 @@
       var bs=pg.querySelectorAll(':scope > .blk'); if(bs.length) last=bs[bs.length-1];
     });
   });
-  document.querySelectorAll('main.wrap .sect > .pg').forEach(function(pg){
+  if(!ROLE) document.querySelectorAll('main.wrap .sect > .pg').forEach(function(pg){
     pg.querySelectorAll(':scope > .blk').forEach(function(b){
       if(!b.querySelector(':scope > h3')) b.classList.add('nolab');
       if(b.querySelector(':scope > .prose, :scope > * > .prose')) b.classList.add('full');
@@ -89,29 +126,24 @@
           var body=document.createElement('div'); body.className='sgb';
           while(h.nextSibling) body.appendChild(h.nextSibling);
           sg.appendChild(body);
-          var st=body.querySelector(':scope > .ind2 > .stack, :scope > .stack'); if(!st) return;
-          var g=null, k=0;
-          [].slice.call(st.children).forEach(function(n){
-            if(n.classList.contains('ind') && g){ if(!g.classList.contains('k')){ g.classList.add('k'); k++; } g.appendChild(n); return; }
-            g=document.createElement('div'); g.className='grp'; st.insertBefore(g,n); g.appendChild(n);
-          });
-          if(k>=2){ sg.classList.add('cansplit'); st.classList.add('grps'); }
+          wrapGrps(sg, body);
         });
       }
     });
   });
   /* 각론 절 안에서 성취기준 대신 다른 줄기로 짠 단원(6-1 「통일, 민주화, 산업화 — 내용 조직 다름」)도 같은 단원 위계로 */
-  document.querySelectorAll('main.wrap .sect').forEach(function(s){
+  if(!ROLE) document.querySelectorAll('main.wrap .sect').forEach(function(s){
     if(s.querySelector('.blk.std')) s.querySelectorAll('.blk.subs:not(.std)').forEach(function(b){ if(b.querySelector(':scope > h3')) b.classList.add('std'); });
   });
   function cols(g){ return getComputedStyle(g).gridTemplateColumns.split(' ').length; }
   function splitTall(){
-    document.querySelectorAll('main.wrap .sg.split').forEach(function(s){ s.classList.remove('split'); });
+    document.querySelectorAll('main.wrap .split').forEach(function(s){ s.classList.remove('split'); });
     fitSpans();
-    document.querySelectorAll('main.wrap .subs').forEach(function(b){
+    /* 칸 무리 = 소단원 격자(.subs 의 .sg) 또는 역할 판정 칸(.sect 의 .blk.cell) */
+    [].slice.call(document.querySelectorAll('main.wrap .subs')).concat([].slice.call(document.querySelectorAll('main.wrap .sect'))).forEach(function(b){
       if(cols(b)<2) return;
-      var sgs=[].slice.call(b.querySelectorAll(':scope > .sg:not(.lead)')); if(sgs.length<2) return;
-      var hs=sgs.map(function(s){ var x=s.querySelector(':scope > .sgb'); return x ? x.getBoundingClientRect().height : 0; });
+      var sgs=[].slice.call(b.querySelectorAll(':scope > .sg:not(.lead), :scope > .pg > .blk.cell')); if(sgs.length<2) return;
+      var hs=sgs.map(function(s){ var x=s.querySelector(':scope > .sgb, :scope > .blb'); return x ? x.getBoundingClientRect().height : 0; });
       var med=hs.slice().sort(function(a,c){ return a-c; })[Math.floor(hs.length/2)];
       sgs.forEach(function(s,i){
         if(s.classList.contains('cansplit') && hs[i]>2.2*med && hs[i]>innerHeight*.6) s.classList.add('split');
@@ -121,7 +153,7 @@
        그 안에서 형제 가지(.branch 둘 이상)가 선 가장 얕은 줄기만 단으로 — 위의 설명 줄은 전폭 그대로 */
     document.querySelectorAll('main.wrap .grp.wide').forEach(function(g){ g.classList.remove('wide'); });
     document.querySelectorAll('main.wrap .bgrid').forEach(function(x){ x.classList.remove('bgrid'); });
-    document.querySelectorAll('main.wrap .sg.split .grps').forEach(function(st){
+    document.querySelectorAll('main.wrap .split .grps').forEach(function(st){
       var gs=[].slice.call(st.querySelectorAll(':scope > .grp')); if(gs.length<2) return;
       var hs=gs.map(function(g){ return g.getBoundingClientRect().height; });
       gs.forEach(function(g,i){
@@ -139,7 +171,7 @@
   }
   function fitSpans(){
     document.querySelectorAll('main.wrap .blk:not(.subs):not(.full):not(.nolab), main.wrap .sg:not(.lead)').forEach(function(c){ c.style.gridColumn=''; });
-    document.querySelectorAll('main.wrap .blk:not(.subs):not(.full):not(.nolab), main.wrap .sg:not(.lead):not(.split)').forEach(function(c){
+    document.querySelectorAll('main.wrap .blk:not(.subs):not(.full):not(.nolab):not(.split), main.wrap .sg:not(.lead):not(.split)').forEach(function(c){
       var g=c.parentElement.closest('.sect, .subs'); if(!g) return;
       var n=cols(g); if(n<2) return;
       var need=c.scrollWidth-c.clientWidth;

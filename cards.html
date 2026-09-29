@@ -9358,6 +9358,14 @@ function ymSolvedToday(){
   for(const e of YM.ev){ if(e.m==='-'||YM_MARKS.indexOf(e.m)<0||undone.has(e.i)||!YM_ITEM_KEY.test(e.k)||dayKey(new Date(e.t))!==tk) continue; s.add(ymKeyParts(ymAliasK(e.k)).base); }
   return s.size;
 }
+/* 문풀 칩 = 재풀이가 남으면 「오답 n」(✕ · 빨강) · 다 비우면 「푼 문제 n」(체크 · 초록) — 동하 09-28 · 누르면 둘 다 문풀 화면.
+   🔴 표시할 때마다 바로 준다(동하 09-30 「오답 하나 표시(닫건 또 틀림이건)할 때마다 하나씩 줄고 0 되면 전환」) — 예전엔 홈을 다시 그릴 때만 바뀌어
+   문풀 화면에서 닫아도 사이드바 칩 숫자가 그대로였다. ymEvent(되돌리기 포함)·원격 당김 뒤 ymTileRefresh가 칩만 고친다. */
+function ymTileSpec(ym){ const ymS=ym===0?ymSolvedToday():null, done=!!ymS;
+  return {k:'ym', n:done?ymS:ym, l:done?'푼 문제':'오답', ic:done?'<path d="m5 12.5 4.5 4.5L19 7.5"/>':'<path d="M7.5 7.5l9 9M16.5 7.5l-9 9"/>', col:done?'var(--c-green)':'var(--c-red)'}; }
+function ymTileRefresh(){ try{ const t=ymTileSpec(ymTodayN()); const num=t.n==null?'—':t.n.toLocaleString();
+  document.querySelectorAll('[data-tile="ym"]').forEach(b=>{ b.style.setProperty('--tc', t.col); const sv=b.querySelector('.ht-ic svg'); if(sv) sv.innerHTML=t.ic;
+    const n=b.querySelector('.ht-n'); if(n){ n.textContent=num; n.classList.toggle('sm', num.length>=6); } const l=b.querySelector('.ht-l'); if(l) l.textContent=t.l; }); }catch(e){} }
 function openListCond(k){ go('scrList'); listCond=k; if(k==='today') $('qSort').value='recent'; renderList(true); }
 function renderHomeHead(due, restToday){
   let learned=0, live=0; for(const c of DATA){ const s=state.cards[c.id]; if(s&&s.retired) continue; live++; if(!isNew(c)) learned++; }
@@ -9370,11 +9378,10 @@ function renderHomeHead(due, restToday){
   if(restToday) parts.push('오늘은 쉬는 날');
   $('hSub').innerHTML=parts.map(x=>'<span style="white-space:nowrap">'+esc(x)+'</span>').join(' · ');   /* 폰에서 줄이 바뀌어도 「오늘 / 신규 0」처럼 한 토막이 갈리지 않게 */
   $('hDday').textContent = dd>0?`D-${dd}`:dd===0?'D-day':''; $('hDday').style.display=dd>=0?'':'none';
-  const ym=ymTodayN(), ymS=ym===0?ymSolvedToday():null, ymDoneMode=!!ymS, tiles=[
+  const ym=ymTodayN(), tiles=[
     {k:'today', n:due, l:'오늘', ic:'<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>', col:'var(--c-acc)', on:true},
     {k:'tmr', n:tomorrowCount(null), l:'내일', ic:'<circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2"/>', col:'var(--c-indigo)'},
-    /* 문풀 칩 = 재풀이가 남으면 「오답 n」(✕) · 다 비우면 「푼 문제 n」(체크) — 동하 09-28 「아이콘도 바꿔 · 문풀도 오답으로」 · 누르면 둘 다 문풀 화면 */
-    {k:'ym', n:ymDoneMode?ymS:ym, l:ymDoneMode?'푼 문제':'오답', ic:ymDoneMode?'<path d="m5 12.5 4.5 4.5L19 7.5"/>':'<path d="M7.5 7.5l9 9M16.5 7.5l-9 9"/>', col:ymDoneMode?'var(--c-green)':'var(--c-red)'},   // 오답 = 빨강 · 푼 문제 = 초록(동하 09-28 「오답은 색도」)
+    ymTileSpec(ym),
     {k:'solved', n:solvedTodayCount(), l:'푼 카드', ic:'<rect x="4" y="6" width="13" height="15" rx="2.5"/><path d="M8 3h9.5A2.5 2.5 0 0 1 20 5.5V17"/>', col:'var(--c-teal)'},
   ];
   const html=tiles.map(t=>{ const num=t.n==null?'—':t.n.toLocaleString();
@@ -12858,7 +12865,7 @@ function ymEvent(k, m, extra){
   const e=Object.assign({i:ymNonce(), t:new Date().toISOString(), k:k, m:m}, extra||{});
   ymAdd([e]); YM.pending.push(e); ymSavePending();
   if(m!=='u') ymMineAdd(e.i);
-  ymDerive(); ymPushSoon();
+  ymDerive(); ymPushSoon(); ymTileRefresh();
   return e;
 }
 /* 🔴 되돌리기 대상 = **오늘 이 기기에서 한 표시**만(리뷰 09-25 L6-2) — 예전엔 로그 전체(모든 기기·모든 날)의 마지막을 물러서,
@@ -12919,7 +12926,7 @@ async function ymLoadRemote(){                 // 원격 로그 → 합집합 ·
    이벤트 id 합집합이라 몇 번 당겨도 안전하다. 카드의 refreshRemote와 같은 자리에서 부르되, 한 번도 안 열었으면(카탈로그 없음) 건너뛴다. */
 async function ymPull(){
   if(!YM.loaded || !cfg || !cfg.token) return;
-  try{ const got=await ghGet(YM_PATH); YM.remoteOK=true; if(got && Array.isArray(got.ev)){ ymAdd(got.ev); ymDerive(); _ymReady=null; }
+  try{ const got=await ghGet(YM_PATH); YM.remoteOK=true; if(got && Array.isArray(got.ev)){ ymAdd(got.ev); ymDerive(); _ymReady=null; ymTileRefresh(); }
     YM.pulledAt=Date.now(); try{ await idbSet(K_YM_LOG, JSON.stringify(ymFile())); }catch(e){}
     if(typeof ymRenderSoon==='function') ymRenderSoon(); }catch(e){}
   if(YM.pending.length) ymPushSoon();

@@ -605,6 +605,8 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .kids.kgrid>*::before,:root.v2 .kids.kgrid>*::after{display:none;}
 :root.v2 .kids.kgrid>*>:first-child .term,:root.v2 .kids.kgrid>*>.term:first-child{color:var(--v2ink);font-weight:700;font-size:1.04em;}
 :root.v2 .colset.gridset{row-gap:.7em;}
+/* 넘침 여유(12px) 이하로 넘치는 부품은 칸 사이 간격(2.2em ≈ 34px) 안 — 스크롤 막대 대신 그대로 보이게(수업 모형 +8px 스크롤) */
+:root.v2 .wide{overflow:visible;}
 /* 단 하나하나도 폭 판단 기준 — 좁은 단에서 수렴 도식 글자가 접히게(4사05-01 축척이 440px 단에서 58px 넘쳐 단 나누기가 취소되던 것) */
 :root.v2 .colset>.col,:root.v2 .colset.gridset>*,:root.v2 .flow>.col{container-type:inline-size;}
 /* 수렴 도식은 폭과 무관하게 늘 칸 안에서 글자를 접는다 — 30em 넘는 단에서 한 줄로 뻗어 가로 스크롤(1180에서 가치 학습 계보 +255·환경 확대법 +76) */

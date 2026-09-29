@@ -320,6 +320,7 @@
       var n=s._n, blks=[].slice.call(s.querySelectorAll(':scope > .pg > .blk')), unit=[];
       var bodyH=function(c){ var b=c.querySelector(':scope > .blb'); return b ? b.getBoundingClientRect().height : 0; };
       var cells=blks.filter(function(b){ return b.classList.contains('cell') && !b.classList.contains('full'); });
+      cells.forEach(function(c){ c._bh=bodyH(c); c._wide=false; });   /* 기본 폭(2트랙)에서의 본문 높이 — 짧은 칸 판정용 */
       var hs=cells.map(bodyH).sort(function(a,b){ return a-b; }), med=hs.length ? hs[Math.floor(hs.length/2)] : 0;
       var spanOf=function(c){ var g=c.style.gridColumn; if(g==='1 / -1' || g==='1/-1' || c.classList.contains('full')) return 2*n; var mm=g.match(/span (\d+)/); return mm ? +mm[1] : 2; };
       var setSpan=function(c,t){ c.style.gridColumn = t>=2*n ? '1/-1' : 'span '+t; };
@@ -338,7 +339,8 @@
           /* 좌우 대조 칸(.cols)의 한쪽이 좁은 기둥으로 여러 줄 접힘도 눌림(09-30 「현장 학습이 너무 눌렸음」) */
           || [].some.call(c.querySelectorAll('.cols > *'), function(x){ var r=x.getBoundingClientRect(); return r.width<11*fs && r.height>4.5*fs*1.5; });
         if(squeezed){ setSpan(c, 2*n); return; }   /* 눌린 칸 = 전폭 → 남은 칸끼리 한 줄을 나눈다(가치 학습 계보 → 명료화 | 탐구) */
-        if(need>2){ var one=s.clientWidth/(2*n), cur=c.getBoundingClientRect().width;
+        if(need>12){ var one=s.clientWidth/(2*n), cur=c.getBoundingClientRect().width;
+          c._wide=true;   /* 넘침 때문에 넓힌 칸 — 줄 채우기에서 비율 유지 */
           setSpan(c, Math.max(spanOf(c)+2, Math.min(2*n, 2*Math.ceil((cur+need)/(2*one))))); }
       });
       /* 줄 채우기(반응형) — 줄에 칸이 혼자거나 빈 자리가 남으면 그 줄 칸들이 폭을 비율대로 나눠 채운다
@@ -346,8 +348,10 @@
       var fillRows=function(){
         var row=[], used=0;
         var close=function(){
-          if(row.length && used<2*n){ var left=2*n, tot=used;
-            row.forEach(function(c,i){ var t= i===row.length-1 ? left : Math.max(2, Math.round(spanOf(c)*2*n/tot)); left-=t; setSpan(c,t); }); }
+          /* 기본은 같은 폭으로 나눈다(두 칸 = 1:1 · 동하 09-30 「협동 학습 수업 모형|Jigsaw I 이 2:1 — 필요할 때만」) · 넘침으로 넓힌 칸이 있을 때만 비율 유지 */
+          var prop=row.some(function(c){ return c._wide; });
+          if(row.length && (used<2*n || !prop)){ var left=2*n, tot=used;
+            row.forEach(function(c,i){ var t= i===row.length-1 ? left : Math.max(2, prop ? Math.round(spanOf(c)*2*n/tot) : Math.floor(2*n/row.length)); left-=t; setSpan(c,t); }); }
           row=[]; used=0; };
         blks.forEach(function(b){
           var isCell=b.classList.contains('cell') && !b.classList.contains('full');
@@ -360,8 +364,15 @@
       };
       fillRows();
       /* 넓어진 칸 = 갈래를 단에 담음 */
+      /* 단으로 안 나누는 칸: 짧은 칸(한 줄기로 화면 1/3 미만 — 6사08-03 미디어) · 세로 단계 사슬(↓)이 든 칸(가치 학습 계보 — 단계는 단을 넘기지 않는다) */
+      var noSplit=function(c){
+        if((c._bh||0) < Math.min(innerHeight,820)/3) return true;
+        if(c.querySelector('.vchain:not(.hz)')) return true;
+        return [].some.call(c.querySelectorAll('.blb div'), function(x){ return !x.children.length && /^[↓⇓]$/.test(x.textContent.trim()); });
+      };
       cells.forEach(function(c){
         var st=c.querySelector('.grps'); if(!st) return;
+        if(noSplit(c)) return;
         var w=c.getBoundingClientRect().width, colw=19*(parseFloat(getComputedStyle(c).fontSize)||16), g2=2.2*(parseFloat(getComputedStyle(c).fontSize)||16);
         var m=Math.floor((w+g2)/(colw+g2)); if(m<2) return;
         balance(st, [].slice.call(st.children), m, 0);
@@ -369,7 +380,7 @@
       /* 넓은 칸인데 갈래 단이 안 선 곳의 키 큰 나무(국어 「읽기 능력 구조」·「소설」) = 가장 바깥 가지 묶음(.bracket/.kids)을 같은 균형 배치로
          (혼자 긴 가지는 레이블 아래 하위 가지를 단에) · 단으로 옮긴 가지는 잇는 선 없음(동하 09-30 「가로 트리라고 트리 구조 유지할 필요 없음」) */
       cells.forEach(function(c){
-        if(c.querySelector('.colset')) return;
+        if(c.querySelector('.colset') || noSplit(c)) return;
         var fs=parseFloat(getComputedStyle(c).fontSize)||16, m=Math.floor((c.getBoundingClientRect().width+2.2*fs)/(21.2*fs)); if(m<2) return;
         var tr=[].find.call(c.querySelectorAll('.bracket, .kids'), function(x){ return x.children.length>=2 && (x._th||0)>360; });
         /* 동하 09-30 결정: 보통 길이 = 6사08-02 꼴(바깥 가지를 통째로 나란히 · 한 층만 · 가지 안 끊음) / 너무 긴 것(한 줄기 900px↑) = 3단으로 잘라 흘림 */

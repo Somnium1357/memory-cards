@@ -659,6 +659,9 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .branch{display:flex;flex-direction:column;align-items:stretch;}
 :root.v2 .branch>:first-child{padding-right:0;}
 :root.v2 .branch>.kids,:root.v2 .branch>.bracket,:root.v2 .branch>.fork,:root.v2 .branch>.stack{margin-left:.35em;margin-top:2px;}
+/* 꺾쇠(〈) 가지 = 레이블 옆 — 레이블이 그 둘의 분류 기준이라 옆에 붙어야 뜻이 산다(동하 09-30 「분배 밑에 있으니 어색」) */
+:root.v2 .branch:has(> .fork){flex-direction:row;align-items:center;gap:.3em;}
+:root.v2 .branch:has(> .fork)>.fork{margin-left:0;margin-top:0;}
 :root.v2 .kids>*,:root.v2 .bracket>*{padding-left:13px;}
 :root.v2 .kids>*::before,:root.v2 .bracket>*::before{border-left-color:var(--v2rule);}
 :root.v2 .kids>*::after,:root.v2 .bracket>*::after{width:7px;border-top-color:var(--v2rule);}

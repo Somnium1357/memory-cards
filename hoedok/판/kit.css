@@ -648,6 +648,27 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .gath{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .5em;margin-top:.6em;}
 :root.v2 .gath>.row{margin:0 !important;}
 :root.v2 .gath>.row+.row::before{content:'·';color:var(--v2faint);margin-right:.5em;}
+/* 샘플 — 나무 압축(kit.js ?tree=c) */
+:root.v2 .ctree .kids>*::before,:root.v2 .ctree .kids>*::after,:root.v2 .ctree .bracket>*::before,:root.v2 .ctree .bracket>*::after,:root.v2 .ctree.bracket>*::before,:root.v2 .ctree.bracket>*::after,:root.v2 .ctree.kids>*::before,:root.v2 .ctree.kids>*::after{display:none;}
+:root.v2 .ctree .fork>.mkf{display:none;}
+:root.v2 .ctree>*{padding-left:0 !important;}
+:root.v2 .ctree .kids>*,:root.v2 .ctree .bracket>*{padding-left:1em;}
+:root.v2 .ctree .branch>.kids,:root.v2 .ctree .branch>.bracket{margin-left:0;}
+:root.v2 .ctree>.ccell+.ccell{margin-top:.9em;}
+:root.v2 .ctree>.ccell:not(.cline)>:first-child{font-size:.92em;color:var(--v2acc);border-bottom:1px solid var(--v2rule);padding-bottom:3px;margin-bottom:.35em;}
+:root.v2 .ctree>.ccell:not(.cline)>:first-child .term{color:var(--v2acc);}
+:root.v2 .ctree>.ccell>.kids>*,:root.v2 .ctree>.ccell>.bracket>*{padding-left:0;}
+:root.v2 .ctree .branch>:first-child .term{font-weight:700;}
+:root.v2 .ctree .cline{display:block !important;}
+:root.v2 .ctree .cline>:first-child{display:inline;}
+:root.v2 .ctree .cline>:first-child>div{display:inline;}
+:root.v2 .ctree .cline>:first-child::after{content:' —';color:var(--v2faint);}
+:root.v2 .ctree .cline>.kids,:root.v2 .ctree .cline>.bracket{display:inline !important;margin:0;}
+:root.v2 .ctree .cline>.kids>*,:root.v2 .ctree .cline>.bracket>*{display:inline;padding:0 !important;}
+:root.v2 .ctree .cline>.kids>*>*,:root.v2 .ctree .cline>.bracket>*>*{display:inline;}
+:root.v2 .ctree .cline>.kids>*::before,:root.v2 .ctree .cline>.bracket>*::before{content:' ';display:inline !important;border:0;position:static;}
+:root.v2 .ctree .cline>.kids>*+*::before,:root.v2 .ctree .cline>.bracket>*+*::before{content:' · ';color:var(--v2faint);}
+:root.v2 .ctree .cline .term{font-weight:600;}
 /* 역할 「글」 — 제목 태그지만 머리줄 밑 도입 글처럼(동하 09-30) */
 :root.v2 h2.r-line,:root.v2 h3.r-line,:root.v2 h4.r-line{font-size:1em;line-height:1.55;font-weight:400;color:var(--v2ink2);margin:.2em 0 .4em;padding:0;border:0;}
 /* 판단 나무 줄(kit.js .dec) — 「X →」 머리 칸 + 이름 · 설명은 이름 아래(동하 09-30 영어 연습 단계 (가)) */
@@ -672,7 +693,7 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 /* 본문 없는 칸(PAN_EMPTY) — 이름표 꼴: 제목 글자를 본문 레이블처럼 */
 :root.v2 .blb>.r-cell.att,:root.v2 .r-cell.att{font-size:1em;font-weight:700;color:var(--v2ink);border:0;padding:0;margin:.55em 0 0;}
 :root.v2 .gathered>.blb>.r-cell.att:first-child{margin-top:0;}
-:root.v2 .gathered>.ghead{border-bottom:1px solid var(--v2rule);margin:0 0 .45em;min-height:1.45em;}
+:root.v2 .gathered>.ghead{margin:0 0 .45em;min-height:1.45em;}   /* 이름 없는 괘선은 긋지 않는다(09-30 국어 「빈 괘선」) */
 :root.v2 .blk.emptyc>.r-cell{font-size:1em;color:var(--v2ink);border-bottom:0;}   /* 같은 격자 칸 제목들의 되풀이 앞머리(「실과 교수·학습 방법 - 」) — 화면에서만 숨김(동하 09-30) */
 :root.v2 main.wrap>h2.r-hide,:root.v2 .pg>h2.r-hide,:root.v2 .r-hide{height:0;margin:0;padding:0;border:0;overflow:hidden;}
 :root.v2 h3.r-in{font-size:.9em;line-height:1.4;font-weight:700;color:var(--v2ink);margin:.9em 0 .25em;border:0;padding:0;}

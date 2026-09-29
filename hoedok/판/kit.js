@@ -174,6 +174,23 @@
   document.querySelectorAll('main.wrap .vchain:not(.conv)').forEach(function(v){
     if(![].some.call(v.querySelectorAll('.ann'), function(x){ return x.textContent.trim(); })) v.classList.add('hz');
   });
+  /* 샘플(09-30 동하 「가로 트리 전부 이상함」 — 샘플 뽑고): 나무 압축 — ?tree=c 일 때만
+     ① 끝가지만 달린 가지 = 한 줄(레이블 + 끝가지를 「·」로) ② 맨 위 가지 = 칸 머리 ③ 선 없음 · 들여쓰기 = 층 */
+  if(/[?&]tree=c/.test(location.search) || window.PAN_CTREE){
+    var isTree=function(x){ return x.classList && (x.classList.contains('bracket') || x.classList.contains('kids')); };
+    var kidsOf=function(b){ return [].find.call(b.children, isTree); };
+    document.querySelectorAll('main.wrap .bracket, main.wrap .kids').forEach(function(tr){
+      if(tr.parentElement.closest('.bracket, .kids')) return;
+      if(!tr.querySelector('.branch .branch')) return;   /* 두 층 이상만 */
+      tr.classList.add('ctree');
+      tr.querySelectorAll('.branch').forEach(function(b){
+        var k=kidsOf(b); if(!k || !k.children.length) return;
+        var leaves=[].every.call(k.children, function(c){ return !c.querySelector('.branch, .bracket, .kids') && c.textContent.trim().length<=40; });
+        if(leaves && k.children.length<=4 && k.textContent.replace(/\s+/g,' ').trim().length<=70) b.classList.add('cline');   /* 끝가지 넷·70자 이하만 한 줄 */
+      });
+      [].forEach.call(tr.children, function(c){ if(c.classList.contains('branch')) c.classList.add('ccell'); });
+    });
+  }
   /* 이름만 있고 내용 없는 항목(미술 조형 요소 「면」·「색」)은 그 묶음 끝 한 줄에 모은다 — 빈 칸 모음과 같은 뜻(동하 09-30 「모으고」) */
   document.querySelectorAll('main.wrap .cols').forEach(function(cl){
     var bare=[].filter.call(cl.querySelectorAll(':scope > .stack > .row'), function(r){
@@ -206,6 +223,19 @@
   });
   if(ROLE){
     var RC={'대단':'r-dae','절':'r-jeol','머리줄':'r-head','칸':'r-cell','글칸':'r-cell','안':'r-in','숨김':'r-hide','글':'r-line'};   /* 글 = 제목을 앞 머리줄 밑 한 줄 도입 글로(국어 토의 「개념 : …」 · 09-30) */   /* 숨김 = 화면에서만 접음(id·목차 링크는 산다 · 사회 학기 구분 — 동하 09-30) */
+    /* 09-30 재조직: 역할 제목이 감싸개(div.ind 등) 안에 들어 있으면 쪽(.pg) 바로 밑으로 꺼낸다 — 감싸개를 제목 앞뒤로 갈라
+       글자 순서는 그대로(체육 신체활동 예시 「역할 표에 뭘 적어도 한 줄기로 쌓임」 · 국어 97곳). 사회는 확정 배치라 끔(PAN_HOIST=false) */
+    if(window.PAN_HOIST!==false) document.querySelectorAll('main.wrap h2[id], main.wrap h3[id], main.wrap h4[id]').forEach(function(h){
+      var r=ROLE[h.id]; if(!r || r==='안' || r==='글') return;
+      var pg=h.closest('.pg'); if(!pg) return;
+      while(h.parentElement && h.parentElement!==pg){
+        var P=h.parentElement, after=P.cloneNode(false); after.removeAttribute('id');
+        while(h.nextSibling) after.appendChild(h.nextSibling);
+        P.parentNode.insertBefore(h, P.nextSibling);
+        if(after.textContent.trim() || after.querySelector('img,svg,table')) h.parentNode.insertBefore(after, h.nextSibling);
+        if(!P.textContent.trim() && !P.querySelector('img,svg,table')) P.remove();
+      }
+    });
     document.querySelectorAll('main.wrap h2[id], main.wrap h3[id], main.wrap h4[id]').forEach(function(h){ var r=ROLE[h.id]; if(RC[r]) h.classList.add(RC[r]); });
     var mk=function(cls, pg, before){ var d=document.createElement('div'); d.className=cls; pg.insertBefore(d, before); return d; };
     document.querySelectorAll('main.wrap .sect').forEach(function(sect){
@@ -260,7 +290,7 @@
             var last=un[un.length-1], g=document.createElement('div'); g.className='blk cell ttl gathered';
             var hd=document.createElement('div'); hd.className='ghead'; g.appendChild(hd);
             var gb=document.createElement('div'); gb.className='blb'; g.appendChild(gb);
-            last.parentNode.insertBefore(g, last.nextSibling);   /* 먼저 넣는다 — 끝 칸이 빈 칸이면 지운 뒤엔 자리가 없다 */
+            em[0].parentNode.insertBefore(g, em[0]);   /* 첫 빈 칸 자리에 — 원문 순서를 덜 깨게(09-30 국어 재조직 「gather 가 순서를 바꾼다」) · 먼저 넣고 지운다 */
             em.forEach(function(c){ var h=c.firstElementChild; h.classList.add('att'); gb.appendChild(h); c.remove(); });
           }
         });
@@ -648,7 +678,7 @@
   var MAIN=document.querySelector('main.wrap'), ALL=[], IX=new Map();
   if(MAIN){ ALL=[].slice.call(MAIN.getElementsByTagName('*')); ALL.forEach(function(e,i){ IX.set(e,i); }); }
   var bpOf=function(){ var w=document.documentElement.clientWidth||window.innerWidth||0; return w>=950 ? 3 : w>=700 ? 2 : w>0 ? 1 : 0; };
-  var BAKE=/[?&]bake=1/.test(location.search), LAYOUT=(!BAKE && window.PAN_LAYOUT) || null, applied=null;
+  var BAKE=/[?&]bake=1/.test(location.search), LAYOUT=(!BAKE && !/[?&]tree=c/.test(location.search) && window.PAN_LAYOUT) || null, applied=null;
   function snapshot(){
     var sn={sect:[], span:[], cls:{}, sets:[], flows:[]};
     MAIN.querySelectorAll('.sect').forEach(function(s){ if(s.style.gridTemplateColumns && IX.has(s)) sn.sect.push([IX.get(s), s.style.gridTemplateColumns]); });

@@ -56,13 +56,62 @@
           if(!sg){ sg=document.createElement('div'); sg.className='sg'+(n.tagName==='H4'?'':' lead'); b.insertBefore(sg,n); }
           sg.appendChild(n);
         });
+        /* 09-30 동하 「3단 높이가 첫 단만 달라」·「긴 칸 옆이 텅 빔」:
+           ③ 소단원 = 제목 + 본문(.sgb) 두 줄 subgrid — 같은 줄 칸끼리 제목 높이를 맞춰 본문 첫 줄이 가지런하다
+           ④ 본문 최상위 갈래(레이블 + 들여쓴 하위)를 .grp 로 묶어 둔다 — 평소엔 display:contents(배치 무변),
+              형제 칸보다 훨씬 긴 칸만 .split = 제목 전폭 + 갈래를 단으로(노트 위계대로 · splitTall 실측) */
+        b.querySelectorAll(':scope > .sg:not(.lead)').forEach(function(sg){
+          var h=sg.firstElementChild; if(!h || h.tagName!=='H4') return;
+          var body=document.createElement('div'); body.className='sgb';
+          while(h.nextSibling) body.appendChild(h.nextSibling);
+          sg.appendChild(body);
+          var st=body.querySelector(':scope > .ind2 > .stack, :scope > .stack'); if(!st) return;
+          var g=null, k=0;
+          [].slice.call(st.children).forEach(function(n){
+            if(n.classList.contains('ind') && g){ if(!g.classList.contains('k')){ g.classList.add('k'); k++; } g.appendChild(n); return; }
+            g=document.createElement('div'); g.className='grp'; st.insertBefore(g,n); g.appendChild(n);
+          });
+          if(k>=2){ sg.classList.add('cansplit'); st.classList.add('grps'); }
+        });
       }
     });
   });
   function cols(g){ return getComputedStyle(g).gridTemplateColumns.split(' ').length; }
+  function splitTall(){
+    document.querySelectorAll('main.wrap .sg.split').forEach(function(s){ s.classList.remove('split'); });
+    fitSpans();
+    document.querySelectorAll('main.wrap .subs').forEach(function(b){
+      if(cols(b)<2) return;
+      var sgs=[].slice.call(b.querySelectorAll(':scope > .sg:not(.lead)')); if(sgs.length<2) return;
+      var hs=sgs.map(function(s){ var x=s.querySelector(':scope > .sgb'); return x ? x.getBoundingClientRect().height : 0; });
+      var med=hs.slice().sort(function(a,c){ return a-c; })[Math.floor(hs.length/2)];
+      sgs.forEach(function(s,i){
+        if(s.classList.contains('cansplit') && hs[i]>2.2*med && hs[i]>innerHeight*.6) s.classList.add('split');
+      });
+    });
+    /* 갈래를 단으로 세운 뒤에도 한 갈래만 훨씬 길면(11-01 「가계와 기업의 역할」) 그 갈래는 전폭 ·
+       그 안에서 형제 가지(.branch 둘 이상)가 선 가장 얕은 줄기만 단으로 — 위의 설명 줄은 전폭 그대로 */
+    document.querySelectorAll('main.wrap .grp.wide').forEach(function(g){ g.classList.remove('wide'); });
+    document.querySelectorAll('main.wrap .bgrid').forEach(function(x){ x.classList.remove('bgrid'); });
+    document.querySelectorAll('main.wrap .sg.split .grps').forEach(function(st){
+      var gs=[].slice.call(st.querySelectorAll(':scope > .grp')); if(gs.length<2) return;
+      var hs=gs.map(function(g){ return g.getBoundingClientRect().height; });
+      gs.forEach(function(g,i){
+        var rest=hs.filter(function(_,j){ return j!==i; }).sort(function(a,c){ return a-c; });
+        if(hs[i] <= 2*rest[Math.floor(rest.length/2)]) return;
+        var best=null;
+        g.querySelectorAll('.stack').forEach(function(x){
+          if(best) return;
+          if([].filter.call(x.children, function(c){ return c.classList.contains('branch'); }).length>=2) best=x;
+        });
+        if(best){ g.classList.add('wide'); best.classList.add('bgrid'); }
+      });
+    });
+    fitSpans();
+  }
   function fitSpans(){
     document.querySelectorAll('main.wrap .blk:not(.subs):not(.full):not(.nolab), main.wrap .sg:not(.lead)').forEach(function(c){ c.style.gridColumn=''; });
-    document.querySelectorAll('main.wrap .blk:not(.subs):not(.full):not(.nolab), main.wrap .sg:not(.lead)').forEach(function(c){
+    document.querySelectorAll('main.wrap .blk:not(.subs):not(.full):not(.nolab), main.wrap .sg:not(.lead):not(.split)').forEach(function(c){
       var g=c.parentElement.closest('.sect, .subs'); if(!g) return;
       var n=cols(g); if(n<2) return;
       var need=c.scrollWidth-c.clientWidth;
@@ -76,11 +125,11 @@
       }
     });
   }
-  fitSpans();
-  var t=null; function again(){ fitSpans(); window.dispatchEvent(new Event('resize')); }
+  splitTall();
+  var t=null; function again(){ splitTall(); window.dispatchEvent(new Event('resize')); }
   window.addEventListener('load', again);
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(again);
-  window.addEventListener('resize', function(){ clearTimeout(t); t=setTimeout(fitSpans,120); });
+  window.addEventListener('resize', function(){ clearTimeout(t); t=setTimeout(splitTall,120); });
 })();
 
 /* 꺾쇠 팔 맞추기 — 첫 항목·끝 항목의 세로 중앙에 팔 끝을 붙인다.

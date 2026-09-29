@@ -500,7 +500,8 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .blk.subs>h3{grid-column:1/-1;}
 :root.v2 .sg{min-width:0;margin:0 0 1.2em;}
 /* 칸이 좁으면 수렴 도식은 줄을 바꿔 칸 안에 앉는다(칸을 넓히지 않는다) · 두 칸 대조는 fitSpans 가 칸을 넓힌다 */
-:root.v2 .blk,:root.v2 .sg{container-type:inline-size;}
+/* 🔴 .sg 자체엔 걸지 않는다 — 컨테이너(레이아웃 가둠)가 되면 subgrid 가 꺼져 제목 높이 맞춤이 죽는다(09-30 실측) → 본문 .sgb 에 */
+:root.v2 .blk,:root.v2 .sg.lead,:root.v2 .sgb{container-type:inline-size;}
 @container (max-width:30em){
   .converge{flex-wrap:wrap;row-gap:4px;}
   .converge>*{flex:0 1 auto;max-width:100%;min-width:0;}
@@ -510,6 +511,17 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .sg.lead{grid-column:1/-1;}
 :root.v2 .sg.lead>*{max-width:46em;}
 :root.v2 .sg>h4:first-child{margin-top:.1em;padding-bottom:3px;border-bottom:1px dotted var(--v2rule);}
+/* 09-30 같은 줄 칸끼리 제목 높이 맞춤 — 소단원 = 제목·본문 두 줄 subgrid(제목이 두 줄로 접힌 칸만 본문이 내려앉던 것) */
+:root.v2 .sg:not(.lead){display:grid;grid-row:span 2;grid-template-rows:subgrid;row-gap:0;}
+:root.v2 .sgb{min-width:0;align-self:start;}
+/* 형제 칸보다 훨씬 긴 소단원(kit.js splitTall) — 제목 전폭 · 본문 최상위 갈래(.grp)만 단으로 */
+:root.v2 .grp{display:contents;}
+:root.v2 .sg.split{grid-column:1/-1;}
+:root.v2 .sg.split .grps{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(16.5em,100%),1fr));gap:.2em 2.2em;align-items:start;}
+:root.v2 .sg.split .grp{display:flex;flex-direction:column;gap:3px;min-width:0;}
+:root.v2 .sg.split .grp.wide{grid-column:1/-1;}
+:root.v2 .sg.split .bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(13em,100%),1fr));gap:.3em 2em;align-items:start;}
+:root.v2 .sg.split .bgrid>:not(.branch){grid-column:1/-1;}
 
 /* 2층 — 블록 레이블(h3): 강조색 · 작게 · 가는 괘선 */
 :root.v2 h3{font-size:.92em;line-height:1.45;font-weight:700;color:var(--v2acc);margin:0 0 .45em;padding-bottom:4px;border-bottom:1px solid var(--v2rule);}
@@ -532,7 +544,9 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .sub{color:var(--v2muted);font-size:.93em;padding-left:1em;}
 :root.v2 .sub::before{content:'';left:.2em;top:.25em;bottom:.25em;border-left:1px solid var(--v2rule);}
 :root.v2 .note{color:var(--v2muted);font-size:.9em;}
-:root.v2 .ind,:root.v2 .ind2{padding-left:0;}
+:root.v2 .ind2{padding-left:0;}
+/* 09-30 동하 「이 모양」 — .ind 까지 0 이라 레이블 → 하위가 한 줄로 납작했다(가계와 기업의 역할 · 시장 · 경제 · 주체 나란히). 한 단씩은 들인다 */
+:root.v2 .ind{padding-left:1em;}
 :root.v2 .stack{gap:3px;}
 
 /* 구조 기호 숨김 — 용어 바로 뒤의 연결 기호 · 줄 머리 기호(자리로 역할이 갈리는 것만). 내용 속 기호는 남긴다 */

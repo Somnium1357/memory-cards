@@ -644,8 +644,14 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .converge>.link:has(>div){display:block;white-space:normal;flex:1 1 auto;min-width:0;}
 /* 한 줄 연결말도 단이 좁으면 연결말 안에서 접는다(화살표는 말 옆 그대로 · 수학 「공식(=간접측정) 유도」가 옆 단 침범) */
 :root.v2 .converge>.link{flex:0 1 auto;min-width:0;white-space:normal;}
+/* 판단 나무 줄(kit.js .dec) — 「X →」 머리 칸 + 이름 · 설명은 이름 아래(동하 09-30 영어 연습 단계 (가)) */
+:root.v2 .dec{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:.45em;align-items:baseline;}
+:root.v2 .dec>.mk{color:var(--v2muted);font-weight:600;white-space:nowrap;}
+:root.v2 .dec>.mk::after{content:' →';font-weight:400;color:var(--v2faint);}
+:root.v2 .decb.decq,:root.v2 .branch>.decq{font-weight:600;color:var(--v2ink);}
+:root.v2 .decb>.decd{display:block;color:var(--v2muted);font-size:.93em;}
 :root.v2 .blk.hrow>.treewide,:root.v2 .blk.nolab>.treewide{max-width:none;}
-:root.v2 .grps>.grp.ingrp>h3.r-in:first-child,:root.v2 .grps>.grp.ingrp>h4.r-in:first-child,:root.v2 .col>.grp.ingrp>.r-in:first-child{margin-top:0;}
+:root.v2 .grps>.grp.ingrp>h3.r-in:first-child,:root.v2 .grps>.grp.ingrp>h4.r-in:first-child,:root.v2 .col>.grp.ingrp>.r-in:first-child{margin-top:0;}
 /* 09-30 역할 판정(window.PAN_ROLE) — 제목 모양은 태그가 아니라 역할로: 같은 층 = 같은 모양 */
 :root.v2 .blk.hrow{margin:0;}
 :root.v2 .blk.hrow>*{max-width:46em;}

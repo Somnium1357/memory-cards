@@ -174,6 +174,23 @@
   document.querySelectorAll('main.wrap .vchain:not(.conv)').forEach(function(v){
     if(![].some.call(v.querySelectorAll('.ann'), function(x){ return x.textContent.trim(); })) v.classList.add('hz');
   });
+  /* 판단 나무 줄(「X : 이름 : 설명」·「O : 질문?」) = 「X →」 머리 + 이름, 설명은 그 아래 들여쓰기 · 이음 「:」는 화면에서만 끔
+     (09-30 동하 영어 말하기 「연습 단계 순서도가 좀 이상함」 → (가) 접힌 줄이 X·O 밑으로 빠지고 질문·이름·설명이 한 줄에 섞임) */
+  document.querySelectorAll('main.wrap .kids > div, main.wrap .kids > .branch > div:first-child, main.wrap .bracket > div').forEach(function(r){
+    var m=r.firstElementChild; if(!m || !m.classList.contains('mk') || !/^[XOxo○×]$/.test(m.textContent.trim())) return;
+    var pre=m.previousSibling; if(pre && pre.nodeType===3 && pre.textContent.trim()) return;
+    var b=document.createElement('span'); b.className='decb';
+    while(m.nextSibling) b.appendChild(m.nextSibling);
+    r.appendChild(b); r.classList.add('dec');
+    var hide=function(t){ var s=document.createElement('span'); s.className='mk'; s.style.display='none'; t.parentNode.insertBefore(s,t); s.appendChild(t); };
+    var f=b.firstChild; if(f && f.nodeType===3 && /^\s*:\s*$/.test(f.textContent)) hide(f);
+    var tm=b.querySelector(':scope > .term');
+    if(tm){ var c=tm.nextSibling; if(c && c.nodeType===3 && /^\s*:\s*$/.test(c.textContent)){ hide(c); var d=tm.nextElementSibling; while(d && d.classList.contains('mk')) d=d.nextElementSibling; if(d && d.classList.contains('desc')) d.classList.add('decd'); } }
+    else b.classList.add('decq');
+    var root=r.closest('.kids'); root=root && root.parentElement; while(root && root.parentElement && root.parentElement.closest('.kids')) root=root.parentElement.closest('.kids').parentElement;
+    var q=root && root.classList.contains('branch') ? root.firstElementChild : null;   /* 맨 위 질문(「이해가 필요한가?」)도 같은 굵기 */
+    if(q && /\?\s*$/.test(q.textContent)) q.classList.add('decq');
+  });
   document.querySelectorAll('main.wrap ol.steps').forEach(function(o){
     if(![].some.call(o.querySelectorAll('.an'), function(x){ return x.textContent.trim(); })) o.classList.add('hz');
   });

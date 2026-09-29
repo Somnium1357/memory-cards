@@ -27,6 +27,27 @@
   });
 })();
 
+/* ── 치트시트 스킨(v2 · 09-29) — 절 카드 안을 h3 단위 블록 격자로. 조립기가 켠 과목(:root.v2)에서만.
+   쪽(.pg)은 display:contents 로 두고(쪽 id 보존) 쪽 안에서 h3 마다 새 블록 · 첫 h3 앞 내용 = 레이블 없는 블록.
+   넓은 부품(표·산문·수렴·가로 줄·여러 단·그림)이 든 블록은 전폭(.full). 🔴 눈금·꺾쇠 실측보다 먼저 돈다. ── */
+(function(){
+  if(!document.documentElement.classList.contains('v2')) return;
+  var WIDE='table,.prose,.converge,.lanes,.forkdown,.fig,img.photo';   /* 가로 흐름(.line)은 칸 안에서 줄바꿈(kit.css v2) — 전폭 아님 */
+  document.querySelectorAll('main.wrap .sect > .pg').forEach(function(pg){
+    var kids=[].slice.call(pg.childNodes), blk=null;
+    kids.forEach(function(n){
+      if(n.nodeType===3 && !n.textContent.trim()){ pg.removeChild(n); return; }
+      if(n.nodeType===1 && n.tagName==='H3') blk=null;
+      if(!blk){ blk=document.createElement('div'); blk.className='blk'; pg.insertBefore(blk,n); }
+      blk.appendChild(n);
+    });
+    pg.querySelectorAll(':scope > .blk').forEach(function(b){
+      if(!b.querySelector(':scope > h3')) b.classList.add('nolab');
+      if(b.querySelector(WIDE)) b.classList.add('full');
+    });
+  });
+})();
+
 /* 꺾쇠 팔 맞추기 — 첫 항목·끝 항목의 세로 중앙에 팔 끝을 붙인다.
    CSS 로는 자식 높이를 알 수 없어서 재서 넣는다. 레이아웃만 읽고 아무것도 저장하지 않는다. */
 (function(){

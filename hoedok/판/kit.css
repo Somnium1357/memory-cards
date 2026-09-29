@@ -468,3 +468,106 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 /* 쪽(.pg)이 바뀌어도 h3 위 여백은 같게 — 카드의 첫 제목만 좁힌다 */
 .sect .pg>h3:first-of-type{margin-top:36px;}
 .sect>.pg:first-child>h3:first-child{margin-top:16px;}
+
+/* ═══ 09-29 치트시트 스킨(v2) — 동하 확정 「C 치트시트 3단 + 42dot Sans + 슬레이트」(카드 QC 09-29 · 시안 claude.ai/artifact/9DPg8iwgsu36cVeb72q8CK v13).
+   조립기 SKIN2 과목만 :root.v2 · 블록 격자는 kit.js. 규칙 = 메모리 feedback-hoedok-content-screen 09-29 줄:
+   블록 격자(h3 = 블록) · 위계 네 층 · 좌우 가르기는 블록당 한 번 · 하위 개념 = 아래로 · 위계 번호·구조 기호 숨김 · 배경 채움 없음 · 강조색 = 레이블만. ═══ */
+:root.v2{
+  --v2ink:var(--label); --v2ink2:color-mix(in srgb,var(--label) 80%,var(--bg)); --v2muted:var(--sec); --v2faint:var(--ter);
+  --v2line:color-mix(in srgb,var(--sep) 90%,var(--bg)); --v2rule:color-mix(in srgb,var(--sec) 32%,var(--bg));
+  --v2acc:#3e5c7e; --v2key:#b9c7d8;
+  --fd:"42dot Sans","NotoMusic",-apple-system,"Apple SD Gothic Neo","PanSans",sans-serif; --fb:var(--fd);
+  --step:1em;
+}
+:root.v2[data-theme="dark"]{ --v2acc:#9fb5d1; --v2key:#3d4e63; }
+@media (prefers-color-scheme:dark){ :root.v2:not([data-theme]){ --v2acc:#9fb5d1; --v2key:#3d4e63; } }
+:root.v2 body{font-size:clamp(15.5px,11.5px + .36vw,18px);line-height:1.55;}
+
+/* 1층 — 절: 카드 없이 굵은 괘선 · 대주제 배너는 더 크게 */
+:root.v2 .part{font-size:1.75em;line-height:1.2;margin:2.4em 0 .2em;}
+:root.v2 main.wrap>h2,:root.v2 .pg>h2{font-size:1.32em;line-height:1.3;margin:2em 0 .9em;padding-bottom:.45em;border-bottom:2px solid var(--v2ink);letter-spacing:-.01em;}
+:root.v2 .sect{background:none;box-shadow:none;border-radius:0;padding:0;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(min(16.5em,100%),1fr));gap:0 2.2em;align-items:start;}
+:root.v2 .sect>.pg{display:contents;}
+:root.v2 .blk{min-width:0;margin:0 0 1.6em;}
+:root.v2 .blk.full{grid-column:1/-1;}
+:root.v2 .blk.nolab{padding-top:calc(.92em * 1.45 + 11px);}
+:root.v2 .blk.full.nolab{padding-top:0;}
+
+/* 2층 — 블록 레이블(h3): 강조색 · 작게 · 가는 괘선 */
+:root.v2 h3{font-size:.92em;line-height:1.45;font-weight:700;color:var(--v2acc);margin:0 0 .45em;padding-bottom:4px;border-bottom:1px solid var(--v2rule);}
+:root.v2 h3.tg::before{display:none;}
+:root.v2 h3 .cat{font-size:.85em;color:var(--v2muted);}
+/* 3층 — 소제목(h4): 본문색 굵게 */
+:root.v2 h4{font-size:.9em;line-height:1.4;font-weight:700;color:var(--v2ink);margin:.9em 0 .25em;}
+:root.v2 h3+h4{margin-top:.2em;}
+:root.v2 .lab,:root.v2 h4.lab{font-size:.78em;font-weight:600;color:var(--v2muted);margin:.8em 0 .25em;}
+
+/* 위계용 번호 숨김(글자는 남긴다 → 앵커 무변) · 순서가 정보인 단계 번호만 남김 */
+:root.v2 h2 .num,:root.v2 h3 .num,:root.v2 h4 .num,:root.v2 .row>.num:first-child,:root.v2 .head .num{display:none;}
+
+/* 글자 역할 */
+:root.v2 .term{font-weight:600;color:var(--v2ink);white-space:normal;}
+:root.v2 .desc{color:var(--v2ink2);}
+:root.v2 .quiet{color:var(--v2muted);}
+:root.v2 .key{font-weight:600;color:var(--v2ink);text-decoration-color:var(--v2key);text-decoration-thickness:2px;text-decoration-skip-ink:none;}
+:root.v2 .mk{color:var(--v2faint);}
+:root.v2 .sub{color:var(--v2muted);font-size:.93em;padding-left:1em;}
+:root.v2 .sub::before{content:'';left:.2em;top:.25em;bottom:.25em;border-left:1px solid var(--v2rule);}
+:root.v2 .note{color:var(--v2muted);font-size:.9em;}
+:root.v2 .ind,:root.v2 .ind2{padding-left:0;}
+:root.v2 .stack{gap:3px;}
+
+/* 구조 기호 숨김 — 용어 바로 뒤의 연결 기호 · 줄 머리 기호(자리로 역할이 갈리는 것만). 내용 속 기호는 남긴다 */
+:root.v2 .term+.mk,:root.v2 .row>.mk:first-child,:root.v2 .lead .mk:first-child{display:none;}
+:root.v2 .lead{padding-left:0;}
+:root.v2 .lead>div{padding:2px 0 2px 9px;text-indent:0;border-left:2px solid var(--v2key);}
+:root.v2 .after{padding-left:9px;border-left:2px solid var(--v2key);font-size:.95em;}
+
+/* 가지 — 하위 개념은 아래로(가로 가지 → 세로) · 눈금선은 옅게 */
+:root.v2 .branch{display:flex;flex-direction:column;align-items:stretch;}
+:root.v2 .branch>:first-child{padding-right:0;}
+:root.v2 .branch>.kids,:root.v2 .branch>.bracket,:root.v2 .branch>.fork,:root.v2 .branch>.stack{margin-left:.35em;margin-top:2px;}
+:root.v2 .kids>*,:root.v2 .bracket>*{padding-left:13px;}
+:root.v2 .kids>*::before,:root.v2 .bracket>*::before{border-left-color:var(--v2rule);}
+:root.v2 .kids>*::after,:root.v2 .bracket>*::after{width:7px;border-top-color:var(--v2rule);}
+:root.v2 .fork>.mkf{color:var(--v2rule);}
+:root.v2 .converge>svg,:root.v2 .forkdown>.mkd{color:var(--v2rule);}
+:root.v2 .converge .link,:root.v2 .converge .link b{color:var(--v2ink2);}
+
+/* 단계 — 동그라미·강조색 없이 회색 번호 + 옅은 레일 */
+:root.v2 ol.steps{padding-left:0;grid-template-columns:minmax(0,max-content) minmax(0,1fr);column-gap:12px;border-left:1px solid var(--v2line);margin-left:9px;}
+:root.v2 ol.steps>li{padding:3px 0 3px 18px;margin-left:-10px;}
+:root.v2 ol.steps>li::before{background:var(--bg);color:var(--v2faint);font-family:var(--fm);font-weight:400;font-size:.72em;width:18px;height:auto;top:.35em;line-height:1.6;border-radius:0;}
+:root.v2 ol.steps>li::after{display:none;}
+:root.v2 ol.steps .nm{line-height:1.5;}
+:root.v2 ol.steps .an{font-size:.93em;color:var(--v2muted);}
+:root.v2 .vchain{border-left:1px solid var(--v2line);padding-left:10px;column-gap:1em;}
+:root.v2 .vchain>.arw{display:none;}
+:root.v2 .vchain>.stp{font-weight:600;padding:2px 0;}
+:root.v2 .vchain>.ann{color:var(--v2muted);font-size:.93em;padding:2px 0 2px 0;text-indent:0;}
+:root.v2 .vchain>.ann>.mk:first-child{display:none;}
+
+/* 가로 흐름(.line) — 칸 안에서 줄바꿈(위·아래 주석은 칸마다 세로로) */
+:root.v2 .line{display:flex;flex-wrap:wrap;align-items:flex-start;gap:2px 8px;overflow:visible;}
+:root.v2 .line>.col{display:flex;flex-direction:column;align-items:center;}
+:root.v2 .line .mid{white-space:normal;font-weight:600;}
+:root.v2 .line .mid.mk{font-weight:400;}
+:root.v2 .line .up,:root.v2 .line .down{white-space:normal;font-size:.85em;color:var(--v2muted);}
+:root.v2 .chain{gap:4px 8px;}
+
+/* 대조·여러 단 */
+:root.v2 .cols{gap:0 1.4em;}
+:root.v2 .vs b{font-weight:600;}
+
+/* 표 — 가로 괘선만 · 머리는 회색 */
+:root.v2 table{font-size:.9em;border-collapse:collapse;}
+:root.v2 th,:root.v2 td{border:0;border-bottom:1px solid var(--v2line);padding:6px 12px 6px 0;text-align:left;vertical-align:top;}
+:root.v2 th{color:var(--v2muted);font-weight:600;border-bottom-color:var(--v2rule);white-space:nowrap;}
+:root.v2 td.h{color:var(--v2ink);font-weight:600;}
+:root.v2 .wide{background:none;}
+
+/* 산문 */
+:root.v2 .prose{max-width:44em;color:var(--v2ink2);}
+:root.v2 .prose>p{line-height:1.7;}
+@media (max-width:540px){ :root.v2 .blk.nolab{padding-top:0;} }

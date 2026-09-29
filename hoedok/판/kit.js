@@ -1,4 +1,13 @@
 
+/* 09-30 성취기준 이름 덧붙이기 — 조각의 제목 바로 뒤 <div class="hname"> 를 화면에서만 제목 끝에 「 – 이름」으로(제목 글자·id·목차 무변 · 동하 「이름 없으면 적당히 뽑아서 붙여야」) */
+(function(){
+  document.querySelectorAll('main.wrap .hname').forEach(function(d){
+    var h=d.previousElementSibling;
+    if(h && /^H[1-6]$/.test(h.tagName)){ var s=document.createElement('span'); s.className='hname'; s.textContent=' – '+d.textContent.trim(); h.appendChild(s); }
+    d.remove();
+  });
+})();
+
 /* ── 절 카드 (09-24 개편 · 앱 디자인 언어) — 절 제목(h2)·대주제 배너(.part)는 카드 바깥, 그 뒤 내용은 .sect 카드 한 장.
    조립기의 쪽(.pg) 구조와 앵커는 그대로 — 쪽이 절 경계에 걸리면 쪽 껍데기를 복제해 양쪽 카드에 나눠 담는다(id 는 첫 조각만).
    🔴 다른 스크립트(눈금·꺾쇠·접기)보다 먼저 돈다 — 재배치 뒤의 자리를 재야 한다. ── */
@@ -129,6 +138,8 @@
       if(m && (m[0].match(/→/g)||[]).length<=3) wrapRange(n, m.index, m.index+m[0].length, 'nw');
     });
     main.querySelectorAll('table').forEach(function(t){ var f=t.querySelector('tr > *'); if(f && !f.textContent.trim()) t.classList.add('rh'); });   /* 첫 칸 빈 표 = 행 머리 표 */
+    /* 짧은 괄호 덧말(12자 이하)은 쪼개지 않는다 — 「STAD (집·성·분 / ·오)」 줄 끝 쪼개짐(09-30) */
+    main.querySelectorAll('.quiet').forEach(function(q){ var s=q.textContent.trim(); if(s.length<=12 && /^\(.*\)$/.test(s)) q.classList.add('nw'); });
     /* 부품 연쇄(가로 줄·가로로 눕힌 사슬·번호 목록)도 단계 셋 이하면 한 덩어리 */
     main.querySelectorAll('.line, .vchain.hz, ol.steps.hz, .chain').forEach(function(c){
       var steps=c.classList.contains('line') ? [].filter.call(c.children, function(k){ var m=k.querySelector('.mid'); return m && !m.classList.contains('mk'); }).length
@@ -323,7 +334,9 @@
         var need=c.scrollWidth-c.clientWidth;
         c.querySelectorAll('.cols,.wide,.line,table,.lanes,.vchain,ol.steps,.fork,.branch,.nw').forEach(function(e){ need=Math.max(need, e.scrollWidth-e.clientWidth); });
         var cw=c.getBoundingClientRect().width;
-        var squeezed=[].some.call(c.querySelectorAll('.converge > :last-child'), function(x){ var r=x.getBoundingClientRect(); return r.width<0.62*cw && r.height>4.5*fs*1.5; });
+        var squeezed=[].some.call(c.querySelectorAll('.converge > :last-child'), function(x){ var r=x.getBoundingClientRect(); return r.width<0.62*cw && r.height>4.5*fs*1.5; })
+          /* 좌우 대조 칸(.cols)의 한쪽이 좁은 기둥으로 여러 줄 접힘도 눌림(09-30 「현장 학습이 너무 눌렸음」) */
+          || [].some.call(c.querySelectorAll('.cols > *'), function(x){ var r=x.getBoundingClientRect(); return r.width<11*fs && r.height>4.5*fs*1.5; });
         if(squeezed){ setSpan(c, 2*n); return; }   /* 눌린 칸 = 전폭 → 남은 칸끼리 한 줄을 나눈다(가치 학습 계보 → 명료화 | 탐구) */
         if(need>2){ var one=s.clientWidth/(2*n), cur=c.getBoundingClientRect().width;
           setSpan(c, Math.max(spanOf(c)+2, Math.min(2*n, 2*Math.ceil((cur+need)/(2*one))))); }
@@ -470,13 +483,16 @@
           var col=document.createElement('div'); col.className='col'; cs.appendChild(col);
           batch.slice(r[0], r[1]).forEach(function(x){ col.appendChild(x); });
         });
-        if(even) batch.forEach(function(x){ if(overflows(x)) x.style.gridColumn='1/-1'; });   /* 격자에서 넘치는 항목만 전폭 */
+        /* 격자에서 넘치는 항목이 있으면 격자를 버리고 같은 단 수로 단 흘림으로 다시(09-30 「4사05-01 내용이 왼쪽에 몰림」 — 넘친 항목만 전폭으로 빼면 줄마다 왼쪽만 참) */
+        if(even && batch.some(function(x){ return overflows(x); })){ cs._items.forEach(function(it){ parent.insertBefore(it, cs); }); cs.remove(); even=false; k++; continue; }
         if(!overflows(cs)) break;
         cs._items.forEach(function(it){ it.style.gridColumn=''; parent.insertBefore(it, cs); }); cs.remove();
       }
       batch=[];
     };
     items.forEach(function(x){
+      /* 표가 든 갈래는 단에 넣지 않는다 — 전폭 그대로(09-30 동하 「바·바스·셔미스 왼쪽이 텅 빔」·「4사05-01 왼쪽에 몰림」) */
+      if(x.querySelector && x.querySelector('table')){ flushB(); return; }
       var inner=(x.classList.contains('grp') || x.classList.contains('branch')) ? (x._inner || null) : null;
       /* 내려가기 = 한 단 몫보다 긴 갈래(∧ 360px↑) · 안쪽에 여러 줄짜리 가지가 있을 때만(한 줄 목록은 쪼개지 않는다 — 4사05-02 행정구역) */
       var kids=inner ? [].slice.call(inner.children) : [];
@@ -602,6 +618,8 @@
   };
   place();
   if(BAKE){
+    /* 구울 때는 글자를 2% 넓게 — 크롬에 딱 맞게 구운 배치가 사파리(글자 폭 1~3px 다름)에서 넘쳐 가로 스크롤이 생기던 것(09-30 환경 확대법) */
+    document.documentElement.classList.add('baking');
     var dump=function(){ relayout(); var pre=document.getElementById('pan-bake') || document.body.appendChild(Object.assign(document.createElement('pre'), {id:'pan-bake'})); pre.style.display='none'; pre.textContent=JSON.stringify({bp:bpOf(), w:document.documentElement.clientWidth, layout:snapshot()}); };
     window.addEventListener('load', function(){ if(document.fonts && document.fonts.ready) document.fonts.ready.then(dump); else dump(); });
   }

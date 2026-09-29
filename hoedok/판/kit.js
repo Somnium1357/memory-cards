@@ -55,7 +55,7 @@
      절·머리줄·대단 = 전폭 머리줄(.hrow) · 칸 = 제목 + 본문(.blb) · 안·표에 없는 제목·글 = 지금 칸에 그대로 · 쪽 이음새는 앞 칸에 잇는다 */
   var ROLE=window.PAN_ROLE;
   if(ROLE){
-    var RC={'대단':'r-dae','절':'r-jeol','머리줄':'r-head','칸':'r-cell','안':'r-in'};
+    var RC={'대단':'r-dae','절':'r-jeol','머리줄':'r-head','칸':'r-cell','글칸':'r-cell','안':'r-in','숨김':'r-hide'};   /* 숨김 = 화면에서만 접음(id·목차 링크는 산다 · 사회 학기 구분 — 동하 09-30) */
     document.querySelectorAll('main.wrap h2[id], main.wrap h3[id], main.wrap h4[id]').forEach(function(h){ var r=ROLE[h.id]; if(RC[r]) h.classList.add(RC[r]); });
     var mk=function(cls, pg, before){ var d=document.createElement('div'); d.className=cls; pg.insertBefore(d, before); return d; };
     document.querySelectorAll('main.wrap .sect').forEach(function(sect){
@@ -65,7 +65,8 @@
           if(n.nodeType===3 && !n.textContent.trim()){ pg.removeChild(n); return; }
           var r=(n.nodeType===1 && /^H[234]$/.test(n.tagName)) ? (ROLE[n.id]||'') : '';
           if(r==='대단' || r==='절' || r==='머리줄'){ cur=mk('blk full hrow', pg, n); cur.appendChild(n); body=cur; return; }
-          if(r==='칸'){ cur=mk('blk cell ttl', pg, n); cur.appendChild(n); body=document.createElement('div'); body.className='blb'; cur.appendChild(body); return; }
+          /* 글칸 = 서술문 칸 → 전폭 · 읽기 폭(46em) — 좁은 단에 긴 문장이 갇히던 것(사회 「기르고자 하는 시민」 09-30) */
+          if(r==='칸' || r==='글칸'){ cur=mk('blk cell ttl'+(r==='글칸'?' full prosecell':''), pg, n); cur.appendChild(n); body=document.createElement('div'); body.className='blb'; cur.appendChild(body); return; }
           if(!cur){ cur=mk('blk nolab', pg, n); body=cur; }
           body.appendChild(n);
         });
@@ -186,10 +187,11 @@
     });
   }
   splitTall();
-  var t=null; function again(){ splitTall(); window.dispatchEvent(new Event('resize')); }
+  /* 재배치가 끝난 뒤 꺾쇠·눈금(resize 로 재는 스크립트들)을 다시 재게 한다 — 09-30 「묶음표 깨짐」: 재배치(지연)보다 꺾쇠가 먼저 재던 것 */
+  var t=null, busy=false; function again(){ splitTall(); busy=true; window.dispatchEvent(new Event('resize')); busy=false; }
   window.addEventListener('load', again);
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(again);
-  window.addEventListener('resize', function(){ clearTimeout(t); t=setTimeout(splitTall,120); });
+  window.addEventListener('resize', function(){ if(busy) return; clearTimeout(t); t=setTimeout(again,120); });
 })();
 
 /* 꺾쇠 팔 맞추기 — 첫 항목·끝 항목의 세로 중앙에 팔 끝을 붙인다.

@@ -534,12 +534,16 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .r-head{font-size:1.02em;line-height:1.35;font-weight:700;color:var(--v2ink);margin:1em 0 .6em;padding-bottom:.3em;border-bottom:1px solid var(--v2ink);}
 :root.v2 h2.r-head{font-size:1.1em;}
 :root.v2 h3.r-cell,:root.v2 h4.r-cell{font-size:.92em;line-height:1.45;font-weight:700;color:var(--v2acc);margin:0 0 .45em;padding-bottom:4px;border-bottom:1px solid var(--v2rule);}
+:root.v2 .blk.prosecell>.blb{max-width:46em;}
+:root.v2 main.wrap>h2.r-hide,:root.v2 .pg>h2.r-hide,:root.v2 .r-hide{height:0;margin:0;padding:0;border:0;overflow:hidden;}
 :root.v2 h3.r-in{font-size:.9em;line-height:1.4;font-weight:700;color:var(--v2ink);margin:.9em 0 .25em;border:0;padding:0;}
 :root.v2 .split .grps{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(16.5em,100%),1fr));gap:.2em 2.2em;align-items:start;}
 :root.v2 .split .grp{display:flex;flex-direction:column;gap:3px;min-width:0;}
 :root.v2 .split .grp.wide{grid-column:1/-1;}
-:root.v2 .split .bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(13em,100%),1fr));gap:.3em 2em;align-items:start;}
-:root.v2 .split .bgrid>:not(.branch){grid-column:1/-1;}
+/* 가지 단 = 고정 폭 격자가 아니라 제 폭대로 줄바꿈(09-30 「상호 의존」 수렴 도식이 좁은 단을 넘어 옆 단 글자와 겹침) */
+:root.v2 .split .bgrid{display:flex;flex-direction:row;flex-wrap:wrap;gap:.3em 2.6em;align-items:flex-start;}
+:root.v2 .split .bgrid>.branch{flex:0 1 auto;min-width:min(11em,100%);max-width:100%;}
+:root.v2 .split .bgrid>:not(.branch){flex:1 1 100%;}
 
 /* 2층 — 블록 레이블(h3): 강조색 · 작게 · 가는 괘선 */
 :root.v2 h3{font-size:.92em;line-height:1.45;font-weight:700;color:var(--v2acc);margin:0 0 .45em;padding-bottom:4px;border-bottom:1px solid var(--v2rule);}

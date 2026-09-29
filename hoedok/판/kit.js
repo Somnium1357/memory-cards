@@ -32,7 +32,9 @@
    넓은 부품(표·산문·수렴·가로 줄·여러 단·그림)이 든 블록은 전폭(.full). 🔴 눈금·꺾쇠 실측보다 먼저 돈다. ── */
 (function(){
   if(!document.documentElement.classList.contains('v2')) return;
-  var WIDE='table,.prose,.converge,.lanes,.forkdown,.fig,img.photo';   /* 가로 흐름(.line)은 칸 안에서 줄바꿈(kit.css v2) — 전폭 아님 */
+  /* 09-29 동하 「단이랑 위계를 좀 유연하게」(사회 각론 = h3 하나에 h4 수십 · 두 칸이 좁은 칸에서 가로 스크롤):
+     ① h4 소단원이 둘 이상인 블록은 h3 레이블을 위에 걸치고 소단원(.sg)을 격자 칸으로 흘린다(.subs = 전폭 · 안쪽도 같은 격자)
+     ② 칸 폭은 고정하지 않는다 — 그린 뒤 넘치는 칸만 필요한 만큼 2칸·전폭으로 넓힌다(fitSpans). 전폭 고정은 산문뿐. */
   document.querySelectorAll('main.wrap .sect > .pg').forEach(function(pg){
     var kids=[].slice.call(pg.childNodes), blk=null;
     kids.forEach(function(n){
@@ -43,9 +45,42 @@
     });
     pg.querySelectorAll(':scope > .blk').forEach(function(b){
       if(!b.querySelector(':scope > h3')) b.classList.add('nolab');
-      if(b.querySelector(WIDE)) b.classList.add('full');
+      if(b.querySelector(':scope > .prose, :scope > * > .prose')) b.classList.add('full');
+      var h4s=b.querySelectorAll(':scope > h4:not(.lab)');
+      if(h4s.length>=2){
+        b.classList.add('subs'); var sg=null;
+        [].slice.call(b.childNodes).forEach(function(n){
+          if(n.nodeType!==1) return;
+          if(n.tagName==='H3') return;
+          if(n.tagName==='H4' && !n.classList.contains('lab')) sg=null;
+          if(!sg){ sg=document.createElement('div'); sg.className='sg'+(n.tagName==='H4'?'':' lead'); b.insertBefore(sg,n); }
+          sg.appendChild(n);
+        });
+      }
     });
   });
+  function cols(g){ return getComputedStyle(g).gridTemplateColumns.split(' ').length; }
+  function fitSpans(){
+    document.querySelectorAll('main.wrap .blk:not(.subs):not(.full):not(.nolab), main.wrap .sg:not(.lead)').forEach(function(c){ c.style.gridColumn=''; });
+    document.querySelectorAll('main.wrap .blk:not(.subs):not(.full):not(.nolab), main.wrap .sg:not(.lead)').forEach(function(c){
+      var g=c.parentElement.closest('.sect, .subs'); if(!g) return;
+      var n=cols(g); if(n<2) return;
+      var need=c.scrollWidth-c.clientWidth;
+      c.querySelectorAll('.cols,.wide,.line,table,.lanes,.vchain,ol.steps,.fork,.branch').forEach(function(e){
+        need=Math.max(need, e.scrollWidth-e.clientWidth);
+      });
+      if(need>2){
+        var w=c.getBoundingClientRect().width, gap=parseFloat(getComputedStyle(g).columnGap)||0, one=(g.clientWidth-gap*(n-1))/n;
+        var span=Math.min(n, Math.ceil((w+need+gap)/(one+gap)));
+        c.style.gridColumn = span>=n ? '1/-1' : 'span '+span;
+      }
+    });
+  }
+  fitSpans();
+  var t=null; function again(){ fitSpans(); window.dispatchEvent(new Event('resize')); }
+  window.addEventListener('load', again);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(again);
+  window.addEventListener('resize', function(){ clearTimeout(t); t=setTimeout(fitSpans,120); });
 })();
 
 /* 꺾쇠 팔 맞추기 — 첫 항목·끝 항목의 세로 중앙에 팔 끝을 붙인다.

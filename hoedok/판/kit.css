@@ -491,8 +491,25 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .sect>.pg{display:contents;}
 :root.v2 .blk{min-width:0;margin:0 0 1.6em;}
 :root.v2 .blk.full{grid-column:1/-1;}
-:root.v2 .blk.nolab{padding-top:calc(.92em * 1.45 + 11px);}
+/* 절 바로 아래 레이블 없는 내용 = 그 절 자신의 설명 → 절 제목 밑 전폭 한 줄(하위 갈래 블록들은 그 아래 단으로 · 동하 09-29 「탐학모 설명은 탐학모 바로 아래」) */
+:root.v2 .blk.nolab{grid-column:1/-1;}
+:root.v2 .blk.nolab>*{max-width:46em;}
 :root.v2 .blk.full.nolab{padding-top:0;}
+/* 큰 블록(h4 소단원 둘 이상) — h3 레이블은 위에 걸치고 소단원(.sg)이 같은 격자로 흐른다 · 넘치는 칸은 kit.js fitSpans 가 넓힌다 */
+:root.v2 .blk.subs{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(16.5em,100%),1fr));gap:0 2.2em;align-items:start;padding-top:0;}
+:root.v2 .blk.subs>h3{grid-column:1/-1;}
+:root.v2 .sg{min-width:0;margin:0 0 1.2em;}
+/* 칸이 좁으면 수렴 도식은 줄을 바꿔 칸 안에 앉는다(칸을 넓히지 않는다) · 두 칸 대조는 fitSpans 가 칸을 넓힌다 */
+:root.v2 .blk,:root.v2 .sg{container-type:inline-size;}
+@container (max-width:30em){
+  .converge{flex-wrap:wrap;row-gap:4px;}
+  .converge>*{flex:0 1 auto;max-width:100%;min-width:0;}
+  .converge>:last-child{flex:1 1 8em;min-width:0;}
+}
+/* h3 아래 첫 h4 앞 설명 = 그 h3 자신의 설명 → 레이블 밑 전폭 */
+:root.v2 .sg.lead{grid-column:1/-1;}
+:root.v2 .sg.lead>*{max-width:46em;}
+:root.v2 .sg>h4:first-child{margin-top:.1em;padding-bottom:3px;border-bottom:1px dotted var(--v2rule);}
 
 /* 2층 — 블록 레이블(h3): 강조색 · 작게 · 가는 괘선 */
 :root.v2 h3{font-size:.92em;line-height:1.45;font-weight:700;color:var(--v2acc);margin:0 0 .45em;padding-bottom:4px;border-bottom:1px solid var(--v2rule);}
@@ -570,4 +587,4 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 /* 산문 */
 :root.v2 .prose{max-width:44em;color:var(--v2ink2);}
 :root.v2 .prose>p{line-height:1.7;}
-@media (max-width:540px){ :root.v2 .blk.nolab{padding-top:0;} }
+

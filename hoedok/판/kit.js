@@ -252,13 +252,16 @@
       }
     });
     document.querySelectorAll('main.wrap h2[id], main.wrap h3[id], main.wrap h4[id]').forEach(function(h){ var r=ROLE[h.id]; if(RC[r]) h.classList.add(RC[r]); });
-    if(window.PAN_HOIST!==false) document.documentElement.classList.add('dae-big');   /* 대단 h2 = 대주제 배너(.part)와 같은 모양(09-30 완성 · 사회는 작은 레이블 그대로) */
+    if(window.PAN_HOIST!==false) document.documentElement.classList.add('dae-big');
+    /* 용어 뒤 관계 기호(↔ ⇔ + ≠)는 뜻이라 끄지 않는다 — .term+.mk 숨김은 구조 기호(⇒ → 등)만(10-01 음악 「창극 ↔ 판소리」·영어 「내용어 + Chunk」 · 사회 제외) */
+    if(window.PAN_HOIST!==false) document.querySelectorAll('main.wrap .mk').forEach(function(m){ if(/^\s*(↔|⇔|\+|≠)\s*$/.test(m.textContent)) m.classList.add('rel'); });   /* 대단 h2 = 대주제 배너(.part)와 같은 모양(09-30 완성 · 사회는 작은 레이블 그대로) */
     var mk=function(cls, pg, before){ var d=document.createElement('div'); d.className=cls; pg.insertBefore(d, before); return d; };
     document.querySelectorAll('main.wrap .sect').forEach(function(sect){
       var cur=null, body=null;
       sect.querySelectorAll(':scope > .pg').forEach(function(pg){
         [].slice.call(pg.childNodes).forEach(function(n){
           if(n.nodeType===3 && !n.textContent.trim()){ pg.removeChild(n); return; }
+          if(n.nodeType===8 && !cur && window.PAN_HOIST!==false) return;   /* 절 제목 뒤 주석이 빈 blk nolab 을 만들어 첫 칸이 25px 벌어지던 것(10-01 음악 8절 · 사회 제외) */
           var r=(n.nodeType===1 && /^H[234]$/.test(n.tagName)) ? (ROLE[n.id]||'') : '';
           if(r==='대단' || r==='절' || r==='머리줄'){ cur=mk('blk full hrow', pg, n); cur.appendChild(n); body=cur; return; }
           /* 글칸 = 서술문 칸 → 전폭 · 읽기 폭(46em) — 좁은 단에 긴 문장이 갇히던 것(사회 「기르고자 하는 시민」 09-30) */

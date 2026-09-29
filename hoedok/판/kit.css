@@ -754,7 +754,7 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .stack{gap:3px;}
 
 /* 구조 기호 숨김 — 용어 바로 뒤의 연결 기호 · 줄 머리 기호(자리로 역할이 갈리는 것만). 내용 속 기호는 남긴다 */
-:root.v2 .term+.mk,:root.v2 .row>.mk:first-child,:root.v2 .lead .mk:first-child{display:none;}
+:root.v2 .term+.mk:not(.rel),:root.v2 .row>.mk:first-child,:root.v2 .lead .mk:first-child{display:none;}
 :root.v2 .lead{padding-left:0;}
 :root.v2 .lead>div{padding:2px 0 2px 9px;text-indent:0;border-left:2px solid var(--v2key);}
 :root.v2 .after{padding-left:9px;border-left:2px solid var(--v2key);font-size:.95em;}

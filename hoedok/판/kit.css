@@ -608,6 +608,11 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .grps>.grp.k>:first-child .term,:root.v2 .col>.grp.k>:first-child .term,:root.v2 .grp.rowg>:first-child .term{color:var(--v2ink);font-weight:700;font-size:1.04em;}
 :root.v2 .grp.rowg>:first-child{margin-bottom:.2em;}
 :root.v2 .grps2>.grp+.grp,:root.v2 .grps2 .col>.grp+.grp{margin-top:.3em;}
+/* 09-30 동하 「떨어져야 하는 줄이 너무 붙음(법·인권: 기본권의 제한 줄 ↔ 의무 줄)」 — 갈래 경계 간격을 층별로:
+   최상위 갈래 .8em > 안쪽 갈래 .65em > 같은 갈래 안 형제 가지 .4em > 한 가지 안 줄 3px(그대로) */
+:root.v2 .grps>.grp.k+.grp,:root.v2 .grps>.grp+.grp.k,:root.v2 .col>.grp.k+.grp,:root.v2 .col>.grp+.grp.k{margin-top:.8em;}
+:root.v2 .grps2>.grp.k+.grp,:root.v2 .grps2>.grp+.grp.k,:root.v2 .grps2 .col>.grp.k+.grp,:root.v2 .grps2 .col>.grp+.grp.k{margin-top:.65em;}
+:root.v2 .grp .stack>.branch+*,:root.v2 .grp .stack>*+.branch{margin-top:.4em;}
 /* 한 겹 안쪽에 든 칸 제목(판 원문이 div 안에 둔 h4 — 사회 영역군) — 앞 내용에 붙어 보이지 않게 위 간격 */
 :root.v2 .blb .r-cell,:root.v2 .hrow>:not(:first-child) .r-cell,:root.v2 .hrow .ind .r-cell{margin-top:1.1em;}
 :root.v2 .split{grid-column:1/-1;}

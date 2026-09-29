@@ -631,6 +631,21 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 /* 한 겹 안쪽에 든 칸 제목(판 원문이 div 안에 둔 h4 — 사회 영역군) — 앞 내용에 붙어 보이지 않게 위 간격 */
 :root.v2 .blb .r-cell,:root.v2 .hrow>:not(:first-child) .r-cell,:root.v2 .hrow .ind .r-cell{margin-top:1.1em;}
 :root.v2 .split{grid-column:1/-1;}
+/* 09-30 과목 확대 검수 — ① 머리줄 밑 도입 글이 있으면 칸 격자 앞에 간격(국어·실과·체육·영어 「설명 줄이 첫 칸 레이블에 바짝」)
+   ② 레이블 옆 설명은 길어도 옆에서 접힌다(통합 성취기준 라벨·미술 삼묵법 — 설명이 통째로 아래 줄로 떨어지던 것)
+   ③ 칸 없는 절의 긴 나무를 흘린 줄기는 읽기 폭 상한 없이 ④ 「안」 갈래 첫 제목 위 여백 없음 */
+:root.v2 .blk.hrow:has(>:not(h2):not(h3):not(h4):not(.rh):not(.memo)){margin-bottom:1.1em;}
+:root.v2 .r-head{margin-top:1.4em;}
+:root.v2 .row>.desc:last-child:not(:first-child){flex:1 1 10em;min-width:0;}
+/* 꺾쇠 가지 레이블이 길면 레이블 쪽이 접힌다(과학 「붉은 양배추 용액 | 안토사이아닌 — …」 꺾쇠가 옆 단 글자 위로 넘치던 것) */
+:root.v2 .branch:has(> .fork){flex-wrap:wrap;}
+:root.v2 .branch:has(> .fork)>:first-child{max-width:100%;}
+/* 수렴 도식 연결말이 여러 줄 덩어리(div)면 한 줄 강제 없이 남은 폭 안에서 쌓고 접는다(수학 「변환」 학문수학 VS 학교수학 · ∴ 위치 — 옆 단 침범) */
+:root.v2 .converge>.link:has(>div){display:block;white-space:normal;flex:1 1 auto;min-width:0;}
+/* 한 줄 연결말도 단이 좁으면 연결말 안에서 접는다(화살표는 말 옆 그대로 · 수학 「공식(=간접측정) 유도」가 옆 단 침범) */
+:root.v2 .converge>.link{flex:0 1 auto;min-width:0;white-space:normal;}
+:root.v2 .blk.hrow>.treewide,:root.v2 .blk.nolab>.treewide{max-width:none;}
+:root.v2 .grps>.grp.ingrp>h3.r-in:first-child,:root.v2 .grps>.grp.ingrp>h4.r-in:first-child,:root.v2 .col>.grp.ingrp>.r-in:first-child{margin-top:0;}
 /* 09-30 역할 판정(window.PAN_ROLE) — 제목 모양은 태그가 아니라 역할로: 같은 층 = 같은 모양 */
 :root.v2 .blk.hrow{margin:0;}
 :root.v2 .blk.hrow>*{max-width:46em;}

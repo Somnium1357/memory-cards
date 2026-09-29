@@ -66,6 +66,23 @@
       while(from.firstChild) to.appendChild(from.firstChild);
       e.remove();
     });
+    /* 09-30 과목 확대 — 칸 안에 「안」 제목이 둘 이상이면 안마다 한 갈래(제목 + 그 뒤 내용) · 칸 본문이 곧 줄기
+       (수학 「도형의 기초」 배경|핵심 · 과학 「순환 학습 모형」 5E|POE · 체육 야구형 셋이 전폭 한 단으로 쌓이던 것) */
+    var ins=body.querySelectorAll(':scope > .r-in');
+    if(ins.length>=2){
+      /* 첫 안 앞 글(칸 자신의 설명)은 줄기 밖 — 단 위 전폭(과학 순환 학습 모형 설명이 5E 단 머리에 붙던 것) */
+      var box=document.createElement('div'); box.className='grps'; body.insertBefore(box, ins[0]);
+      var cur=null;
+      [].slice.call(body.childNodes).forEach(function(n){
+        if(!cur && n!==ins[0]) return;
+        if(n===box) return;
+        if(n.nodeType!==1){ if(cur) cur.appendChild(n); return; }
+        if(n.classList.contains('r-in')){ cur=document.createElement('div'); cur.className='grp k ingrp'; box.appendChild(cur); }
+        cur.appendChild(n);
+      });
+      cell.classList.add('cansplit');
+      return;
+    }
     /* 갈래 담는 줄기 — .ind2>.stack · .stack · .ind2(4사05-01처럼 stack 없이 바로) · .ind>.stack · .ind 중 자식 둘 이상인 첫 것 */
     var st=null;
     [':scope > .ind2 > .stack', ':scope > .stack', ':scope > .ind2', ':scope > .ind > .stack', ':scope > .ind'].some(function(q){
@@ -126,13 +143,19 @@
       if(el.children.length>6) return;
       var t=el.textContent.trim();
       if(t.charAt(0)==='※' && !el.querySelector('div, li')) el.classList.add('memo');
+      /* 09-30 과목 확대 검수 — 작업 메모 줄(「동하 손글씨 …」·「여백 라벨 …」·「구조 메모」·「학습 지침(손글씨)」·「「가. 성격」 구역은 동하 …」) 통째로 */
+      else if(!el.querySelector('div, li') && (/^(\[[^\]]+\]\s*)?(동하 (손글씨|마킹)|여백 라벨|구조 메모|학습 지침)/.test(t) || /^「[^」]+」\s*(절|구역)은 동하/.test(t) || /^.{0,22}(동하 메모|손글씨 「)/.test(t))) el.classList.add('memo');
     });
     var tw=document.createTreeWalker(main, NodeFilter.SHOW_TEXT), list=[], x;
     while((x=tw.nextNode())) list.push(x);
     list.forEach(function(n){
-      if(!n.parentNode || (n.parentElement && n.parentElement.closest('.memo, h1, h2, h3, h4, script, style'))) return;
-      var s=n.textContent, m;
-      if((m=/\((?:\s*)동하[^)]*\)/.exec(s))){ wrapRange(n, m.index, m.index+m[0].length, 'memo'); return; }
+      if(!n.parentNode || (n.parentElement && n.parentElement.closest('.memo, h1, script, style'))) return;
+      var s=n.textContent, m, inH=n.parentElement && n.parentElement.closest('h2, h3, h4');   /* 제목 안은 메모만 숨긴다(「(운동 — 손글씨 라벨)」) */
+      /* 괄호 메모 = 「(동하 …)」·「(09-01 동하 확정)」·「(구멍 09-27)」 — 「이동하기」 같은 낱말 속 「동하」는 아님 */
+      if((m=/\((?:구멍\s*\d\d-\d\d|(?:[^()]*[^가-힣()])?동하(?![가-힣])[^()]*)\)/.exec(s))){ wrapRange(n, m.index, m.index+m[0].length, 'memo'); return; }
+      /* 「(손글씨 라벨)」 통째 · 「(운동 — 손글씨 라벨)」·「(손글씨 라벨 — 지리/일사/역사)」는 메모 말만(내용 낱말은 남김) */
+      if((m=/\(손글씨 라벨\)|\s*—\s*손글씨 라벨|손글씨 라벨\s*—\s*/.exec(s))){ wrapRange(n, m.index, m.index+m[0].length, 'memo'); return; }
+      if(inH) return;
       var i=s.indexOf('※'); if(i>0){ wrapRange(n, i, s.length, 'memo'); return; }
       m=/[^\s→,;()·]+(?:\s[^\s→,;()·]+)?\s*→\s*[^\s→,;()·]+(?:\s*→\s*[^\s→,;()·]+){1,2}/.exec(s);
       if(m && (m[0].match(/→/g)||[]).length<=3) wrapRange(n, m.index, m.index+m[0].length, 'nw');
@@ -216,15 +239,25 @@
         });
       }
       /* 칸 h2 연달음으로 시작한 격자 = 숨긴 앞머리를 절 표시로 한 번(동하 09-30 「위에 절 표시 만들면 되잖아」) — 제목 태그 아님(id 없음) */
-      var fb=sect.querySelector(':scope > .pg > .blk'), fh=fb && fb.classList.contains('cell') ? fb.firstElementChild : null;
-      if(fh && fh.tagName==='H2' && fh.querySelector('.pfx')){
+      /* 앞머리가 바뀌는 칸마다 한 번(체육 「5~6학년군 스포츠」 뒤 「3~4학년군 표현」 묶음에 절 표시가 없던 것 · 09-30) */
+      var prevP=null;
+      [].slice.call(sect.querySelectorAll(':scope > .pg > .blk')).forEach(function(fb){
+        var fh=fb.classList.contains('cell') ? fb.firstElementChild : null;
+        if(!fb.classList.contains('cell')){ prevP=null; return; }
+        if(!fh || fh.tagName!=='H2' || !fh.querySelector('.pfx')) return;
+        var p=fh.querySelector('.pfx').textContent.replace(/\s*-\s*$/,'').trim();
+        if(p===prevP) return; prevP=p;
+        var prev=fb.previousElementSibling; if(prev && prev.classList.contains('hrow') && !prev.classList.contains('runhead')) return;
         var rh=document.createElement('div'); rh.className='blk full hrow runhead';
-        var t=document.createElement('div'); t.className='rh'; t.textContent=fh.querySelector('.pfx').textContent.replace(/\s*-\s*$/,''); rh.appendChild(t);
+        var t=document.createElement('div'); t.className='rh'; t.textContent=p; rh.appendChild(t);
         fb.parentNode.insertBefore(rh, fb);
-      }
+      });
       sect.querySelectorAll('.blk.cell').forEach(function(c){
         var b=c.querySelector(':scope > .blb');
-        if(b.querySelector('.prose')) c.classList.add('full');
+        /* 전폭 = 긴 산문(200자↑)이나 표가 든 칸만 — 짧은 산문 한 줄 칸은 형제와 나란히(국어 2022 내용 체계 「영역마다 범주 3칸」 · 09-30) */
+        var pl=[].reduce.call(b.querySelectorAll('.prose'), function(a,p){ return a+p.textContent.trim().length; }, 0);
+        var tb=[].some.call(b.querySelectorAll('table'), function(t){ var r=t.querySelector('tr'); return t.classList.contains('rh') || (r && r.children.length>=3); });
+        if(pl>200 || tb) c.classList.add('full');
         wrapGrps(c, b);
       });
     });
@@ -302,7 +335,8 @@
     main.querySelectorAll('.flat').forEach(function(g){ g.classList.remove('flat'); });
     main.querySelectorAll('.tcells').forEach(function(g){ g.classList.remove('tcells'); });
     main.querySelectorAll('.kids.kgrid').forEach(function(k){ k.classList.remove('kgrid'); });
-    var sects=[].filter.call(main.querySelectorAll('.sect'), function(s){ return s.querySelector(':scope > .pg > .blk.cell'); });
+    main.querySelectorAll('.treewide').forEach(function(k){ k.classList.remove('treewide'); });
+    var sects=[].filter.call(main.querySelectorAll('.sect'), function(s){ return s.querySelector(':scope > .pg > .blk.cell, :scope > .pg > .blk.hrow, :scope > .pg > .blk.nolab'); });
     sects.forEach(function(s){
       var fs=parseFloat(getComputedStyle(s).fontSize)||16, gap=2.2*fs, minc=16.5*fs;
       var n=Math.max(1, Math.min(3, Math.floor((s.clientWidth+gap)/(minc+gap))));
@@ -312,7 +346,7 @@
     /* 좁은(기본 폭) 상태에서 높이를 잰다 — 단에 담을 때 단 폭 ≈ 기본 칸 폭 */
     main.querySelectorAll('.grps .grp').forEach(function(g){ g._h=g.getBoundingClientRect().height; });
     /* 나무 — 가지 묶음 높이(_th) · 가지 높이(_h) · 가지의 하위 묶음(_inner) */
-    main.querySelectorAll('.blk.cell .bracket, .blk.cell .kids').forEach(function(x){
+    main.querySelectorAll('.blk.cell .bracket, .blk.cell .kids, .blk.hrow .bracket, .blk.hrow .kids, .blk.nolab .bracket, .blk.nolab .kids').forEach(function(x){
       x._th=x.getBoundingClientRect().height;
       [].forEach.call(x.children, function(k){ k._h=k.getBoundingClientRect().height; if(!k._inner) k._inner=k.querySelector(':scope > .kids, :scope > .bracket'); });
     });
@@ -367,10 +401,13 @@
       /* 단으로 안 나누는 칸: 짧은 칸(한 줄기로 화면 1/3 미만 — 6사08-03 미디어) · 세로 단계 사슬(↓)이 든 칸(가치 학습 계보 — 단계는 단을 넘기지 않는다) */
       var noSplit=function(c){
         if((c._bh||0) < Math.min(innerHeight,820)/3) return true;
-        if(c.querySelector('.vchain:not(.hz)')) return true;
-        return [].some.call(c.querySelectorAll('.blb div'), function(x){ return !x.children.length && /^[↓⇓]$/.test(x.textContent.trim()); });
+        if(c.querySelector('.grp.ingrp')) return false;   /* 안 갈래 칸 = 안을 통째로 단에 담는다(사슬은 안 속에서 안 끊긴다 — balance 가 사슬 든 갈래는 안 내려감) */
+        return hasChain(c);
       };
-      cells.forEach(function(c){
+      /* 전폭 칸(표·긴 산문 제외)도 갈래 단 대상 — 「안」 둘 이상 칸이 전폭 한 단으로 쌓이던 것(09-30 과목 확대) */
+      var fulls=blks.filter(function(b){ return b.classList.contains('cell') && b.classList.contains('full') && !b.classList.contains('prosecell') && !b.querySelector('table'); });
+      fulls.forEach(function(c){ c._bh=bodyH(c); });
+      cells.concat(fulls).forEach(function(c){
         var st=c.querySelector('.grps'); if(!st) return;
         if(noSplit(c)) return;
         var w=c.getBoundingClientRect().width, colw=19*(parseFloat(getComputedStyle(c).fontSize)||16), g2=2.2*(parseFloat(getComputedStyle(c).fontSize)||16);
@@ -379,10 +416,14 @@
       });
       /* 넓은 칸인데 갈래 단이 안 선 곳의 키 큰 나무(국어 「읽기 능력 구조」·「소설」) = 가장 바깥 가지 묶음(.bracket/.kids)을 같은 균형 배치로
          (혼자 긴 가지는 레이블 아래 하위 가지를 단에) · 단으로 옮긴 가지는 잇는 선 없음(동하 09-30 「가로 트리라고 트리 구조 유지할 필요 없음」) */
-      cells.forEach(function(c){
+      /* 칸 없는 절 본문(머리줄 블록)의 키 큰 나무도 같은 흘림 — 과학 단원 절 30여 개가 한 줄기로 화면 1~2장이던 것(09-30) */
+      var hrows=blks.filter(function(b){ return (b.classList.contains('hrow') || b.classList.contains('nolab')) && !b.classList.contains('runhead'); });
+      hrows.forEach(function(c){ c._bh=c.getBoundingClientRect().height; });
+      cells.concat(fulls, hrows).forEach(function(c){
         if(c.querySelector('.colset') || noSplit(c)) return;
         var fs=parseFloat(getComputedStyle(c).fontSize)||16, m=Math.floor((c.getBoundingClientRect().width+2.2*fs)/(21.2*fs)); if(m<2) return;
         var tr=[].find.call(c.querySelectorAll('.bracket, .kids'), function(x){ return x.children.length>=2 && (x._th||0)>360; });
+        if(tr && !c.classList.contains('cell')){ var top=tr; while(top.parentElement!==c) top=top.parentElement; top.classList.add('treewide'); }
         /* 동하 09-30 결정: 보통 길이 = 6사08-02 꼴(바깥 가지를 통째로 나란히 · 한 층만 · 가지 안 끊음) / 너무 긴 것(한 줄기 900px↑) = 3단으로 잘라 흘림 */
         var TM0=window.PAN_TREE||((tr && (tr._th||0)>Math.min(innerHeight,820)*2/3) ? 'flow' : 'one');   /* 기준 = 패드 가로 화면 2/3(동하 「픽셀 말고 아이패드 가로에서 어느 정도로」 · 「820도 좀 긴데」) */
         if(tr && TM0==='none') return;
@@ -470,6 +511,11 @@
   var WIDE='.cols,.wide,.line,table,.lanes,.vchain,ol.steps,.fork,.branch,.converge';
   /* 넘침 판정 여유 12px — 크롬에서도 부품이 단 폭에 딱 맞아(여유 0) 사파리 글자 폭 1~3px 차로 단 나누기가 통째 취소되던 것
      (09-30 동하 패드 「아직도 안 올라옴」 · 실제 겹침은 수십 px) */
+  /* 세로 단계 사슬(↓·.vchain)이 든 덩어리 — 단을 넘기지 않는다(동하 09-30 가치 학습 계보) */
+  function hasChain(c){
+    if(c.querySelector('.vchain:not(.hz)')) return true;
+    return [].some.call(c.querySelectorAll('.blb div'), function(x){ return !x.children.length && /^[↓⇓]$/.test(x.textContent.trim()); });
+  }
   function overflows(root, tol){ tol = tol==null ? 12 : tol; return [].some.call(root.querySelectorAll(WIDE), function(e){ return e.scrollWidth-e.clientWidth>tol; }); }
   function balance(parent, items, m, depth){
     var tot=items.reduce(function(a,x){ return a+(x._h||0); },0), target=tot/m, batch=[];
@@ -508,7 +554,7 @@
       /* 내려가기 = 한 단 몫보다 긴 갈래(∧ 360px↑) · 안쪽에 여러 줄짜리 가지가 있을 때만(한 줄 목록은 쪼개지 않는다 — 4사05-02 행정구역) */
       var kids=inner ? [].slice.call(inner.children) : [];
       var rich=kids.length>=2 && kids.some(function(z){ return (z._h||0)>=60; });
-      if(depth<2 && rich && (x._h||0)>Math.max(1.15*target, 360)){
+      if(depth<2 && rich && (x._h||0)>Math.max(1.15*target, 360) && !hasChain(x)){
         flushB(); x.classList.add('rowg'); balance(inner, [].slice.call(inner.children), m, depth+1);
       } else batch.push(x);
     });
@@ -576,7 +622,7 @@
     var sn={sect:[], span:[], cls:{}, sets:[], flows:[]};
     MAIN.querySelectorAll('.sect').forEach(function(s){ if(s.style.gridTemplateColumns && IX.has(s)) sn.sect.push([IX.get(s), s.style.gridTemplateColumns]); });
     ALL.forEach(function(e,i){ if(e.style && e.style.gridColumn) sn.span.push([i, e.style.gridColumn]); });
-    ['rowg','flat','flowing','tcells','lead1'].forEach(function(c){ sn.cls[c]=ALL.filter(function(e){ return e.classList.contains(c); }).map(function(e){ return IX.get(e); }); });
+    ['rowg','flat','flowing','tcells','lead1','treewide'].forEach(function(c){ sn.cls[c]=ALL.filter(function(e){ return e.classList.contains(c); }).map(function(e){ return IX.get(e); }); });
     MAIN.querySelectorAll('.colset').forEach(function(cs){
       sn.sets.push({p:IX.get(cs.parentNode), c:cs.className, m:cs.style.getPropertyValue('--m'), items:(cs._items||[]).map(function(x){ return IX.get(x); }),
         cols: cs.classList.contains('gridset') ? null : [].map.call(cs.children, function(col){ return [].map.call(col.children, function(x){ return IX.get(x); }); })});

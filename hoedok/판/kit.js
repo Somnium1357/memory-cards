@@ -174,9 +174,9 @@
   document.querySelectorAll('main.wrap .vchain:not(.conv)').forEach(function(v){
     if(![].some.call(v.querySelectorAll('.ann'), function(x){ return x.textContent.trim(); })) v.classList.add('hz');
   });
-  /* 샘플(09-30 동하 「가로 트리 전부 이상함」 — 샘플 뽑고): 나무 압축 — ?tree=c 일 때만
+  /* 나무 압축(09-30 동하 「가로 트리 전부 이상함」 → 샘플 → 「수학은 괜찮은데 국어는 나열하면 안 될 것(시점)이 나열로」) — 기본 켬(PAN_CTREE=false 로 끔)
      ① 끝가지만 달린 가지 = 한 줄(레이블 + 끝가지를 「·」로) ② 맨 위 가지 = 칸 머리 ③ 선 없음 · 들여쓰기 = 층 */
-  if(/[?&]tree=c/.test(location.search) || window.PAN_CTREE){
+  if(window.PAN_CTREE!==false){   /* 09-30 동하 「수학은 괜찮은데」 → 기본으로 켬 */
     var isTree=function(x){ return x.classList && (x.classList.contains('bracket') || x.classList.contains('kids')); };
     var kidsOf=function(b){ return [].find.call(b.children, isTree); };
     document.querySelectorAll('main.wrap .bracket, main.wrap .kids').forEach(function(tr){
@@ -185,7 +185,8 @@
       tr.classList.add('ctree');
       tr.querySelectorAll('.branch').forEach(function(b){
         var k=kidsOf(b); if(!k || !k.children.length) return;
-        var leaves=[].every.call(k.children, function(c){ return !c.querySelector('.branch, .bracket, .kids') && c.textContent.trim().length<=40; });
+        /* 이름만 있는 끝가지만 한 줄로 — 「이름 — 설명」이 달린 끝가지(국어 시점 「1인칭 주인공 시점 — 내면심리묘사 O」)는 나열하지 않는다(동하 09-30) */
+        var leaves=[].every.call(k.children, function(c){ return !c.querySelector('.branch, .bracket, .kids, .mk, .sub') && c.querySelectorAll('.term, .desc').length<=1 && c.textContent.trim().length<=24; });
         if(leaves && k.children.length<=4 && k.textContent.replace(/\s+/g,' ').trim().length<=70) b.classList.add('cline');   /* 끝가지 넷·70자 이하만 한 줄 */
       });
       [].forEach.call(tr.children, function(c){ if(c.classList.contains('branch')) c.classList.add('ccell'); });
@@ -678,7 +679,7 @@
   var MAIN=document.querySelector('main.wrap'), ALL=[], IX=new Map();
   if(MAIN){ ALL=[].slice.call(MAIN.getElementsByTagName('*')); ALL.forEach(function(e,i){ IX.set(e,i); }); }
   var bpOf=function(){ var w=document.documentElement.clientWidth||window.innerWidth||0; return w>=950 ? 3 : w>=700 ? 2 : w>0 ? 1 : 0; };
-  var BAKE=/[?&]bake=1/.test(location.search), LAYOUT=(!BAKE && !/[?&]tree=c/.test(location.search) && window.PAN_LAYOUT) || null, applied=null;
+  var BAKE=/[?&]bake=1/.test(location.search), LAYOUT=(!BAKE && window.PAN_LAYOUT) || null, applied=null;
   function snapshot(){
     var sn={sect:[], span:[], cls:{}, sets:[], flows:[]};
     MAIN.querySelectorAll('.sect').forEach(function(s){ if(s.style.gridTemplateColumns && IX.has(s)) sn.sect.push([IX.get(s), s.style.gridTemplateColumns]); });

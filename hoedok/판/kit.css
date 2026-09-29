@@ -585,6 +585,9 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .kids.kgrid>*{padding-left:0;}
 :root.v2 .kids.kgrid>*::before,:root.v2 .kids.kgrid>*::after{display:none;}
 :root.v2 .kids.kgrid>*>:first-child .term,:root.v2 .kids.kgrid>*>.term:first-child{color:var(--v2ink);font-weight:700;font-size:1.04em;}
+:root.v2 .colset.gridset{row-gap:.7em;}
+:root.v2 .colset.gridset>*{min-width:0;margin-top:0 !important;}
+:root.v2 .colset.gridset>.lead1{grid-column:1/-1;}
 :root.v2 .colset>.col{display:flex;flex-direction:column;gap:3px;min-width:0;}
 /* 09-30 동하 「헤더 아래 항목별(기호와 범례 · 축척) 구분이 잘 안 됨 — 줄로 가르진 말고 선명하게」: 최상위 갈래 사이 간격 + 레이블 또렷 */
 :root.v2 .grps>.grp+.grp,:root.v2 .col>.grp+.grp{margin-top:.55em;}

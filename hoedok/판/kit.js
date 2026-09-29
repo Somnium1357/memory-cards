@@ -380,10 +380,22 @@
     var tot=items.reduce(function(a,x){ return a+(x._h||0); },0), target=tot/m, batch=[];
     var flushB=function(){
       /* 단 안에서 넓은 부품(대조 표·수렴 도식)이 넘치면 단 수를 줄이고, 끝까지 넘치면 안 나눈다(09-30 실측 — 옆 단 글자와 겹침) */
+      /* 높이가 비슷한 같은 급 항목(6사10-02 기후대)은 줄 맞춘 격자 — 단 흘림이면 단마다 개수가 달라 줄이 어긋난다(동하 09-30) */
+      var bh=batch.map(function(x){ return x._h||0; }), sb=bh.slice().sort(function(a,b){ return a-b; }), md=sb[Math.floor(sb.length/2)]||1;
+      var even=batch.length>m && sb[sb.length-1]<=2.5*md;
       for(var k=Math.min(m, batch.length); batch.length>=2 && k>=2; k--){
-        var cs=document.createElement('div'); cs.className='colset'; cs.style.setProperty('--m', k);
+        var cs=document.createElement('div'); cs.className='colset'+(even?' gridset':''); cs.style.setProperty('--m', k);
         parent.insertBefore(cs, batch[0]); cs._items=batch.slice();
-        part(batch.map(function(x){ return x._h||0; }), k).forEach(function(r){
+        if(even){ batch.forEach(function(x){ cs.appendChild(x); });
+          /* 모양이 다른 첫 항목 = 앞머리 → 전폭: ① 나머지는 모두 「이름 : 설명」인데 첫 항목만 아님(6사10-02 「요소·요인」)
+             ② 첫 항목만 하위 없는 한 줄 메모, 나머지는 모두 갈래(4사05-01 「방위, 기호와 범례…」) — 같은 급(08-02 국회)은 건드리지 않는다 */
+          batch.forEach(function(x){ x.classList.remove('lead1'); });
+          var fl=function(x){ return ((x.firstElementChild||x).textContent||'').trim(); };
+          var rest=batch.slice(1), colon=function(x){ return /\s:\s|:\s/.test(fl(x)); };
+          var r1=!colon(batch[0]) && rest.filter(colon).length>=rest.length-1 && rest.filter(colon).length>=2;
+          var r2=!batch[0].classList.contains('k') && rest.every(function(x){ return x.classList.contains('k'); });
+          if(batch.length>2 && (r1 || r2)) batch[0].classList.add('lead1'); }
+        else part(bh, k).forEach(function(r){
           var col=document.createElement('div'); col.className='col'; cs.appendChild(col);
           batch.slice(r[0], r[1]).forEach(function(x){ col.appendChild(x); });
         });

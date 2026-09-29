@@ -285,7 +285,7 @@
         혼자 한 단 몫보다 훨씬 긴 갈래는 그 레이블을 머리로 두고 하위 가지를 같은 식으로 단에 담음(한 번 더까지) */
   function layoutRole(){
     var main=document.querySelector('main.wrap');
-    main.querySelectorAll('.colset').forEach(function(cs){ (cs._items||[]).forEach(function(it){ cs.parentNode.insertBefore(it, cs); }); cs.remove(); });
+    main.querySelectorAll('.colset').forEach(function(cs){ (cs._items||[]).forEach(function(it){ it.style.gridColumn=''; cs.parentNode.insertBefore(it, cs); }); cs.remove(); });
     main.querySelectorAll('.rowg').forEach(function(g){ g.classList.remove('rowg'); });
     main.querySelectorAll('.flowing').forEach(unflow);
     main.querySelectorAll('.flat').forEach(function(g){ g.classList.remove('flat'); });
@@ -440,7 +440,9 @@
     var out=[], e=n; for(j=k;j>=1;j--){ var b=cut[j][e]; out.unshift([b,e]); e=b; } return out;
   }
   var WIDE='.cols,.wide,.line,table,.lanes,.vchain,ol.steps,.fork,.branch,.converge';
-  function overflows(root){ return [].some.call(root.querySelectorAll(WIDE), function(e){ return e.scrollWidth-e.clientWidth>2; }); }
+  /* 넘침 판정 여유 12px — 크롬에서도 부품이 단 폭에 딱 맞아(여유 0) 사파리 글자 폭 1~3px 차로 단 나누기가 통째 취소되던 것
+     (09-30 동하 패드 「아직도 안 올라옴」 · 실제 겹침은 수십 px) */
+  function overflows(root, tol){ tol = tol==null ? 12 : tol; return [].some.call(root.querySelectorAll(WIDE), function(e){ return e.scrollWidth-e.clientWidth>tol; }); }
   function balance(parent, items, m, depth){
     var tot=items.reduce(function(a,x){ return a+(x._h||0); },0), target=tot/m, batch=[];
     var flushB=function(){
@@ -464,8 +466,9 @@
           var col=document.createElement('div'); col.className='col'; cs.appendChild(col);
           batch.slice(r[0], r[1]).forEach(function(x){ col.appendChild(x); });
         });
+        if(even) batch.forEach(function(x){ if(overflows(x)) x.style.gridColumn='1/-1'; });   /* 격자에서 넘치는 항목만 전폭 */
         if(!overflows(cs)) break;
-        cs._items.forEach(function(it){ parent.insertBefore(it, cs); }); cs.remove();
+        cs._items.forEach(function(it){ it.style.gridColumn=''; parent.insertBefore(it, cs); }); cs.remove();
       }
       batch=[];
     };

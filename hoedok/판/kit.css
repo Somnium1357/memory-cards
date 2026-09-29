@@ -563,6 +563,8 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 ol.steps.hz>li+li::after{display:none;}
 :root.v2 ol.steps.hz>li+li>:first-child::before{content:'→';margin-right:8px;color:var(--v2faint);font-weight:400;}
 :root.v2 ol.steps.hz .an{display:none;}
+/* 가로 사슬(설명 없는 단계)은 줄 전체가 굵어 무거웠다 → 단계 이름 보통 굵기 · 화살표가 구분을 맡는다(10-01 도덕 합리적 의사 결정·집단 탐구·경험 학습 · 사회 제외) */
+:root.v2.dae-big ol.steps.hz>li,:root.v2.dae-big ol.steps.hz>li *,:root.v2.dae-big .vchain.hz>.stp,:root.v2.dae-big .vchain.hz>.stp *{font-weight:400;}
 /* 설명 있는 가로 줄을 세운 세로 사슬(.conv) — 기존 세로 사슬과 같은 모양 */
 :root.v2 .vchain.conv .stp .mid{font-weight:600;white-space:normal;}
 :root.v2 .vchain{grid-template-columns:minmax(0,max-content) minmax(0,1fr);}   /* 단계 이름도 좁으면 접힌다 — 좁은 칸에서 넘쳐 칸이 넓어지던 것(가치 탐구) */
@@ -726,7 +728,7 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 /* 2층 — 블록 레이블(h3): 강조색 · 작게 · 가는 괘선 */
 :root.v2 h3{font-size:.92em;line-height:1.45;font-weight:700;color:var(--v2acc);margin:0 0 .45em;padding-bottom:4px;border-bottom:1px solid var(--v2rule);}
 :root.v2 h3.tg::before{display:none;}
-:root.v2 h3 .cat{font-size:.85em;color:var(--v2muted);}
+:root.v2 h3 .cat,:root.v2 h4 .cat{font-size:.85em;font-weight:400;color:var(--v2muted);}   /* h4 도(10-01 도덕 인물 부제 「아리스토텔레스 (유덕한 인격인)」) */
 /* 3층 — 소제목(h4): 본문색 굵게 */
 :root.v2 h4{font-size:.9em;line-height:1.4;font-weight:700;color:var(--v2ink);margin:.9em 0 .25em;}
 :root.v2 h3+h4{margin-top:.2em;}

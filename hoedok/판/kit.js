@@ -154,7 +154,7 @@
     var tw=document.createTreeWalker(main, NodeFilter.SHOW_TEXT), list=[], x;
     while((x=tw.nextNode())) list.push(x);
     list.forEach(function(n){
-      if(!n.parentNode || (n.parentElement && n.parentElement.closest('.memo, h1, script, style'))) return;
+      if(!n.parentNode || (n.parentElement && n.parentElement.closest('.memo, h1, script, style, svg'))) return;   /* svg 안 <text> 는 건너뜀 — HTML span 으로 감싸면 글자가 사라진다(10-01 뒤르켐 도식 「→」 연쇄 소실) */
       var s=n.textContent, m, inH=n.parentElement && n.parentElement.closest('h2, h3, h4');   /* 제목 안은 메모만 숨긴다(「(운동 — 손글씨 라벨)」) */
       /* 괄호 메모 = 「(동하 …)」·「(09-01 동하 확정)」·「(구멍 09-27)」 — 「이동하기」 같은 낱말 속 「동하」는 아님 */
       if((m=/\((?:구멍\s*\d\d-\d\d|(?:[^()]*[^가-힣()])?동하(?![가-힣])[^()]*)\)/.exec(s))){ wrapRange(n, m.index, m.index+m[0].length, 'memo'); return; }

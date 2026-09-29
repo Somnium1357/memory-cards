@@ -1,44 +1,47 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="60 3 440 272" width="440" height="272">
-  <!-- 09-30 맞춤(판 도덕): 오른쪽 빈 여백을 잘라 viewBox 를 그림 크기로 — 좁은 칸에서 글자가 덜 줄게 · 그림 무변 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 3 312 272" width="312" height="272">
+  <!-- 10-01 맞춤(판 도덕): 소크라테스·플라톤 칸(판 폭 1000 에서 1/3 ≈ 290px)에 폭 440 그림이 줄어 글자 10px · 지배/동의 8px(맹자와 같은 병)
+       → 같은 그림(영혼 욕구·이성·기개 → 덕 절제·지혜·용기 · 이성↔욕구 지배/동의 · 이성↔기개 판단/수호 · 앎 ↑이데아 |현상 · 괄호 → 조화 : 정의)을
+       가로 간격만 좁혀 폭 312 로(본문 15) 다시 짬 · 작은 이름표 12.5 → 14 · 글자 무변
+       · 판 도식 정본 형식: <style> 없음 · 색 전부 currentColor -->
   <g class="ln" stroke="currentColor" stroke-width="1.4" fill="none">
-    <line x1="152" y1="72" x2="286" y2="72"/>
-    <line x1="152" y1="256" x2="286" y2="256"/>
-    <line x1="148" y1="164" x2="188" y2="164"/>
-    <line x1="234" y1="164" x2="286" y2="164"/>
-    <line x1="110" y1="148" x2="110" y2="90"/>
-    <line x1="132" y1="90" x2="132" y2="148"/>
-    <line x1="110" y1="182" x2="110" y2="238"/>
-    <line x1="132" y1="238" x2="132" y2="182"/>
-    <line x1="210" y1="148" x2="210" y2="118"/>
-    <line x1="210" y1="182" x2="210" y2="206"/>
-    <line x1="372" y1="164" x2="398" y2="164"/>
-    <path d="M 342 62 C 362 62 348 156 366 164 C 348 172 362 266 342 266"/>
+    <line x1="66" y1="72" x2="160" y2="72"/>
+    <line x1="66" y1="256" x2="160" y2="256"/>
+    <line x1="66" y1="164" x2="100" y2="164"/>
+    <line x1="124" y1="164" x2="160" y2="164"/>
+    <line x1="35" y1="148" x2="35" y2="90"/>
+    <line x1="57" y1="90" x2="57" y2="148"/>
+    <line x1="35" y1="182" x2="35" y2="238"/>
+    <line x1="57" y1="238" x2="57" y2="182"/>
+    <line x1="112" y1="148" x2="112" y2="118"/>
+    <line x1="112" y1="182" x2="112" y2="206"/>
+    <line x1="220" y1="164" x2="232" y2="164"/>
+    <path d="M 200 62 C 216 62 204 156 218 164 C 204 172 216 266 200 266"/>
   </g>
-  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(286.0,72.0) rotate(0.0)"/>
-  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(286.0,256.0) rotate(0.0)"/>
-  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(286.0,164.0) rotate(0.0)"/>
-  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(110.0,90.0) rotate(-90.0)"/>
-  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(132.0,148.0) rotate(90.0)"/>
-  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(110.0,238.0) rotate(90.0)"/>
-  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(132.0,182.0) rotate(-90.0)"/>
-  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(210.0,118.0) rotate(-90.0)"/>
-  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(398.0,164.0) rotate(0.0)"/>
-  <g class="tx" fill="currentColor" font-size="16" text-anchor="middle">
-    <text x="123" y="32" font-size="16">영혼</text>
-    <text x="318" y="32" font-size="16">덕</text>
-    <text x="123" y="77" font-size="16">욕구</text>
-    <text x="123" y="169" font-size="16">이성</text>
-    <text x="123" y="261" font-size="16">기개</text>
-    <text x="318" y="77" font-size="16">절제</text>
-    <text x="318" y="169" font-size="16">지혜</text>
-    <text x="318" y="261" font-size="16">용기</text>
-    <text x="210" y="169" font-size="16">앎</text>
-    <text x="214" y="110" font-size="16">이데아</text>
-    <text x="210" y="224" font-size="16">현상</text>
-    <text x="86" y="122" font-size="12.5">지배</text>
-    <text x="158" y="122" font-size="12.5">동의</text>
-    <text x="86" y="212" font-size="12.5">판단</text>
-    <text x="158" y="212" font-size="12.5">수호</text>
-    <text x="406" y="170" text-anchor="start">조화 : 정의</text>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(160,72)"/>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(160,256)"/>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(160,164)"/>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(35,90) rotate(-90)"/>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(57,148) rotate(90)"/>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(35,238) rotate(90)"/>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(57,182) rotate(-90)"/>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(112,118) rotate(-90)"/>
+  <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(234,164)"/>
+  <g class="tx" fill="currentColor" font-size="15" text-anchor="middle">
+    <text x="46" y="32">영혼</text>
+    <text x="178" y="32">덕</text>
+    <text x="46" y="77">욕구</text>
+    <text x="46" y="169">이성</text>
+    <text x="46" y="261">기개</text>
+    <text x="178" y="77">절제</text>
+    <text x="178" y="169">지혜</text>
+    <text x="178" y="261">용기</text>
+    <text x="112" y="169">앎</text>
+    <text x="116" y="110">이데아</text>
+    <text x="112" y="224">현상</text>
+    <text x="14" y="123" font-size="13">지배</text>
+    <text x="78" y="123" font-size="13">동의</text>
+    <text x="14" y="215" font-size="13">판단</text>
+    <text x="78" y="215" font-size="13">수호</text>
+    <text x="238" y="169" text-anchor="start">조화 : 정의</text>
   </g>
 </svg>

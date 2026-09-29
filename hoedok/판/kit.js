@@ -197,6 +197,15 @@
       [].forEach.call(tr.children, function(c){ if(c.classList.contains('branch')) c.classList.add('ccell'); });
     });
   }
+  /* 묶음 괄호(}) = 묶는 줄 높이에 맞춰 늘인다 — 그림 높이가 조각에 고정(56·84px)이라 줄이 접혀 길어지면 괄호가 짧아 「깨져」 보이던 것
+     (동하 09-30 「합동변환 묶음선 깨짐 — 계속 문제되는데 왜 반복되지? 다시 안 생기도록」) */
+  document.querySelectorAll('main.wrap .converge > svg, main.wrap .branch > svg').forEach(function(sv){
+    if(sv.getAttribute('viewBox')!=='0 0 11 70') return;
+    sv.setAttribute('preserveAspectRatio','none'); sv.classList.add('brace');
+    sv.querySelectorAll('path').forEach(function(pt){ pt.setAttribute('vector-effect','non-scaling-stroke'); });
+    var st=sv.previousElementSibling; if(st && st.classList.contains('stack')) [].forEach.call(st.children, function(k){ if(k.textContent.trim().length<=14) k.classList.add('nw'); });   /* 괄호 앞 짧은 이름은 접지 않는다(「대칭이동(뒤집기)」) */
+    var w=document.createElement('span'); w.className='bracew'; sv.parentNode.insertBefore(w, sv); w.appendChild(sv);   /* 키 없는 틀 — 줄 높이만 따라간다(괄호 그림의 고유 비율이 줄을 늘리지 않게) */
+  });
   /* 이름만 있고 내용 없는 항목(미술 조형 요소 「면」·「색」)은 그 묶음 끝 한 줄에 모은다 — 빈 칸 모음과 같은 뜻(동하 09-30 「모으고」) */
   document.querySelectorAll('main.wrap .cols').forEach(function(cl){
     var bare=[].filter.call(cl.querySelectorAll(':scope > .stack > .row'), function(r){

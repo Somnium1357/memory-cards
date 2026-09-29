@@ -543,7 +543,7 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.baking body{letter-spacing:.02em;}
 /* ⑩ 각주·작업 메모 숨김 · ⑪ 짧은 연쇄 한 덩어리 */
 :root.v2 .memo{display:none !important;}
-:root.v2 .nw{white-space:nowrap;}
+:root.v2 .nw,:root.v2 .nw .term,:root.v2 .nw .desc{white-space:nowrap;}   /* .term 의 normal 이 안 접기를 깨던 것(대칭이동(뒤집기) 09-30) */
 :root.v2 .line.nw,:root.v2 .vchain.hz.nw,:root.v2 ol.steps.hz.nw,:root.v2 .chain.nw{flex-wrap:nowrap !important;}
 /* 단으로 나눈 칸 안 = 선 없는 단 형식(나무 잇는 선 지움 · 들여쓰기만) — 동하 09-30 「가계·기업·정부 묶음선 이상」 */
 :root.v2 .colset .bracket>*::before,:root.v2 .colset .bracket>*::after,:root.v2 .colset .kids>*::before,:root.v2 .colset .kids>*::after,
@@ -651,6 +651,7 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 /* 샘플 — 나무 압축(kit.js ?tree=c) */
 :root.v2 .ctree .kids>*::before,:root.v2 .ctree .kids>*::after,:root.v2 .ctree .bracket>*::before,:root.v2 .ctree .bracket>*::after,:root.v2 .ctree.bracket>*::before,:root.v2 .ctree.bracket>*::after,:root.v2 .ctree.kids>*::before,:root.v2 .ctree.kids>*::after{display:none;}
 :root.v2 .ctree .fork>.mkf{display:none;}
+:root.v2 .ctree .bsub>.converge>.stack>*::before,:root.v2 .ctree .bsub>.converge>.stack>*::after{display:none;}   /* 괄호 앞 줄머리 선도 지운다 — 괄호가 이미 묶음을 보여 준다(합동변환 09-30) */
 :root.v2 .ctree>*{padding-left:0 !important;}
 :root.v2 .ctree .kids>*,:root.v2 .ctree .bracket>*{padding-left:1em;}
 :root.v2 .ctree .branch>.kids,:root.v2 .ctree .branch>.bracket{margin-left:0;}
@@ -677,6 +678,9 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2.dae-big .blb .ctree>.ccell:not(.cline)>:first-child{font-size:1em;color:var(--v2ink);border-bottom:0;padding-bottom:0;margin-bottom:.15em;}
 :root.v2.dae-big .blb .ctree>.ccell:not(.cline)>:first-child .term{color:var(--v2ink);}
 :root.v2.dae-big h3.r-jeol,:root.v2.dae-big h4.r-jeol{font-size:1.2em;border-bottom-width:1px;}
+/* 묶음 괄호 = 묶는 줄 높이만큼(kit.js .brace · 09-30 「묶음선 깨짐 반복」 근본 수리) */
+:root.v2 .bracew{position:relative;flex:0 0 11px;width:11px;align-self:stretch;min-height:1.6em;color:var(--v2rule);}
+:root.v2 .bracew>svg.brace{position:absolute;left:0;top:0;width:100%;height:100% !important;}
 /* 역할 「글」 — 제목 태그지만 머리줄 밑 도입 글처럼(동하 09-30) */
 :root.v2 h2.r-line,:root.v2 h3.r-line,:root.v2 h4.r-line{font-size:1em;line-height:1.55;font-weight:400;color:var(--v2ink2);margin:.2em 0 .4em;padding:0;border:0;}
 /* 판단 나무 줄(kit.js .dec) — 「X →」 머리 칸 + 이름 · 설명은 이름 아래(동하 09-30 영어 연습 단계 (가)) */

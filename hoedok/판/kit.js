@@ -337,7 +337,8 @@
         /* 전폭 = 긴 산문(200자↑)이나 표가 든 칸만 — 짧은 산문 한 줄 칸은 형제와 나란히(국어 2022 내용 체계 「영역마다 범주 3칸」 · 09-30) */
         var pl=[].reduce.call(b.querySelectorAll('.prose'), function(a,p){ return a+p.textContent.trim().length; }, 0);
         var tb=[].some.call(b.querySelectorAll('table'), function(t){ var r=t.querySelector('tr'); return t.classList.contains('rh') || (r && r.children.length>=3); });
-        if(pl>200 || tb) c.classList.add('full');
+        /* 조각이 [data-full] 로 전폭을 요청한 칸 — 글자 수 기준으로 잡으면 수학 확정 칸까지 흔들려(10-01 실측) 사람 판단 스위치로만 · 도덕적 토론 수업 모형(1/3 칸에서 설명이 두세 글자씩 접힘) */
+        if(pl>200 || tb || b.querySelector('[data-full]')) c.classList.add('full');
         wrapGrps(c, b);
       });
     });

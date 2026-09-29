@@ -765,6 +765,9 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .kids>*,:root.v2 .bracket>*{padding-left:13px;}
 :root.v2 .kids>*::before,:root.v2 .bracket>*::before{border-left-color:var(--v2rule);}
 :root.v2 .kids>*::after,:root.v2 .bracket>*::after{width:7px;border-top-color:var(--v2rule);}
+/* bsub(괄호 묶음 낀 가지) 줄머리 선도 v2 들여쓰기(13px)에 맞춘다 — 옛 -17px 그대로라 형제 선과 4px 어긋나 끊겨 보였다(10-01 동하 「시의 내용 줄 깨짐」 · 사회 제외 = dae-big) */
+:root.v2.dae-big .bracket>.bsub>.converge>.stack:first-child>*::before{left:-13px;border-left-color:var(--v2rule);}
+:root.v2.dae-big .bracket>.bsub>.converge>.stack:first-child>*::after{left:-13px;width:7px;border-top-color:var(--v2rule);}
 :root.v2 .fork>.mkf{color:var(--v2rule);}
 :root.v2 .converge>svg,:root.v2 .forkdown>.mkd{color:var(--v2rule);}
 :root.v2 .converge .link,:root.v2 .converge .link b{color:var(--v2ink2);}

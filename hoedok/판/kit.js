@@ -174,6 +174,16 @@
   document.querySelectorAll('main.wrap .vchain:not(.conv)').forEach(function(v){
     if(![].some.call(v.querySelectorAll('.ann'), function(x){ return x.textContent.trim(); })) v.classList.add('hz');
   });
+  /* 이름만 있고 내용 없는 항목(미술 조형 요소 「면」·「색」)은 그 묶음 끝 한 줄에 모은다 — 빈 칸 모음과 같은 뜻(동하 09-30 「모으고」) */
+  document.querySelectorAll('main.wrap .cols').forEach(function(cl){
+    var bare=[].filter.call(cl.querySelectorAll(':scope > .stack > .row'), function(r){
+      if([].some.call(r.childNodes, function(n){ return n.nodeType===3 ? n.textContent.trim() : !(n.classList.contains('num') || n.classList.contains('term')); })) return false;
+      var nx=r.nextElementSibling; return !(nx && (nx.classList.contains('ind') || nx.classList.contains('bracket') || nx.classList.contains('kids')));
+    });
+    if(bare.length<2 || bare.length===cl.querySelectorAll(':scope > .stack > .row').length) return;   /* 전부 이름뿐인 목록(수학 「특성」 8개)은 목록 그대로 */
+    var g=document.createElement('div'); g.className='gath'; cl.parentNode.insertBefore(g, cl.nextSibling);
+    bare.forEach(function(r){ g.appendChild(r); });
+  });
   /* 판단 나무 줄(「X : 이름 : 설명」·「O : 질문?」) = 「X →」 머리 + 이름, 설명은 그 아래 들여쓰기 · 이음 「:」는 화면에서만 끔
      (09-30 동하 영어 말하기 「연습 단계 순서도가 좀 이상함」 → (가) 접힌 줄이 X·O 밑으로 빠지고 질문·이름·설명이 한 줄에 섞임) */
   document.querySelectorAll('main.wrap .kids > div, main.wrap .kids > .branch > div:first-child, main.wrap .bracket > div').forEach(function(r){
@@ -195,7 +205,7 @@
     if(![].some.call(o.querySelectorAll('.an'), function(x){ return x.textContent.trim(); })) o.classList.add('hz');
   });
   if(ROLE){
-    var RC={'대단':'r-dae','절':'r-jeol','머리줄':'r-head','칸':'r-cell','글칸':'r-cell','안':'r-in','숨김':'r-hide'};   /* 숨김 = 화면에서만 접음(id·목차 링크는 산다 · 사회 학기 구분 — 동하 09-30) */
+    var RC={'대단':'r-dae','절':'r-jeol','머리줄':'r-head','칸':'r-cell','글칸':'r-cell','안':'r-in','숨김':'r-hide','글':'r-line'};   /* 글 = 제목을 앞 머리줄 밑 한 줄 도입 글로(국어 토의 「개념 : …」 · 09-30) */   /* 숨김 = 화면에서만 접음(id·목차 링크는 산다 · 사회 학기 구분 — 동하 09-30) */
     document.querySelectorAll('main.wrap h2[id], main.wrap h3[id], main.wrap h4[id]').forEach(function(h){ var r=ROLE[h.id]; if(RC[r]) h.classList.add(RC[r]); });
     var mk=function(cls, pg, before){ var d=document.createElement('div'); d.className=cls; pg.insertBefore(d, before); return d; };
     document.querySelectorAll('main.wrap .sect').forEach(function(sect){
@@ -541,6 +551,10 @@
       /* 높이가 비슷한 같은 급 항목(6사10-02 기후대)은 줄 맞춘 격자 — 단 흘림이면 단마다 개수가 달라 줄이 어긋난다(동하 09-30) */
       var bh=batch.map(function(x){ return x._h||0; }), sb=bh.slice().sort(function(a,b){ return a-b; }), md=sb[Math.floor(sb.length/2)]||1;
       var even=batch.length>m && sb[sb.length-1]<=2.5*md;
+      /* 줄 맞춘 격자가 단 흘림보다 훨씬 길면(빈 칸이 크게 남음) 흘림으로 — 체육 야구형 「발야구 | 주먹 야구 / 티볼」 → 티볼을 주먹 야구 밑으로(동하 09-30 「높이 맞추라니까」) */
+      if(even){ var kk=Math.min(m, batch.length), gH=0; for(var r0=0; r0<bh.length; r0+=kk) gH+=Math.max.apply(null, bh.slice(r0, r0+kk));
+        var fH=Math.max.apply(null, part(bh, kk).map(function(r){ return bh.slice(r[0], r[1]).reduce(function(a,b){ return a+b; },0); }));
+        if(batch.length%kk && gH>1.15*fH && batch.every(function(x){ return x.classList.contains('ingrp'); })) even=false; }   /* 「안」 갈래끼리만(같은 급 목록 격자 — 사회 05-02·08-02·현장 학습 — 는 동하 확정 배치 그대로) */
       for(var k=Math.min(m, batch.length); batch.length>=2 && k>=2; k--){
         var cs=document.createElement('div'); cs.className='colset'+(even?' gridset':''); cs.style.setProperty('--m', k);
         parent.insertBefore(cs, batch[0]); cs._items=batch.slice();

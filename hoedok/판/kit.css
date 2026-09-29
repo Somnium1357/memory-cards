@@ -644,6 +644,12 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .converge>.link:has(>div){display:block;white-space:normal;flex:1 1 auto;min-width:0;}
 /* 한 줄 연결말도 단이 좁으면 연결말 안에서 접는다(화살표는 말 옆 그대로 · 수학 「공식(=간접측정) 유도」가 옆 단 침범) */
 :root.v2 .converge>.link{flex:0 1 auto;min-width:0;white-space:normal;}
+/* 내용 없는 이름만 항목 모음(kit.js .gath) — 묶음 밑 한 줄 「면 · 색」 */
+:root.v2 .gath{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .5em;margin-top:.6em;}
+:root.v2 .gath>.row{margin:0 !important;}
+:root.v2 .gath>.row+.row::before{content:'·';color:var(--v2faint);margin-right:.5em;}
+/* 역할 「글」 — 제목 태그지만 머리줄 밑 도입 글처럼(동하 09-30) */
+:root.v2 h2.r-line,:root.v2 h3.r-line,:root.v2 h4.r-line{font-size:1em;line-height:1.55;font-weight:400;color:var(--v2ink2);margin:.2em 0 .4em;padding:0;border:0;}
 /* 판단 나무 줄(kit.js .dec) — 「X →」 머리 칸 + 이름 · 설명은 이름 아래(동하 09-30 영어 연습 단계 (가)) */
 :root.v2 .dec{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:.45em;align-items:baseline;}
 :root.v2 .dec>.mk{color:var(--v2muted);font-weight:600;white-space:nowrap;}

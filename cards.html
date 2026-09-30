@@ -1491,6 +1491,19 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 .s2-dash{font-size:17px;color:var(--c-sec);}
 #scrHome .plan-warn{border-radius:var(--r-group);margin:0;}
 .s2-chev{width:8px;height:14px;color:var(--c-chev);}
+/* 스터디 현황(10-01) — 세션 목록과 같은 inset 목록 · 줄 = 상태 점 + 이름 + 「상태 · 시간」 + 오른쪽 장수 */
+#studyBox{display:flex;flex-direction:column;gap:16px;}
+#studyBox:empty{display:none;}
+.sc-g{font-size:15px;color:var(--c-sec);padding-right:12px;max-width:50%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sc-list{background:var(--c-card);border-radius:var(--r-group);box-shadow:var(--sh-card);display:flex;flex-direction:column;overflow:hidden;}
+.sc-row:active{background:none;}
+.sc-err{font-size:13px;line-height:18px;color:var(--c-sec);margin:-10px 20px 0;}
+.sc-msg{font-size:13px;line-height:18px;color:var(--c-sec);margin-top:6px;}
+.sc-msg:empty{display:none;}
+.sc-goal{display:flex;align-items:center;gap:8px;min-height:44px;font-size:17px;}
+.sc-goal input{width:72px;}
+.sc-goal>span:first-child{white-space:nowrap;}
+.sc-goal span.u{color:var(--c-sec);font-size:15px;}
 .hp-views{display:none;}
 #tabBar{display:none;}
 @media (hover:hover) and (pointer:fine) and (min-width:1300px){ #scrHome .home-inner{max-width:var(--read-max);margin:0 auto;width:100%;} }
@@ -2048,6 +2061,7 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
         <div id="planWarn" class="plan-warn"></div>
         <div class="h-sec2"><h2>세션</h2><button id="btnNewSess" aria-label="새 세션" title="새 세션"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
         <div id="sessList"></div>
+        <div id="studyBox"></div>
         <div class="hp-views">
           <div class="hs-grp">보기</div>
           <div class="hp-list"><button class="hs-row" id="ctOpenP"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M9.5 4.5v15"/></svg>내용 체계표</button><button class="hs-row" data-go="scrStats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V11M11 20V5M17 20v-6"/></svg>통계</button></div>
@@ -2612,6 +2626,9 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
     <div class="tgl-row"><span>여백 눌러도 정답 보기</span><div class="tgl" id="tglZtap"></div></div>
     <div class="tgl-row"><span>스와이프 채점</span><div class="tgl" id="tglSwipe"></div></div>
     <div class="tgl-row"><span>키보드 단축키</span><div class="tgl" id="tglKbd"></div></div>
+  </div>
+  <div class="field"><label>스터디</label>
+    <div id="scBox"></div>
   </div>
   <div class="field"><label>그 밖</label>
     <button class="act-btn" id="setInput"><span>입력 배치</span><small>키보드 · 게임패드</small></button>
@@ -9466,6 +9483,122 @@ function renderSessRows(){
   });
   if(!sessions.length) box.innerHTML='<div class="empty-note" style="padding:20px">세션이 없어요 — 오른쪽 위 ＋로 만들어요</div>';
 }
+/* ═══════════════ 스터디 현황 (10-01 동하 · 친구가 쓰는 안키 애드온 「스터디 현황」과 같은 방) ═══════════════
+   애드온 = 오늘 공부 시간·답한 수·목표·상태를 30초마다 방(Supabase)에 올리고, 방 사람들의 같은 값을 받아 보여 준다.
+   이 앱은 **같은 서버·같은 표·같은 규칙**으로 올려서 안키 쓰는 친구들 방에 그대로 뜬다(애드온 online.py · addon.py를 그대로 옮김).
+   · 올리는 것 = 공부 시간 · 답한 수 · 목표 · 상태뿐(카드 내용 없음). 이름 = user id에서 뽑은 익명 코드(애드온 nicknames.py와 같은 식).
+   · 🔴 **답한 수·시간은 채점 로그에서 센다** — 기기가 여럿이어도 로그가 공유라 합친 값이 올라간다. 시간 = 채점 사이 간격(5분 넘는 틈 제외 · 홈 「오늘 n분」과 같은 규칙).
+   · 🔴 **날짜 = 한국 시각 자정**(애드온 study_day와 같게) — 앱의 새벽 4시 경계와 다르다. 00~04시 채점은 방에선 「오늘」이다.
+   · 상태 = 풀이 화면이 떠 있고 1분 안에 손을 댔으면 「공부 중」 · 풀이 화면인데 1분 넘게 가만히면 「잠시 멈춤」 · 그 밖 「접속 중」(애드온 IDLE_AFTER 1분).
+   · 계정 = 처음 「참여」를 누를 때 익명 가입(애드온과 같다 — 기기마다 따로다. 이메일 연결은 아직 없음). 인증·방은 **이 기기 localStorage에만**(공개 저장소에 토큰을 올리지 않는다). */
+const SC_URL='https://uvrnsdknkivtclzlfjxx.supabase.co';
+const SC_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2cm5zZGtua2l2dGNsemxmanh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0OTA2NzYsImV4cCI6MjA3MDA2NjY3Nn0.k_jx9ysXfPIsU9ls3NHSgE4uqEkOrdzPftVVcYvck2s';   // 애드온에 든 공개(anon) 키 그대로
+const K_SC='cards_study_v1';
+let SC=(()=>{ try{ return JSON.parse(lsGet(K_SC)||'{}')||{}; }catch(e){ return {}; } })();
+function scSave(){ lsSet(K_SC, JSON.stringify(SC)); }
+async function scReq(method, path, o){ o=o||{};
+  let url=SC_URL+path; if(o.query) url+='?'+new URLSearchParams(o.query).toString();
+  const h={apikey:SC_KEY, Accept:'application/json'}; if(o.token) h.Authorization='Bearer '+o.token; if(o.prefer) h.Prefer=o.prefer;
+  let body; if(o.body!==undefined){ body=JSON.stringify(o.body); h['Content-Type']='application/json'; }
+  let r; try{ r=await fetch(url,{method, headers:h, body, keepalive:!!o.keepalive}); }catch(e){ throw new Error('서버에 연결하지 못했어요'); }
+  const txt=await r.text(); let j=null; try{ j=txt?JSON.parse(txt):null; }catch(e){}
+  if(!r.ok){ const e=new Error((j&&(j.msg||j.message||j.error_description||j.error))||('HTTP '+r.status)); e.status=r.status; throw e; }
+  return j; }
+function scStore(r){ const u=r.user||{}, old=SC.auth||{};
+  SC.auth={access_token:r.access_token, refresh_token:r.refresh_token||old.refresh_token||'', expires_at:r.expires_at||Math.floor(Date.now()/1000)+(r.expires_in||3600), user_id:u.id||old.user_id};
+  scSave(); }
+async function scToken(){ const a=SC.auth; if(!a||!a.access_token){ const e=new Error('계정이 없어요'); e.status=401; throw e; }
+  if(a.refresh_token && Date.now()/1000>=(a.expires_at||0)-60) scStore(await scReq('POST','/auth/v1/token',{query:{grant_type:'refresh_token'}, body:{refresh_token:a.refresh_token}}));
+  return SC.auth.access_token; }
+async function scAuthed(fn){   // 만료로 401이면 한 번 갱신하고 다시(애드온 _run_authenticated_action)
+  try{ return await fn(await scToken()); }
+  catch(e){ if(e.status!==401 || !SC.auth || !SC.auth.refresh_token) throw e; SC.auth.expires_at=0; return await fn(await scToken()); } }
+async function scNick(uid){   // 애드온 canonical_nickname — sha256("study-companion:display-code:v1:"+id) 앞 6바이트 → XXX-XXX
+  const b=new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('study-companion:display-code:v1:'+uid)));
+  const A='23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; let s=''; for(let i=0;i<6;i++) s+=A[b[i]&31]; return s.slice(0,3)+'-'+s.slice(3); }
+const scDay=t=>new Date(t+9*3600e3).toISOString().slice(0,10);   // 한국 시각 날짜
+function scToday(){ const D=scDay(Date.now()), L=state.log, lo=Date.now()-2*86400e3, ts=[];
+  for(let i=L.length-1;i>=0;i--){ const e=L[i]; if(!e) continue; const t=logTs(e); if(!isFinite(t)) continue; if(t<lo) break; if(scDay(t)===D) ts.push(t); }
+  ts.sort((a,b)=>a-b); let ms=0; for(let i=1;i<ts.length;i++){ const d=ts[i]-ts[i-1]; if(d>0 && d<300000) ms+=d; }
+  return {day:D, n:ts.length, sec:Math.round(ms/1000)}; }
+let scInputAt=0;
+function scStatus(){ if(document.visibilityState!=='visible' || !$('scrSolve').classList.contains('on')) return 'stopped';
+  return Date.now()-scInputAt<60000 ? 'studying' : 'paused'; }
+function scMemberStatus(m){   // 애드온 _current_member_status — 90초 넘게 소식이 없으면 오프라인
+  const t=m.updated_at?Date.parse(m.updated_at):NaN; if(!isFinite(t) || Date.now()-t>90000) return 'offline';
+  return m.status==='studying'||m.status==='paused' ? m.status : 'online'; }
+async function scFetchToday(tok, gid, day){
+  const mem=await scReq('GET','/rest/v1/group_members',{token:tok, query:{select:'user_id,joined_at', group_id:'eq.'+gid, order:'joined_at.asc'}})||[];
+  const st=await scReq('GET','/rest/v1/daily_stats',{token:tok, query:{select:'group_id,user_id,study_day,active_seconds,answer_count,time_goal_minutes,card_goal,status,updated_at', group_id:'eq.'+gid, study_day:'eq.'+day, order:'updated_at.desc'}})||[];
+  const ids=[...new Set(mem.map(m=>m.user_id))], names={};
+  if(ids.length) (await scReq('GET','/rest/v1/profiles',{token:tok, query:{select:'id,display_name', id:'in.('+ids.join(',')+')'}})||[]).forEach(p=>{ names[p.id]=p.display_name; });
+  const by={}; st.forEach(r=>{ if(!by[r.user_id]) by[r.user_id]=r; });
+  return mem.map(m=>Object.assign({user_id:m.user_id, active_seconds:0, answer_count:0, time_goal_minutes:0, card_goal:0, status:'stopped'}, by[m.user_id]||{}, {display_name:names[m.user_id]||null})); }
+let scBusy=false;
+async function scSync(o){ o=o||{};
+  if(!SC.auth || !SC.group || scBusy) return; scBusy=true;
+  try{ const t=scToday(), uid=SC.auth.user_id, nick=await scNick(uid);
+    const row={group_id:SC.group.id, user_id:uid, study_day:t.day, active_seconds:t.sec, answer_count:t.n,
+      time_goal_minutes:SC.goalMin||0, card_goal:SC.goalCards||0, status:o.status||scStatus(), updated_at:new Date().toISOString()};
+    const mem=await scAuthed(async tok=>{
+      if(SC.nick!==nick){ await scReq('POST','/rest/v1/profiles',{token:tok, query:{on_conflict:'id'}, body:{id:uid, display_name:nick}, prefer:'resolution=merge-duplicates,return=representation'}); SC.nick=nick; }
+      await scReq('POST','/rest/v1/daily_stats',{token:tok, query:{on_conflict:'group_id,user_id,study_day'}, body:[row], prefer:'resolution=merge-duplicates,return=representation', keepalive:o.keepalive});
+      return o.keepalive ? null : scFetchToday(tok, SC.group.id, t.day); });
+    if(mem){ SC.members=mem; SC.membersAt=Date.now(); }
+    delete SC.err; scSave();
+  }catch(e){ SC.err = e.status===401 ? '연결이 끊겼어요 — 설정 › 스터디에서 다시 참여해 주세요' : (e.message||String(e)); if(e.status===401){ delete SC.auth; } scSave(); }
+  finally{ scBusy=false; if(!o.keepalive) scRender(); } }
+async function scJoin(code){
+  code=String(code||'').replace(/\s+/g,'').toUpperCase();
+  if(!/^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4}$/.test(code)) throw new Error('초대 코드는 영문 대문자·숫자 4자리예요');
+  if(!SC.auth) scStore(await scReq('POST','/auth/v1/signup',{body:{data:{}}}));   // 애드온 sign_in_anonymously
+  const [gid, rows]=await scAuthed(async tok=>{
+    const g=await scReq('POST','/rest/v1/rpc/join_study_group',{token:tok, body:{code}});
+    const r=await scReq('GET','/rest/v1/group_members',{token:tok, query:{select:'group_id,joined_at,study_groups(id,name,invite_code,owner_id,created_at)', user_id:'eq.'+SC.auth.user_id, order:'joined_at.asc'}})||[];
+    return [Array.isArray(g)?g[0]:g, r]; });
+  const list=rows.map(r=>Object.assign({}, r.study_groups||{}, {id:(r.study_groups&&r.study_groups.id)||r.group_id}));
+  SC.group=list.find(x=>x.id===gid) || list.find(x=>String(x.invite_code||'').toUpperCase()===code) || {id:gid, name:'스터디', invite_code:code};
+  delete SC.err; scSave(); await scSync(); }
+const scFmt=s=>{ const m=Math.floor((s||0)/60); if(m<60) return m+'분'; const h=Math.floor(m/60), r=m%60; return r?`${h}시간 ${r}분`:`${h}시간`; };
+const SC_ST={studying:'공부 중', paused:'잠시 멈춤', online:'접속 중', offline:'오프라인'};
+function scRender(){ scRenderHome(); scRenderSet(); }
+function scRenderHome(){ const box=$('studyBox'); if(!box) return;
+  if(!SC.group){ box.innerHTML=''; return; }
+  const me=SC.auth&&SC.auth.user_id, t=scToday(), myS=scStatus();
+  let rows=(SC.members||[]).filter(m=>m.user_id!==me);
+  const rank={studying:0, paused:1, online:2, offline:3};
+  rows.sort((a,b)=>rank[scMemberStatus(a)]-rank[scMemberStatus(b)] || (b.answer_count||0)-(a.answer_count||0));
+  rows=[{user_id:me, mine:true}, ...rows];
+  const html=rows.map(m=>{ const st=m.mine?(myS==='stopped'?'online':myS):scMemberStatus(m);
+    const n=m.mine?t.n:(m.answer_count||0), sec=m.mine?t.sec:(m.active_seconds||0);
+    const cg=m.mine?(SC.goalCards||0):(m.card_goal||0), tg=m.mine?(SC.goalMin||0):(m.time_goal_minutes||0);
+    return `<div class="sess2 sc-row"><span class="s2-dot" style="background:${st==='studying'?'var(--c-green)':'var(--c-chev)'}"></span>
+      <span class="s2-b"><span class="s2-n">${m.mine?'나':esc(m.display_name||'친구')}</span><span class="s2-s">${SC_ST[st]} · ${scFmt(sec)}${tg?` / ${tg}분`:''}</span></span>
+      <span class="s2-r"><span class="s2-cnt"><b>${n.toLocaleString()}</b><small>${cg?` / ${cg.toLocaleString()}`:''}장</small></span></span></div>`; }).join('');
+  box.innerHTML=`<div class="h-sec2"><h2>스터디</h2><span class="sc-g">${esc(SC.group.name||'')}</span></div><div class="sc-list">${html}</div>${SC.err?`<div class="sc-err">${esc(SC.err)}</div>`:''}`; }
+function scRenderSet(){ const b=$('scBox'); if(!b) return;
+  if(!SC.group){
+    if(b.dataset.m==='join') return; b.dataset.m='join';   // 입력 중에 다시 그려 글자가 날아가지 않게
+    b.innerHTML=`<div style="display:flex;gap:8px;align-items:center"><input id="scCode" type="text" maxlength="8" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="친구에게 받은 초대 코드" style="flex:1 1 150px;min-width:0"><button class="btn-ghost" id="scJoin" style="flex:0 0 auto">참여</button></div><div class="sc-msg" id="scMsg">${SC.err?esc(SC.err):''}</div>`;
+    const go=async()=>{ const btn=$('scJoin'), msg=$('scMsg'); btn.disabled=true; msg.textContent='참여하는 중…';
+      try{ await scJoin($('scCode').value); b.dataset.m=''; scRender(); toast('스터디 방에 들어갔어요'); }
+      catch(e){ msg.textContent=e.message||String(e); btn.disabled=false; } };
+    $('scJoin').onclick=go; $('scCode').onkeydown=e=>{ if(e.key==='Enter') go(); };
+    return; }
+  const key='in|'+SC.group.id+'|'+(SC.nick||'')+'|'+(SC.err||''); if(b.dataset.m===key) return; b.dataset.m=key;
+  b.innerHTML=`<div class="set-row"><span>${esc(SC.group.name||'스터디')}</span><span class="desc">코드 ${esc(SC.group.invite_code||'—')}${SC.nick?` · 내 이름 ${esc(SC.nick)}`:''}</span></div>
+    <div class="sc-goal"><span style="flex:1">하루 목표</span><input id="scGoalMin" type="number" inputmode="numeric" min="0" placeholder="0" value="${SC.goalMin||''}"><span class="u">분</span><input id="scGoalCards" type="number" inputmode="numeric" min="0" placeholder="0" value="${SC.goalCards||''}"><span class="u">장</span></div>
+    <div class="sc-msg">${SC.err?esc(SC.err):''}</div>
+    <button class="btn-ghost" id="scLeave" style="margin-top:8px">이 기기에서 연결 끊기</button>`;
+  const gset=()=>{ SC.goalMin=Math.max(0,parseInt($('scGoalMin').value,10)||0); SC.goalCards=Math.max(0,parseInt($('scGoalCards').value,10)||0); scSave(); scRenderHome(); scSync(); };
+  $('scGoalMin').onchange=gset; $('scGoalCards').onchange=gset;
+  $('scLeave').onclick=()=>{ if(!confirm('이 기기에서 스터디 방 연결을 끊을까요? 방의 기록은 그대로 남아요.')) return;
+    delete SC.group; delete SC.members; delete SC.err; scSave(); b.dataset.m=''; scRender(); }; }
+/* 30초마다 올리고 받기(애드온과 같은 주기) · 앱을 내리면 「접속 중」으로 한 번 · 풀이 화면에서 손대면 「공부 중」 */
+setInterval(()=>{ if(SC.group && document.visibilityState==='visible') scSync(); else if(SC.group) scRenderHome(); }, 30000);
+['pointerdown','keydown'].forEach(ev=>document.addEventListener(ev, ()=>{ scInputAt=Date.now(); }, true));
+document.addEventListener('visibilitychange', ()=>{ if(!SC.group) return;
+  if(document.visibilityState==='hidden') scSync({keepalive:true, status:'stopped'}); else scSync(); });
 function renderHome(){
   try{ if(DATA.length && !planIncomplete) basisCheck(); }catch(e){}
   try{ snapSoon(); }catch(e){}         // 앱 현황 스냅숏 — 부팅 뒤 첫 홈에서 그날 morning을 잡는다(10분 스로틀 · 실패 무시)
@@ -9478,6 +9611,7 @@ function renderHome(){
   cleanupTempSessions();
   renderPlanWarn();
   renderSessRows();
+  try{ scRender(); if(SC.group && Date.now()-(SC.membersAt||0)>20000) scSync(); }catch(e){}   // 스터디 현황 — 홈을 그릴 때 20초 넘었으면 한 번 받아 온다
   syncThemeSeg();
   $('tglReshow').classList.toggle('on',reshowOn);
   $('tglZtap').classList.toggle('on',zoneTapOn);

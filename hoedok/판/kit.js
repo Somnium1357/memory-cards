@@ -313,7 +313,7 @@
           if(EM==='gather' && em.length===1 && window.PAN_HOIST!==false){
             var c1=em[0], i1=un.indexOf(c1), host1=null;
             for(var j1=i1-1;j1>=0;j1--) if(!isEmpty(un[j1])){ host1=un[j1]; break; }
-            if(host1){ var h1=c1.firstElementChild; h1.classList.add('att'); host1.querySelector(':scope > .blb').appendChild(h1); c1.remove(); }
+            if(host1){ var h1=c1.firstElementChild; h1.classList.add('att'); h1.classList.add('glab'); /* M1: 모음 칸과 같은 레이블 꼴(CSS) */ host1.querySelector(':scope > .blb').appendChild(h1); c1.remove(); }
             return;
           }
           if(EM==='gather' && em.length>=2){
@@ -321,7 +321,13 @@
             var hd=document.createElement('div'); hd.className='ghead'; g.appendChild(hd);
             var gb=document.createElement('div'); gb.className='blb'; g.appendChild(gb);
             em[0].parentNode.insertBefore(g, em[0]);   /* 첫 빈 칸 자리에 — 원문 순서를 덜 깨게(09-30 국어 재조직 「gather 가 순서를 바꾼다」) · 먼저 넣고 지운다 */
-            em.forEach(function(c){ var h=c.firstElementChild; h.classList.add('att'); gb.appendChild(h); c.remove(); });
+            /* 10-01 독립검수 M1(동하 승인 · 사회 제외): 모은 이름표 = 칸 레이블 꼴(파랑 + 괘선) — 흰 굵은 이름이 레이블 없이 서서 다른 층처럼 보이던 것.
+               첫 이름이 레이블 줄(subgrid 첫 행)에 앉아 같은 줄 칸들과 레이블 선이 맞는다 · 줄 높이를 키우면 layoutRole 이 전폭 레이블 격자(.gfull)로 */
+            if(window.PAN_HOIST!==false){
+              g.classList.add('glabs'); g.removeChild(hd);
+              em.forEach(function(c,i){ var h=c.firstElementChild; h.classList.add('glab'); if(i===0) g.insertBefore(h, gb); else gb.appendChild(h); c.remove(); });
+            }
+            else em.forEach(function(c){ var h=c.firstElementChild; h.classList.add('att'); gb.appendChild(h); c.remove(); });
           }
         });
       }
@@ -379,6 +385,22 @@
         if(f && f.classList.contains('endlab')) h.classList.add('r-enddup');
       });
       document.querySelectorAll('main.wrap div.quiet').forEach(function(q){ if(/^\(\d\)\s*\d학년\s*\d학기/.test(q.textContent.trim())) q.classList.add('memo'); });
+      /* 10-01 독립검수 M5(사회 제외): 표 열 폭 = 내용 길이 비례(kit.css table-layout:auto) — 짧은 첫 열(코드·이름 12자 이하)은 접지 않는다(.nw1).
+         균등 열 폭이라 한 줄짜리 코드 열이 1/3 을 먹고 문장 열이 3~4줄로 접히던 것(통합교과 공통 적용 표) */
+      /* 10-01 독립검수 L2(사회 제외): 레이블을 제목으로 올린 뒤 줄머리에 남은 「:」(영어 「: comprehensible input」) — 표시만 끈다(글자 무변) */
+      document.querySelectorAll('main.wrap div > .mk:first-child').forEach(function(m){
+        if(m.textContent.trim()!==':') return;
+        for(var p=m.previousSibling; p; p=p.previousSibling) if(p.nodeType!==8 && p.textContent.trim()) return;
+        m.classList.add('lhc');
+      });
+      document.querySelectorAll('main.wrap .blk table').forEach(function(t){
+        var rows=[].filter.call(t.rows, function(r){ return r.cells.length>=2; }); if(!rows.length) return;
+        /* 병합 칸(rowspan·colspan)이 있는 표는 균등 그대로 — 긴 병합 칸이 폭을 다 먹어 숫자 열이 눌리던 것(총창 시간 배당 표 · 10-01 실측) */
+        if([].some.call(t.querySelectorAll('td,th'), function(c){ return c.rowSpan>1 || c.colSpan>1; })) return;
+        t.classList.add('tauto');
+        var firsts=rows.map(function(r){ return r.cells[0]; }).filter(function(c){ return c.colSpan===1; });
+        if(firsts.length && firsts.every(function(c){ return c.textContent.trim().length<=12; })) firsts.forEach(function(c){ c.classList.add('nw1'); });
+      });
     }
   }
   if(!ROLE) document.querySelectorAll('main.wrap .sect').forEach(function(sect){
@@ -455,6 +477,7 @@
     main.querySelectorAll('.tcells').forEach(function(g){ g.classList.remove('tcells'); });
     main.querySelectorAll('.kids.kgrid').forEach(function(k){ k.classList.remove('kgrid'); });
     main.querySelectorAll('.treewide').forEach(function(k){ k.classList.remove('treewide'); });
+    main.querySelectorAll('.gfull').forEach(function(k){ k.classList.remove('gfull'); });
     var sects=[].filter.call(main.querySelectorAll('.sect'), function(s){ return s.querySelector(':scope > .pg > .blk.cell, :scope > .pg > .blk.hrow, :scope > .pg > .blk.nolab'); });
     sects.forEach(function(s){
       var fs=parseFloat(getComputedStyle(s).fontSize)||16, gap=2.2*fs, minc=16.5*fs;
@@ -629,6 +652,23 @@
         var nx=Math.min(2*n, cur+2); c.style.gridColumn= nx>=2*n ? '1/-1' : 'span '+nx;
       });
       fillRows();
+      /* 10-01 독립검수 M1(사회 제외): 모은 이름표 칸이 같은 줄 칸보다 키가 커 줄 높이를 키우면(도덕 원리 5개 — 왼쪽 두 칸 아래 150px 빔)
+         또는 줄에 혼자면 = 전폭 레이블 격자(.gfull · 절 격자와 같은 단) — 이름표가 짧은 칸 여럿처럼 한두 줄로 */
+      if(window.PAN_HOIST!==false){
+        var gch=false;
+        blks.forEach(function(g){
+          if(!g.classList.contains('glabs')) return;
+          var full=spanOf(g)>=2*n;
+          if(!full){
+            var gt=g.getBoundingClientRect().top, fsg=parseFloat(getComputedStyle(g).fontSize)||16;
+            var mates=cells.filter(function(c){ return c!==g && Math.abs(c.getBoundingClientRect().top-gt)<=2; });
+            var mx=mates.length ? Math.max.apply(null, mates.map(bodyH)) : 0;
+            if(!mates.length || bodyH(g)>mx+1.5*fsg){ setSpan(g, 2*n); g._wide=false; gch=true; full=true; }
+          }
+          if(full) g.classList.add('gfull');
+        });
+        if(gch) fillRows();
+      }
     });
     eqAlign();
   }
@@ -637,6 +677,23 @@
     var main=document.querySelector('main.wrap'); if(!main || !main.clientWidth) return;
     var eqX=function(root){ var tw=document.createTreeWalker(root, NodeFilter.SHOW_TEXT), t; while((t=tw.nextNode())){ var i=t.textContent.indexOf('='); if(i>=0){ var r=document.createRange(); r.setStart(t,i); r.setEnd(t,i+1); return r.getBoundingClientRect().left; } } return null; };
     main.querySelectorAll('.eqal').forEach(function(e){ e.style.paddingLeft=''; e.classList.remove('eqal'); });
+    /* 10-01 독립검수 L1(사회 제외): 같은 절 안 형제 세로 단계 목록은 단계 이름 열 폭을 맞춘다(설명 열 x 가 목록마다 134·155px — 도덕 168~221) —
+       절 안 최대 이름 열 폭으로 · 그만큼 넓혀도 설명 열이 12em 넘게 남는 목록만 */
+    if(document.documentElement.classList.contains('dae-big')){
+      main.querySelectorAll('.vchain.l1al').forEach(function(v){ v.style.gridTemplateColumns=''; v.classList.remove('l1al'); });
+      main.querySelectorAll('.sect').forEach(function(s){
+        var L=[].filter.call(s.querySelectorAll('.vchain:not(.hz)'), function(v){ return v.offsetParent!==null && v.querySelector(':scope > .ann'); });
+        if(L.length<2) return;
+        var cw=L.map(function(v){ var st=v.querySelector(':scope > .stp'); return st ? st.getBoundingClientRect().width : 0; });
+        var mx=Math.max.apply(null, cw);
+        L.forEach(function(v,i){
+          if(mx-cw[i]<2) return;
+          var fs=parseFloat(getComputedStyle(v).fontSize)||16;
+          if(v.clientWidth-mx-fs < 12*fs) return;
+          v.style.gridTemplateColumns=Math.ceil(mx)+'px minmax(0,1fr)'; v.classList.add('l1al');
+        });
+      });
+    }
     main.querySelectorAll('.blk .ind').forEach(function(ind){
       var d=ind.firstElementChild; if(!d || d.textContent.trim().charAt(0)!=='=') return;
       var prev=ind.previousElementSibling; if(!prev) return;
@@ -814,7 +871,7 @@
     var sn={sect:[], span:[], cls:{}, sets:[], flows:[]};
     MAIN.querySelectorAll('.sect').forEach(function(s){ if(s.style.gridTemplateColumns && IX.has(s)) sn.sect.push([IX.get(s), s.style.gridTemplateColumns]); });
     ALL.forEach(function(e,i){ if(e.style && e.style.gridColumn) sn.span.push([i, e.style.gridColumn]); });
-    ['rowg','flat','flowing','tcells','lead1','treewide'].forEach(function(c){ sn.cls[c]=ALL.filter(function(e){ return e.classList.contains(c); }).map(function(e){ return IX.get(e); }); });
+    ['rowg','flat','flowing','tcells','lead1','treewide','gfull'].forEach(function(c){ sn.cls[c]=ALL.filter(function(e){ return e.classList.contains(c); }).map(function(e){ return IX.get(e); }); });
     MAIN.querySelectorAll('.colset').forEach(function(cs){
       sn.sets.push({p:IX.get(cs.parentNode), c:cs.className, m:cs.style.getPropertyValue('--m'), items:(cs._items||[]).map(function(x){ return IX.get(x); }),
         cols: cs.classList.contains('gridset') ? null : [].map.call(cs.children, function(col){ return [].map.call(col.children, function(x){ return IX.get(x); }); })});

@@ -553,6 +553,18 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 /* 표 = 전폭 · 칸 폭 고르게(동하 「바·바스·셔미스 표 쏠림」) — 첫 칸(행 머리)만 좁게 */
 :root.v2 .blk table{width:100%;table-layout:fixed;}
 :root.v2 .blk table.rh tr:first-child>:first-child{width:5.5em;}
+/* 10-01 독립검수 M5(사회 제외 = dae-big): 열 폭 = 내용 길이 비례 · 짧은 첫 열(.nw1 — kit.js)은 한 줄 */
+:root.v2.dae-big .blk table.tauto{table-layout:auto;}
+:root.v2.dae-big .blk table .nw1{white-space:nowrap;}
+/* 10-01 독립검수 L2 · L6 · L9 · L4(사회 제외 = dae-big)
+   L2 줄머리 「:」 표시만 끔(kit.js .lhc) · L6 나란한 두 갈래(.lanes — 영어 Acquisition | Learning) 세로 구분선 끔(「줄로 가르지 마라」) ·
+   L9 세로 단계 목록 왼쪽 괘선 끔 — 회색 인용 막대(.sub)와 한 모양을 나눠 쓰던 것 · 단계는 굵은 이름 열 + 설명 열로 읽힌다 ·
+   L4 색이 곧 내용인 교재 발췌(오방색 — 반전 안 함)는 다크에서 밝기만 낮춤(흰 바탕 눈부심) · 작품 이미지는 대상 아님 */
+:root.v2.dae-big .mk.lhc{display:none;}
+:root.v2.dae-big .lanes>*{border-left:0;}
+:root.v2.dae-big .vchain:not(.hz){border-left:0;padding-left:1em;}   /* 들여쓰기는 남긴다 — 괘선과 들여쓰기를 다 빼면 단계 이름이 위 안 제목(「개념 형성 모형」)과 같은 x·같은 굵기로 서서 층이 사라졌다(10-01 수학 실측) */
+:root.v2.dae-big[data-theme="dark"] img.photo.color{filter:brightness(.8);}
+@media (prefers-color-scheme:dark){ :root.v2.dae-big:not([data-theme]) img.photo.color{filter:brightness(.8);} }
 /* ⑨ 단계 모양 통일(동하 09-30 「설명 있으면 세로, 없으면 가로」) — 설명 없는 세로 사슬·번호 목록 = 가로 화살표 줄 */
 :root.v2 .vchain.hz{display:flex !important;flex-wrap:wrap;align-items:center;gap:4px 8px;border-left:0;padding-left:0;}
 :root.v2 .vchain.hz>.arw{display:none;}
@@ -745,6 +757,15 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .blb>.r-cell.att,:root.v2 .r-cell.att{font-size:1em;font-weight:700;color:var(--v2ink);border:0;padding:0;margin:.55em 0 0;}
 :root.v2 .gathered>.blb>.r-cell.att:first-child{margin-top:0;}
 :root.v2 .gathered>.ghead{margin:0 0 .45em;min-height:1.45em;}   /* 이름 없는 괘선은 긋지 않는다(09-30 국어 「빈 괘선」) */
+/* 10-01 독립검수 M1(사회 제외 = dae-big): 모은 이름표 = 칸 레이블 꼴 한 벌(파랑 + 괘선) — 첫 이름은 레이블 줄에 앉아 옆 칸 레이블과 선이 맞고,
+   나머지는 그 아래 레이블만 있는 칸처럼 · 줄 높이를 키우면(kit.js) 전폭 레이블 격자(.gfull — 절 격자와 같은 단 · 한두 줄) */
+:root.v2.dae-big .gathered.glabs>.blb>.r-cell.glab{font-size:.92em;line-height:1.45;font-weight:700;color:var(--v2acc);border-bottom:1px solid var(--v2rule);padding-bottom:4px;margin:.95em 0 0;}
+:root.v2.dae-big .gathered.glabs .r-cell.glab .term,:root.v2.dae-big .blb>.r-cell.att.glab .term{color:var(--v2acc);}
+/* 빈 칸 하나뿐이라 앞 칸 끝에 붙인 이름표도 같은 레이블 꼴(흰 굵은 이름이 앞 칸 항목처럼 읽히던 것 · 국어 「메모하기」 · 과학 「기체의 성질을 이용한 장치」) */
+:root.v2.dae-big .blb>.r-cell.att.glab{font-size:.92em;line-height:1.45;font-weight:700;color:var(--v2acc);border-bottom:1px solid var(--v2rule);padding-bottom:4px;margin:1.3em 0 0;}
+:root.v2.dae-big .gathered.glabs.gfull{display:grid;grid-row:auto;grid-template-rows:none;grid-template-columns:repeat(auto-fill,minmax(min(16.5em,100%),1fr));column-gap:2.2em;row-gap:.95em;align-items:start;}
+:root.v2.dae-big .gathered.glabs.gfull>.blb{display:contents;}
+:root.v2.dae-big .gathered.glabs.gfull .r-cell.glab{margin:0;}
 :root.v2 .blk.emptyc>.r-cell{font-size:1em;color:var(--v2ink);border-bottom:0;}   /* 같은 격자 칸 제목들의 되풀이 앞머리(「실과 교수·학습 방법 - 」) — 화면에서만 숨김(동하 09-30) */
 :root.v2 main.wrap>h2.r-hide,:root.v2 .pg>h2.r-hide,:root.v2 .r-hide{height:0;margin:0;padding:0;border:0;overflow:hidden;}
 :root.v2 h3.r-in{font-size:.9em;line-height:1.4;font-weight:700;color:var(--v2ink);margin:.9em 0 .25em;border:0;padding:0;}

@@ -353,6 +353,8 @@
                   : k.classList.contains('chain') ? k.querySelectorAll(':scope > .arrow').length+1 : k.querySelectorAll(':scope > .stp, :scope > li').length;
             return st>=5; })) c.classList.add('longchain');
         }
+        /* 10-01 동하 「나머지 다 정리」(사회 3): 사회는 확정 배치라 조각이 [data-half] 로 고른 단계 칸만(뱅크스 | 매트릭스 — 위아래로 쌓여 각각 오른쪽 80% 빔) */
+        else if(b.querySelector('[data-half]') && b.querySelector('ol.steps:not(.hz), .vchain:not(.hz)')) c.classList.add('stepc');
         wrapGrps(c, b);
       });
     });
@@ -360,6 +362,8 @@
        · 단원 끝 블록 속 레이블(「성취기준 해설」·「적용 시 고려 사항」 — 조각의 인라인 작은 회색 p)을 안 꼴로(.endlab)
        · 끝 제목(「해설 · 적용 시 고려 사항」)은 바로 밑에 속 레이블이 보이면 같은 말 되풀이 → 화면에서만 접음(id 는 산다)
        · 과학 학기 구분 줄(「(3) 4학년 2학기」 — 절 제목 밑 흐린 줄 13곳) = 숨김(규칙 §1 학기 구분) */
+    /* 10-01 동하 「나머지 다 정리」(사회 5): M6 수렴 결과 열 최소 폭을 사회에도(극화 학습 「기준: ⟶ 규칙·/체계·/승패/유무」 한 글자씩 쌓임) — 모양은 kit.css .converge.m6 */
+    if(window.PAN_HOIST===false) document.querySelectorAll('main.wrap .converge').forEach(function(cv){ cv.classList.add('m6'); });
     if(window.PAN_HOIST!==false){
       document.querySelectorAll('main.wrap .prose > p[style]').forEach(function(p){
         var t=p.textContent.trim();
@@ -462,7 +466,10 @@
       x._th=x.getBoundingClientRect().height;
       [].forEach.call(x.children, function(k){ k._h=k.getBoundingClientRect().height; if(!k._inner) k._inner=k.querySelector(':scope > .kids, :scope > .bracket'); });
     });
+    /* 사회 .m6(수렴 결과 열 최소 폭)는 칸 폭 판정(눌린 칸 = 전폭) 뒤에 켠다 — 판정 전에 켜면 극화 학습 칸이 반폭으로 바뀌어 확정 배치가 흔들린다(10-01 사회 5) */
+    var M6=[].slice.call(main.querySelectorAll('.converge.m6'));
     sects.forEach(function(s){
+      M6.forEach(function(x){ x.classList.remove('m6'); });
       var n=s._n, blks=[].slice.call(s.querySelectorAll(':scope > .pg > .blk')), unit=[];
       var bodyH=function(c){ var b=c.querySelector(':scope > .blb'); return b ? b.getBoundingClientRect().height : 0; };
       var cells=blks.filter(function(b){ return b.classList.contains('cell') && !b.classList.contains('full'); });
@@ -489,6 +496,7 @@
           c._wide=true;   /* 넘침 때문에 넓힌 칸 — 줄 채우기에서 비율 유지 */
           setSpan(c, Math.max(spanOf(c)+2, Math.min(2*n, 2*Math.ceil((cur+need)/(2*one))))); }
       });
+      M6.forEach(function(x){ x.classList.add('m6'); });
       /* 줄 채우기(반응형) — 줄에 칸이 혼자거나 빈 자리가 남으면 그 줄 칸들이 폭을 비율대로 나눠 채운다
          (동하 09-30 「민주주의·선거 옆 단이 비었잖아」 · 「국가유산처럼 둘뿐이면 3단 흉내 말고」) */
       var fillRows=function(){
@@ -521,19 +529,50 @@
       /* 10-01 독립검수 H4·M9(동하 승인 · 사회 제외):
          ① M9 — 산문 칸·다섯 단계↑ 사슬 칸은 3단 격자에서 최소 1/2 폭(1/3 칸 290px 에 한 줄 17~19자로 잘게 접히던 것)
          ② H4 — 전폭이 된 세로 단계 목록 칸은 목록 내용 폭이 반 폭에 들면 반 폭으로(역할놀이 9단계 오른쪽 절반 이상 빔) — 짧은 형제 칸이 옆에 선다 */
-      if(window.PAN_HOIST!==false && n>=2){
+      if(n>=2 && (window.PAN_HOIST!==false || s.querySelector('[data-half]'))){   /* 사회 = [data-half] 칸만(사회 3) */
         var gp=2.2*(parseFloat(getComputedStyle(s).fontSize)||16), W=s.clientWidth, halfW=n*(W-(2*n-1)*gp)/(2*n)+(n-1)*gp, ch2=false;
         var natW=function(c){ var cl=c.getBoundingClientRect().left, mx=0;
           c.querySelectorAll('ol.steps:not(.hz), .vchain:not(.hz)').forEach(function(L){ var o=L.style.width; L.style.width='max-content'; var r=L.getBoundingClientRect(); mx=Math.max(mx, r.right-cl); L.style.width=o; });
           return mx; };
         blks.forEach(function(c){
           if(!c.classList.contains('cell')) return;
+          if(window.PAN_HOIST===false && !c.querySelector('[data-half]')) return;
           var sp=spanOf(c);
           if((c.classList.contains('prosey') || c.classList.contains('longchain')) && !c.classList.contains('full') && sp<n){ setSpan(c,n); c._wide=false; ch2=true; }
           if(c.classList.contains('stepc') && sp>=2*n && !c.querySelector('table, .colset, .prose') && natW(c)<=halfW*1.35){
             c._half=true; setSpan(c,n); c._wide=false; ch2=true; if(cells.indexOf(c)<0) cells.push(c); }
         });
+        /* 10-01 동하 「나머지 다 정리」(8): 반폭 단계 칸 옆 짧은 형제 칸이 혼자 줄을 차지해 전폭으로 채워져 있으면 반폭으로 돌려 옆에 세운다
+           (수학 폴리아 「문제 해결 4단계 | 문제 해결 전략」 — 형제가 전폭이면 반폭 단계 칸도 줄에 혼자 남아 다시 전폭이 되던 것) · 형제가 단계 칸보다 짧을 때만 */
+        blks.forEach(function(c,i){
+          if(!c.classList.contains('stepc') || spanOf(c)!==n) return;
+          /* 단계 목록이 칸 본문의 거의 전부일 때만 — 목록 밖 갈래가 큰 칸(과학 개념 변화 · 미술 도자기 공예)은 전폭에서 갈래 단이 서는 편이 낫다(10-01 실측) */
+          var lh=[].reduce.call(c.querySelectorAll('ol.steps:not(.hz), .vchain:not(.hz)'), function(a,L){ return a+L.getBoundingClientRect().height; }, 0);
+          if(lh < 0.7*bodyH(c)) return;
+          if(c._half) [blks[i+1], blks[i-1]].some(function(o){
+            if(!o || !o.classList.contains('cell') || o.classList.contains('full') || o._half || o._wide || spanOf(o)<2*n) return false;
+            if(window.PAN_HOIST===false && !o.querySelector('[data-half]')) return false;
+            if((o._bh||bodyH(o)) > bodyH(c)) return false;
+            setSpan(o, n); ch2=true; return true;
+          });
+        });
         if(ch2) fillRows();
+        /* 단계 목록이 반폭보다 넓으면(폴리아 반성 설명 줄) 같은 줄 짧은 형제와 2/3 : 1/3 — 목록이 접히지 않게 · 짧은 형제는 좁은 쪽(동하 「필요할 때만 2:1」) */
+        var tw=function(t){ return t*(W-(2*n-1)*gp)/(2*n)+(t-1)*gp; }, ch3=false;
+        if(n===3) blks.forEach(function(c,i){
+          if(!c.classList.contains('stepc') || spanOf(c)!==n) return;
+          var lh=[].reduce.call(c.querySelectorAll('ol.steps:not(.hz), .vchain:not(.hz)'), function(a,L){ return a+L.getBoundingClientRect().height; }, 0);
+          if(lh < 0.7*bodyH(c)) return;
+          var nw=natW(c); if(!(nw>tw(n)+8 && nw<=tw(2*n-2)+8)) return;
+          [blks[i+1], blks[i-1]].some(function(o){
+            if(!o || !o.classList.contains('cell') || o._half || o.classList.contains('stepc') || spanOf(o)!==n) return false;
+            if(Math.abs(o.getBoundingClientRect().top-c.getBoundingClientRect().top)>2) return false;   /* 같은 줄 짝만 */
+            if(window.PAN_HOIST===false && !o.querySelector('[data-half]')) return false;
+            if((o._bh||bodyH(o)) > 0.5*bodyH(c) || overflows(o)) return false;
+            setSpan(c, 2*n-2); setSpan(o, 2); c._wide=true; o._wide=true; ch3=true; return true;
+          });
+        });
+        if(ch3) fillRows();
       }
       /* 넓어진 칸 = 갈래를 단에 담음 */
       /* 단으로 안 나누는 칸: 짧은 칸(한 줄기로 화면 1/3 미만 — 6사08-03 미디어) · 세로 단계 사슬(↓)이 든 칸(가치 학습 계보 — 단계는 단을 넘기지 않는다) */
@@ -543,7 +582,8 @@
         return hasChain(c);
       };
       /* 전폭 칸(표·긴 산문 제외)도 갈래 단 대상 — 「안」 둘 이상 칸이 전폭 한 단으로 쌓이던 것(09-30 과목 확대) */
-      var fulls=blks.filter(function(b){ return b.classList.contains('cell') && b.classList.contains('full') && !b.classList.contains('prosecell') && !b.querySelector('table'); });
+      /* [data-cols] = 표가 든 전폭 칸도 갈래 단 대상(표 갈래는 balance 가 전폭으로 둠) — 10-01 동하 「나머지 다 정리」(사회 2 · 4사05-01 방위~높낮이가 한 기둥으로 왼쪽에 몰림) */
+      var fulls=blks.filter(function(b){ return b.classList.contains('cell') && b.classList.contains('full') && !b.classList.contains('prosecell') && (!b.querySelector('table') || b.querySelector('[data-cols]')); });
       fulls.forEach(function(c){ c._bh=bodyH(c); });
       cells.concat(fulls).forEach(function(c){
         var st=c.querySelector('.grps'); if(!st) return;
@@ -761,7 +801,8 @@
   /* 10-01 독립검수 H3(동하 승인): 구간은 창 폭이 아니라 본문(main.wrap) 폭으로 — 목차를 열어 본문이 ≈680px 로 줄었는데 창 폭(1000) 구간 3단이 남아
      두세 글자씩 접히던 것. 굽힌 배치(PAN_LAYOUT) 셋 중 고르기만 한다(측정 없음). 굽기 창 폭 1000·820·390 에선 본문 폭 = 창 폭이라 굽는 값은 그대로.
      사회는 확정 배치라 옛 기준(창 폭) 그대로 — 사회의 같은 결함은 동하 판단 */
-  var bpOf=function(){ var w, mwb=window.PAN_HOIST!==false && document.querySelector('main.wrap');
+  /* 10-01 동하 「나머지 다 정리」(사회 1): 사회도 본문 폭 기준 — 목차를 열면 사회 3단이 630px 에 남아 두세 글자씩 접히던 것. 목차 닫힌 기본 상태에선 본문 폭 = 창 폭이라 배치 무변 */
+  var bpOf=function(){ var w, mwb=document.querySelector('main.wrap');
     w = mwb ? mwb.clientWidth : (document.documentElement.clientWidth||window.innerWidth||0);
     return w>=950 ? 3 : w>=700 ? 2 : w>0 ? 1 : 0; };
   var BAKE=/[?&]bake=1/.test(location.search), LAYOUT=(!BAKE && window.PAN_LAYOUT) || null, applied=null;
@@ -1052,7 +1093,9 @@ document.querySelectorAll('.mkf svg,.mkd svg,.converge>svg,.fork svg,.fig svg').
     for(var j=L.indexOf(b)+1; j<L.length && !isBound(L[j]); j++) out.push(L[j]);
     return out; }
   function setClosedB(h,c){ h.classList.toggle('closed',c); rangeB(h).forEach(function(e){ e.classList.toggle('clpsd',c); }); }
-  if(DB) [].forEach.call(main.querySelectorAll('.sect .blk.hrow > .r-jeol'), function(h){
+  /* 10-01 동하 「나머지 다 정리」(사회 4): 사회 H3 단원 절(5단원~ · 칸 격자 안 머리줄)에도 ▾ — 다른 단원(h2 절)과 같은 접기 · 모양은 kit.css */
+  var JB=DB || window.PAN_HOIST===false;
+  if(JB) [].forEach.call(main.querySelectorAll('.sect .blk.hrow > .r-jeol'), function(h){
     h.classList.add('tg');
     h.addEventListener('click',function(ev){ if(ev.target.closest('a')) return; setClosedB(h,!h.classList.contains('closed')); });
   });
@@ -1067,7 +1110,7 @@ document.querySelectorAll('.mkf svg,.mkd svg,.converge>svg,.fork svg,.fig svg').
       if(e.tagName==='H3'||e.tagName==='H2'){
         if(e.classList.contains('closed'))setClosed(e,false);
         if(e.tagName==='H2')break;}}
-    if(DB) openB(el);
+    if(JB) openB(el);
     el.classList&&el.classList.remove('clpsd');}
   window.addEventListener('hashchange',function(){
     expandTo(decodeURIComponent(location.hash.slice(1)));});

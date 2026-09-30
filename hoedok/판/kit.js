@@ -160,11 +160,15 @@
       if((m=/\((?:구멍\s*\d\d-\d\d|(?:[^()]*[^가-힣()])?동하(?![가-힣])[^()]*)\)/.exec(s))){ wrapRange(n, m.index, m.index+m[0].length, 'memo'); return; }
       /* 「(손글씨 라벨)」 통째 · 「(운동 — 손글씨 라벨)」·「(손글씨 라벨 — 지리/일사/역사)」는 메모 말만(내용 낱말은 남김) */
       if((m=/\(손글씨 라벨\)|\s*—\s*손글씨 라벨|손글씨 라벨\s*—\s*/.exec(s))){ wrapRange(n, m.index, m.index+m[0].length, 'memo'); return; }
+      /* 「(※표 — 전부 암기 지정)」 같은 암기 지정 메모(10-01 독립검수 M7 · 음악 요소 제목 — 글자를 지우면 제목 id·카드 링크가 바뀌어 표시만 끔) */
+      if((m=/\s*\(※[^()]*(?:암기|지정)[^()]*\)/.exec(s))){ wrapRange(n, m.index, m.index+m[0].length, 'memo'); return; }
       if(inH) return;
       var i=s.indexOf('※'); if(i>0){ wrapRange(n, i, s.length, 'memo'); return; }
       m=/[^\s→,;()·]+(?:\s[^\s→,;()·]+)?\s*→\s*[^\s→,;()·]+(?:\s*→\s*[^\s→,;()·]+){1,2}/.exec(s);
       if(m && (m[0].match(/→/g)||[]).length<=3) wrapRange(n, m.index, m.index+m[0].length, 'nw');
     });
+    /* 목차 링크 글자에서도 같은 암기 지정 메모를 뗀다(표시만 · href 무변 · M7) */
+    document.querySelectorAll('nav a, .list-view a, .tochead a').forEach(function(a){ var s=a.textContent, r=s.replace(/\s*\(※[^()]*(?:암기|지정)[^()]*\)/, ''); if(r!==s && a.children.length===0) a.textContent=r; });
     main.querySelectorAll('table').forEach(function(t){ var f=t.querySelector('tr > *'); if(f && !f.textContent.trim()) t.classList.add('rh'); });   /* 첫 칸 빈 표 = 행 머리 표 */
     /* 짧은 괄호 덧말(12자 이하)은 쪼개지 않는다 — 「STAD (집·성·분 / ·오)」 줄 끝 쪼개짐(09-30) */
     main.querySelectorAll('.quiet').forEach(function(q){ var s=q.textContent.trim(); if(s.length<=12 && /^\(.*\)$/.test(s)) q.classList.add('nw'); });

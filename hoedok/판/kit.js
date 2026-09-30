@@ -395,6 +395,9 @@
       });
       document.querySelectorAll('main.wrap .blk table').forEach(function(t){
         var rows=[].filter.call(t.rows, function(r){ return r.cells.length>=2; }); if(!rows.length) return;
+        /* 10-01 동하 「단모음표·자음체계표 좌우로 너무 늘어남」: 몸 칸이 전부 1~2자인 격자 표(.cgrid) = 전폭 대신 내용 폭 */
+        var body=[].filter.call(t.querySelectorAll('td'), function(c){ return !c.classList.contains('h'); });
+        if(body.length>=4 && body.every(function(c){ return c.textContent.trim().length<=2; })){ t.classList.add('cgrid'); return; }
         /* 병합 칸(rowspan·colspan)이 있는 표는 균등 그대로 — 긴 병합 칸이 폭을 다 먹어 숫자 열이 눌리던 것(총창 시간 배당 표 · 10-01 실측) */
         if([].some.call(t.querySelectorAll('td,th'), function(c){ return c.rowSpan>1 || c.colSpan>1; })) return;
         t.classList.add('tauto');

@@ -556,6 +556,11 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 /* 10-01 독립검수 M5(사회 제외 = dae-big): 열 폭 = 내용 길이 비례 · 짧은 첫 열(.nw1 — kit.js)은 한 줄 */
 :root.v2.dae-big .blk table.tauto{table-layout:auto;}
 :root.v2.dae-big .blk table .nw1{white-space:nowrap;}
+/* 10-01 격자 표(.cgrid — kit.js: 몸 칸 전부 1~2자 · 단모음·자음 체계) = 내용 폭 · 몸 칸 가운데 */
+:root.v2 .blk table.cgrid{width:auto;table-layout:auto;align-self:flex-start;flex:none;}
+:root.v2 .blk table.cgrid td:not(.h){text-align:center;min-width:3.2em;padding-right:0;}
+:root.v2 .blk table.cgrid th{text-align:center;padding:6px .8em;}
+:root.v2 .blk table.cgrid td.h{padding-right:1em;white-space:nowrap;}
 /* 10-01 독립검수 L2 · L6 · L9 · L4(사회 제외 = dae-big)
    L2 줄머리 「:」 표시만 끔(kit.js .lhc) · L6 나란한 두 갈래(.lanes — 영어 Acquisition | Learning) 세로 구분선 끔(「줄로 가르지 마라」) ·
    L9 세로 단계 목록 왼쪽 괘선 끔 — 회색 인용 막대(.sub)와 한 모양을 나눠 쓰던 것 · 단계는 굵은 이름 열 + 설명 열로 읽힌다 ·

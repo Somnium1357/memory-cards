@@ -1500,6 +1500,10 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 .sc-err{font-size:13px;line-height:18px;color:var(--c-sec);margin:-10px 20px 0;}
 .sc-msg{font-size:13px;line-height:18px;color:var(--c-sec);margin-top:6px;}
 .sc-msg:empty{display:none;}
+.sc-more>summary{font-size:15px;color:var(--c-acc);cursor:pointer;min-height:36px;display:flex;align-items:center;list-style:none;}
+.sc-more>summary::-webkit-details-marker{display:none;}
+#scBox .set-row>span:first-child{white-space:nowrap;flex:0 0 auto;}
+#scBox .set-row .desc{text-align:right;min-width:0;}
 .sc-goal{display:flex;align-items:center;gap:8px;min-height:44px;font-size:17px;}
 .sc-goal input{width:72px;}
 .sc-goal>span:first-child{white-space:nowrap;}
@@ -9546,19 +9550,41 @@ async function scSync(o){ o=o||{};
       return o.keepalive ? null : scFetchToday(tok, SC.group.id, t.day); });
     if(mem){ SC.members=mem; SC.membersAt=Date.now(); }
     delete SC.err; scSave();
-  }catch(e){ SC.err = e.status===401 ? '연결이 끊겼어요 — 설정 › 스터디에서 다시 참여해 주세요' : (e.message||String(e)); if(e.status===401){ delete SC.auth; } scSave(); }
+  }catch(e){ SC.err = e.status===401 ? (SC.kind==='email' ? '로그인이 풀렸어요 — 설정 › 스터디에서 다시 로그인해 주세요' : '연결이 끊겼어요 — 설정 › 스터디에서 다시 참여해 주세요') : (e.message||String(e)); if(e.status===401){ delete SC.auth; } scSave(); }
   finally{ scBusy=false; if(!o.keepalive) scRender(); } }
+async function scGroups(tok){   // 애드온 list_groups — 내가 든 방들(가입 순)
+  const r=await scReq('GET','/rest/v1/group_members',{token:tok, query:{select:'group_id,joined_at,study_groups(id,name,invite_code,owner_id,created_at)', user_id:'eq.'+SC.auth.user_id, order:'joined_at.asc'}})||[];
+  return r.map(x=>Object.assign({}, x.study_groups||{}, {id:(x.study_groups&&x.study_groups.id)||x.group_id})); }
 async function scJoin(code){
   code=String(code||'').replace(/\s+/g,'').toUpperCase();
   if(!/^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4}$/.test(code)) throw new Error('초대 코드는 영문 대문자·숫자 4자리예요');
-  if(!SC.auth) scStore(await scReq('POST','/auth/v1/signup',{body:{data:{}}}));   // 애드온 sign_in_anonymously
-  const [gid, rows]=await scAuthed(async tok=>{
+  if(!SC.auth){ scStore(await scReq('POST','/auth/v1/signup',{body:{data:{}}})); SC.kind='guest'; scSave(); }   // 애드온 sign_in_anonymously
+  const [gid, list]=await scAuthed(async tok=>{
     const g=await scReq('POST','/rest/v1/rpc/join_study_group',{token:tok, body:{code}});
-    const r=await scReq('GET','/rest/v1/group_members',{token:tok, query:{select:'group_id,joined_at,study_groups(id,name,invite_code,owner_id,created_at)', user_id:'eq.'+SC.auth.user_id, order:'joined_at.asc'}})||[];
-    return [Array.isArray(g)?g[0]:g, r]; });
-  const list=rows.map(r=>Object.assign({}, r.study_groups||{}, {id:(r.study_groups&&r.study_groups.id)||r.group_id}));
+    return [Array.isArray(g)?g[0]:g, await scGroups(tok)]; });
   SC.group=list.find(x=>x.id===gid) || list.find(x=>String(x.invite_code||'').toUpperCase()===code) || {id:gid, name:'스터디', invite_code:code};
   delete SC.err; scSave(); await scSync(); }
+/* 🔴 기기 여럿 = 한 사람(10-01 동하 「아무 기기에서나 다 되게」) — 애드온의 「이메일 연결」 그대로:
+   ① 참여한 기기(익명)에서 이메일을 넣으면 확인 메일이 간다(update_user email) ② 메일의 링크를 연 뒤 비밀번호를 정한다(익명이 풀렸는지 get_user로 확인 → update_user password)
+   ③ 다른 기기에선 「이메일로 로그인」(sign_in) → 이미 든 방을 불러온다. 기기마다 제 로그인 세션이라 토큰이 서로 안 부딪힌다. 비밀번호는 동하가 직접 넣는다(앱은 저장 안 함). */
+async function scLinkEmail(addr){ addr=String(addr||'').trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(addr)) throw new Error('이메일을 확인해 주세요');
+  await scAuthed(tok=>scReq('PUT','/auth/v1/user',{token:tok, body:{email:addr}}));
+  SC.pendingEmail=addr; scSave(); }
+async function scFinishLink(pw){ pw=String(pw||'');
+  if(pw.length<6) throw new Error('비밀번호는 6자 이상이에요');
+  await scAuthed(async tok=>{ const u=await scReq('GET','/auth/v1/user',{token:tok});
+    if(u && u.is_anonymous!==false && !u.email) throw new Error('먼저 메일의 확인 링크를 열어 주세요');
+    await scReq('PUT','/auth/v1/user',{token:tok, body:{password:pw}}); });
+  SC.kind='email'; SC.email=SC.pendingEmail||SC.email; delete SC.pendingEmail; scSave(); }
+async function scSignIn(addr, pw){ addr=String(addr||'').trim();
+  if(!addr || !pw) throw new Error('이메일과 비밀번호를 넣어 주세요');
+  const r=await scReq('POST','/auth/v1/token',{query:{grant_type:'password'}, body:{email:addr, password:pw}});
+  if(!(r && r.user && r.user.id)) throw new Error('로그인 응답에 사용자가 없어요');
+  SC={goalMin:SC.goalMin, goalCards:SC.goalCards}; scStore(r); SC.kind='email'; SC.email=addr;
+  const list=await scAuthed(tok=>scGroups(tok));
+  if(!list.length){ scSave(); throw new Error('이 계정은 아직 든 방이 없어요 — 초대 코드로 참여해 주세요'); }
+  SC.group=list[0]; scSave(); await scSync(); }
 const scFmt=s=>{ const m=Math.floor((s||0)/60); if(m<60) return m+'분'; const h=Math.floor(m/60), r=m%60; return r?`${h}시간 ${r}분`:`${h}시간`; };
 const SC_ST={studying:'공부 중', paused:'잠시 멈춤', online:'접속 중', offline:'오프라인'};
 function scRender(){ scRenderHome(); scRenderSet(); }
@@ -9576,24 +9602,43 @@ function scRenderHome(){ const box=$('studyBox'); if(!box) return;
       <span class="s2-b"><span class="s2-n">${m.mine?'나':esc(m.display_name||'친구')}</span><span class="s2-s">${SC_ST[st]} · ${scFmt(sec)}${tg?` / ${tg}분`:''}</span></span>
       <span class="s2-r"><span class="s2-cnt"><b>${n.toLocaleString()}</b><small>${cg?` / ${cg.toLocaleString()}`:''}장</small></span></span></div>`; }).join('');
   box.innerHTML=`<div class="h-sec2"><h2>스터디</h2><span class="sc-g">${esc(SC.group.name||'')}</span></div><div class="sc-list">${html}</div>${SC.err?`<div class="sc-err">${esc(SC.err)}</div>`:''}`; }
+function scBtn(id, f){ const btn=$(id); if(!btn) return; btn.onclick=async()=>{ const msg=$('scMsg'); btn.disabled=true; if(msg) msg.textContent='잠깐만요…';
+  try{ const ok=await f(); $('scBox').dataset.m=''; scRender(); if(ok) toast(ok); }catch(e){ const m2=$('scMsg'); if(m2) m2.textContent=e.message||String(e); btn.disabled=false; } }; }
+const scRow=(inner,top)=>`<div style="display:flex;gap:8px;align-items:center;margin-top:${top==null?8:top}px">${inner}</div>`;
+const scIn=(id,type,ph)=>`<input id="${id}" type="${type}" ${type==='password'?'autocomplete="current-password"':'autocomplete="off" autocapitalize="none" spellcheck="false"'} placeholder="${ph}" style="flex:1 1 150px;min-width:0">`;
 function scRenderSet(){ const b=$('scBox'); if(!b) return;
   if(!SC.group){
     if(b.dataset.m==='join') return; b.dataset.m='join';   // 입력 중에 다시 그려 글자가 날아가지 않게
-    b.innerHTML=`<div style="display:flex;gap:8px;align-items:center"><input id="scCode" type="text" maxlength="8" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="친구에게 받은 초대 코드" style="flex:1 1 150px;min-width:0"><button class="btn-ghost" id="scJoin" style="flex:0 0 auto">참여</button></div><div class="sc-msg" id="scMsg">${SC.err?esc(SC.err):''}</div>`;
-    const go=async()=>{ const btn=$('scJoin'), msg=$('scMsg'); btn.disabled=true; msg.textContent='참여하는 중…';
-      try{ await scJoin($('scCode').value); b.dataset.m=''; scRender(); toast('스터디 방에 들어갔어요'); }
-      catch(e){ msg.textContent=e.message||String(e); btn.disabled=false; } };
-    $('scJoin').onclick=go; $('scCode').onkeydown=e=>{ if(e.key==='Enter') go(); };
+    b.innerHTML=scRow(`<input id="scCode" type="text" maxlength="8" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="친구에게 받은 초대 코드" style="flex:1 1 150px;min-width:0"><button class="btn-ghost" id="scJoin" style="flex:0 0 auto">참여</button>`, 0)
+      + `<details class="sc-more" style="margin-top:10px"><summary>다른 기기에서 이메일을 연결했다면 — 이메일로 로그인</summary>`
+      + scRow(scIn('scLEmail','email','이메일')) + scRow(scIn('scLPw','password','비밀번호')+`<button class="btn-ghost" id="scLogin" style="flex:0 0 auto">로그인</button>`) + `</details>`
+      + `<div class="sc-msg" id="scMsg">${SC.err?esc(SC.err):''}</div>`;
+    scBtn('scJoin', async()=>{ await scJoin($('scCode').value); return '스터디 방에 들어갔어요'; });
+    $('scCode').onkeydown=e=>{ if(e.key==='Enter') $('scJoin').click(); };
+    scBtn('scLogin', async()=>{ await scSignIn($('scLEmail').value, $('scLPw').value); return '로그인했어요 — 이 기기도 같은 사람으로 떠요'; });
     return; }
-  const key='in|'+SC.group.id+'|'+(SC.nick||'')+'|'+(SC.err||''); if(b.dataset.m===key) return; b.dataset.m=key;
+  const key='in|'+SC.group.id+'|'+(SC.nick||'')+'|'+(SC.err||'')+'|'+(SC.kind||'')+'|'+(SC.pendingEmail||''); if(b.dataset.m===key) return; b.dataset.m=key;
+  let acct;
+  if(SC.kind==='email') acct=`<div class="set-row"><span>계정</span><span class="desc">${esc(SC.email||'이메일')} — 다른 기기에선 이 이메일로 로그인</span></div>`;
+  else if(SC.pendingEmail) acct=`<div class="set-row"><span>이메일 연결</span><span class="desc">${esc(SC.pendingEmail)}로 확인 메일을 보냈어요</span></div>`
+      + `<div class="sc-msg" style="margin-top:0">메일의 링크를 연 뒤 비밀번호를 정해 주세요</div>`
+      + scRow(scIn('scNPw','password','새 비밀번호 (6자 이상)')+`<button class="btn-ghost" id="scFinish" style="flex:0 0 auto">연결 끝내기</button>`);
+  else acct=`<details class="sc-more" style="margin-top:4px"><summary>다른 기기에서도 같은 사람으로 — 이메일 연결</summary>`
+      + scRow(scIn('scEmail','email','이메일')+`<button class="btn-ghost" id="scSend" style="flex:0 0 auto">확인 메일 보내기</button>`) + `</details>`;
   b.innerHTML=`<div class="set-row"><span>${esc(SC.group.name||'스터디')}</span><span class="desc">코드 ${esc(SC.group.invite_code||'—')}${SC.nick?` · 내 이름 ${esc(SC.nick)}`:''}</span></div>
     <div class="sc-goal"><span style="flex:1">하루 목표</span><input id="scGoalMin" type="number" inputmode="numeric" min="0" placeholder="0" value="${SC.goalMin||''}"><span class="u">분</span><input id="scGoalCards" type="number" inputmode="numeric" min="0" placeholder="0" value="${SC.goalCards||''}"><span class="u">장</span></div>
-    <div class="sc-msg">${SC.err?esc(SC.err):''}</div>
-    <button class="btn-ghost" id="scLeave" style="margin-top:8px">이 기기에서 연결 끊기</button>`;
+    ${acct}
+    <div class="sc-msg" id="scMsg">${SC.err?esc(SC.err):''}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${SC.pendingEmail&&SC.kind!=='email'?'<button class="btn-ghost" id="scReEmail">다른 이메일로</button>':''}<button class="btn-ghost" id="scLeave">이 기기에서 연결 끊기</button></div>`;
   const gset=()=>{ SC.goalMin=Math.max(0,parseInt($('scGoalMin').value,10)||0); SC.goalCards=Math.max(0,parseInt($('scGoalCards').value,10)||0); scSave(); scRenderHome(); scSync(); };
   $('scGoalMin').onchange=gset; $('scGoalCards').onchange=gset;
+  scBtn('scSend', async()=>{ await scLinkEmail($('scEmail').value); return '확인 메일을 보냈어요'; });
+  scBtn('scFinish', async()=>{ await scFinishLink($('scNPw').value); return '이메일을 연결했어요 — 다른 기기에서 로그인하면 돼요'; });
+  const re=$('scReEmail'); if(re) re.onclick=()=>{ delete SC.pendingEmail; scSave(); b.dataset.m=''; scRenderSet(); };
   $('scLeave').onclick=()=>{ if(!confirm('이 기기에서 스터디 방 연결을 끊을까요? 방의 기록은 그대로 남아요.')) return;
-    delete SC.group; delete SC.members; delete SC.err; scSave(); b.dataset.m=''; scRender(); }; }
+    if(SC.kind==='email'){ SC={goalMin:SC.goalMin, goalCards:SC.goalCards}; }   // 이메일 계정은 로그아웃까지(다시 로그인하면 방이 돌아온다)
+    else { delete SC.group; delete SC.members; delete SC.err; }
+    scSave(); b.dataset.m=''; scRender(); }; }
 /* 30초마다 올리고 받기(애드온과 같은 주기) · 앱을 내리면 「접속 중」으로 한 번 · 풀이 화면에서 손대면 「공부 중」 */
 setInterval(()=>{ if(SC.group && document.visibilityState==='visible') scSync(); else if(SC.group) scRenderHome(); }, 30000);
 ['pointerdown','keydown'].forEach(ev=>document.addEventListener(ev, ()=>{ scInputAt=Date.now(); }, true));

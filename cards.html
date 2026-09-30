@@ -1935,6 +1935,23 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
 .fc-svg .fc-old{fill:none;stroke:var(--c-ter);stroke-width:1.2;stroke-linejoin:round;opacity:.55;}
 .fc-svg .fc-dot.ok{opacity:.8;}
 .fc-svg .fc-dot{stroke:var(--c-fill);stroke-width:2;}
+/* 내 기억 패턴 — 계산·적용·표준값(10-01) */
+#fwBox{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:0;max-width:100%;}
+#fwField{min-width:0;}
+.fw-cand{background:var(--c-fill);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0;max-width:100%;overflow:hidden;box-sizing:border-box;}
+.fw-cand #fwApply{align-self:flex-start;}
+.fw-ct{font-size:15px;font-weight:600;color:var(--c-label);}
+.fw-cs{font-size:13px;line-height:18px;color:var(--c-sec);}
+.fw-fc{overflow-x:auto;min-width:0;max-width:100%;}
+.fw-fc table{border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums;width:100%;}
+.fw-fc th{font-weight:400;color:var(--c-ter);padding:2px 4px;text-align:right;}
+.fw-fc td{padding:3px 4px;text-align:right;color:var(--c-sec);}
+.fw-fc td:first-child,.fw-fc th:first-child{text-align:left;white-space:nowrap;}
+.fw-fc td.nw{color:var(--c-label);font-weight:600;}
+.fw-fc table{max-width:320px;}
+.fw-fc tr.sum td{border-top:.5px solid var(--c-sep);padding-top:5px;}
+.fw-msg{font-size:13px;line-height:18px;color:var(--c-sec);margin:6px 0;}
+.fw-btns{display:flex;gap:8px;flex-wrap:wrap;}
 </style>
 </head>
 <body>
@@ -10295,25 +10312,87 @@ $('focusPick').onclick=()=>{ const f=focusSel(); $('ovlSettings').classList.remo
 
 /* 개인 맞춤 파라미터 — 루틴이 내놓은 값이 **새것일 때만** 「적용」이 뜬다.
    🔴 자동 적용 금지: 누르는 순간 전 카드 due가 한 번에 옮겨진다. 되돌릴 길도 같이 준다. */
+/* ═══ 내 기억 패턴(FSRS 개인 파라미터) — 계산 · 적용 · 표준값으로 (10-01 동하 「FSRS 설정 쪽에 기능 3개 · 적용은 항상 있을 필요 없다」) ═══
+   계산 = 앱 안에서(브라우저 FSRS 모듈 vendor/fsrs-browser · fsrs-rs WASM · 단일 스레드 — Pages는 멀티스레드용 보안 헤더를 못 붙인다).
+   규칙 = fsrs_opt.py와 같다: 하루 경계 KST 04시 · 카드별 그날 첫 채점만 · 재출 제외 · 사라진 카드 로그도 포함 · 당일 재학습 단계 없음.
+   🔴 관문(메타 09-30): 최근 7일을 떼고 맞춘 값이 그 7일을 지금 값보다 잘 맞힐 때만 후보(학습 데이터 안 비교는 맞춤값이 늘 이긴다) → 후보는 전 기록으로 다시 맞춘다.
+   후보 = 이 기기에만(localStorage) · 적용 전에 7일 예보(지금 값 / 새 값) 두 줄을 보인다 · 「적용」은 후보가 있을 때만 뜬다 · 적용 = 기존 applyFw(동기화 fw/fwAt). */
+const K_FW_CAND='cards_fw_cand_v1';
+let _fsrsMod=null, _fwBusy=false, _fwMsg='';
+async function fsrsMod(){ if(!_fsrsMod){ const m=await import('./vendor/fsrs-browser/fsrs_browser.js'); await m.default(); _fsrsMod=m; } return _fsrsMod; }
+function fwCand(){ try{ const c=JSON.parse(lsGet(K_FW_CAND)||'null'); return c&&Array.isArray(c.w)&&c.w.length===21?c:null; }catch(e){ return null; } }
+function fwItems(){           // → {items:[{r:[..], d:[..], last}], n(첫 채점 수), maxDay}
+  const by=new Map();
+  for(const e of state.log){ if(e[3]&&e[3].re) continue; const g=e[2]; if(!(g>=1&&g<=4)) continue;
+    const day=Math.floor((logTs(e)/1000+5*3600)/86400);          // KST(+9) − 04시 = +5시간
+    let s=by.get(e[0]); if(!s){ s=[]; by.set(e[0], s); } if(s.length && s[s.length-1][0]===day) continue; s.push([day,g]); }
+  const items=[]; let n=0, maxDay=0;
+  for(const s of by.values()){ n+=s.length; for(let k=2;k<=s.length;k++){ const r=[], d=[];
+      for(let i=0;i<k;i++){ r.push(s[i][1]); d.push(i?s[i][0]-s[i-1][0]:0); }
+      items.push({r, d, last:s[k-1][0]}); if(s[k-1][0]>maxDay) maxDay=s[k-1][0]; } }
+  return {items, n, maxDay};
+}
+function fwFit(M, items){
+  const R=[], D=[], L=[]; for(const it of items){ R.push(...it.r); D.push(...it.d); L.push(it.r.length); }
+  const f=new M.Fsrs(); const w=f.computeParameters(new Uint32Array(R), new Uint32Array(D), new Uint32Array(L), null, false);
+  f.free(); return Array.from(w, x=>Math.round(x*1e6)/1e6);
+}
+function fwLogLoss(M, w, items){   // 각 항목의 마지막 복습을 그 앞 기록으로 예측 — fsrs-rs evaluate와 같은 뜻
+  const f=new M.Fsrs(new Float32Array(w)), decay=w[20], F=Math.pow(0.9, -1/decay)-1; let ll=0, k=0;
+  for(const it of items){ const m=it.r.length-1; const st=f.memoryState(new Uint32Array(it.r.slice(0,m)), new Uint32Array(it.d.slice(0,m)));
+    const S=st[0], t=it.d[m]; let p=Math.pow(1+F*t/S, -decay); p=Math.min(1-1e-6, Math.max(1e-6, p)); const y=it.r[m]>1?1:0;
+    ll-= y*Math.log(p)+(1-y)*Math.log(1-p); k++; }
+  f.free(); return k?ll/k:null;
+}
+function fwForecast(w){           // 그 w로 전 로그를 다시 돌린 8일 예보(오늘 포함) — 끝나면 지금 값으로 되돌린다(상태 무변)
+  const keep=fsrsCfg.w; let out=null;
+  try{ fsrsCfg.w=w; buildEngine(); replayLog(); restReset(); _dueParts=null; out=forecastCarry(8).cols.map(c=>({k:c.k, n:c.fresh})); }
+  finally{ fsrsCfg.w=keep; buildEngine(); replayLog(); restReset(); _dueParts=null; }
+  return out;
+}
+async function fwCompute(){
+  if(_fwBusy) return; _fwBusy=true; _fwMsg='계산 중… (기록이 많으면 몇십 초 걸려요)'; renderFwUI();
+  await new Promise(r=>setTimeout(r,50));
+  try{
+    const M=await fsrsMod(), {items, n, maxDay}=fwItems(), cut=maxDay-6;
+    const tr=items.filter(x=>x.last<cut), ho=items.filter(x=>x.last>=cut);
+    if(tr.length<500||ho.length<100){ _fwMsg='기록이 아직 적어서 비교할 수 없어요'; return; }
+    const cur=(fsrsCfg.w&&fsrsCfg.w.length===21)?fsrsCfg.w:Array.from(M.DEFAULT_PARAMETERS());
+    const wTr=fwFit(M, tr), llOld=fwLogLoss(M, cur, ho), llNew=fwLogLoss(M, wTr, ho);
+    if(!(llNew<llOld)){ lsDel(K_FW_CAND); _fwMsg=`지금 값이 더 잘 맞아요 — 최근 7일 예측 오차 ${llOld.toFixed(4)} ≤ 새 값 ${llNew.toFixed(4)} · 바꿀 것 없음`; return; }
+    const w=fwFit(M, items);
+    const cand={w, at:new Date().toISOString(), n, items:items.length, llOld, llNew, base:fsrsCfg.wAt||'', fcOld:fwForecast(cur), fcNew:fwForecast(w)};
+    lsSet(K_FW_CAND, JSON.stringify(cand)); _fwMsg='';
+  }catch(e){ console.warn('[FSRS 계산]', e); _fwMsg='계산하지 못했어요 — '+(e&&e.message||e); }
+  finally{ _fwBusy=false; renderFwUI(); }
+}
 function renderFwUI(){
-  const box=$('fwBox'), fld=$('fwField');
-  const applied=!!(fsrsCfg.w&&fsrsCfg.wAt);
-  const fresh=FSRSP && FSRSP.at !== (fsrsCfg.wAt||'');
-  if(!FSRSP && !applied){ fld.style.display='none'; return; }   // 아직 만들어진 적 없다 = 숨긴다
+  const box=$('fwBox'), fld=$('fwField'); if(!box||!fld) return;
   fld.style.display='';
-  const when=s=>String(s||'').slice(0,10);
-  let h='';
-  if(fresh){
-    h+=`<div class="set-row"><span>새 맞춤값 · ${when(FSRSP.at)}</span><button class="btn-ghost" id="fwApply">적용</button></div>`;
-  }else if(applied){
-    h+=`<div class="set-row"><span>맞춤값 · ${when(fsrsCfg.wAt)}</span></div>`;
-  }else{
-    h+=`<div class="set-row"><span>표준값</span></div>`;
-  }
-  if(applied) h+=`<button class="btn-ghost" id="fwReset">표준값으로</button>`;   // 간격은 #fwBox의 gap이 준다
+  const applied=!!(fsrsCfg.w&&fsrsCfg.wAt);
+  const md=s=>{ const d=new Date(s); return isNaN(d)?String(s||'').slice(5,10):(d.getMonth()+1)+'/'+d.getDate(); };
+  let cand=fwCand(); if(cand && cand.at===(fsrsCfg.wAt||'')) cand=null;                 // 이미 적용한 후보
+  const fileCand=(!cand && FSRSP && FSRSP.at!==(fsrsCfg.wAt||'')) ? FSRSP : null;       // 루틴·QC가 만든 cards-fsrs.json(이 기기 계산 후보가 없을 때만)
+  let h=`<div class="set-row"><span>지금 ${applied?`맞춤값 · ${md(fsrsCfg.wAt)} 적용`:'표준값'}</span></div>`;
+  if(cand){ const pct=Math.round((1-cand.llNew/cand.llOld)*1000)/10;
+    h+=`<div class="fw-cand"><div class="fw-ct">새 맞춤값</div>
+      <div class="fw-cs">${md(cand.at)} 계산 · 채점 ${cand.n.toLocaleString()}건 · 최근 7일 예측 오차 ${cand.llOld.toFixed(4)} → ${cand.llNew.toFixed(4)} (${pct}% 나음)</div>
+      ${fwFcTable(cand)}<button class="btn-ghost" id="fwApply">적용</button></div>`; }
+  else if(fileCand) h+=`<div class="set-row"><span>새 맞춤값(파일) · ${md(fileCand.at)}</span><button class="btn-ghost" id="fwApplyFile">적용</button></div>`;
+  if(_fwMsg) h+=`<div class="fw-msg">${esc(_fwMsg)}</div>`;
+  h+=`<div class="fw-btns"><button class="btn-ghost" id="fwCalc"${_fwBusy?' disabled':''}>${_fwBusy?'계산 중…':'계산'}</button>${applied?'<button class="btn-ghost" id="fwReset">표준값으로</button>':''}</div>`;
   box.innerHTML=h;
-  const ap=$('fwApply'); if(ap) ap.onclick=()=>applyFw(FSRSP.w, FSRSP.at);
-  const rs=$('fwReset'); if(rs) rs.onclick=()=>applyFw(null, new Date().toISOString());
+  const ap=$('fwApply'); if(ap) ap.onclick=()=>{ const c=fwCand(); if(!c) return; applyFw(c.w, c.at); lsDel(K_FW_CAND); renderFwUI(); };
+  const af=$('fwApplyFile'); if(af) af.onclick=()=>applyFw(FSRSP.w, FSRSP.at);
+  const cb=$('fwCalc'); if(cb) cb.onclick=fwCompute;
+  const rs=$('fwReset'); if(rs) rs.onclick=()=>{ lsDel(K_FW_CAND); _fwMsg=''; applyFw(null, new Date().toISOString()); };
+}
+function fwFcTable(c){           // 적용 전 7일 예보 — 날짜가 줄 · 지금/새 값이 칸(폰에서 글자가 세로로 서지 않게 · 10-01 동하)
+  if(!c.fcOld||!c.fcNew) return '';
+  const dd=k=>k.slice(5).replace('-','/'), sum=a=>a.reduce((s,x)=>s+x.n,0);
+  return `<div class="fw-fc"><table><tr><th></th><th>지금</th><th>새 값</th></tr>`
+    + c.fcOld.map((x,i)=>`<tr><td>${i?dd(x.k):'오늘'}</td><td>${x.n.toLocaleString()}</td><td class="nw">${c.fcNew[i].n.toLocaleString()}</td></tr>`).join('')
+    + `<tr class="sum"><td>8일 합</td><td>${sum(c.fcOld).toLocaleString()}</td><td class="nw">${sum(c.fcNew).toLocaleString()}</td></tr></table></div>`;
 }
 function applyFw(w, at){
   const before=dueTodayCount();

@@ -794,6 +794,8 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .desc{color:var(--v2ink2);}
 :root.v2 .quiet{color:var(--v2muted);}
 :root.v2 .key{font-weight:600;color:var(--v2ink);text-decoration-color:var(--v2key);text-decoration-thickness:2px;text-decoration-skip-ink:none;}
+/* 산문 블록(교육과정 조문·해설 등)의 카드 빈칸은 굵게 빼고 흰색 + 밑줄만 — 문단마다 3~6개씩 번쩍이던 것(10-01 독립검수 이견 3 · 동하 「볼드 빼는 게 낫다」 · 사회 제외) */
+:root.v2.dae-big .prose .key,:root.v2.dae-big p.std .key,:root.v2.dae-big p.sub .key{font-weight:400;}
 :root.v2 .mk{color:var(--v2faint);}
 :root.v2 .sub{color:var(--v2muted);font-size:.93em;padding-left:1em;}
 :root.v2 .sub::before{content:'';left:.2em;top:.25em;bottom:.25em;border-left:1px solid var(--v2rule);}

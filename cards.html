@@ -9220,7 +9220,8 @@ function dueTodayParts(cached){   // cached = 라이브러리 줄마다 부르�
   for(const sx of sessions){ if(!sx) continue;
     const list=(curSess&&curSess.id===sx.id) ? queue.slice(qPos).filter(c=>!c._re&&!settledToday(c)&&!buried(c)&&!retired(c)&&!offed(c)) : gateIn(sessCards(sx), null);   // = sessRemain과 같은 술어
     for(const c of list) pass.add(c.id); }
-  const today=[...dropSettled(inQ).filter(c=>pass.has(c.id)), ...gateIn(restDue, inQ)];
+  /* 🔴 **휴식일엔 큐 밖 due를 「오늘」에 안 센다**(동하 10-01 「이거 또 안 맞아」 — 휴식일 아침 타일 87 · 세션 줄 합 12). 휴식일엔 refillSess가 자동 세션을 안 채워서 세션 줄은 「오늘 끝」인데 restDue(자동 범위 · 큐 밖)는 그대로 세었다. 사람이 「이어서 채우기」로 담으면 큐에 들어 pass로 세어진다 · 안 담은 몫은 later(내일 막대)로. */
+  const today=[...dropSettled(inQ).filter(c=>pass.has(c.id)), ...(isRestDay(tk) ? [] : gateIn(restDue, inQ))];
   /* all = 홈 「오늘」 타일 — 세션에 남은 전부(복습+신규 · 동하 09-26 「카드 남은 거랑 왼쪽 탭이 안 맞아」 → 1번) = 세션 줄 합(겹침 한 번) + 아직 큐 밖인 오늘 복습.
      today(복습만)는 통계 예보·라이브러리 「복습 예정」이 그대로 쓴다. */
   const all=new Set([...pass, ...today.map(c=>c.id)]).size;

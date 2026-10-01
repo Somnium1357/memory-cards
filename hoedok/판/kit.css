@@ -873,3 +873,16 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .prose{max-width:44em;color:var(--v2ink2);}
 :root.v2 .prose>p{line-height:1.7;}
 
+
+/* 10-02 동하 「배포본 국어 표 때문에 페이지 전체에 가로 스크롤(폰)」 — 폰 폭: 격자 표 칸 여백 줄임 · 머리 칸 줄바꿈 허용 · 그래도 넓은 표는 표 안에서만 가로로 밀림(페이지는 안 밀림) */
+@media (max-width: 600px){
+  :root.v2 th{white-space:normal;}
+  :root.v2 th,:root.v2 td{padding:5px 8px 5px 0;}
+  :root.v2 .blk table.cgrid td:not(.h){min-width:2.1em;}
+  :root.v2 .blk table.cgrid th{padding:5px .35em;}
+  :root.v2 .blk table.cgrid td.h{padding-right:.5em;}
+  :root.v2 table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  :root.v2 .blk table.tauto,:root.v2 .blk table{width:auto;}
+  :root.v2 .nw{white-space:normal;}
+  :root.v2 .line{flex-wrap:wrap;max-width:100%;}
+}

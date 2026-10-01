@@ -1846,6 +1846,9 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
 #ovlSettings.page .sheet{max-width:none;width:100%;max-height:none;height:100%;border-radius:0;box-shadow:none;background:var(--c-bg);padding:calc(var(--set-top,0px) + 16px) var(--sp-m) 32px;overflow-y:auto;}   /* 제목 윗선 = 사이드바 「카드」 제목 윗선 */
 #ovlSettings.page .sheet>h2{font-size:34px;font-weight:700;letter-spacing:-.025em;line-height:41px;margin:0 0 16px 0;}   /* 왼끝 = 홈 제목(09-25 · 4px 어긋남 정리) */
 #ovlSettings.page .sheet-x,#ovlSettings.page .sheet>.btn-row{display:none;}
+/* 폰(떠 있는 시트) — 제목 줄을 붙박이 머리로: ✕를 제목과 같은 줄 가운데에 두고, 스크롤하면 내용은 머리 밑으로 지나간다(10-01 동하 「폰 설정창 X 위치 이상해」 — 맨 위에선 모서리에 끼고 · 내리면 카드 위에 떠서 가렸다) */
+#ovlSettings:not(.page) .sheet>h2{position:sticky;top:-22px;z-index:1;margin:-22px -22px 0;padding:22px 22px 12px;line-height:28px;background:var(--c-bg);}
+#ovlSettings:not(.page) .sheet-x{position:sticky;top:-8px;margin:-8px -8px 0 0;width:44px;height:44px;background:var(--c-fill);box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;color:var(--c-sec);}
 #hSide.set-on .hs-row.on:not(#btnSettings){background:none;color:var(--c-label);font-weight:400;}   /* 설정을 연 동안 강조는 「설정」 줄 하나 */
 #hSide.set-on .hs-tile.on{background:var(--c-tile);color:var(--c-label);} #hSide.set-on .hs-tile.on .ht-ic{background:var(--tc);} #hSide.set-on .hs-tile.on .ht-l{color:var(--c-sec);}
 

@@ -170,69 +170,79 @@ p.note,p.sub{max-width:46em;}
 <div class="part" id="과학_학습_모형">과학 학습 모형</div>
 <h2 id="학습모형">학습모형</h2>
 
+<!-- 10-03 맞춤(동하 「배포본 과학 학습모형 쪽 정리 좀 해야겠다」): 모형 일곱 개(경험·발견·탐구·순환·5E·POE·개념 변화·STS)를 한 뼈대로
+     ① 모형 머리 → ② 성격·목적 = 회색 세로줄 덩이(.sub) 하나(두 줄이면 <br>) → ③ 단계 = 세로 사슬(.vchain 단계 | 설명) → ④ 덧붙임 = 굵은 이름 줄 + 들인 본문
+     간격 = ②→③ 10px · ③→④ 12px · 가로 줄(.line)의 「→」는 단계 사이 .arw 로 옮겨 보존 · 글자 무변 -->
 <h3 id="1)_경험_학습_모형"><a id="경험_학습_모형"></a><span class="num">1)</span> 경험 학습 모형</h3>
 <div class="ind">
-<div class="sub">학생들의 감각 경험 <span class="mk">⇒</span> 오감 사용, 기초 탐구 기능 중심<span class="quiet">(관찰)</span></div>
-<div class="row"><span class="mk">∴</span><span class="desc">특정한 목적 X</span></div>
-<div class="line" style="margin-top:10px">
-  <div class="col"><span class="mid">자유 탐색</span><span class="down" style="text-align:center">자유롭게 탐구</span></div>
-  <div class="col"><span class="mid mk">→</span></div>
-  <div class="col"><span class="mid">탐색 내용 발표</span></div>
-  <div class="col"><span class="mid mk">→</span></div>
-  <div class="col"><span class="mid">교사의 안내에 따른 탐색</span><span class="down" style="text-align:center">학생들이 미처 생각하지 못한 것 제시</span></div>
-  <div class="col"><span class="mid mk">→</span></div>
-  <div class="col"><span class="mid">탐색 내용 정리</span></div>
+<!-- 10-03 「∴ 특정한 목적 X」(따로 놀던 줄)를 성격 덩이 둘째 줄로 -->
+<div class="sub">학생들의 감각 경험 <span class="mk">⇒</span> 오감 사용, 기초 탐구 기능 중심<span class="quiet">(관찰)</span><br><span class="mk">∴</span> 특정한 목적 X</div>
+<!-- 10-03 가로 줄(.line) → 단계 | 설명 세로 사슬 -->
+<div class="vchain" style="margin-top:10px">
+  <div class="stp"><span class="term">자유 탐색</span></div><div class="ann">자유롭게 탐구</div>
+  <div class="arw">→</div>
+  <div class="stp"><span class="term">탐색 내용 발표</span></div>
+  <div class="arw">→</div>
+  <div class="stp"><span class="term">교사의 안내에 따른 탐색</span></div><div class="ann">학생들이 미처 생각하지 못한 것 제시</div>
+  <div class="arw">→</div>
+  <div class="stp"><span class="term">탐색 내용 정리</span></div>
 </div>
 </div>
 
 <h3 id="2)_발견_학습_모형_(→_통제↓)"><a id="발견_학습_모형_(→_통제↓)"></a><a id="발견_학습_모형"></a><span class="num">2)</span> 발견 학습 모형 <span class="quiet">(→ 통제↓)</span></h3>
 <div class="ind">
 <div class="sub">규칙성 발견 <span class="mk">⇒</span> 학생 중심, 귀납적 활동</div>
-<div class="line" style="margin-top:10px">
-  <div class="col"><span class="mid">탐색 및 문제 파악</span></div>
-  <div class="col"><span class="mid mk">→</span></div>
-  <div class="col"><span class="mid" style="text-align:center">자료 제시<br>및 관찰·탐색</span><span class="down" style="text-align:center">교사 의도와 달라도 수용</span></div>
-  <div class="col"><span class="mid mk">→</span></div>
-  <div class="col"><span class="mid" style="text-align:center">추가 자료 제시<br>및 관찰·탐색</span><span class="down" style="text-align:center">구체화·산출</span></div>
-  <div class="col"><span class="mid mk">→</span></div>
-  <div class="col"><span class="mid" style="text-align:center">규칙성 발견<br>및 개념 정리</span><span class="down" style="text-align:center">규칙성 제시 X<br>↳ 발견 못하면 추가 자료, 피드백</span></div>
-  <div class="col"><span class="mid mk">→</span></div>
-  <div class="col"><span class="mid">적용 및 응용</span></div>
+<!-- 10-03 가로 줄(.line) → 단계 | 설명 세로 사슬 · 단계 이름 강제 줄바꿈(<br>) 걷음(칸 폭대로 접힘) -->
+<div class="vchain" style="margin-top:10px">
+  <div class="stp"><span class="term">탐색 및 문제 파악</span></div>
+  <div class="arw">→</div>
+  <div class="stp"><span class="term">자료 제시 및 관찰·탐색</span></div><div class="ann">교사 의도와 달라도 수용</div>
+  <div class="arw">→</div>
+  <div class="stp"><span class="term">추가 자료 제시 및 관찰·탐색</span></div><div class="ann">구체화·산출</div>
+  <div class="arw">→</div>
+  <div class="stp"><span class="term">규칙성 발견 및 개념 정리</span></div><div class="ann">규칙성 제시 X<br>↳ 발견 못하면 추가 자료, 피드백</div>
+  <div class="arw">→</div>
+  <div class="stp"><span class="term">적용 및 응용</span></div>
 </div>
 </div>
 
 <h3 id="3)_탐구_학습_모형"><a id="탐구_학습_모형"></a><span class="num">3)</span> 탐구 학습 모형</h3>
 <div class="ind">
 <div class="sub">과학자의 실제 탐구 과정 <span class="mk">≒</span> 가설 검증 학습 모형 <span class="mk">→</span> 통합 탐구 기능 사용, 교사 안내 개입 O</div>
-<div class="wide" style="margin-top:10px"><div class="line">
-  <div class="col"><span class="mid">탐색 및 문제 파악</span><span class="down" style="text-align:center">문제 인식</span></div>
-  <div class="col"><span class="mid mk">→</span></div>
-  <div class="col"><span class="mid">가설 설정</span><span class="down" style="text-align:center">가설 설정<br>↳ 검증 가능, 평서, 인과</span></div>
-  <div class="col"><span class="mid mk">→</span></div>
-  <div class="col"><span class="mid">실험 설계</span><span class="down" style="text-align:center">변인 통제 '계획'</span></div>
-  <div class="col"><span class="mid mk">→</span></div>
-  <div class="col"><span class="mid">실험</span><span class="down" style="text-align:center">변인 통제</span></div>
-  <div class="col"><span class="mid mk">→</span></div>
-  <div class="col"><span class="mid">가설 검증</span><span class="down" style="text-align:center">자료 변환<br>자료 해석<br>결론 도출</span></div>
-  <div class="col"><span class="mid mk">→</span></div>
-  <div class="col"><span class="mid">적용, 새로운 문제 발견</span><span class="down" style="text-align:center">일반화<br>문제 인식</span></div>
-</div></div>
-<div class="row" style="margin-top:12px"><span class="num">유의점)</span><span class="desc">요리책 활동 X <span class="mk">→</span> 실험 설계를 교사 임의, 학생 주도 X</span></div>
+<!-- 10-03 가로 줄(.line, .wide 감싸개) → 단계 | 설명 세로 사슬 -->
+<div class="vchain" style="margin-top:10px">
+  <div class="stp"><span class="term">탐색 및 문제 파악</span></div><div class="ann">문제 인식</div>
+  <div class="arw">→</div>
+  <div class="stp"><span class="term">가설 설정</span></div><div class="ann">가설 설정<br>↳ 검증 가능, 평서, 인과</div>
+  <div class="arw">→</div>
+  <div class="stp"><span class="term">실험 설계</span></div><div class="ann">변인 통제 '계획'</div>
+  <div class="arw">→</div>
+  <div class="stp"><span class="term">실험</span></div><div class="ann">변인 통제</div>
+  <div class="arw">→</div>
+  <div class="stp"><span class="term">가설 검증</span></div><div class="ann">자료 변환<br>자료 해석<br>결론 도출</div>
+  <div class="arw">→</div>
+  <div class="stp"><span class="term">적용, 새로운 문제 발견</span></div><div class="ann">일반화<br>문제 인식</div>
+</div>
+<!-- 10-03 덧붙임 꼴: 「유의점)」이 줄머리 번호(.num, v2 에서 숨김)라 화면에 안 보이던 것 → 굵은 이름(.term)으로 -->
+<div class="row" style="margin-top:12px"><span class="term">유의점)</span><span class="desc">요리책 활동 X <span class="mk">→</span> 실험 설계를 교사 임의, 학생 주도 X</span></div>
 </div>
 
 <h3 id="4)_순환_학습_모형_(5E,_POE_모형)"><a id="순환_학습_모형_(5E,_POE_모형)"></a><a id="순환_학습_모형"></a><span class="num">4)</span> 순환 학습 모형 <span class="quiet">(5E, POE 모형)</span></h3>
 <div class="ind">
-<div class="sub">학생들이 발견·탐구하기 너무 어려운 개념 대상 <span class="mk">⇒</span> 교사·교과서에서 개념 제시</div>
-<div class="row"><span class="mk">→</span><span class="desc">과학자의 장기적 탐구 과정 모델링 <span class="quiet">(탐구학습 ≒ 단기 → 다양 개념)</span></span></div>
-<!-- 10-01 맞춤(동하 「과학 이쪽 뭔가 정리가 안 됨」): 가로 사슬(.line)이 좁은 칸에서 세로로 접혀 「↳ 기본적…」이 멀리 뜨고, 분류 세 갈래(cols n3)가 칸 전폭 양끝으로 벌어지던 것
-     → 단계·분류 모두 용어 | 설명 두 열 격자(vs · 수학 사각형 선례) · 사슬 화살표는 단계 이름 앞 「→」로 · 글자 무변 -->
-<div class="vs" style="row-gap:.35em;margin-top:10px">
-  <span class="term">탐색</span><span></span>
-  <span><span class="mk">→</span> <span class="term">개념 도입</span></span><span class="desc">↳ 기본적 순환 학습 모형 단계</span>
-  <span><span class="mk">→</span> <span class="term">개념 적용</span></span><span></span>
-  <span><span class="mk">→</span> <span class="term">탐색·순환</span></span><span class="quiet">(개념 적용X 사례)</span>
+<!-- 10-03 성격 두 줄(회색 인용 + 따로 놀던 「→ 장기적 탐구」 줄)을 성격 덩이 하나로 -->
+<div class="sub">학생들이 발견·탐구하기 너무 어려운 개념 대상 <span class="mk">⇒</span> 교사·교과서에서 개념 제시<br><span class="mk">→</span> 과학자의 장기적 탐구 과정 모델링 <span class="quiet">(탐구학습 ≒ 단기 → 다양 개념)</span></div>
+<!-- 10-03 단계 사이에 끼어 흐름을 끊던 「↳ 기본적 순환 학습 모형 단계」를 사슬 머리 표지로 · 5E 칸 밑에 떨어져 있던 3단계 ↔ 5E 대응(탐색 = Engagement~Explore …)을 각 단계 설명 칸으로 옮김(「5E」 꼬리표만 더함) -->
+<div class="row" style="margin-top:10px"><span class="desc">↳ 기본적 순환 학습 모형 단계</span></div>
+<div class="vchain" style="margin-top:4px">
+  <div class="stp"><span class="term">탐색</span></div><div class="ann"><span class="quiet">5E</span> Engagement~Explore</div>
+  <div class="arw">→</div>
+  <div class="stp"><span class="term">개념 도입</span></div><div class="ann"><span class="quiet">5E</span> Explanation</div>
+  <div class="arw">→</div>
+  <div class="stp"><span class="term">개념 적용</span></div><div class="ann"><span class="quiet">5E</span> Elaborate~Evaluate</div>
+  <div class="arw">→</div>
+  <div class="stp"><span class="term">탐색·순환</span></div><div class="ann">(개념 적용X 사례)</div>
 </div>
-<div class="row" style="margin-top:14px"><span class="mk">+α</span><span class="term">순환 학습 모형 분류</span></div>
+<div class="row" style="margin-top:12px"><span class="mk">+α</span><span class="term">순환 학습 모형 분류</span></div>
 <div class="ind">
 <div class="vs" style="row-gap:.35em">
   <span class="term">서술적</span><span class="desc">(그냥 기술) <span class="quiet">↳ (서술적 <span class="mk">→</span> 초등)</span></span>
@@ -245,40 +255,65 @@ p.note,p.sub{max-width:46em;}
 <section class="pg" id="p04">
 <!-- 09-30 맞춤: 5E 머리 위 옛 여백(40px)이 옆 단 POE 와 머리 높이를 어긋나게 해 걷음(B13) -->
 <!-- 10-01 맞춤: 5E·POE 단계 사슬(.line)도 용어 | 설명 격자로(p03 주석 참고) -->
+<!-- 10-03 맞춤: 5E·POE 도 형제 모형과 같은 세로 사슬(.vchain 단계 | 설명) · 단계 이름 앞 「→」는 단계 사이 .arw 로 · 본문 들여쓰기 .ind2(0) → .ind(형제 모형과 같은 1em) · 3단계 ↔ 5E 대응은 순환 학습 모형 단계 설명 칸(p03)으로 옮김 -->
 <h4 id="*_5E_모형_(Eng,_Explo,_Expla,_Elab,_Eval)"><a id="*_5E_모형"></a><span class="num">*</span> 5E 모형 <span class="quiet">(Eng, Explo, Expla, Elab, Eval)</span></h4>
-<div class="ind2">
-<div class="vs" style="row-gap:.45em">
-  <span><span class="term">Engagement</span></span><span class="desc">동기 유발<br>(⇒ 인지적 갈등 유발)</span>
-  <span><span class="mk">→</span> <span class="term">Explore</span></span><span class="desc">교사 주도 X<br>결과 예상<br>↳ 실험 검증</span>
-  <span><span class="mk">→</span> <span class="term">Explanation</span></span><span class="desc">문제에 대한 답<br>↳ 교사 설명, 개념 제시</span>
-  <span><span class="mk">→</span> <span class="term">Elaborate</span></span><span class="desc">개념 정교화<br>↳ 예시 찾기 등<br>↳ 적용</span>
-  <span><span class="mk">→</span> <span class="term">Evaluate</span></span><span class="desc">학생 평가</span>
+<div class="ind">
+<div class="vchain">
+  <div class="stp"><span class="term">Engagement</span></div><div class="ann">동기 유발<br>(⇒ 인지적 갈등 유발)</div>
+  <div class="arw">→</div>
+  <div class="stp"><span class="term">Explore</span></div><div class="ann">교사 주도 X<br>결과 예상<br>↳ 실험 검증</div>
+  <div class="arw">→</div>
+  <div class="stp"><span class="term">Explanation</span></div><div class="ann">문제에 대한 답<br>↳ 교사 설명, 개념 제시</div>
+  <div class="arw">→</div>
+  <div class="stp"><span class="term">Elaborate</span></div><div class="ann">개념 정교화<br>↳ 예시 찾기 등<br>↳ 적용</div>
+  <div class="arw">→</div>
+  <div class="stp"><span class="term">Evaluate</span></div><div class="ann">학생 평가</div>
 </div>
-<div class="vs" style="row-gap:.2em;margin-top:12px">
-  <span class="term">탐색</span><span class="desc">Engagement~Explore</span>
-  <span class="term">개념 도입</span><span class="desc">Explanation</span>
-  <span class="term">개념 적용</span><span class="desc">Elaborate~Evaluate</span>
-</div>
+<!-- 10-03 3단계 ↔ 5E 대응표 자리: 대응은 순환 학습 모형 단계 설명 칸으로 옮겼고, 단계 이름은 거기 사슬과 되풀이라 화면에서만 끔 -->
+<span class="mk" style="display:none">탐색 개념 도입 개념 적용</span>
 </div>
 
 <h4 id="*_POE_모형_(Pred,_Obsrv,_Expla)_≒_PEOE_(E-Exp.)"><a id="*_POE_모형_(Pred,_Obsrv,_Expla)_≒_PEOE"></a><span class="num">*</span> POE 모형 <span class="quiet">(Pred, Obsrv, Expla) ≒ PEOE (E-Exp.)</span></h4>
-<div class="ind2">
-<div class="vs" style="row-gap:.45em">
-  <span><span class="term">Prediction</span></span><span class="desc">학생들이 예상<br>+ 정당한 까닭<br>글로 쓰기 → 정교화</span>
-  <span><span class="mk">→</span> <span class="term">Observation</span></span><span class="desc">관찰 결과 기록<br>유의 : 동료 학생의 말을 듣고 관찰 결과를 바꾸거나, 기존 생각과 모순되는 관찰 결과를 무시할 수 있으므로 직접 적게 한다. <span class="quiet" style="display:none">(구멍 09-22)</span></span><!-- 10-01 구멍 반영: 회독본 156행 -->
-  <span><span class="mk">→</span> <span class="term">Explanation</span></span><span class="desc">예상과 관찰 사이 모순 해결<br>근거 바탕 + 까닭<br>↳ 추리 가능</span>
+<div class="ind">
+<div class="vchain">
+  <div class="stp"><span class="term">Prediction</span></div><div class="ann">학생들이 예상<br>+ 정당한 까닭<br>글로 쓰기 → 정교화</div>
+  <div class="arw">→</div>
+  <div class="stp"><span class="term">Observation</span></div><div class="ann">관찰 결과 기록<br>유의 : 동료 학생의 말을 듣고 관찰 결과를 바꾸거나, 기존 생각과 모순되는 관찰 결과를 무시할 수 있으므로 직접 적게 한다. <span class="quiet" style="display:none">(구멍 09-22)</span></div><!-- 10-01 구멍 반영: 회독본 156행 -->
+  <div class="arw">→</div>
+  <div class="stp"><span class="term">Explanation</span></div><div class="ann">예상과 관찰 사이 모순 해결<br>근거 바탕 + 까닭<br>↳ 추리 가능</div>
 </div>
 </div>
 
 <!-- 10-01 맞춤(동하 「헤더에 설명이 들어감」 · 체크리스트 30): 제목엔 이름만, 설명은 본문 첫 줄로 · id 는 옛 것 그대로 · 글자 무변 -->
 <h3 id="6)_개념_변화_학습_모형_⇒_&quot;오개념_변화&quot;"><a id="개념_변화_학습_모형"></a><span class="num">6)</span> 개념 변화 학습 모형</h3>
-<div class="ind2">
-<div class="row"><span class="mk">⇒</span><span class="desc">"오개념 변화"</span></div>
+<!-- 10-03 성격 줄을 형제 모형과 같은 회색 세로줄 덩이(.sub)로 · 앞 「⇒」는 전처럼 화면에서만 끔 -->
+<div class="ind">
+<div class="sub"><span class="mk" style="display:none">⇒</span> "오개념 변화"</div>
 </div>
 <!-- 09-30 맞춤: 칸 전폭인데 왼쪽에만 몰려 오른쪽이 텅 빔(B9) → 「조건」을 안 제목으로 올리고 단계 사슬에 안 제목 「단계」를 더해 오개념의 특징과 세 갈래로 나란히 · 글자 무변(「단계」만 더함) -->
+<!-- 10-03 형제 모형 뼈대(성격 → 단계 → 덧붙임)대로 「단계」를 「조건」 앞으로 · 「개념 표현 :」 콜론 꼴 → 단계 | 설명 두 칸(콜론은 설명 칸 머리 .mk 로 옮겨 화면에서만 끔) · 하위 단계 「이름 : 설명」도 두 칸 격자(.vs) -->
+<h4 id="안_개념변화_단계">단계</h4>
+<div class="ind">
+<div class="vchain">
+  <div class="stp"><span class="term">개념 표현</span></div><div class="ann"><span class="mk">:</span> <span class="desc">사전 개념 조사</span> <span class="quiet">(=오개념)</span></div>
+  <div class="arw">↓</div>
+  <div class="stp"><span class="term">개념 재구성</span></div><div class="ann"><!-- 10-01 구멍 반영: 회독본 173행 --><div style="margin-bottom:4px"><span class="term">하위 단계</span> : <span class="desc">명료화, 갈등 상황 경험, 새로운 개념 구성, 개념 평가</span> <span class="quiet" style="display:none">(구멍 09-22)</span></div><div class="vs" style="row-gap:.2em">
+    <span class="term">명료화</span><span class="desc"><span class="mk" style="display:none">:</span> 오개념 명료화</span>
+    <span class="term">인지적 갈등 유발</span><span class="desc"><span class="mk" style="display:none">:</span> 불만족 유발</span>
+    <span class="term">개념 구성</span><span class="desc"><span class="mk" style="display:none">:</span> 이해 가능한 개념 구성</span>
+    <span class="term">개념 평가</span><span class="desc"><span class="mk" style="display:none">:</span> 개념의 타당성 평가 <span class="quiet">(학생 성취 X)</span></span>
+  </div></div>
+  <div class="arw">↓</div>
+  <div class="stp"><span class="term">개념 응용</span></div><div class="ann"><span class="mk">:</span> <span class="desc">개념 활용 가능성</span></div>
+  <div class="arw">↓</div>
+  <div class="stp"><span class="term">개념 변화 검토</span></div><div class="ann"><span class="mk">:</span> <span class="desc">사전 개념 ↔ 새로운 개념 비교</span></div>
+</div>
+</div>
+
+<!-- 10-03 조건: 이중 들여쓰기(.ind > .ind) 걷어 형제 갈래와 같은 1em -->
 <h4 id="안_개념변화_조건">조건</h4>
 <div class="ind">
-<div class="ind stack">
+<div class="stack">
   <div class="row"><span class="num">1)</span><span class="term">불만족</span> <span class="quiet">(dissatisfaction)</span></div>
   <div class="row"><span class="num">2)</span><span class="term">이해 가능한 개념</span> <span class="quiet">(intelligible)</span></div>
   <div class="row"><span class="num">3)</span><span class="term">타당함</span> <span class="quiet">(plausible)</span></div>
@@ -286,54 +321,40 @@ p.note,p.sub{max-width:46em;}
 </div>
 </div>
 
-<h4 id="안_개념변화_단계">단계</h4>
-<div class="ind">
-<div class="vchain">
-  <div class="stp"><span class="term">개념 표현</span> :</div><div class="ann"><span class="desc">사전 개념 조사</span> <span class="quiet">(=오개념)</span></div>
-  <div class="arw">↓</div>
-  <div class="stp"><span class="term">개념 재구성</span></div><div class="ann"><!-- 10-01 구멍 반영: 회독본 173행 --><div class="sub" style="margin-bottom:4px"><span class="term">하위 단계</span> : <span class="desc">명료화, 갈등 상황 경험, 새로운 개념 구성, 개념 평가</span> <span class="quiet" style="display:none">(구멍 09-22)</span></div><div class="bracket">
-    <div><span class="term">명료화</span> : <span class="desc">오개념 명료화</span></div>
-    <div><span class="term">인지적 갈등 유발</span> : <span class="desc">불만족 유발</span></div>
-    <div><span class="term">개념 구성</span> : <span class="desc">이해 가능한 개념 구성</span></div>
-    <div><span class="term">개념 평가</span> : <span class="desc">개념의 타당성 평가 <span class="quiet">(학생 성취 X)</span></span></div>
-  </div></div>
-  <div class="arw">↓</div>
-  <div class="stp"><span class="term">개념 응용</span> :</div><div class="ann"><span class="desc">개념 활용 가능성</span></div>
-  <div class="arw">↓</div>
-  <div class="stp"><span class="term">개념 변화 검토</span> :</div><div class="ann"><span class="desc">사전 개념 ↔ 새로운 개념 비교</span></div>
-</div>
-</div>
-
+<!-- 10-03 오개념의 특징: 「이름 : 설명」 콜론 꼴 → 이름 | 설명 두 칸 격자(.vs · 콜론은 화면에서만 끔) · 들여쓰기 .ind2 → .ind -->
 <h4 id="오개념의_특징">오개념의 특징</h4>
-<div class="ind2">
-<div class="bracket">
-  <div><span class="term">현상 중심 사고</span> : <span class="desc">눈에 보이는 현상 <span class="quiet">(수증기 응결 → 사라짐)</span></span></div>
-  <div><span class="term">상황 의존</span> : <span class="desc">다른 상황 → 다른 결과 <span class="quiet">(물 끓임 → 열/증발 → 수증기)</span></span></div>
-  <div><span class="term">미분화</span> : <span class="desc">여러 개념 분화 X <span class="quiet">(무게·질량·밀도…)</span></span></div>
-  <div><span class="term">제한</span> : <span class="desc">두드러지는 현상만 <span class="quiet">(솜 상자 vs 쇠 상자 ~ 열전도X, 느낌)</span></span></div>
-  <div><span class="term">변화 중심</span> : <span class="desc">변화하는 것 중심 <span class="quiet">(등속 운동하는 물체엔 힘 O)</span></span></div>
-  <div><span class="term">단순 인과</span> : <span class="desc">복잡한 인과를 단순화하기 <span class="quiet">(비눗방울 터지는 이유 → 단순 시간)</span></span></div>
+<div class="ind">
+<div class="vs" style="row-gap:.35em">
+  <span class="term">현상 중심 사고</span><span class="desc"><span class="mk" style="display:none">:</span> 눈에 보이는 현상 <span class="quiet">(수증기 응결 → 사라짐)</span></span>
+  <span class="term">상황 의존</span><span class="desc"><span class="mk" style="display:none">:</span> 다른 상황 → 다른 결과 <span class="quiet">(물 끓임 → 열/증발 → 수증기)</span></span>
+  <span class="term">미분화</span><span class="desc"><span class="mk" style="display:none">:</span> 여러 개념 분화 X <span class="quiet">(무게·질량·밀도…)</span></span>
+  <span class="term">제한</span><span class="desc"><span class="mk" style="display:none">:</span> 두드러지는 현상만 <span class="quiet">(솜 상자 vs 쇠 상자 ~ 열전도X, 느낌)</span></span>
+  <span class="term">변화 중심</span><span class="desc"><span class="mk" style="display:none">:</span> 변화하는 것 중심 <span class="quiet">(등속 운동하는 물체엔 힘 O)</span></span>
+  <span class="term">단순 인과</span><span class="desc"><span class="mk" style="display:none">:</span> 복잡한 인과를 단순화하기 <span class="quiet">(비눗방울 터지는 이유 → 단순 시간)</span></span>
 </div>
 </div>
 </section>
 <section class="pg" id="p05">
 <h3 id="6)_STS_학습_모형_(Science_-_Technology_-_Society)"><a id="STS_학습_모형_(Science_-_Technology_-_Society)"></a><a id="STS_학습_모형"></a><span class="num">6)</span> STS 학습 모형 <span class="quiet">(Science - Technology - Society)</span></h3>
+<!-- 10-03 맞춤: 형제 모형 뼈대(성격 → 단계 → 덧붙임)대로 — 끝에 처져 있던 성격 줄 「이름 per se」를 머리 밑으로 · 단계 사슬을 그다음(설명 없는 단계라 가로 사슬 그대로) · 「왜?」 괄호 가지를 덧붙임 꼴(굵은 이름 줄 + 들인 목록)로 맨 뒤 -->
 <div class="ind">
-<div class="branch">
-  <div><span class="term">왜?</span></div>
-  <div class="bracket">
-    <div class="row"><span class="num">①</span><span class="desc">과학만으로 풀 수 없는 문제 ↑</span></div>
-    <div class="row"><span class="num">②</span><span class="desc">학문보다 과학·기술 발전에 따른 사회문제가 더 큰 영향</span></div>
-    <div class="row"><span class="num">③</span><span class="desc">과학적·합리적 해결 방안 결정 태도</span></div>
-  </div>
-</div>
-<div class="chain" style="margin-top:12px">
+<!-- 10-03 성격 줄과 사슬을 한 덩이로 감쌈 — 1000 폭에서 판이 사슬만 오른쪽 단으로 떼어 놓던 것 -->
+<div>
+<div class="sub">이름 per se</div>
+<div class="chain" style="margin-top:10px">
   <span class="term">문제로의 초대</span><span class="arrow">→</span>
   <span class="term">탐색</span><span class="arrow">→</span>
   <span class="term">설명·해결 방안 제시</span><span class="arrow">→</span>
   <span class="term">행동</span>
 </div>
-<div class="sub">이름 per se</div>
+</div>
+<div class="row" style="margin-top:12px"><span class="term">왜?</span></div>
+<!-- 10-03 .stack 은 판이 두 단으로 흩뿌려 ①·② 가 좌우로 갈라짐 → 세로 목록(.bracket) -->
+<div class="ind"><div class="bracket">
+  <div class="row"><span class="num">①</span><span class="desc">과학만으로 풀 수 없는 문제 ↑</span></div>
+  <div class="row"><span class="num">②</span><span class="desc">학문보다 과학·기술 발전에 따른 사회문제가 더 큰 영향</span></div>
+  <div class="row"><span class="num">③</span><span class="desc">과학적·합리적 해결 방안 결정 태도</span></div>
+</div></div>
 </div>
 
 <!-- 09-30 완성: 노트 p35~p37(과학 학습 이론 · 과학 교수·학습 방법 · 과학 실험 안전 지도)을 원문 순서(회독본 ## 과학 학습 모형 → 학습 이론 → 교수·학습 방법 → 안전 지도 → 물질) 자리로 옮김 — 각론 뒤 기본이론 되풀이 해소 -->
@@ -3457,5 +3478,5 @@ p.note,p.sub{max-width:46em;}
 </div>
 </section><p class="foot"><a href="5.도덕.html">← 5.도덕</a> · <a href="index.html">목록</a> · <a href="7.체육.html">7.체육 →</a></p></main>
 </div>
-<script>window.PAN_LAYOUT={"3":{"sect":[[6,"repeat(6, minmax(0px, 1fr))"],[28,"repeat(6, minmax(0px, 1fr))"],[250,"repeat(6, minmax(0px, 1fr))"],[345,"repeat(6, minmax(0px, 1fr))"],[755,"repeat(6, minmax(0px, 1fr))"],[933,"repeat(6, minmax(0px, 1fr))"],[1157,"repeat(6, minmax(0px, 1fr))"],[1264,"repeat(6, minmax(0px, 1fr))"],[1848,"repeat(6, minmax(0px, 1fr))"],[1980,"repeat(6, minmax(0px, 1fr))"],[2091,"repeat(6, minmax(0px, 1fr))"],[2204,"repeat(6, minmax(0px, 1fr))"],[2376,"repeat(6, minmax(0px, 1fr))"],[2550,"repeat(6, minmax(0px, 1fr))"],[2667,"repeat(6, minmax(0px, 1fr))"],[2869,"repeat(6, minmax(0px, 1fr))"],[3131,"repeat(6, minmax(0px, 1fr))"],[3277,"repeat(6, minmax(0px, 1fr))"],[3367,"repeat(6, minmax(0px, 1fr))"],[3448,"repeat(6, minmax(0px, 1fr))"],[3552,"repeat(6, minmax(0px, 1fr))"],[3682,"repeat(6, minmax(0px, 1fr))"],[3776,"repeat(6, minmax(0px, 1fr))"],[3953,"repeat(6, minmax(0px, 1fr))"],[4106,"repeat(6, minmax(0px, 1fr))"],[4326,"repeat(6, minmax(0px, 1fr))"],[4480,"repeat(6, minmax(0px, 1fr))"],[4610,"repeat(6, minmax(0px, 1fr))"],[4770,"repeat(6, minmax(0px, 1fr))"],[4866,"repeat(6, minmax(0px, 1fr))"],[4943,"repeat(6, minmax(0px, 1fr))"],[5026,"repeat(6, minmax(0px, 1fr))"],[5113,"repeat(6, minmax(0px, 1fr))"],[5159,"repeat(6, minmax(0px, 1fr))"],[5198,"repeat(6, minmax(0px, 1fr))"],[5250,"repeat(6, minmax(0px, 1fr))"]],"span":[[30,"span 3"],[96,"span 3"],[160,"span 3"],[208,"span 3"],[252,"span 3"],[295,"span 3"],[347,"span 2"],[390,"span 2"],[442,"span 2"],[510,"1 / -1"],[618,"1 / -1"],[720,"1 / -1"],[794,"span 3"],[803,"span 3"],[852,"1 / -1"],[893,"1 / -1"],[1038,"span 2"],[1062,"span 2"],[1085,"span 2"],[1102,"span 2"],[1123,"span 2"],[1135,"span 2"],[1163,"span 2"],[1181,"span 2"],[1213,"span 2"],[1223,"span 3"],[1253,"span 3"],[1270,"span 3"],[1283,"span 3"],[1288,"span 3"],[1295,"span 3"],[1337,"span 2"],[1356,"span 2"],[1372,"span 2"],[1426,"span 4"],[1494,"span 2"],[1543,"span 2"],[1561,"span 2"],[1605,"span 2"],[1650,"span 3"],[1682,"span 3"],[1769,"span 3"],[1806,"span 3"],[1855,"1 / -1"],[1875,"1 / -1"],[1987,"span 3"],[2008,"span 3"],[2097,"span 3"],[2128,"span 3"],[2227,"span 3"],[2285,"span 3"],[2382,"1 / -1"],[2433,"1 / -1"],[2505,"span 3"],[2523,"span 3"],[2556,"1 / -1"],[2603,"span 3"],[2619,"span 3"],[2643,"1 / -1"],[2677,"span 2"],[2700,"span 2"],[2744,"span 2"],[2783,"span 3"],[2819,"span 3"],[2849,"1 / -1"],[2875,"span 2"],[2914,"span 2"],[2950,"span 2"],[2996,"span 3"],[3066,"span 3"],[3137,"span 2"],[3181,"span 2"],[3229,"span 2"],[3283,"span 3"],[3299,"span 3"],[3321,"span 3"],[3351,"span 3"],[3373,"span 3"],[3430,"span 3"],[3456,"span 3"],[3475,"span 3"],[3487,"span 3"],[3509,"span 3"],[3559,"span 3"],[3618,"span 3"],[3690,"span 3"],[3715,"span 3"],[3785,"span 2"],[3806,"span 2"],[3844,"span 2"],[3882,"span 3"],[3926,"span 3"],[3962,"span 3"],[3986,"span 3"],[3996,"span 3"],[4025,"span 3"],[4118,"span 3"],[4136,"span 3"],[4159,"span 3"],[4191,"span 3"],[4277,"span 2"],[4288,"span 2"],[4305,"span 2"],[4334,"span 2"],[4402,"span 2"],[4454,"span 2"],[4488,"span 2"],[4522,"span 2"],[4574,"span 2"],[4618,"span 2"],[4652,"span 2"],[4703,"span 2"],[4778,"1 / -1"],[4854,"1 / -1"],[4874,"1 / -1"],[4926,"1 / -1"],[4952,"span 3"],[4991,"span 3"],[5123,"span 3"],[5145,"span 3"],[5217,"span 2"],[5223,"span 2"],[5229,"span 2"],[5235,"span 3"],[5241,"span 3"]],"cls":{"rowg":[],"flat":[1879,2019,2139,2387,2438,2561,4782,4881],"flowing":[1879,2019,2387,2438,4782],"tcells":[],"lead1":[],"treewide":[],"gfull":[]},"sets":[{"p":552,"c":"colset","m":"2","items":[553,592],"cols":[[553],[592]]},{"p":627,"c":"colset","m":"2","items":[628,648,690],"cols":[[628,648],[690]]},{"p":727,"c":"colset gridset","m":"2","items":[728,742,751],"cols":null},{"p":859,"c":"colset gridset","m":"2","items":[860,866,880],"cols":null},{"p":900,"c":"colset","m":"2","items":[901,924],"cols":[[901],[924]]},{"p":2139,"c":"colset gridset","m":"2","items":[2140,2159,2191,2197],"cols":null},{"p":2561,"c":"colset","m":"2","items":[2562,2563,2591],"cols":[[2562,2563],[2591]]},{"p":4881,"c":"colset","m":"2","items":[4882,4906],"cols":[[4882],[4906]]},{"p":5277,"c":"colset","m":"2","items":[5278,5282,5287,5290,5306,5308],"cols":[[5278,5282,5287,5290],[5306,5308]]}],"flows":[{"tr":1879,"m":"2","cols":[{"crumb":"","items":[[1880,"0em",0]]},{"crumb":"","items":[[1906,"0em",1],[1909,"1.1em",0],[1916,"1.1em",0],[1931,"0em",1],[1934,"1.1em",0],[1936,"1.1em",0],[1938,"1.1em",0],[1948,"1.1em",0],[1951,"1.1em",0],[1953,"0em",0]]}]},{"tr":2019,"m":"2","cols":[{"crumb":"","items":[[2020,"0em",0]]},{"crumb":"","items":[[2049,"0em",0]]}]},{"tr":2387,"m":"2","cols":[{"crumb":"","items":[[2388,"0em",0],[2393,"0em",0],[2397,"0em",0],[2399,"0em",0]]},{"crumb":"","items":[[2403,"0em",0]]}]},{"tr":2438,"m":"2","cols":[{"crumb":"","items":[[2439,"0em",0]]},{"crumb":"","items":[[2451,"0em",0]]}]},{"tr":4782,"m":"2","cols":[{"crumb":"","items":[[4784,"0em",1],[4787,"1.1em",0],[4795,"1.1em",0],[4811,"1.1em",0],[4813,"1.1em",0]]},{"crumb":"","items":[[4824,"0em",1],[4827,"1.1em",0],[4832,"1.1em",0],[4836,"1.1em",0],[4840,"1.1em",0],[4846,"1.1em",0]]}]}]},"2":{"sect":[[6,"repeat(4, minmax(0px, 1fr))"],[28,"repeat(4, minmax(0px, 1fr))"],[250,"repeat(4, minmax(0px, 1fr))"],[345,"repeat(4, minmax(0px, 1fr))"],[755,"repeat(4, minmax(0px, 1fr))"],[933,"repeat(4, minmax(0px, 1fr))"],[1157,"repeat(4, minmax(0px, 1fr))"],[1264,"repeat(4, minmax(0px, 1fr))"],[1848,"repeat(4, minmax(0px, 1fr))"],[1980,"repeat(4, minmax(0px, 1fr))"],[2091,"repeat(4, minmax(0px, 1fr))"],[2204,"repeat(4, minmax(0px, 1fr))"],[2376,"repeat(4, minmax(0px, 1fr))"],[2550,"repeat(4, minmax(0px, 1fr))"],[2667,"repeat(4, minmax(0px, 1fr))"],[2869,"repeat(4, minmax(0px, 1fr))"],[3131,"repeat(4, minmax(0px, 1fr))"],[3277,"repeat(4, minmax(0px, 1fr))"],[3367,"repeat(4, minmax(0px, 1fr))"],[3448,"repeat(4, minmax(0px, 1fr))"],[3552,"repeat(4, minmax(0px, 1fr))"],[3682,"repeat(4, minmax(0px, 1fr))"],[3776,"repeat(4, minmax(0px, 1fr))"],[3953,"repeat(4, minmax(0px, 1fr))"],[4106,"repeat(4, minmax(0px, 1fr))"],[4326,"repeat(4, minmax(0px, 1fr))"],[4480,"repeat(4, minmax(0px, 1fr))"],[4610,"repeat(4, minmax(0px, 1fr))"],[4770,"repeat(4, minmax(0px, 1fr))"],[4866,"repeat(4, minmax(0px, 1fr))"],[4943,"repeat(4, minmax(0px, 1fr))"],[5026,"repeat(4, minmax(0px, 1fr))"],[5113,"repeat(4, minmax(0px, 1fr))"],[5159,"repeat(4, minmax(0px, 1fr))"],[5198,"repeat(4, minmax(0px, 1fr))"],[5250,"repeat(4, minmax(0px, 1fr))"]],"span":[[30,"span 2"],[96,"span 2"],[160,"span 2"],[208,"span 2"],[252,"span 2"],[295,"span 2"],[347,"span 2"],[390,"span 2"],[442,"1 / -1"],[510,"1 / -1"],[618,"1 / -1"],[720,"1 / -1"],[794,"span 2"],[803,"span 2"],[852,"1 / -1"],[893,"1 / -1"],[1038,"span 2"],[1062,"span 2"],[1085,"span 2"],[1102,"span 2"],[1123,"span 2"],[1135,"span 2"],[1163,"span 2"],[1181,"span 2"],[1213,"span 2"],[1223,"span 2"],[1253,"1 / -1"],[1270,"span 2"],[1283,"span 2"],[1288,"span 2"],[1295,"span 2"],[1337,"span 2"],[1356,"span 2"],[1372,"1 / -1"],[1426,"span 2"],[1494,"span 2"],[1543,"span 2"],[1561,"span 2"],[1605,"1 / -1"],[1650,"1 / -1"],[1682,"1 / -1"],[1769,"span 2"],[1806,"span 2"],[1855,"1 / -1"],[1875,"1 / -1"],[1987,"span 2"],[2008,"span 2"],[2097,"span 2"],[2128,"span 2"],[2227,"span 2"],[2285,"span 2"],[2382,"1 / -1"],[2433,"1 / -1"],[2505,"span 2"],[2523,"span 2"],[2556,"1 / -1"],[2603,"span 2"],[2619,"span 2"],[2643,"1 / -1"],[2677,"span 2"],[2700,"span 2"],[2744,"span 2"],[2783,"span 2"],[2819,"span 2"],[2849,"span 2"],[2875,"span 2"],[2914,"span 2"],[2950,"span 2"],[2996,"span 2"],[3066,"1 / -1"],[3137,"span 2"],[3181,"span 2"],[3229,"1 / -1"],[3283,"span 2"],[3299,"span 2"],[3321,"span 2"],[3351,"span 2"],[3373,"span 2"],[3430,"span 2"],[3456,"span 2"],[3475,"span 2"],[3487,"span 2"],[3509,"span 2"],[3559,"span 2"],[3618,"span 2"],[3690,"span 2"],[3715,"span 2"],[3785,"1 / -1"],[3806,"1 / -1"],[3844,"span 2"],[3882,"span 2"],[3926,"1 / -1"],[3962,"span 2"],[3986,"span 2"],[3996,"span 2"],[4025,"span 2"],[4118,"span 2"],[4136,"span 2"],[4159,"span 2"],[4191,"span 2"],[4277,"span 2"],[4288,"span 2"],[4305,"1 / -1"],[4334,"span 2"],[4402,"span 2"],[4454,"1 / -1"],[4488,"span 2"],[4522,"span 2"],[4574,"1 / -1"],[4618,"span 2"],[4652,"span 2"],[4703,"1 / -1"],[4778,"1 / -1"],[4854,"1 / -1"],[4874,"1 / -1"],[4926,"1 / -1"],[4952,"span 2"],[4991,"span 2"],[5123,"span 2"],[5145,"span 2"],[5217,"span 2"],[5223,"span 2"],[5229,"span 2"],[5235,"span 2"],[5241,"1 / -1"]],"cls":{"rowg":[],"flat":[1879,2019,2139,2387,2438,4708,4782,4881],"flowing":[1879,2387,2438],"tcells":[],"lead1":[],"treewide":[],"gfull":[1253]},"sets":[{"p":552,"c":"colset","m":"2","items":[553,592],"cols":[[553],[592]]},{"p":627,"c":"colset","m":"2","items":[628,648,690],"cols":[[628,648],[690]]},{"p":859,"c":"colset","m":"2","items":[860,866,880],"cols":[[860],[866,880]]},{"p":1375,"c":"colset","m":"2","items":[1376,1378],"cols":[[1376],[1378]]},{"p":2019,"c":"colset","m":"2","items":[2020,2049],"cols":[[2020],[2049]]},{"p":2139,"c":"colset gridset","m":"2","items":[2140,2159,2191,2197],"cols":null},{"p":4708,"c":"colset","m":"2","items":[4709,4737],"cols":[[4709],[4737]]},{"p":4782,"c":"colset","m":"2","items":[4783,4823],"cols":[[4783],[4823]]},{"p":4881,"c":"colset","m":"2","items":[4882,4906],"cols":[[4882],[4906]]},{"p":5277,"c":"colset","m":"2","items":[5278,5282,5287,5290,5306,5308],"cols":[[5278,5282,5287,5290],[5306,5308]]}],"flows":[{"tr":1879,"m":"2","cols":[{"crumb":"","items":[[1880,"0em",0],[1906,"0em",1],[1909,"1.1em",0]]},{"crumb":"연소 생성물","items":[[1916,"1.1em",0],[1931,"0em",1],[1934,"1.1em",0],[1936,"1.1em",0],[1938,"1.1em",0],[1948,"1.1em",0],[1951,"1.1em",0],[1953,"0em",0]]}]},{"tr":2387,"m":"2","cols":[{"crumb":"","items":[[2388,"0em",0],[2393,"0em",0],[2397,"0em",0],[2399,"0em",0]]},{"crumb":"","items":[[2403,"0em",0]]}]},{"tr":2438,"m":"2","cols":[{"crumb":"","items":[[2439,"0em",0]]},{"crumb":"","items":[[2451,"0em",0]]}]}]},"1":{"sect":[[6,"repeat(2, minmax(0px, 1fr))"],[28,"repeat(2, minmax(0px, 1fr))"],[250,"repeat(2, minmax(0px, 1fr))"],[345,"repeat(2, minmax(0px, 1fr))"],[755,"repeat(2, minmax(0px, 1fr))"],[933,"repeat(2, minmax(0px, 1fr))"],[1157,"repeat(2, minmax(0px, 1fr))"],[1264,"repeat(2, minmax(0px, 1fr))"],[1848,"repeat(2, minmax(0px, 1fr))"],[1980,"repeat(2, minmax(0px, 1fr))"],[2091,"repeat(2, minmax(0px, 1fr))"],[2204,"repeat(2, minmax(0px, 1fr))"],[2376,"repeat(2, minmax(0px, 1fr))"],[2550,"repeat(2, minmax(0px, 1fr))"],[2667,"repeat(2, minmax(0px, 1fr))"],[2869,"repeat(2, minmax(0px, 1fr))"],[3131,"repeat(2, minmax(0px, 1fr))"],[3277,"repeat(2, minmax(0px, 1fr))"],[3367,"repeat(2, minmax(0px, 1fr))"],[3448,"repeat(2, minmax(0px, 1fr))"],[3552,"repeat(2, minmax(0px, 1fr))"],[3682,"repeat(2, minmax(0px, 1fr))"],[3776,"repeat(2, minmax(0px, 1fr))"],[3953,"repeat(2, minmax(0px, 1fr))"],[4106,"repeat(2, minmax(0px, 1fr))"],[4326,"repeat(2, minmax(0px, 1fr))"],[4480,"repeat(2, minmax(0px, 1fr))"],[4610,"repeat(2, minmax(0px, 1fr))"],[4770,"repeat(2, minmax(0px, 1fr))"],[4866,"repeat(2, minmax(0px, 1fr))"],[4943,"repeat(2, minmax(0px, 1fr))"],[5026,"repeat(2, minmax(0px, 1fr))"],[5113,"repeat(2, minmax(0px, 1fr))"],[5159,"repeat(2, minmax(0px, 1fr))"],[5198,"repeat(2, minmax(0px, 1fr))"],[5250,"repeat(2, minmax(0px, 1fr))"]],"span":[[30,"1 / -1"],[96,"1 / -1"],[160,"1 / -1"],[208,"1 / -1"],[252,"1 / -1"],[295,"1 / -1"],[347,"1 / -1"],[390,"1 / -1"],[442,"1 / -1"],[510,"1 / -1"],[618,"1 / -1"],[720,"1 / -1"],[794,"1 / -1"],[803,"1 / -1"],[852,"1 / -1"],[893,"1 / -1"],[1038,"1 / -1"],[1062,"1 / -1"],[1085,"1 / -1"],[1102,"1 / -1"],[1123,"1 / -1"],[1135,"1 / -1"],[1163,"1 / -1"],[1181,"1 / -1"],[1213,"1 / -1"],[1223,"1 / -1"],[1253,"1 / -1"],[1270,"1 / -1"],[1283,"1 / -1"],[1288,"1 / -1"],[1295,"1 / -1"],[1337,"1 / -1"],[1356,"1 / -1"],[1372,"1 / -1"],[1426,"1 / -1"],[1494,"1 / -1"],[1543,"1 / -1"],[1561,"1 / -1"],[1605,"1 / -1"],[1650,"1 / -1"],[1682,"1 / -1"],[1769,"1 / -1"],[1806,"1 / -1"],[1855,"1 / -1"],[1875,"1 / -1"],[1987,"1 / -1"],[2008,"1 / -1"],[2097,"1 / -1"],[2128,"1 / -1"],[2227,"1 / -1"],[2285,"1 / -1"],[2382,"1 / -1"],[2433,"1 / -1"],[2505,"1 / -1"],[2523,"1 / -1"],[2556,"1 / -1"],[2603,"1 / -1"],[2619,"1 / -1"],[2643,"1 / -1"],[2677,"1 / -1"],[2700,"1 / -1"],[2744,"1 / -1"],[2783,"1 / -1"],[2819,"1 / -1"],[2849,"1 / -1"],[2875,"1 / -1"],[2914,"1 / -1"],[2950,"1 / -1"],[2996,"1 / -1"],[3066,"1 / -1"],[3137,"1 / -1"],[3181,"1 / -1"],[3229,"1 / -1"],[3283,"1 / -1"],[3299,"1 / -1"],[3321,"1 / -1"],[3351,"1 / -1"],[3373,"1 / -1"],[3430,"1 / -1"],[3456,"1 / -1"],[3475,"1 / -1"],[3487,"1 / -1"],[3509,"1 / -1"],[3559,"1 / -1"],[3618,"1 / -1"],[3690,"1 / -1"],[3715,"1 / -1"],[3785,"1 / -1"],[3806,"1 / -1"],[3844,"1 / -1"],[3882,"1 / -1"],[3926,"1 / -1"],[3962,"1 / -1"],[3986,"1 / -1"],[3996,"1 / -1"],[4025,"1 / -1"],[4118,"1 / -1"],[4136,"1 / -1"],[4159,"1 / -1"],[4191,"1 / -1"],[4277,"1 / -1"],[4288,"1 / -1"],[4305,"1 / -1"],[4334,"1 / -1"],[4402,"1 / -1"],[4454,"1 / -1"],[4488,"1 / -1"],[4522,"1 / -1"],[4574,"1 / -1"],[4618,"1 / -1"],[4652,"1 / -1"],[4703,"1 / -1"],[4778,"1 / -1"],[4854,"1 / -1"],[4874,"1 / -1"],[4926,"1 / -1"],[4952,"1 / -1"],[4991,"1 / -1"],[5123,"1 / -1"],[5145,"1 / -1"],[5217,"1 / -1"],[5223,"1 / -1"],[5229,"1 / -1"],[5235,"1 / -1"],[5241,"1 / -1"]],"cls":{"rowg":[],"flat":[],"flowing":[],"tcells":[],"lead1":[],"treewide":[],"gfull":[1253]},"sets":[],"flows":[]}}</script>
+<script>window.PAN_LAYOUT={"3":{"sect":[[6,"repeat(6, minmax(0px, 1fr))"],[28,"repeat(6, minmax(0px, 1fr))"],[250,"repeat(6, minmax(0px, 1fr))"],[345,"repeat(6, minmax(0px, 1fr))"],[695,"repeat(6, minmax(0px, 1fr))"],[873,"repeat(6, minmax(0px, 1fr))"],[1097,"repeat(6, minmax(0px, 1fr))"],[1204,"repeat(6, minmax(0px, 1fr))"],[1788,"repeat(6, minmax(0px, 1fr))"],[1920,"repeat(6, minmax(0px, 1fr))"],[2031,"repeat(6, minmax(0px, 1fr))"],[2144,"repeat(6, minmax(0px, 1fr))"],[2316,"repeat(6, minmax(0px, 1fr))"],[2490,"repeat(6, minmax(0px, 1fr))"],[2607,"repeat(6, minmax(0px, 1fr))"],[2809,"repeat(6, minmax(0px, 1fr))"],[3071,"repeat(6, minmax(0px, 1fr))"],[3217,"repeat(6, minmax(0px, 1fr))"],[3307,"repeat(6, minmax(0px, 1fr))"],[3388,"repeat(6, minmax(0px, 1fr))"],[3492,"repeat(6, minmax(0px, 1fr))"],[3622,"repeat(6, minmax(0px, 1fr))"],[3716,"repeat(6, minmax(0px, 1fr))"],[3893,"repeat(6, minmax(0px, 1fr))"],[4046,"repeat(6, minmax(0px, 1fr))"],[4266,"repeat(6, minmax(0px, 1fr))"],[4420,"repeat(6, minmax(0px, 1fr))"],[4550,"repeat(6, minmax(0px, 1fr))"],[4710,"repeat(6, minmax(0px, 1fr))"],[4806,"repeat(6, minmax(0px, 1fr))"],[4883,"repeat(6, minmax(0px, 1fr))"],[4966,"repeat(6, minmax(0px, 1fr))"],[5053,"repeat(6, minmax(0px, 1fr))"],[5099,"repeat(6, minmax(0px, 1fr))"],[5138,"repeat(6, minmax(0px, 1fr))"],[5190,"repeat(6, minmax(0px, 1fr))"]],"span":[[30,"span 3"],[96,"span 3"],[160,"span 3"],[208,"span 3"],[252,"span 3"],[295,"span 3"],[347,"span 2"],[374,"span 2"],[405,"span 2"],[449,"1 / -1"],[556,"1 / -1"],[660,"1 / -1"],[734,"span 3"],[743,"span 3"],[792,"1 / -1"],[833,"1 / -1"],[978,"span 2"],[1002,"span 2"],[1025,"span 2"],[1042,"span 2"],[1063,"span 2"],[1075,"span 2"],[1103,"span 2"],[1121,"span 2"],[1153,"span 2"],[1163,"span 3"],[1193,"span 3"],[1210,"span 3"],[1223,"span 3"],[1228,"span 3"],[1235,"span 3"],[1277,"span 2"],[1296,"span 2"],[1312,"span 2"],[1366,"span 4"],[1434,"span 2"],[1483,"span 2"],[1501,"span 2"],[1545,"span 2"],[1590,"span 3"],[1622,"span 3"],[1709,"span 3"],[1746,"span 3"],[1795,"1 / -1"],[1815,"1 / -1"],[1927,"span 3"],[1948,"span 3"],[2037,"span 3"],[2068,"span 3"],[2167,"span 3"],[2225,"span 3"],[2322,"1 / -1"],[2373,"1 / -1"],[2445,"span 3"],[2463,"span 3"],[2496,"1 / -1"],[2543,"span 3"],[2559,"span 3"],[2583,"1 / -1"],[2617,"span 2"],[2640,"span 2"],[2684,"span 2"],[2723,"span 3"],[2759,"span 3"],[2789,"1 / -1"],[2815,"span 2"],[2854,"span 2"],[2890,"span 2"],[2936,"span 3"],[3006,"span 3"],[3077,"span 2"],[3121,"span 2"],[3169,"span 2"],[3223,"span 3"],[3239,"span 3"],[3261,"span 3"],[3291,"span 3"],[3313,"span 3"],[3370,"span 3"],[3396,"span 3"],[3415,"span 3"],[3427,"span 3"],[3449,"span 3"],[3499,"span 3"],[3558,"span 3"],[3630,"span 3"],[3655,"span 3"],[3725,"span 2"],[3746,"span 2"],[3784,"span 2"],[3822,"span 3"],[3866,"span 3"],[3902,"span 3"],[3926,"span 3"],[3936,"span 3"],[3965,"span 3"],[4058,"span 3"],[4076,"span 3"],[4099,"span 3"],[4131,"span 3"],[4217,"span 2"],[4228,"span 2"],[4245,"span 2"],[4274,"span 2"],[4342,"span 2"],[4394,"span 2"],[4428,"span 2"],[4462,"span 2"],[4514,"span 2"],[4558,"span 2"],[4592,"span 2"],[4643,"span 2"],[4718,"1 / -1"],[4794,"1 / -1"],[4814,"1 / -1"],[4866,"1 / -1"],[4892,"span 3"],[4931,"span 3"],[5063,"span 3"],[5085,"span 3"],[5157,"span 2"],[5163,"span 2"],[5169,"span 2"],[5175,"span 3"],[5181,"span 3"]],"cls":{"rowg":[],"flat":[1819,1959,2079,2327,2378,2501,4722,4821],"flowing":[1819,1959,2327,2378,4722],"tcells":[],"lead1":[],"treewide":[],"gfull":[]},"sets":[{"p":496,"c":"colset","m":"2","items":[497,530],"cols":[[497],[530]]},{"p":564,"c":"colset","m":"2","items":[565,610,630],"cols":[[565],[610,630]]},{"p":667,"c":"colset","m":"2","items":[668,679],"cols":[[668],[679]]},{"p":799,"c":"colset gridset","m":"2","items":[800,806,820],"cols":null},{"p":840,"c":"colset","m":"2","items":[841,864],"cols":[[841],[864]]},{"p":2079,"c":"colset gridset","m":"2","items":[2080,2099,2131,2137],"cols":null},{"p":2501,"c":"colset","m":"2","items":[2502,2503,2531],"cols":[[2502,2503],[2531]]},{"p":4821,"c":"colset","m":"2","items":[4822,4846],"cols":[[4822],[4846]]},{"p":5217,"c":"colset","m":"2","items":[5218,5222,5227,5230,5246,5248],"cols":[[5218,5222,5227,5230],[5246,5248]]}],"flows":[{"tr":1819,"m":"2","cols":[{"crumb":"","items":[[1820,"0em",0]]},{"crumb":"","items":[[1846,"0em",1],[1849,"1.1em",0],[1856,"1.1em",0],[1871,"0em",1],[1874,"1.1em",0],[1876,"1.1em",0],[1878,"1.1em",0],[1888,"1.1em",0],[1891,"1.1em",0],[1893,"0em",0]]}]},{"tr":1959,"m":"2","cols":[{"crumb":"","items":[[1960,"0em",0]]},{"crumb":"","items":[[1989,"0em",0]]}]},{"tr":2327,"m":"2","cols":[{"crumb":"","items":[[2328,"0em",0],[2333,"0em",0],[2337,"0em",0],[2339,"0em",0]]},{"crumb":"","items":[[2343,"0em",0]]}]},{"tr":2378,"m":"2","cols":[{"crumb":"","items":[[2379,"0em",0]]},{"crumb":"","items":[[2391,"0em",0]]}]},{"tr":4722,"m":"2","cols":[{"crumb":"","items":[[4724,"0em",1],[4727,"1.1em",0],[4735,"1.1em",0],[4751,"1.1em",0],[4753,"1.1em",0]]},{"crumb":"","items":[[4764,"0em",1],[4767,"1.1em",0],[4772,"1.1em",0],[4776,"1.1em",0],[4780,"1.1em",0],[4786,"1.1em",0]]}]}]},"2":{"sect":[[6,"repeat(4, minmax(0px, 1fr))"],[28,"repeat(4, minmax(0px, 1fr))"],[250,"repeat(4, minmax(0px, 1fr))"],[345,"repeat(4, minmax(0px, 1fr))"],[695,"repeat(4, minmax(0px, 1fr))"],[873,"repeat(4, minmax(0px, 1fr))"],[1097,"repeat(4, minmax(0px, 1fr))"],[1204,"repeat(4, minmax(0px, 1fr))"],[1788,"repeat(4, minmax(0px, 1fr))"],[1920,"repeat(4, minmax(0px, 1fr))"],[2031,"repeat(4, minmax(0px, 1fr))"],[2144,"repeat(4, minmax(0px, 1fr))"],[2316,"repeat(4, minmax(0px, 1fr))"],[2490,"repeat(4, minmax(0px, 1fr))"],[2607,"repeat(4, minmax(0px, 1fr))"],[2809,"repeat(4, minmax(0px, 1fr))"],[3071,"repeat(4, minmax(0px, 1fr))"],[3217,"repeat(4, minmax(0px, 1fr))"],[3307,"repeat(4, minmax(0px, 1fr))"],[3388,"repeat(4, minmax(0px, 1fr))"],[3492,"repeat(4, minmax(0px, 1fr))"],[3622,"repeat(4, minmax(0px, 1fr))"],[3716,"repeat(4, minmax(0px, 1fr))"],[3893,"repeat(4, minmax(0px, 1fr))"],[4046,"repeat(4, minmax(0px, 1fr))"],[4266,"repeat(4, minmax(0px, 1fr))"],[4420,"repeat(4, minmax(0px, 1fr))"],[4550,"repeat(4, minmax(0px, 1fr))"],[4710,"repeat(4, minmax(0px, 1fr))"],[4806,"repeat(4, minmax(0px, 1fr))"],[4883,"repeat(4, minmax(0px, 1fr))"],[4966,"repeat(4, minmax(0px, 1fr))"],[5053,"repeat(4, minmax(0px, 1fr))"],[5099,"repeat(4, minmax(0px, 1fr))"],[5138,"repeat(4, minmax(0px, 1fr))"],[5190,"repeat(4, minmax(0px, 1fr))"]],"span":[[30,"span 2"],[96,"span 2"],[160,"span 2"],[208,"span 2"],[252,"span 2"],[295,"span 2"],[347,"span 2"],[374,"span 2"],[405,"1 / -1"],[449,"1 / -1"],[556,"1 / -1"],[660,"1 / -1"],[734,"span 2"],[743,"span 2"],[792,"1 / -1"],[833,"1 / -1"],[978,"span 2"],[1002,"span 2"],[1025,"span 2"],[1042,"span 2"],[1063,"span 2"],[1075,"span 2"],[1103,"span 2"],[1121,"span 2"],[1153,"span 2"],[1163,"span 2"],[1193,"1 / -1"],[1210,"span 2"],[1223,"span 2"],[1228,"span 2"],[1235,"span 2"],[1277,"span 2"],[1296,"span 2"],[1312,"1 / -1"],[1366,"span 2"],[1434,"span 2"],[1483,"span 2"],[1501,"span 2"],[1545,"1 / -1"],[1590,"1 / -1"],[1622,"1 / -1"],[1709,"span 2"],[1746,"span 2"],[1795,"1 / -1"],[1815,"1 / -1"],[1927,"span 2"],[1948,"span 2"],[2037,"span 2"],[2068,"span 2"],[2167,"span 2"],[2225,"span 2"],[2322,"1 / -1"],[2373,"1 / -1"],[2445,"span 2"],[2463,"span 2"],[2496,"1 / -1"],[2543,"span 2"],[2559,"span 2"],[2583,"1 / -1"],[2617,"span 2"],[2640,"span 2"],[2684,"span 2"],[2723,"span 2"],[2759,"span 2"],[2789,"span 2"],[2815,"span 2"],[2854,"span 2"],[2890,"span 2"],[2936,"span 2"],[3006,"1 / -1"],[3077,"span 2"],[3121,"span 2"],[3169,"1 / -1"],[3223,"span 2"],[3239,"span 2"],[3261,"span 2"],[3291,"span 2"],[3313,"span 2"],[3370,"span 2"],[3396,"span 2"],[3415,"span 2"],[3427,"span 2"],[3449,"span 2"],[3499,"span 2"],[3558,"span 2"],[3630,"span 2"],[3655,"span 2"],[3725,"1 / -1"],[3746,"1 / -1"],[3784,"span 2"],[3822,"span 2"],[3866,"1 / -1"],[3902,"span 2"],[3926,"span 2"],[3936,"span 2"],[3965,"span 2"],[4058,"span 2"],[4076,"span 2"],[4099,"span 2"],[4131,"span 2"],[4217,"span 2"],[4228,"span 2"],[4245,"1 / -1"],[4274,"span 2"],[4342,"span 2"],[4394,"1 / -1"],[4428,"span 2"],[4462,"span 2"],[4514,"1 / -1"],[4558,"span 2"],[4592,"span 2"],[4643,"1 / -1"],[4718,"1 / -1"],[4794,"1 / -1"],[4814,"1 / -1"],[4866,"1 / -1"],[4892,"span 2"],[4931,"span 2"],[5063,"span 2"],[5085,"span 2"],[5157,"span 2"],[5163,"span 2"],[5169,"span 2"],[5175,"span 2"],[5181,"1 / -1"]],"cls":{"rowg":[],"flat":[1819,1959,2079,2327,2378,4648,4722,4821],"flowing":[1819,2327,2378],"tcells":[],"lead1":[],"treewide":[],"gfull":[1193]},"sets":[{"p":496,"c":"colset","m":"2","items":[497,530],"cols":[[497],[530]]},{"p":564,"c":"colset","m":"2","items":[565,610,630],"cols":[[565],[610,630]]},{"p":799,"c":"colset","m":"2","items":[800,806,820],"cols":[[800],[806,820]]},{"p":1315,"c":"colset","m":"2","items":[1316,1318],"cols":[[1316],[1318]]},{"p":1959,"c":"colset","m":"2","items":[1960,1989],"cols":[[1960],[1989]]},{"p":2079,"c":"colset gridset","m":"2","items":[2080,2099,2131,2137],"cols":null},{"p":4648,"c":"colset","m":"2","items":[4649,4677],"cols":[[4649],[4677]]},{"p":4722,"c":"colset","m":"2","items":[4723,4763],"cols":[[4723],[4763]]},{"p":4821,"c":"colset","m":"2","items":[4822,4846],"cols":[[4822],[4846]]},{"p":5217,"c":"colset","m":"2","items":[5218,5222,5227,5230,5246,5248],"cols":[[5218,5222,5227,5230],[5246,5248]]}],"flows":[{"tr":1819,"m":"2","cols":[{"crumb":"","items":[[1820,"0em",0],[1846,"0em",1],[1849,"1.1em",0]]},{"crumb":"연소 생성물","items":[[1856,"1.1em",0],[1871,"0em",1],[1874,"1.1em",0],[1876,"1.1em",0],[1878,"1.1em",0],[1888,"1.1em",0],[1891,"1.1em",0],[1893,"0em",0]]}]},{"tr":2327,"m":"2","cols":[{"crumb":"","items":[[2328,"0em",0],[2333,"0em",0],[2337,"0em",0],[2339,"0em",0]]},{"crumb":"","items":[[2343,"0em",0]]}]},{"tr":2378,"m":"2","cols":[{"crumb":"","items":[[2379,"0em",0]]},{"crumb":"","items":[[2391,"0em",0]]}]}]},"1":{"sect":[[6,"repeat(2, minmax(0px, 1fr))"],[28,"repeat(2, minmax(0px, 1fr))"],[250,"repeat(2, minmax(0px, 1fr))"],[345,"repeat(2, minmax(0px, 1fr))"],[695,"repeat(2, minmax(0px, 1fr))"],[873,"repeat(2, minmax(0px, 1fr))"],[1097,"repeat(2, minmax(0px, 1fr))"],[1204,"repeat(2, minmax(0px, 1fr))"],[1788,"repeat(2, minmax(0px, 1fr))"],[1920,"repeat(2, minmax(0px, 1fr))"],[2031,"repeat(2, minmax(0px, 1fr))"],[2144,"repeat(2, minmax(0px, 1fr))"],[2316,"repeat(2, minmax(0px, 1fr))"],[2490,"repeat(2, minmax(0px, 1fr))"],[2607,"repeat(2, minmax(0px, 1fr))"],[2809,"repeat(2, minmax(0px, 1fr))"],[3071,"repeat(2, minmax(0px, 1fr))"],[3217,"repeat(2, minmax(0px, 1fr))"],[3307,"repeat(2, minmax(0px, 1fr))"],[3388,"repeat(2, minmax(0px, 1fr))"],[3492,"repeat(2, minmax(0px, 1fr))"],[3622,"repeat(2, minmax(0px, 1fr))"],[3716,"repeat(2, minmax(0px, 1fr))"],[3893,"repeat(2, minmax(0px, 1fr))"],[4046,"repeat(2, minmax(0px, 1fr))"],[4266,"repeat(2, minmax(0px, 1fr))"],[4420,"repeat(2, minmax(0px, 1fr))"],[4550,"repeat(2, minmax(0px, 1fr))"],[4710,"repeat(2, minmax(0px, 1fr))"],[4806,"repeat(2, minmax(0px, 1fr))"],[4883,"repeat(2, minmax(0px, 1fr))"],[4966,"repeat(2, minmax(0px, 1fr))"],[5053,"repeat(2, minmax(0px, 1fr))"],[5099,"repeat(2, minmax(0px, 1fr))"],[5138,"repeat(2, minmax(0px, 1fr))"],[5190,"repeat(2, minmax(0px, 1fr))"]],"span":[[30,"1 / -1"],[96,"1 / -1"],[160,"1 / -1"],[208,"1 / -1"],[252,"1 / -1"],[295,"1 / -1"],[347,"1 / -1"],[374,"1 / -1"],[405,"1 / -1"],[449,"1 / -1"],[556,"1 / -1"],[660,"1 / -1"],[734,"1 / -1"],[743,"1 / -1"],[792,"1 / -1"],[833,"1 / -1"],[978,"1 / -1"],[1002,"1 / -1"],[1025,"1 / -1"],[1042,"1 / -1"],[1063,"1 / -1"],[1075,"1 / -1"],[1103,"1 / -1"],[1121,"1 / -1"],[1153,"1 / -1"],[1163,"1 / -1"],[1193,"1 / -1"],[1210,"1 / -1"],[1223,"1 / -1"],[1228,"1 / -1"],[1235,"1 / -1"],[1277,"1 / -1"],[1296,"1 / -1"],[1312,"1 / -1"],[1366,"1 / -1"],[1434,"1 / -1"],[1483,"1 / -1"],[1501,"1 / -1"],[1545,"1 / -1"],[1590,"1 / -1"],[1622,"1 / -1"],[1709,"1 / -1"],[1746,"1 / -1"],[1795,"1 / -1"],[1815,"1 / -1"],[1927,"1 / -1"],[1948,"1 / -1"],[2037,"1 / -1"],[2068,"1 / -1"],[2167,"1 / -1"],[2225,"1 / -1"],[2322,"1 / -1"],[2373,"1 / -1"],[2445,"1 / -1"],[2463,"1 / -1"],[2496,"1 / -1"],[2543,"1 / -1"],[2559,"1 / -1"],[2583,"1 / -1"],[2617,"1 / -1"],[2640,"1 / -1"],[2684,"1 / -1"],[2723,"1 / -1"],[2759,"1 / -1"],[2789,"1 / -1"],[2815,"1 / -1"],[2854,"1 / -1"],[2890,"1 / -1"],[2936,"1 / -1"],[3006,"1 / -1"],[3077,"1 / -1"],[3121,"1 / -1"],[3169,"1 / -1"],[3223,"1 / -1"],[3239,"1 / -1"],[3261,"1 / -1"],[3291,"1 / -1"],[3313,"1 / -1"],[3370,"1 / -1"],[3396,"1 / -1"],[3415,"1 / -1"],[3427,"1 / -1"],[3449,"1 / -1"],[3499,"1 / -1"],[3558,"1 / -1"],[3630,"1 / -1"],[3655,"1 / -1"],[3725,"1 / -1"],[3746,"1 / -1"],[3784,"1 / -1"],[3822,"1 / -1"],[3866,"1 / -1"],[3902,"1 / -1"],[3926,"1 / -1"],[3936,"1 / -1"],[3965,"1 / -1"],[4058,"1 / -1"],[4076,"1 / -1"],[4099,"1 / -1"],[4131,"1 / -1"],[4217,"1 / -1"],[4228,"1 / -1"],[4245,"1 / -1"],[4274,"1 / -1"],[4342,"1 / -1"],[4394,"1 / -1"],[4428,"1 / -1"],[4462,"1 / -1"],[4514,"1 / -1"],[4558,"1 / -1"],[4592,"1 / -1"],[4643,"1 / -1"],[4718,"1 / -1"],[4794,"1 / -1"],[4814,"1 / -1"],[4866,"1 / -1"],[4892,"1 / -1"],[4931,"1 / -1"],[5063,"1 / -1"],[5085,"1 / -1"],[5157,"1 / -1"],[5163,"1 / -1"],[5169,"1 / -1"],[5175,"1 / -1"],[5181,"1 / -1"]],"cls":{"rowg":[],"flat":[],"flowing":[],"tcells":[],"lead1":[],"treewide":[],"gfull":[1193]},"sets":[],"flows":[]}}</script>
 <script src="kit.js?v=5a1f309c"></script>

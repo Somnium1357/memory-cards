@@ -270,7 +270,8 @@
           if(r==='대단' || r==='절' || r==='머리줄' || r==='끝'){ cur=mk('blk full hrow'+(r==='끝'?' endb':''), pg, n); cur.appendChild(n); body=cur; return; }
           /* 글칸 = 서술문 칸 → 전폭 · 읽기 폭(46em) — 좁은 단에 긴 문장이 갇히던 것(사회 「기르고자 하는 시민」 09-30) */
           if(r==='칸' || r==='글칸'){ cur=mk('blk cell ttl'+(r==='글칸'?' full prosecell':''), pg, n); cur.appendChild(n); body=document.createElement('div'); body.className='blb'; cur.appendChild(body); return; }
-          if(!cur){ cur=mk('blk nolab', pg, n); body=cur; }
+          /* data-own = 제목 없는 도입 줄이 앞 칸(첫머리 성취기준 글칸)에 삼켜지지 않게 새 nolab 을 연다(10-03 미술·실과 첫머리) */
+          if(!cur || (n.nodeType===1 && n.hasAttribute('data-own'))){ cur=mk('blk nolab', pg, n); body=cur; }
           body.appendChild(n);
         });
       });
@@ -688,9 +689,14 @@
         var L=[].filter.call(s.querySelectorAll('.vchain:not(.hz)'), function(v){ return v.offsetParent!==null && v.querySelector(':scope > .ann'); });
         if(L.length<2) return;
         var cw=L.map(function(v){ var st=v.querySelector(':scope > .stp'); return st ? st.getBoundingClientRect().width : 0; });
-        var mx=Math.max.apply(null, cw);
+        /* 10-03 동하 미결(순환·5E·POE 이름 칸 넓음): 절 최대 하나에 다 맞추면 짧은 이름 사슬(탐색 62px)이 172px 로 벌어진다 →
+           폭이 1.5배 안쪽인 사슬끼리만 무리 지어 무리 안 최대로 */
+        var ord=cw.map(function(w,i){ return i; }).filter(function(i){ return cw[i]>0; }).sort(function(a,b){ return cw[a]-cw[b]; });
+        var grpMax={}, g=[];
+        var flushG=function(){ var m=Math.max.apply(null, g.map(function(i){ return cw[i]; })); g.forEach(function(i){ grpMax[i]=m; }); g=[]; };
+        ord.forEach(function(i){ if(g.length && cw[i]>cw[g[0]]*1.5) flushG(); g.push(i); }); if(g.length) flushG();
         L.forEach(function(v,i){
-          if(mx-cw[i]<2) return;
+          var mx=grpMax[i]; if(mx==null || mx-cw[i]<2) return;
           var fs=parseFloat(getComputedStyle(v).fontSize)||16;
           if(v.clientWidth-mx-fs < 12*fs) return;
           v.style.gridTemplateColumns=Math.ceil(mx)+'px minmax(0,1fr)'; v.classList.add('l1al');

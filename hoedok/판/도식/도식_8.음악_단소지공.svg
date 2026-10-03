@@ -20,7 +20,7 @@
   </g>
   <g fill="currentColor" font-size="16">
     <text x="216" y="100">5공 <tspan font-size="13">(거의 X)</tspan></text>
-    <text x="216" y="145">4공 <tspan font-size="13">(우·검)</tspan></text>
+    <text x="216" y="145">4공 <tspan font-size="13">(우·중)</tspan></text>
     <text x="216" y="190">3공 <tspan font-size="13">(좌·중)</tspan></text>
     <text x="216" y="235">2공 <tspan font-size="13">(좌·검)</tspan></text>
     <g text-anchor="end">

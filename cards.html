@@ -8162,7 +8162,7 @@ function counts(){ // 상단 바 — 남은 수는 현재 세션 큐 · 「내�
   /* 진행 막대 = **그날 이 세션** 기준(동하 09-24 「닫았다 열 때마다 진행바가 바뀜 · 그날 듀 기준으로 고정」) — 다시 열면 큐가 남은 카드로만
      다시 조립돼(playSess) 분모가 매번 줄고 막대가 0에서 다시 시작했다. 막대 = 오늘 이 세션에서 처음 채점한 수(pg) ÷ (그것 + 남은 첫 대면). 재출은 뺀다. */
   let bd=done, bt=tot;
-  if(curSess){ const n=(curSess.pg&&curSess.pg.day===todayKey())?(curSess.pg.n||0):0; bd=n; bt=n+rest.filter(c=>!c._re).length; }
+  if(curSess){ const n=(curSess.pg&&curSess.pg.day===todayKey())?(curSess.pg.n||0):0; bd=n; bt=n+newCap(curSess, rest.filter(c=>!c._re)).length; }   // 신규 하루 최대(10-03) — 세션 줄과 같은 문
   $('tbSess').textContent = curSess ? curSess.name : (curPreset ? '풀이' : '');
   /* 🔴 숫자 = 푼 수/오늘 이 세션 몫(진행 막대의 분자/분모 · 동하 09-25 「110/159 식」) — 라벨 없이(폰 폭). */
   $('tbCounts').textContent = curPreset ? `${bd.toLocaleString()}/${bt.toLocaleString()}` : '';
@@ -10994,6 +10994,7 @@ $('nsSave').onclick=()=>{
     // nsState는 시트를 열 때 뜬 **깊은 복사본**이다 — 그 사이에 세션이 끝났으면 성적이 되돌아간다.
     // lastScore를 지키던 이유 그대로 scores(추이 이력)도 지킨다 (2026-08-24)
     const keepQ=nsTarget.q, keepDone=nsTarget.done, keepScore=nsTarget.lastScore, keepScores=nsTarget.scores;
+    const newMaxChanged=(nsTarget.how.newMax||null)!==(nsState.how.newMax||null);   // 신규 하루 최대를 바꾸면 풀던 큐도 바로 따라온다(10-03 동하 「진행바가 안 고쳐짐」)
     const prevU=new Set(nsTarget.scope.units||[]), prevM=new Set(nsTarget.scope.mids||[]);  // 편집 **전** 범위
     const keepPg=nsTarget.pg;   // 진행 막대 카운터도 시트 사본에 덮이지 않게(09-24)
     const exB=JSON.parse(JSON.stringify(nsTarget.scope.ex||{})), keepExDel=nsTarget.exDel, keepExAt=nsTarget.exAt;   // L0-1 — 시트 사본이 병합으로 받은 도장을 덮지 않게
@@ -11016,6 +11017,7 @@ $('nsSave').onclick=()=>{
     }
     // 범위 없이 직접 추가로 바꾼 경우(자동 충전에서 전환 등)는 들고 있던 큐를 그대로 이월
     if(curSess&&curSess.id===nsTarget.id) curPreset=asPreset(nsTarget);
+    if(newMaxChanged && curSess&&curSess.id===nsTarget.id) requeueLive(nsTarget);
     /* 🔴 제외를 바꿨는데 오늘 큐가 그대로면 「안 먹혔다」로 보인다. 직접 추가 세션은 위 필터가
        이미 걸러내고, 자동 충전은 day를 비워 다음 렌더에서 다시 뽑게 한다. */
     if(exChanged && !isFixed(nsTarget)) nsTarget.day='';

@@ -2557,6 +2557,7 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
       <button data-v="shuffle">셔플</button><button data-v="doc">문서순</button><button data-v="weighted">가중 셔플</button></div></div>
     <div class="field" id="nsWtField" style="display:none"><label>과목 가중치 (배점 비율)</label><div class="wt-grid" id="nsWts"></div></div>
     <div class="field"><label>분량 (비우면 전량)</label><input id="nsLimit" type="number" inputmode="numeric" min="1" placeholder="전량"></div>
+    <div class="field"><label>신규 하루 최대 (비우면 제한 없음)</label><input id="nsNewMax" type="number" inputmode="numeric" min="1" placeholder="제한 없음"></div>
     <div class="field"><label>내용 채우기</label><div class="seg" id="nsMode">
       <button data-v="auto">자동 충전</button><button data-v="manual">직접 추가</button></div>
       <div class="desc" style="margin:6px 2px 0">자동 충전 = 범위 전체에서 매일 다시 채움 · 직접 추가 = 세션 화면에서 넣고 잔량은 이월</div></div>
@@ -7105,7 +7106,7 @@ function reRestore(snap){
 }
 function requeueLive(sx){
   const snap=reSnap();
-  queue=[...queue.slice(0,qPos), ...gateOut(gateIn(sessCards(sx), null), sx.how.order, false)];
+  queue=[...queue.slice(0,qPos), ...gateOut(newCap(sx, gateIn(sessCards(sx), null)), sx.how.order, false)];
   reRestore(snap);
   counts();
 }
@@ -7209,8 +7210,8 @@ function refillSess(sx){ // 전체 범위 세션은 날이 바뀌면 스스로 �
    ⚠ **저장 큐는 그대로 둔다** — 지우면 되돌리기가 카드를 되살릴 자리를 잃는다. 세는 것만 바꾼다.
    ⚠ 그래서 되돌리기로 되살아날 카드는 이 숫자에 안 잡힌다. 「지금 풀 것」을 세는 값이므로 그게 맞다. */
 function sessRemain(sx){ return (curSess&&curSess.id===sx.id)
-  ? queue.slice(qPos).filter(c=>!settledToday(c)&&!buried(c)&&!retired(c)&&!offed(c)).length   // 끈 카드 제외(F3-8)
-  : gateIn(sessCards(sx), null).length; }   // 🔴 격리분(사슬·짝 키·방향) 전부 빼고 센다 — 숫자와 실제가 어긋나면 안 된다(F3-3: 사슬만 세던 것)
+  ? newCap(sx, queue.slice(qPos).filter(c=>!settledToday(c)&&!buried(c)&&!retired(c)&&!offed(c))).length   // 끈 카드 제외(F3-8)
+  : newCap(sx, gateIn(sessCards(sx), null)).length; }   // 신규 하루 최대(10-03)도 같은 문   // 🔴 격리분(사슬·짝 키·방향) 전부 빼고 센다 — 숫자와 실제가 어긋나면 안 된다(F3-3: 사슬만 세던 것)
 /* 범위 피커의 시작 선택 = 지금 범위에서 빼 둔 것(ex)을 뺀 것. ex가 단위 안쪽(중주제·3층)만 뺐으면 그 단위를 한 층 풀어서 나머지를 체크한다. */
 function scopeEffSel(sx){
   const sc=sx.scope||{}, ex=sc.ex||{}, exU=new Set(ex.units||[]), exM=new Set(ex.mids||[]);
@@ -7559,6 +7560,15 @@ function settledToday(c){         // 오늘 처리 끝난 카드 = 오늘 한 �
    ⚠ **저장 큐는 안 건드린다** — 되돌리기 발판이라는 원칙 그대로다(§3). 세는 것·내는 것만 바꾼다.
    ⚠ (09-06 보강) 저장 큐를 **쓰는 쪽**은 `keepIds`가 맡는다 — 화면 잔량에 **오늘 못 낸 보류분을 도로 얹는다**(F3-2).
       여기서 걸러 낸 것과 거기서 남기는 것은 다른 이야기다: 이 술어는 「오늘 낼 것」, 저기는 「내일로 넘길 것」. */
+/* 🔴 **세션별 신규 하루 최대**(동하 10-03 「특정 세션의 신규 카드 제한」 · 강사질문 하루 100장). `how.newMax` = 그 세션이 하루에 내는 신규 상한.
+   센다 = 오늘 처음 본 카드 중 이 세션 범위에 든 것(다른 세션에서 본 같은 범위 카드도 센다) → 남은 몫만큼만 큐 순서대로 신규를 낸다 · 복습은 그대로.
+   저장 큐(q)는 안 건드린다 — 내는 자리(playSess·requeueLive)와 세는 자리(sessRemain·dueTodayParts)가 같은 문을 지나 숫자와 실제가 같다. 남은 신규는 다음 날로. */
+function newCapLeft(sx){ const N=sx&&sx.how?parseInt(sx.how.newMax,10):0; if(!(N>0)) return Infinity;
+  const sc=asPreset(sx).scope, tk=todayKey(), first=firstRevMap(); let n=0;
+  for(const id in first){ if(dayKey(new Date(first[id]))!==tk) continue; const c=BYID[id]; if(c && scopeMatch(c, sc)) n++; }
+  return Math.max(0, N-n); }
+function newCap(sx, list){ let left=newCapLeft(sx); if(left===Infinity) return list;
+  return list.filter(c=>{ if(c._re || !isNew(c)) return true; if(left>0){ left--; return true; } return false; }); }
 function dropSettled(list){ return list.filter(c=>!settledToday(c) && !buried(c) && !retired(c) && !offed(c)); }
 /* 🔴 **이웃 낱장 상호 누설 격리** (문법 v1.15 보강 2 · 동하 승인 2026-09-02 · 생성기 v2.29)
    `[이웃]` 낱장은 앞면에 **i-1·i+1 단계명이 보인다.** 그래서 번호 차가 1인 두 장은
@@ -7931,7 +7941,7 @@ function playSess(sx){          // 세션 화면의 [이어가기] — 남은 �
   refillSess(sx);
   const all=sessCards(sx);
   // 다른 세션에서 오늘 푼 것은 빼고 이어간다 — 단 지목 세션(pick)은 그대로 푼다
-  queue=gateOut(gateIn(all, null, sx.pick), sx.how.order, false); qPos=0;   // 🔴 두 문 · 저장 순서는 지킨다
+  queue=gateOut(newCap(sx, gateIn(all, null, sx.pick)), sx.how.order, false); qPos=0;   // 🔴 두 문 · 저장 순서는 지킨다
   /* 재출 대기분 복원(09-16) — 그날 것만 · 카드가 살아 있고 오늘 첫 채점이 있는 것만(재출은 「아까 다시 한 카드」다) · 자리는 저장 때 rest 안 위치 */
   if(Array.isArray(sx.rq) && sx.rq.length && sx.day===todayKey()){
     const tr=todayRatings();
@@ -9221,7 +9231,7 @@ function dueTodayParts(cached){   // cached = 라이브러리 줄마다 부르�
      푸는 중인 세션은 화면 큐 그대로(sessRemain과 같다). 보류분은 later로 간다. */
   const pass=new Set();
   for(const sx of sessions){ if(!sx) continue;
-    const list=(curSess&&curSess.id===sx.id) ? queue.slice(qPos).filter(c=>!c._re&&!settledToday(c)&&!buried(c)&&!retired(c)&&!offed(c)) : gateIn(sessCards(sx), null);   // = sessRemain과 같은 술어
+    const list=newCap(sx, (curSess&&curSess.id===sx.id) ? queue.slice(qPos).filter(c=>!c._re&&!settledToday(c)&&!buried(c)&&!retired(c)&&!offed(c)) : gateIn(sessCards(sx), null));   // = sessRemain과 같은 술어(신규 하루 최대 포함)
     for(const c of list) pass.add(c.id); }
   /* 🔴 **휴식일엔 큐 밖 due를 「오늘」에 안 센다**(동하 10-01 「이거 또 안 맞아」 — 휴식일 아침 타일 87 · 세션 줄 합 12). 휴식일엔 refillSess가 자동 세션을 안 채워서 세션 줄은 「오늘 끝」인데 restDue(자동 범위 · 큐 밖)는 그대로 세었다. 사람이 「이어서 채우기」로 담으면 큐에 들어 pass로 세어진다 · 안 담은 몫은 later(내일 막대)로. */
   const today=[...dropSettled(inQ).filter(c=>pass.has(c.id)), ...(isRestDay(tk) ? [] : gateIn(restDue, inQ))];
@@ -9295,6 +9305,7 @@ function sessDesc(sx){
      셔플(기본값)·방향 분산(항상)·신규 이어가기는 세션 화면 설정에서 보이므로 여기서는 뺀다. 문서순·상한만 남긴다 */
   if(sx.how.order==='doc')parts.push('문서순'); else if(sx.how.order==='weighted')parts.push('과목 가중');
   if(sx.how.limit)parts.push(sx.how.limit+'장');
+  if(sx.how.newMax)parts.push('신규 하루 '+sx.how.newMax+'장');
   return parts.join(' · ');
 }
 /* 🔴 **세션이 붙잡고 있는데 지금 카드가 0장인 범위 키** (전층 감사 F2-1 · 2026-09-06).
@@ -10954,12 +10965,14 @@ function syncSessEditor(){
     c.appendChild(inp); wg.appendChild(c);
   }
   $('nsLimit').value=h.limit||'';
+  $('nsNewMax').value=h.newMax||'';
   $('nsBury').classList.toggle('on',!!h.bury);
   $('nsNewAfter').classList.toggle('on',!!h.newAfter);
 }
 $('nsBury').onclick=()=>{ nsState.how.bury=!nsState.how.bury; nsDirty=true; $('nsBury').classList.toggle('on'); };
 $('nsNewAfter').onclick=()=>{ nsState.how.newAfter=!nsState.how.newAfter; nsDirty=true; $('nsNewAfter').classList.toggle('on'); };
 $('nsLimit').addEventListener('input',()=>{ nsDirty=true; });
+$('nsNewMax').addEventListener('input',()=>{ nsDirty=true; });
 $('nsCancel').onclick=()=>$('ovlSess').classList.remove('show');
 $('ovlSess').onclick=(e)=>{ if(e.target===$('ovlSess'))$('ovlSess').classList.remove('show'); };
 $('nsDelete').onclick=()=>{
@@ -10971,6 +10984,7 @@ $('nsDelete').onclick=()=>{
 $('nsSave').onclick=()=>{
   const h=nsState.how;
   h.limit=+$('nsLimit').value||null;
+  h.newMax=Math.max(0,parseInt($('nsNewMax').value,10)||0)||null;   // 신규 하루 최대(10-03)
   if(h.order==='weighted' && !h.limit){ $('nsLimit').focus(); toast('가중 셔플은 분량(N장)과 함께 써야 해요'); return; }
   nsState.name=$('nsName').value.trim()||'이름 없는 세션';
   if(nsTarget){

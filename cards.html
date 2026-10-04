@@ -9663,7 +9663,8 @@ async function scSync(o){ o=o||{};
       return (o.keepalive || (!o.force && !o.manual && Date.now()-(SC.membersAt||0)<85000)) ? null : scFetchToday(tok, SC.group.id, t.day); });
     if(mem){ SC.members=mem; SC.membersAt=Date.now(); SC.memDay=scDay(Date.now()); }
     delete SC.err; scFail=0; scHold=0; scSave();
-  }catch(e){ SC.err = /not a member/i.test(e.message||'') ? '방에서 빠졌어요 — 스터디 화면에서 초대 코드로 다시 들어가요' : e.status===401 ? '연결이 끊겼어요 — 스터디 화면에서 초대 코드로 다시 들어가요' : (e.message||String(e)); if(e.status===401){ delete SC.auth; }
+  }catch(e){ if(/not a member/i.test(e.message||'') && SC.group){ scDropRoom(); toast('스터디 방에서 빠졌어요 — 스터디 화면에서 초대 코드로 다시 들어가요'); return; }   // finally가 다시 그린다
+    SC.err = e.status===401 ? '연결이 끊겼어요 — 스터디 화면에서 초대 코드로 다시 들어가요' : (e.message||String(e)); if(e.status===401){ delete SC.auth; }
     if(e.status!==401 && !o.keepalive){ scFail++; scHold=Date.now()+[60,120,240,300][Math.min(scFail,4)-1]*1000; } scSave(); }
   finally{ scBusy=false; if(!o.keepalive) scRender(); } }
 /* 계정을 바꿔도 이 기기 것은 남긴다 — 설치 ID · 목표 · 세션 이름 공유 · 세션별 속도 기록 */
@@ -9847,8 +9848,13 @@ async function scCreate(name, tz){ name=String(name||'').trim(); if(!name) throw
     if(!r||!(r.id||r.group_id)) throw new Error('방을 만들지 못했어요'); return r; });
   SC.group={id:g.id||g.group_id, name, invite_code:g.invite_code, owner_id:SC.auth.user_id, time_zone:g.time_zone||tz||'Asia/Seoul', day_start_hour:4};
   delete SC.err; delete SC.members; SC.membersAt=0; scSave(); await scSync({manual:true}); return SC.group.invite_code; }
-async function scLeaveRoom(){ const g=SC.group; await scAuthed(tok=>scReq('POST','/rest/v1/rpc/leave_study_group',{token:tok, body:{target_group:g.id}}));
-  delete SC.group; delete SC.members; delete SC.err; delete SC.rv; SC.deckPub=null; scOpen=null; scSave(); }
+async function scLeaveRoom(){ const g=SC.group;
+  try{ await scAuthed(tok=>scReq('POST','/rest/v1/rpc/leave_study_group',{token:tok, body:{target_group:g.id}})); }
+  catch(e){ if(!/not a member/i.test(e.message||'')) throw e; }   // 이미 내보내졌거나 나간 방 = 나간 것으로 본다(안 그러면 방 정보에 갇힌다 · 애드온 리뷰 10-04)
+  scDropRoom(); }
+/* 방 정보 비우기 — 나가기 성공 · 서버가 「멤버 아님」이라고 할 때(방장이 내보냄 등) 둘 다 여기로. 그래야 입구(초대 코드)가 다시 뜬다 */
+function scDropRoom(){ delete SC.group; delete SC.members; delete SC.err; delete SC.rv; SC.deckPub=null; scOpen=null; scSave();
+  const a=$('scBox'), c=$('studyBody'); if(a) a.dataset.m=''; if(c) c.dataset.m=''; }
 async function scLoadBans(){ const g=SC.group; const r=await scAuthed(tok=>scReq('POST','/rest/v1/rpc/list_study_group_bans',{token:tok, body:{target_group:g.id}}))||[];
   scBans=await Promise.all(r.filter(x=>x&&x.user_id).map(async x=>({user_id:x.user_id, name:await scNick(x.user_id)}))); }
 async function scModerate(uid, blocked){ const g=SC.group; await scAuthed(tok=>scReq('POST','/rest/v1/rpc/moderate_study_group_member',{token:tok, body:{target_group:g.id, target_user:uid, blocked}}));

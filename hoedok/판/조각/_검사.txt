@@ -252,9 +252,6 @@ FAIL  2.수학_p903
 FAIL  2.수학_p904
   - <h2 로 시작하지 않음
   - style= 에 간격 외 속성: border-bottom, color, display, font-size, font-weight, text-decoration, white-space
-FAIL  2.수학_p905
-  - <h2 로 시작하지 않음
-  - style= 에 간격 외 속성: border-bottom, color, display, font-size, font-weight, text-decoration, white-space
 FAIL  2.수학_p906
   - <h2 로 시작하지 않음
   - kit.css 에 없는 class: rst
@@ -617,4 +614,4 @@ FAIL  9.미술_p921
   - <h2 로 시작하지 않음
 FAIL  9.미술_p931
   - <h2 로 시작하지 않음
-검사: 통과 124 · 실패 226 (총 350)
+검사: 통과 124 · 실패 225 (총 349)

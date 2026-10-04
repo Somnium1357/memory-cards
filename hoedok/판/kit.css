@@ -902,3 +902,7 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
    조문 줄과 같은 모양이라 조문을 훑기 어렵던 것 → 머리 레이블만 흐리게 + 한 단 들여쓰기(조문 줄은 그대로 · 표지 .sgnote 는 kit.js) */
 :root.v2 .stack>.desc.sgnote{padding-left:1.3em;}
 :root.v2 .desc.sgnote>.sglab{color:var(--v2muted);font-weight:400;}
+/* 10-04 배포 검수 F3(위계 역전 · 8과목 같은 규칙): 교육과정 성취기준 절 = 학년군 머리 > 영역(단원) 제목 > (가)(나) 헤더.
+   (가)(나)(.sgsub · kit.js) = 한 단계 낮춤(작게 · 600) — 파랑·괘선은 유지 · 학년군 머리 h3(.sggrade) = 머리줄(.r-head) 꼴 */
+:root.v2 main.wrap h4.sgsub.sgsub{font-size:.82em;line-height:1.45;font-weight:600;color:var(--v2acc);border-bottom:1px solid var(--v2rule);padding-bottom:3px;}
+:root.v2 main.wrap h3.sggrade.sggrade{font-size:1.02em;line-height:1.35;font-weight:700;color:var(--v2ink);padding-bottom:.3em;border-bottom:1px solid var(--v2ink);}

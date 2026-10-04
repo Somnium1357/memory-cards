@@ -384,6 +384,17 @@
       var lab=document.createElement('span'); lab.className='sglab'; lab.textContent=m[0];
       t.nodeValue=t.nodeValue.slice(m[0].length); d.insertBefore(lab, t); d.classList.add('sgnote');
     });
+    /* 10-04 배포 검수 F3(본체 「원문 조직이 기준」 · 위계 역전): 교육과정 성취기준 절의 (가)(나) 헤더(「(가) 성취기준 해설」「(나) 성취기준 적용 시 고려 사항」)
+       = .sgsub(한 단계 낮춤 · 파랑·괘선 유지) · 그 위 학년군 머리(「3~4학년」「5~6학년군」)가 h3 이면 .sggrade(머리줄 꼴) → 학년군 > 영역(단원) > (가)(나). 모양은 kit.css · 8과목 같은 규칙 */
+    (function(){
+      var hs=[].slice.call(document.querySelectorAll('main.wrap h2, main.wrap h3, main.wrap h4'));
+      var bare=function(h){ var c=h.cloneNode(true); [].forEach.call(c.querySelectorAll('.mk'), function(m){ m.remove(); }); return c.textContent.trim(); };
+      hs.forEach(function(h, i){
+        if(h.tagName!=='H4' || !/^\((가|나)\) 성취기준/.test(bare(h))) return;
+        h.classList.add('sgsub');
+        for(var j=i-1; j>=0; j--){ var p=hs[j]; if(p.tagName==='H2') break; if(p.tagName==='H3' && /^\d~\d학년(군)?$/.test(bare(p))){ p.classList.add('sggrade'); break; } }
+      });
+    })();
     if(window.PAN_HOIST!==false){
       document.querySelectorAll('main.wrap .prose > p[style]').forEach(function(p){
         var t=p.textContent.trim();

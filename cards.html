@@ -924,6 +924,34 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
    28칸 차트는 칸 20.5px라 「08/24」가 「08/」로 잘렸다. 라벨은 2~7칸마다 하나씩만 찍히므로
    넘쳐도 이웃과 안 겹친다 — 가두는 대신 넘치게 둔다. 글자도 11.5px로 살짝 줄였다. */
 .legend{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;}
+/* 잔디판(10-04) — 칸 --hc · 사이 4 · 반경 4 · 진하기 = 시스템 초록 22/40/60/80% 섞음 4단 */
+#statsBody{--hc:14px;}
+@media (min-width:700px){ #statsBody{--hc:20px;} }
+.hm-stats{display:flex;flex-wrap:wrap;gap:6px 20px;margin:10px 0 12px;}
+.hm-stats>div{display:flex;flex-direction:column;}
+.hm-stats b{font-size:22px;line-height:28px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--c-label);}
+.hm-stats small{font-size:12px;line-height:16px;color:var(--c-sec);font-weight:600;}
+.hm{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;}
+.hm-days{display:grid;grid-template-rows:14px repeat(7,var(--hc));gap:4px;font-size:11px;line-height:var(--hc);font-weight:600;color:var(--c-sec);flex:0 0 auto;}
+.hm-body{display:flex;flex-direction:column;gap:4px;}
+.hm-months{display:grid;gap:4px;height:14px;font-size:11px;line-height:14px;font-weight:600;color:var(--c-sec);white-space:nowrap;}
+.hm-grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,var(--hc));grid-auto-columns:var(--hc);gap:4px;}
+.hm-c{display:block;width:var(--hc);height:var(--hc);border-radius:4px;background:var(--c-fill);cursor:pointer;}
+.hm-c.l1{background:color-mix(in srgb, var(--c-green) 22%, var(--c-fill));}
+.hm-c.l2{background:color-mix(in srgb, var(--c-green) 40%, var(--c-fill));}
+.hm-c.l3{background:color-mix(in srgb, var(--c-green) 60%, var(--c-fill));}
+.hm-c.l4{background:color-mix(in srgb, var(--c-green) 80%, var(--c-fill));}   /* 시스템 초록을 바탕에 섞어 연하게(애플식 단색 농도) — 동하 10-04 A안 · 원색(형광)·「알맞음」 초록(어두움)은 둘 다 기각 */
+.hm-c.rest{background:repeating-linear-gradient(45deg, var(--c-fill) 0 3px, transparent 3px 6px);}
+.hm-c.fut{background:transparent;box-shadow:inset 0 0 0 1px var(--c-sep);}
+.hm-c.today{box-shadow:0 0 0 2px var(--c-acc);}
+.hm-c.exam{box-shadow:inset 0 0 0 2px var(--c-orange);}
+.hm-c.sel{outline:2px solid var(--c-label);outline-offset:1px;}
+.hm-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 16px;margin-top:10px;}
+.hm-line{font-size:13px;line-height:18px;color:var(--c-sec);}
+.hm-line b{color:var(--c-label);font-weight:600;}
+.hm-key{display:flex;align-items:center;gap:3px;font-size:11px;font-weight:600;color:var(--c-sec);}
+.hm-key .hm-c{width:11px;height:11px;border-radius:3px;cursor:default;}
+.hm-key .hm-c.exam{margin-left:8px;}
 .legend span{font-size:12px;font-weight:700;color:var(--mute);display:flex;align-items:center;gap:5px;}
 .legend i{width:9px;height:9px;border-radius:3px;display:block;}
 .sbar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--sunken);}
@@ -12312,6 +12340,49 @@ function statSignals(){
   if(leech>=SIG_LEECH) out.push({k:'leech', t:'누수 <b>'+leech+'장</b> — 라이브러리에서 보기', go:'scrWeak'});
   return out.slice(0,3);
 }
+/* ═══ 오늘 — 잔디판(동하 10-04 「깃헙이나 클코 히트맵 느낌으로」) ═══
+   열 = 주(월~일) · 칸 = 하루 · 진하기 = 그날 푼 장수(첫 채점 장 · 재출 제외 = dailyStats().cards) 4단(시스템 초록을 바탕에 섞어 연하게 · 동하 A안).
+   0인 날 = 빈 칸 · 쉬는 날(0장) = 빗금 · 오늘 = 파랑 테두리 · 시험날까지 남은 날 = 테두리만 · 시험날 = 주황 테두리.
+   단계 문턱 = 푼 날들의 4분위(날마다 양이 크게 달라 고정 문턱이면 다 같은 색이 된다). 칸을 누르면 아래 줄에 그날 내역. */
+let hmSel=null;
+function heatmapHtml(by, T){
+  const tk=todayKey(), endKey=EXAM_DAY>tk?EXAM_DAY:tk;
+  const days=Object.keys(by).filter(k=>by[k].cards>0).sort();
+  let startKey=days.length?days[0]:tk; const minKey=dkAdd(tk,-7*26); if(startKey<minKey) startKey=minKey;   // 최대 26주 뒤로
+  const dow=k=>(new Date(k+'T12:00:00').getDay()+6)%7;   // 월=0 … 일=6
+  startKey=dkAdd(startKey,-dow(startKey)); const lastKey=dkAdd(endKey, 6-dow(endKey));
+  const vals=days.filter(k=>k<=tk).map(k=>by[k].cards).sort((a,b)=>a-b), q=p=>vals.length?vals[Math.min(vals.length-1,Math.floor(p*vals.length))]:0;
+  const q1=q(.25), q2=q(.5), q3=q(.75);
+  const lvl=v=>!v?0:v<=q1?1:v<=q2?2:v<=q3?3:4;
+  const hard={}; if(T&&T.hist) for(let i=1;i<T.hist.length;i++) hard[T.hist[i].k]=Math.max(0,T.hist[i].hard-T.hist[i-1].hard);
+  let cells='', months='', k=startKey, col=0, lastMon='';
+  while(k<=lastKey){
+    if(dow(k)===0){ const m=Number(k.slice(5,7)); months+=`<span>${m!==Number(lastMon)?m+'월':''}</span>`; if(m!==Number(lastMon)) lastMon=String(m); col++; }
+    const e=by[k], v=e?e.cards:0, fut=k>tk, cls=['hm-c'];
+    if(fut) cls.push('fut'); else if(!v && isRestDay(k)) cls.push('rest'); else cls.push('l'+lvl(v));
+    if(k===tk) cls.push('today'); if(k===EXAM_DAY) cls.push('exam'); if(hmSel===k) cls.push('sel');
+    cells+=`<i class="${cls.join(' ')}" data-k="${k}"></i>`;
+    k=dkAdd(k,1); }
+  /* 요약 — 연속(쉬는 날은 끊지 않음 · 오늘 아직 0이면 어제까지) · 최근 7일 평균(푼 날 기준 아님 = 달력 7일) · 최다 */
+  let streak=0; for(let d=tk, first=true; ; d=dkAdd(d,-1), first=false){ const v=by[d]?by[d].cards:0;
+    if(v>0) streak++; else if(first || isRestDay(d)) { if(d<startKey) break; continue; } else break;
+    if(d<startKey) break; }
+  let w7=0; for(let i=0;i<7;i++){ const d=dkAdd(tk,-i); w7+=by[d]?by[d].cards:0; }
+  let best=null; for(const d of days) if(d<=tk && (!best||by[d].cards>by[best].cards)) best=d;
+  const md=d=>Number(d.slice(5,7))+'/'+Number(d.slice(8));
+  const dd=Math.round((new Date(EXAM_DAY+'T12:00:00')-new Date(tk+'T12:00:00'))/86400000);
+  const today=by[tk]||emptyDay();
+  const stat=(n,l)=>`<div><b>${n}</b><small>${l}</small></div>`;
+  return `<div class="hm-stats">${stat(today.cards.toLocaleString(),'오늘 장')}${stat(streak+'일','연속')}${stat(Math.round(w7/7).toLocaleString(),'7일 평균')}${stat(best?by[best].cards.toLocaleString():'—', best?'최다 '+md(best):'최다')}${dd>=0?stat('D-'+dd,'시험'):''}</div>`
+    + `<div class="hm" data-cols="${col}"><div class="hm-days"><span></span><span>월</span><span></span><span>수</span><span></span><span>금</span><span></span></div>`
+    + `<div class="hm-body"><div class="hm-months" style="grid-template-columns:repeat(${col},var(--hc))">${months}</div><div class="hm-grid">${cells}</div></div></div>`
+    + `<div class="hm-foot"><span class="hm-line" id="hmLine">${hmLine(hmSel||tk, by, hard)}</span>`
+    + `<span class="hm-key">적게<i class="hm-c l0"></i><i class="hm-c l1"></i><i class="hm-c l2"></i><i class="hm-c l3"></i><i class="hm-c l4"></i>많이<i class="hm-c rest" style="margin-left:8px"></i>쉼<i class="hm-c exam fut"></i>시험</span></div>`; }
+function hmLine(k, by, hard){
+  const tk=todayKey(), W='일월화수목금토'[new Date(k+'T12:00:00').getDay()], d=`${Number(k.slice(5,7))}월 ${Number(k.slice(8))}일 (${W})`;
+  if(k>tk){ const n=Math.round((new Date(EXAM_DAY+'T12:00:00')-new Date(k+'T12:00:00'))/86400000); return `${d} · ${k===EXAM_DAY?'시험날':n>0?'시험 '+n+'일 전':''}`; }
+  const e=by[k]; if(!e||!e.cards) return `${d} · ${isRestDay(k)?'쉬는 날':'안 풂'}`;
+  return `${d} · <b>${e.cards.toLocaleString()}장</b> · 신규 ${e.nw.toLocaleString()} · 복습 ${Math.max(0,e.cards-e.nw).toLocaleString()} · ${fmtMin(e.ms)}${hard&&hard[k]!=null?' · 새로 굳음 +'+hard[k]:''}`; }
 function renderStats(){
   if(!statsLoaded){ statsLoaded=true;
     /* 🔴 없는 주를 긁지 않는다 (09-02) — 「있을 수 있는 주」와 교집합만. 상한은 여전히 13주. */
@@ -12365,23 +12436,11 @@ function renderStats(){
   if(!T){
     h+='<div class="cap">'+today.cards+'장 — 신규 '+today.nw+' · 복습 '+Math.max(0,today.cards-today.nw)+' · '+fmtMin(today.ms)+'</div>';
   } else {
-    /* 🔴 막대 = **굳힌 것(아래) + 그날 처음 본 것(위)** 2단 · 최근 28일 (동하 09-09: 「기간을 더 길게 · 폭을 좁혀서 · 막대도 쪼개서」).
-       왜 이 둘인가 — 하루의 성과(굳음)와 투입(신규)을 같은 자로 보면 **투입이 며칠 뒤 굳음으로 올라오는 지연**이 눈에 보인다.
-       신규를 몰아 넣은 날 뒤에 굳음이 따라오는지, 아니면 그냥 무름만 쌓이는지가 이 한 줄에서 읽힌다.
-       ⚠ 「그날 처음 본 장수」는 `unseen` 감소분이다(= 첫 대면 카드 수) — `dailyStats().nw`와 같은 값이지만 여기선 hist 한 곳에서 뽑는다. */
-    const G=todayGains(T.hist), hs=T.hist, spark=[];
-    for(let i=Math.max(1,hs.length-28);i<hs.length;i++){
-      const k=hs[i].k, v=Math.max(0, hs[i].hard-hs[i-1].hard), nw=Math.max(0, hs[i-1].unseen-hs[i].unseen);
-      const last=(i===hs.length-1);
-      spark.push({a:v, b:nw, label:last?'오늘':((hs.length-1-i)%7===0?k.slice(5).replace('-','/'):''),
-        cls:last?'today':(isRestDay(k)?'rest':''), title:k+' · 새로 굳은 '+v+'장 · 처음 본 '+nw+'장'}); }
+    const G=todayGains(T.hist);
     h+='<div class="cap">새로 굳은 <b>'+(G.newHard>=0?'+':'')+G.newHard+'</b> · 누수 탈출 <b>'+G.escaped+'</b>'
-      +' · '+today.cards+'장 — 신규 '+today.nw+' · 복습 '+Math.max(0,today.cards-today.nw)+' · '+fmtMin(today.ms)+'</div>'
-      +(spark.length?barChart(spark,{h:60}):'')
-      +'<div class="legend" style="margin-top:6px"><span><i style="background:var(--accent)"></i>새로 굳음</span>'
-      +'<span><i style="background:var(--good)"></i>처음 본 카드</span>'
-      +'<span style="color:var(--faint)">최근 '+spark.length+'일</span></div>';
+      +' · '+today.cards+'장 — 신규 '+today.nw+' · 복습 '+Math.max(0,today.cards-today.nw)+' · '+fmtMin(today.ms)+'</div>';
   }
+  h+=heatmapHtml(by, T);
   h+='</div>';
 
   /* ═══ C. 신호 ═══ */
@@ -12482,6 +12541,15 @@ function renderStats(){
   h+='<div class="card-box"><details><summary style="cursor:pointer;font-weight:600">자세히 — 풀이량 · 분포 · 추이</summary>'+adv+'</details></div>';
 
   $('statsBody').innerHTML=h;
+  { const hd={}; if(T&&T.hist) for(let i=1;i<T.hist.length;i++) hd[T.hist[i].k]=Math.max(0,T.hist[i].hard-T.hist[i-1].hard);
+    $('statsBody').querySelectorAll('.hm-grid .hm-c').forEach(c=>c.onclick=()=>{ hmSel=c.dataset.k;
+      $('statsBody').querySelectorAll('.hm-grid .hm-c.sel').forEach(x=>x.classList.remove('sel')); c.classList.add('sel');
+      $('hmLine').innerHTML=hmLine(hmSel, by, hd); });
+    /* 칸 크기 = 카드 폭에 맞춘다(12~34px) — 고정 칸이면 아이패드에선 절반이 비고 폰에선 좁았다 */
+    const hm=$('statsBody').querySelector('.hm');
+    if(hm){ const fit=()=>{ const n=+hm.dataset.cols, w=hm.clientWidth; if(!n||!w) return;
+        hm.style.setProperty('--hc', Math.max(12, Math.min(34, Math.floor((w-26)/n)-4))+'px'); };
+      fit(); if(window.ResizeObserver) new ResizeObserver(fit).observe(hm); } }
   watchCharts();   // 🔴 그리고 나서 폭을 정수로 못 박는다(간격 들쭉날쭉 방지) · 창 크기가 바뀌면 ResizeObserver가 다시 잰다
   $('statsBody').querySelectorAll('.sig-row').forEach(el=>{ el.onclick=(ev)=>{ if(ev.target.closest('.sig-x')) return;
     if(el.dataset.sk==='leech') openListCond('leech'); else go(el.dataset.go); }; });   // 누수 = 라이브러리 「누수」 목록(약점 화면은 UX §1 정리 대상)

@@ -818,6 +818,7 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 
 /* 가지 — 하위 개념은 아래로(가로 가지 → 세로) · 눈금선은 옅게 */
 :root.v2 .branch{display:flex;flex-direction:column;align-items:stretch;}
+@media (max-width:500px){:root.v2 .branch>:last-child{flex:0 1 auto;}}   /* 10-04 배포 검수(V2·V3): v2 나무는 세로라 좁은 화면 규칙의 flex-basis 8em 이 높이로 먹어 빈 띠(사회 31·과학 69·체육 43) */
 :root.v2 .branch>:first-child{padding-right:0;}
 :root.v2 .branch>.kids,:root.v2 .branch>.bracket,:root.v2 .branch>.fork,:root.v2 .branch>.stack{margin-left:.35em;margin-top:2px;}
 /* 꺾쇠(〈) 가지 = 레이블 옆 — 레이블이 그 둘의 분류 기준이라 옆에 붙어야 뜻이 산다(동하 09-30 「분배 밑에 있으니 어색」) */

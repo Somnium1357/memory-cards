@@ -9506,8 +9506,11 @@ function renderSessRows(){
    애드온 = 오늘 공부 시간·답한 수·목표·상태를 30초마다 방(Supabase)에 올리고, 방 사람들의 같은 값을 받아 보여 준다.
    이 앱은 **같은 서버·같은 표·같은 규칙**으로 올려서 안키 쓰는 친구들 방에 그대로 뜬다(애드온 online.py · addon.py를 그대로 옮김).
    · 올리는 것 = 공부 시간 · 답한 수 · 목표 · 상태뿐(카드 내용 없음). 이름 = user id에서 뽑은 익명 코드(애드온 nicknames.py와 같은 식).
-   · 🔴 **답한 수·시간은 채점 로그에서 센다** — 기기가 여럿이어도 로그가 공유라 합친 값이 올라간다. 시간 = 채점 사이 간격(5분 넘는 틈 제외 · 홈 「오늘 n분」과 같은 규칙).
-   · 🔴 **날짜 = 한국 시각 자정**(애드온 study_day와 같게) — 앱의 새벽 4시 경계와 다르다. 00~04시 채점은 방에선 「오늘」이다.
+   · 🔴 **답한 수·시간은 채점 로그에서 센다** — 시간 = 채점 사이 간격(5분 넘는 틈 제외 · 홈 「오늘 n분」과 같은 규칙).
+   · 🔴 **10-04 서버 개편(애드온 1aaac27)** — 방에 뜨는 시간·장수는 이제 **복습 기록(`sync_review_day`)만 합산**한다. 채점 한 번 = 기록 한 줄
+     (시각 ms · 카드 ID를 10진으로 · 간격 ms). 같은 로그를 기기 둘이 보내도 서버가 (시각, 카드)로 한 번만 센다. `daily_stats` 직접 쓰기는 서버가 막았다.
+     기기 카운터(`record_device_day`)는 「공부 중」 상태·목표만 맡는다(합계엔 안 들어감). 읽기 = `get_group_device_stats` · 참여 = `join_study_group_safe`.
+   · 🔴 **날짜 = 방 시간대의 새벽 4시 경계**(서버 study_groups.time_zone·day_start_hour · 옛 방 정보엔 없어 서울·4시) — 앱의 4시 경계와 같아졌다.
    · 상태 = 풀이 화면이 떠 있고 1분 안에 손을 댔으면 「공부 중」 · 풀이 화면인데 1분 넘게 가만히면 「잠시 멈춤」 · 그 밖 「접속 중」(애드온 IDLE_AFTER 1분).
    · 계정 = 처음 「참여」를 누를 때 익명 가입(애드온과 같다 — 기기마다 따로다. 이메일 연결은 아직 없음). 인증·방은 **이 기기 localStorage에만**(공개 저장소에 토큰을 올리지 않는다). */
 const SC_URL='https://uvrnsdknkivtclzlfjxx.supabase.co';
@@ -9535,11 +9538,38 @@ async function scAuthed(fn){   // 만료로 401이면 한 번 갱신하고 다�
 async function scNick(uid){   // 애드온 canonical_nickname — sha256("study-companion:display-code:v1:"+id) 앞 6바이트 → XXX-XXX
   const b=new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('study-companion:display-code:v1:'+uid)));
   const A='23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; let s=''; for(let i=0;i<6;i++) s+=A[b[i]&31]; return s.slice(0,3)+'-'+s.slice(3); }
-const scDay=t=>new Date(t+9*3600e3).toISOString().slice(0,10);   // 한국 시각 날짜
-function scToday(){ const D=scDay(Date.now()), L=state.log, lo=Date.now()-2*86400e3, ts=[];
-  for(let i=L.length-1;i>=0;i--){ const e=L[i]; if(!e) continue; const t=logTs(e); if(!isFinite(t)) continue; if(t<lo) break; if(scDay(t)===D) ts.push(t); }
-  ts.sort((a,b)=>a-b); let ms=0; for(let i=1;i<ts.length;i++){ const d=ts[i]-ts[i-1]; if(d>0 && d<300000) ms+=d; }
-  return {day:D, n:ts.length, sec:Math.round(ms/1000)}; }
+const scTZ=()=>(SC.group&&SC.group.time_zone)||'Asia/Seoul';
+const scDSH=()=>{ const h=SC.group&&SC.group.day_start_hour; return Number.isInteger(h)?h:4; };
+let scDF=null;
+function scDay(t){ const tz=scTZ(), s=t-scDSH()*3600e3;   // 방의 하루 — 방 시간대 새벽 4시에 넘어간다(애드온 study_day.py)
+  try{ if(!scDF||scDF.tz!==tz) scDF={tz, f:new Intl.DateTimeFormat('en-CA',{timeZone:tz, year:'numeric', month:'2-digit', day:'2-digit'})}; return scDF.f.format(new Date(s)); }
+  catch(e){ return new Date(s+9*3600e3).toISOString().slice(0,10); } }
+const scCid=id=>/^[0-9a-f]{1,16}$/i.test(id||'') ? (BigInt('0x'+id)||1n).toString() : null;   // 서버 card_id = 숫자 문자열(1~20자리) — 16자리 hex ID를 10진으로
+function scEvents(){   // 방 기준 오늘·어제 채점 — 시간 = 같은 날 앞 채점과의 간격(5분 넘으면 0)
+  const now=Date.now(), D=scDay(now), Y=scDay(now-86400e3), L=state.log, lo=now-3*86400e3, ev=[];
+  for(let i=L.length-1;i>=0;i--){ const e=L[i]; if(!e) continue; const t=logTs(e); if(!isFinite(t)) continue; if(t<lo) break; const d=scDay(t); if(d===D||d===Y) ev.push({t, d, id:e[0]}); }
+  ev.sort((a,b)=>a.t-b.t);
+  for(let i=0;i<ev.length;i++){ const g=i?ev[i].t-ev[i-1].t:0; ev[i].ms=(i && ev[i-1].d===ev[i].d && g>0 && g<300000) ? Math.round(g) : 0; }
+  return {D, Y, ev}; }
+function scToday(){ const {D, ev}=scEvents(); let n=0, ms=0; for(const x of ev) if(x.d===D){ n++; ms+=x.ms; }
+  return {day:D, n, sec:Math.round(ms/1000)}; }
+function scDev(){ if(!SC.dev){ const b=crypto.getRandomValues(new Uint8Array(16)); b[6]=(b[6]&15)|64; b[8]=(b[8]&63)|128;   // 이 기기 설치 ID(uuid v4) — 상태·목표 줄의 열쇠
+  const h=[...b].map(x=>x.toString(16).padStart(2,'0')).join(''); SC.dev=`${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`; scSave(); } return SC.dev; }
+async function scPushReviews(tok){   // 🔴 방 합계의 유일한 재료(10-04) — 보낸 (시각|카드)는 이 기기에 적어 두고 새 것만 보낸다
+  const {D, Y, ev}=scEvents(), key=SC.group.id+'|'+SC.auth.user_id, now=Date.now();
+  if(!SC.rv || SC.rv.k!==key) SC.rv={k:key, s:{}};
+  const S=SC.rv.s; for(const d in S) if(d!==D && d!==Y) delete S[d];
+  for(const d of [Y, D]){
+    const sent=new Set(S[d]||[]), have=new Set(), todo=[];
+    for(const x of ev){ if(x.d!==d || !scCid(x.id)) continue; const k=x.t+'|'+x.id; have.add(k); if(!sent.has(k)) todo.push(x); }
+    /* 되돌리기(undo)로 로그에서 빠진 것 — 보낸 지 10분 안의 것만 지운다(로그 통째 교체 같은 사고로 기록을 대량 삭제하지 않게) */
+    const gone=[...sent].filter(k=>!have.has(k) && now-Number(k.split('|')[0])<600000).slice(0,100);   // 한 번에 기록+삭제 1,000줄까지(서버)
+    if(!todo.length && !gone.length) continue;
+    for(let i=0;i<Math.max(todo.length, 1);i+=900){ const part=todo.slice(i,i+900), rm=i?[]:gone;
+      await scReq('POST','/rest/v1/rpc/sync_review_day',{token:tok, body:{target_group:SC.group.id, source_collection:'memory-cards', target_day:d,
+        reviews:part.map(x=>({id:String(x.t), card_id:scCid(x.id), time_ms:x.ms})),
+        removed_ids:rm.map(k=>{ const [t,id]=k.split('|'); return {id:t, card_id:scCid(id), changed_at:now}; })}});
+      part.forEach(x=>sent.add(x.t+'|'+x.id)); rm.forEach(k=>sent.delete(k)); S[d]=[...sent]; scSave(); } } }
 let scInputAt=0;
 function scStatus(){ if(document.visibilityState!=='visible' || !$('scrSolve').classList.contains('on')) return 'stopped';
   return Date.now()-scInputAt<60000 ? 'studying' : 'paused'; }
@@ -9548,7 +9578,7 @@ function scMemberStatus(m){   // 애드온 _current_member_status — 90초 넘�
   return m.status==='studying'||m.status==='paused' ? m.status : 'online'; }
 async function scFetchToday(tok, gid, day){
   const mem=await scReq('GET','/rest/v1/group_members',{token:tok, query:{select:'user_id,joined_at', group_id:'eq.'+gid, order:'joined_at.asc'}})||[];
-  const st=await scReq('GET','/rest/v1/daily_stats',{token:tok, query:{select:'group_id,user_id,study_day,active_seconds,answer_count,time_goal_minutes,card_goal,status,updated_at', group_id:'eq.'+gid, study_day:'eq.'+day, order:'updated_at.desc'}})||[];
+  const st=await scReq('POST','/rest/v1/rpc/get_group_device_stats',{token:tok, body:{target_group:gid, target_day:day}})||[];   // 기기·복습 기록 합산(10-04 · 옛 daily_stats는 서버가 안 읽는다)
   const ids=[...new Set(mem.map(m=>m.user_id))], names={};
   if(ids.length) (await scReq('GET','/rest/v1/profiles',{token:tok, query:{select:'id,display_name', id:'in.('+ids.join(',')+')'}})||[]).forEach(p=>{ names[p.id]=p.display_name; });
   const by={}; st.forEach(r=>{ if(!by[r.user_id]) by[r.user_id]=r; });
@@ -9556,27 +9586,34 @@ async function scFetchToday(tok, gid, day){
 let scBusy=false;
 async function scSync(o){ o=o||{};
   if(!SC.auth || !SC.group || scBusy) return; scBusy=true;
-  try{ const t=scToday(), uid=SC.auth.user_id, nick=await scNick(uid);
-    const row={group_id:SC.group.id, user_id:uid, study_day:t.day, active_seconds:t.sec, answer_count:t.n,
-      time_goal_minutes:SC.goalMin||0, card_goal:SC.goalCards||0, status:o.status||scStatus(), updated_at:new Date().toISOString()};
+  try{ const uid=SC.auth.user_id, nick=await scNick(uid), status=o.status||scStatus();
     const mem=await scAuthed(async tok=>{
+      if(SC.group.day_start_hour===undefined && !o.keepalive){   // 옛 방 정보엔 시간대가 없다 — 한 번 받아 채운다
+        const g=(await scGroups(tok)).find(x=>x.id===SC.group.id); SC.group=Object.assign({}, SC.group, g||{});
+        if(!Number.isInteger(SC.group.day_start_hour)) SC.group.day_start_hour=4; scSave(); }
       if(SC.nick!==nick){ await scReq('POST','/rest/v1/profiles',{token:tok, query:{on_conflict:'id'}, body:{id:uid, display_name:nick}, prefer:'resolution=merge-duplicates,return=representation'}); SC.nick=nick; }
-      await scReq('POST','/rest/v1/daily_stats',{token:tok, query:{on_conflict:'group_id,user_id,study_day'}, body:[row], prefer:'resolution=merge-duplicates,return=representation', keepalive:o.keepalive});
+      if(!o.keepalive) await scPushReviews(tok);   // 앱을 내릴 때(keepalive)는 상태만 — 기록은 다음에 열 때 보낸다
+      const t=scToday(); SC.rev=Math.max(Date.now(), (SC.rev||0)+1);   // 판 번호 = 늘기만 하면 된다(서버가 옛 판은 무시)
+      await scReq('POST','/rest/v1/rpc/record_device_day',{token:tok, body:{target_group:SC.group.id, source_device:scDev(), target_day:t.day, snapshot_revision:SC.rev,
+        seconds_total:t.sec, answers_total:t.n, activity_status:status, time_goal:Math.min(1440, SC.goalMin||0), cards_goal:Math.min(10000, SC.goalCards||0)}, keepalive:o.keepalive});
       return o.keepalive ? null : scFetchToday(tok, SC.group.id, t.day); });
     if(mem){ SC.members=mem; SC.membersAt=Date.now(); }
     delete SC.err; scSave();
-  }catch(e){ SC.err = e.status===401 ? (SC.kind==='email' ? '로그인이 풀렸어요 — 설정 › 스터디에서 다시 로그인해 주세요' : '연결이 끊겼어요 — 설정 › 스터디에서 다시 참여해 주세요') : (e.message||String(e)); if(e.status===401){ delete SC.auth; } scSave(); }
+  }catch(e){ SC.err = /not a member/i.test(e.message||'') ? '방에서 빠졌어요 — 초대 코드로 다시 참여해 주세요' : e.status===401 ? (SC.kind==='email' ? '로그인이 풀렸어요 — 설정 › 스터디에서 다시 로그인해 주세요' : '연결이 끊겼어요 — 설정 › 스터디에서 다시 참여해 주세요') : (e.message||String(e)); if(e.status===401){ delete SC.auth; } scSave(); }
   finally{ scBusy=false; if(!o.keepalive) scRender(); } }
 async function scGroups(tok){   // 애드온 list_groups — 내가 든 방들(가입 순)
-  const r=await scReq('GET','/rest/v1/group_members',{token:tok, query:{select:'group_id,joined_at,study_groups(id,name,invite_code,owner_id,created_at)', user_id:'eq.'+SC.auth.user_id, order:'joined_at.asc'}})||[];
+  const r=await scReq('GET','/rest/v1/group_members',{token:tok, query:{select:'group_id,joined_at,study_groups(id,name,invite_code,owner_id,created_at,time_zone,day_start_hour)', user_id:'eq.'+SC.auth.user_id, order:'joined_at.asc'}})||[];
   return r.map(x=>Object.assign({}, x.study_groups||{}, {id:(x.study_groups&&x.study_groups.id)||x.group_id})); }
 async function scJoin(code){
   code=String(code||'').replace(/\s+/g,'').toUpperCase();
   if(!/^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4}$/.test(code)) throw new Error('초대 코드는 영문 대문자·숫자 4자리예요');
   if(!SC.auth){ scStore(await scReq('POST','/auth/v1/signup',{body:{data:{}}})); SC.kind='guest'; scSave(); }   // 애드온 sign_in_anonymously
   const [gid, list]=await scAuthed(async tok=>{
-    const g=await scReq('POST','/rest/v1/rpc/join_study_group',{token:tok, body:{code}});
-    return [Array.isArray(g)?g[0]:g, await scGroups(tok)]; });
+    let g; try{ g=await scReq('POST','/rest/v1/rpc/join_study_group_safe',{token:tok, body:{code}}); }
+    catch(e){ if(/full/i.test(e.message||'')) throw new Error('방이 가득 찼어요 — 한 방은 방장 포함 8명까지예요'); throw e; }
+    g=Array.isArray(g)?g[0]:g;
+    if(!g || !g.ok || !g.group_id) throw new Error(g&&g.error==='TOO_MANY_ATTEMPTS' ? '초대 코드를 너무 여러 번 넣었어요 — 10분 뒤에 다시 해 주세요' : '초대 코드를 확인해 주세요');
+    return [g.group_id, await scGroups(tok)]; });
   SC.group=list.find(x=>x.id===gid) || list.find(x=>String(x.invite_code||'').toUpperCase()===code) || {id:gid, name:'스터디', invite_code:code};
   delete SC.err; scSave(); await scSync(); }
 /* 🔴 기기 여럿 = 한 사람(10-01 동하 「아무 기기에서나 다 되게」) — 애드온의 「이메일 연결」 그대로:
@@ -9596,7 +9633,7 @@ async function scSignIn(addr, pw){ addr=String(addr||'').trim();
   if(!addr || !pw) throw new Error('이메일과 비밀번호를 넣어 주세요');
   const r=await scReq('POST','/auth/v1/token',{query:{grant_type:'password'}, body:{email:addr, password:pw}});
   if(!(r && r.user && r.user.id)) throw new Error('로그인 응답에 사용자가 없어요');
-  SC={goalMin:SC.goalMin, goalCards:SC.goalCards}; scStore(r); SC.kind='email'; SC.email=addr;
+  SC={goalMin:SC.goalMin, goalCards:SC.goalCards, dev:SC.dev}; scStore(r); SC.kind='email'; SC.email=addr;
   const list=await scAuthed(tok=>scGroups(tok));
   if(!list.length){ scSave(); throw new Error('이 계정은 아직 든 방이 없어요 — 초대 코드로 참여해 주세요'); }
   SC.group=list[0]; scSave(); await scSync(); }
@@ -9651,7 +9688,7 @@ function scRenderSet(){ const b=$('scBox'); if(!b) return;
   scBtn('scFinish', async()=>{ await scFinishLink($('scNPw').value); return '이메일을 연결했어요 — 다른 기기에서 로그인하면 돼요'; });
   const re=$('scReEmail'); if(re) re.onclick=()=>{ delete SC.pendingEmail; scSave(); b.dataset.m=''; scRenderSet(); };
   $('scLeave').onclick=()=>{ if(!confirm('이 기기에서 스터디 방 연결을 끊을까요? 방의 기록은 그대로 남아요.')) return;
-    if(SC.kind==='email'){ SC={goalMin:SC.goalMin, goalCards:SC.goalCards}; }   // 이메일 계정은 로그아웃까지(다시 로그인하면 방이 돌아온다)
+    if(SC.kind==='email'){ SC={goalMin:SC.goalMin, goalCards:SC.goalCards, dev:SC.dev}; }   // 이메일 계정은 로그아웃까지(다시 로그인하면 방이 돌아온다)
     else { delete SC.group; delete SC.members; delete SC.err; }
     scSave(); b.dataset.m=''; scRender(); }; }
 /* 30초마다 올리고 받기(애드온과 같은 주기) · 앱을 내리면 「접속 중」으로 한 번 · 풀이 화면에서 손대면 「공부 중」 */

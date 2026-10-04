@@ -1576,6 +1576,7 @@ button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inher
 .sc-name-r{display:flex;align-items:center;gap:10px;min-width:0;}
 .sc-name-r .desc{color:var(--c-sec);font-size:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .sc-chev-sp{width:14px;flex:0 0 auto;}
+.sc-me{font-size:12px;font-weight:600;color:var(--c-sec);margin-left:6px;vertical-align:1px;}   /* 내 줄 = 닉네임 + 작은 「나」(동하 10-04) */
 button.sc-go{display:flex;align-items:center;gap:8px;background:none;border:0;font:inherit;font-size:15px;color:var(--c-sec);cursor:pointer;max-width:70%;}
 button.sc-go .s2-chev{flex:0 0 auto;}
 details.sc-fold>summary{display:flex;align-items:center;justify-content:space-between;min-height:44px;color:var(--c-label);font-size:17px;}
@@ -9854,7 +9855,7 @@ function scPeople(where){
     const stTxt=(!m.mine && st==='offline' && m.updated_at) ? `마지막 ${scHM(Date.parse(m.updated_at))}` : SC_ST[st];
     const open=where==='study' && !m.mine && scOpen===m.user_id, tap=where==='home' || !m.mine;
     return `<${tap?'button':'div'} class="sess2 sc-row${open?' open':''}" data-uid="${esc(m.user_id||'')}"${where==='study'&&!m.mine?` aria-expanded="${open}"`:''}><span class="s2-dot" style="background:${st==='studying'?'var(--c-green)':st==='offline'?'transparent':'var(--c-acc)'}"></span>
-      <span class="s2-b"><span class="s2-n">${m.mine?'나':esc(m.display_name||'친구')}</span><span class="s2-s">${stTxt} · ${sec==null?'—':scFmt(sec)}${tg?` / ${tg}분`:''}</span></span>
+      <span class="s2-b"><span class="s2-n">${m.mine?`${esc(SC.nick||'나')}<small class="sc-me">나</small>`:esc(m.display_name||'친구')}</span><span class="s2-s">${stTxt} · ${sec==null?'—':scFmt(sec)}${tg?` / ${tg}분`:''}</span></span>
       <span class="s2-r"><span class="s2-cnt"><b>${n==null?'—':n.toLocaleString()}</b><small>${cg?` / ${cg.toLocaleString()}`:''}장</small></span>${where==='home'?SC_RCHEV:(m.mine?'<span class="sc-chev-sp"></span>':SC_CHEV)}</span></${tap?'button':'div'}>`
       + (open ? `<div class="sc-det">${scDetFriend(m)}</div>` : ''); }).join('');
   return {html, nStudy}; }

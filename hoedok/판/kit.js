@@ -257,6 +257,8 @@
     });
     document.querySelectorAll('main.wrap h2[id], main.wrap h3[id], main.wrap h4[id]').forEach(function(h){ var r=ROLE[h.id]; if(RC[r]) h.classList.add(RC[r]); });
     if(window.PAN_HOIST!==false) document.documentElement.classList.add('dae-big');
+    /* 10-04 배포 검수 E6: 대주제 배너(.part) 뒤에 오는 대단 = 영역 밑 대단원(수학 「도형과 측정」 › 「평면도형」…) → 한 단 작게(.dae2 · 모양은 kit.css) */
+    if(window.PAN_HOIST!==false){ var _p1=document.querySelector('main.wrap .part'); if(_p1) document.querySelectorAll('main.wrap h2.r-dae').forEach(function(h){ if(_p1.compareDocumentPosition(h) & 4) h.classList.add('dae2'); }); }
     /* 용어 뒤 관계 기호(↔ ⇔ + ≠)는 뜻이라 끄지 않는다 — .term+.mk 숨김은 구조 기호(⇒ → 등)만(10-01 음악 「창극 ↔ 판소리」·영어 「내용어 + Chunk」 · 사회 제외) */
     if(window.PAN_HOIST!==false) document.querySelectorAll('main.wrap .mk').forEach(function(m){ if(/^\s*(↔|⇔|\+|≠)\s*$/.test(m.textContent)) m.classList.add('rel'); });   /* 대단 h2 = 대주제 배너(.part)와 같은 모양(09-30 완성 · 사회는 작은 레이블 그대로) */
     var mk=function(cls, pg, before){ var d=document.createElement('div'); d.className=cls; pg.insertBefore(d, before); return d; };
@@ -375,6 +377,13 @@
        · 과학 학기 구분 줄(「(3) 4학년 2학기」 — 절 제목 밑 흐린 줄 13곳) = 숨김(규칙 §1 학기 구분) */
     /* 10-01 동하 「나머지 다 정리」(사회 5): M6 수렴 결과 열 최소 폭을 사회에도(극화 학습 「기준: ⟶ 규칙·/체계·/승패/유무」 한 글자씩 쌓임) — 모양은 kit.css .converge.m6 */
     if(window.PAN_HOIST===false) document.querySelectorAll('main.wrap .converge').forEach(function(cv){ cv.classList.add('m6'); });
+    /* 10-04 배포 검수 E9: 성취기준 절의 해설·고려 사항 줄(.stack>.desc 가 「성취기준 해설:」「적용 시 고려 사항 [4사01]:」로 시작) = 머리 레이블을 span.sglab 로 · 줄에 .sgnote(모양은 kit.css) — 글자 무변 · 실측상 과학·사회 p904 만 */
+    document.querySelectorAll('main.wrap .stack > .desc').forEach(function(d){
+      var t=d.firstChild; if(!t || t.nodeType!==3) return;
+      var m=/^\s*(?:성취기준 해설|적용 시 고려 사항)(?:\s*\[[^\]]*\])?\s*:/.exec(t.nodeValue); if(!m) return;
+      var lab=document.createElement('span'); lab.className='sglab'; lab.textContent=m[0];
+      t.nodeValue=t.nodeValue.slice(m[0].length); d.insertBefore(lab, t); d.classList.add('sgnote');
+    });
     if(window.PAN_HOIST!==false){
       document.querySelectorAll('main.wrap .prose > p[style]').forEach(function(p){
         var t=p.textContent.trim();

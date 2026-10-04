@@ -721,6 +721,9 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2.dae-big .sect>.pg:first-child>.blk.hrow:first-child>.r-jeol:first-child{margin-top:.9em !important;}
 /* 대주제 배너(.part) 밑에서 절 여럿을 묶는 대단(수학 「평면도형」 › 삼각형·사각형… — 옛 h2 절 › h3 절 두 겹) = 한 단 작은 배너 · 배너끼리 같은 크기로 겹쳐 서지 않게 */
 :root.v2.dae-big .part~h2.r-dae{font-size:1.45em;line-height:1.25;margin:2.2em 0 .1em;}
+/* 10-04 배포 검수 E6(V1·V5): 위 규칙은 .part 와 h2 가 형제가 아니라 안 먹고(754행 27px 가 이김) 수학 영역(도형과 측정) ↔ 대단원(평면도형…)이 둘 다 27px 였다 →
+   kit.js 가 「앞에 대주제 배너(.part)가 있는 대단」에 .dae2 를 단다(대단이 배너보다 먼저 나오는 실과 5개는 해당 없음 → 실측상 수학 8개만) · 한 단 작게(27.1 → 22.5px) */
+:root.v2.dae-big main.wrap h2.r-dae.dae2{font-size:1.45em;line-height:1.25;margin:2.2em 0 .1em;}
 :root.v2.dae-big h3.r-jeol.tg,:root.v2.dae-big h4.r-jeol.tg{cursor:pointer;}
 :root.v2.dae-big h3.r-jeol.tg::before,:root.v2.dae-big h4.r-jeol.tg::before{content:'▾';display:inline-block;width:.95em;margin-left:-.1em;color:var(--ter);font-size:.72em;vertical-align:.18em;transition:transform .12s;}
 :root.v2.dae-big h3.r-jeol.tg.closed::before,:root.v2.dae-big h4.r-jeol.tg.closed::before{transform:rotate(-90deg);}
@@ -754,7 +757,7 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2.dae-big main.wrap>h2.r-dae,:root.v2.dae-big .pg>h2.r-dae,:root.v2.dae-big h3.r-dae{font-family:var(--fd);font-size:1.75em;line-height:1.2;font-weight:700;color:var(--v2ink);letter-spacing:-.01em;margin:2.4em 0 .2em;padding:0;border:0;}
 :root.v2 h3.r-jeol,:root.v2 h4.r-jeol{font-size:1.32em;line-height:1.3;font-weight:700;color:var(--v2ink);margin:1.4em 0 .9em;padding-bottom:.45em;border-bottom:2px solid var(--v2ink);letter-spacing:-.01em;}
 :root.v2 .r-head{font-size:1.02em;line-height:1.35;font-weight:700;color:var(--v2ink);margin:1em 0 .6em;padding-bottom:.3em;border-bottom:1px solid var(--v2ink);}
-:root.v2 h2.r-head{font-size:1.1em;}
+:root.v2:not(.dae-big) h2.r-head{font-size:1.1em;}   /* 10-04 배포 검수 E5(V5 ③): 같은 머리줄인데 h2 일 때만 17.05px(국어 4·음악 2·미술 1) → dae-big 과목은 h3/h4 와 같은 15.81px · 사회(dae-big 없음)는 그대로 */
 :root.v2 h2.r-cell,:root.v2 h3.r-cell,:root.v2 h4.r-cell{font-size:.92em;line-height:1.45;font-weight:700;color:var(--v2acc);margin:0 0 .45em;padding-bottom:4px;border-bottom:1px solid var(--v2rule);}
 :root.v2 .blk.prosecell>.blb{max-width:46em;}
 :root.v2 .pfx{display:none;}
@@ -887,3 +890,15 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
   :root.v2 .nw{white-space:normal;}
   :root.v2 .line{flex-wrap:wrap;max-width:100%;}
 }
+
+/* 10-04 배포 검수 E2(V3 음악 장구 · V1 국어 한글 해독 표) — 폰(≤500) · 사회 제외(dae-big):
+   · 칸 안 2단(.cols)이 폰에서도 2단으로 남아 그림·기호표가 잘리던 것 — 옛 ≤500 규칙(.cols → 1단)을 v2 의 .cols.fit 2단 규칙(552행)이 눌렀다 → 한 단
+   · 6열 이상 글 표(격자표 .cgrid 제외)는 칸이 한두 글자 폭으로 눌려 세로로 길어지던 것 → 칸 최소 폭 · 넘치면 표 안에서만 가로로 밀림(≤600 규칙의 table{overflow-x:auto}) */
+@media (max-width:500px){
+  :root.v2.dae-big .cols,:root.v2.dae-big .cols.fit{grid-template-columns:minmax(0,1fr);row-gap:.7em;}
+  :root.v2.dae-big table:not(.cgrid):has(tr>:nth-child(6)) :is(th,td){min-width:4.6em;}
+}
+/* 10-04 배포 검수 E9(V2): 「2022 개정 교육과정 - 성취기준」 절(과학·사회 p904)의 「성취기준 해설:」「적용 시 고려 사항 […]:」 줄 —
+   조문 줄과 같은 모양이라 조문을 훑기 어렵던 것 → 머리 레이블만 흐리게 + 한 단 들여쓰기(조문 줄은 그대로 · 표지 .sgnote 는 kit.js) */
+:root.v2 .stack>.desc.sgnote{padding-left:1.3em;}
+:root.v2 .desc.sgnote>.sglab{color:var(--v2muted);font-weight:400;}

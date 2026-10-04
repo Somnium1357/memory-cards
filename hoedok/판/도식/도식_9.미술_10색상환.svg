@@ -14,7 +14,7 @@
   <g class="ln" stroke="currentColor" stroke-width="1.3" stroke-dasharray="5 4"><line x1="165" y1="95" x2="165" y2="215"/></g>
   <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(165.0,91.0) rotate(-90.0)"/>
   <path class="ah" fill="currentColor" d="M0,0 L-9,-3.6 L-9,3.6 Z" transform="translate(165.0,219.0) rotate(90.0)"/>
-  <g class="tx" fill="currentColor" font-size="15" text-anchor="middle">
+  <g class="tx" fill="currentColor" font-size="16" text-anchor="middle">
     <text x="165.0" y="25.0">빨강</text>
     <text x="243.8" y="50.6">주황</text>
     <text x="292.4" y="117.6">노랑</text>
@@ -25,6 +25,6 @@
     <text x="37.6" y="200.4">남색</text>
     <text x="37.6" y="117.6">보라</text>
     <text x="86.2" y="50.6">자주</text>
-    <text x="187" y="159" font-size="14" text-anchor="start">보색</text>
+    <text x="187" y="159" font-size="15" text-anchor="start">보색</text>
   </g>
 </svg>

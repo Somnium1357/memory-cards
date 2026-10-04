@@ -14,10 +14,10 @@
     <text x="140" y="106">안정</text>
     <text x="302" y="106">목표</text>
     <text x="410" y="106">최대</text>
-    <text x="302" y="124" font-size="13">(60%)</text>
-    <text x="410" y="124" font-size="13">(220 − 연령)</text>
-    <text x="221" y="70" font-size="13">6</text>
-    <text x="356" y="70" font-size="13">4</text>
-    <text x="230" y="150" font-size="13">목표 = 여유를 운동 강도로 내분한 점 (60%면 6:4)</text>
+    <text x="302" y="124" font-size="13.5">(60%)</text>
+    <text x="410" y="124" font-size="13.5">(220 − 연령)</text>
+    <text x="221" y="70" font-size="13.5">6</text>
+    <text x="356" y="70" font-size="13.5">4</text>
+    <text x="230" y="150" font-size="13.5">목표 = 여유를 운동 강도로 내분한 점 (60%면 6:4)</text>
   </g>
 </svg>

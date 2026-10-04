@@ -38,10 +38,10 @@
     <text x="112" y="169">앎</text>
     <text x="116" y="110">이데아</text>
     <text x="112" y="224">현상</text>
-    <text x="14" y="123" font-size="13">지배</text>
-    <text x="78" y="123" font-size="13">동의</text>
-    <text x="14" y="215" font-size="13">판단</text>
-    <text x="78" y="215" font-size="13">수호</text>
+    <text x="14" y="123" font-size="14.5">지배</text>
+    <text x="78" y="123" font-size="14.5">동의</text>
+    <text x="14" y="215" font-size="14.5">판단</text>
+    <text x="78" y="215" font-size="14.5">수호</text>
     <text x="238" y="169" text-anchor="start">조화 : 정의</text>
   </g>
 </svg>

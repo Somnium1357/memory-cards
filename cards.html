@@ -6761,6 +6761,11 @@ function tryResume(){
 const DEEP_CARD='f9e8603831de1ad5';        // 8.음악/전통 음악/전통 악기/소금 · [도식] 운지표
 function cardHoedokURI(c){
   if(!c) return null;
+  /* 🔴 수학 성취기준 = **학년군 자리로**(10-04 카드 QC 발주 · 동하 「2로」) — 판이 별책대로 학년군 > 영역으로 재배열됐다(0175bf0d).
+     카드 노드 `2.수학/2022 개정 교육과정/성취기준 — <영역>/<학년군>`(tags[1] = 「성취기준 — <영역>」)은 중주제 이름만으론
+     옛 영역 앵커 = 1~2학년군 그 영역으로 떨어진다(5~6 카드도). 앵커 `성취기준_<영역>_<학년군>`이 판 색인에 있을 때만 쓴다(12개 · 4705de86). */
+  if(c.subj==='2.수학' && PAN && PAN['2.수학']){ const mm=String(c.node||'').match(/\/성취기준 — (.+)\/(\d~\d학년군)$/);
+    if(mm){ const a=anch('성취기준_'+mm[1]+'_'+mm[2]); if(PAN['2.수학'].has(a)) return PAN_DIR+encodeURIComponent(c.subj)+'.html#'+encodeURIComponent(a); } }
   const u=tagKey(c), mid=(c.tags||[])[1]||'';
   if(c.id===DEEP_CARD && mid){
     const s=subOf(c);

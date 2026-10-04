@@ -860,6 +860,8 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .line .mid{white-space:normal;font-weight:600;}
 :root.v2 .line .mid.mk{font-weight:400;}
 :root.v2 .line .up,:root.v2 .line .down{white-space:normal;font-size:.85em;color:var(--v2muted);}
+/* 10-05 위 주석이 있는 줄 — 주석 없는 칸에 같은 높이 빈 줄을 얹어 가운데 줄(.mid)을 한 줄로 맞춘다(「음성 언어 - 음소 - 음절」이 주석 칸만 내려가던 것) */
+:root.v2 .line:has(.up)>.col:not(:has(.up))::before{content:"\00a0";font-size:.85em;}
 :root.v2 .chain{gap:4px 8px;}
 
 /* 대조·여러 단 */

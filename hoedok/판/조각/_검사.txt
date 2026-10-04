@@ -1,0 +1,620 @@
+FAIL  1.국어_p02
+  - 마커 잔존: ※
+FAIL  1.국어_p03
+  - 마커 잔존: ※
+PASS  1.국어_p04
+FAIL  1.국어_p05
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+  - 마커 잔존: ※
+FAIL  1.국어_p06
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+FAIL  1.국어_p07
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+FAIL  1.국어_p08
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+  (경고) h2 중주제 '문단, 글, 지도 방법' 가 회독_1.국어.md 제목과 불일치
+FAIL  1.국어_p09
+  - kit.css 에 없는 class: pumsa
+  - style= 에 간격 외 속성: width
+PASS  1.국어_p10
+PASS  1.국어_p11
+FAIL  1.국어_p12
+  - style= 에 간격 외 속성: display
+FAIL  1.국어_p13
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+PASS  1.국어_p14
+PASS  1.국어_p15
+PASS  1.국어_p16
+FAIL  1.국어_p17
+  - style= 에 간격 외 속성: display
+FAIL  1.국어_p18
+  - style= 에 간격 외 속성: display
+FAIL  1.국어_p19
+  - <h2 로 시작하지 않음
+FAIL  1.국어_p20
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+  (경고) h2 중주제 '사실적 읽기' 가 회독_1.국어.md 제목과 불일치
+FAIL  1.국어_p21
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+  - 마커 잔존: ※
+  (경고) h2 중주제 '추론적 읽기' 가 회독_1.국어.md 제목과 불일치
+FAIL  1.국어_p22
+  - 마커 잔존: ※
+FAIL  1.국어_p23
+  - style= 에 간격 외 속성: display
+PASS  1.국어_p24
+PASS  1.국어_p25
+FAIL  1.국어_p26
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+PASS  1.국어_p27
+PASS  1.국어_p28
+FAIL  1.국어_p29
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+FAIL  1.국어_p30
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+PASS  1.국어_p31
+FAIL  1.국어_p32
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+FAIL  1.국어_p33
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+FAIL  1.국어_p34
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+PASS  1.국어_p35
+FAIL  1.국어_p36
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+PASS  1.국어_p37
+FAIL  1.국어_p38
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+PASS  1.국어_p39
+FAIL  1.국어_p40
+  - kit.css 에 없는 class: inmul, sijeom
+  - style= 에 간격 외 속성: color, display, font-size, font-weight, width
+FAIL  1.국어_p41
+  - style= 에 간격 외 속성: display
+FAIL  1.국어_p42
+  - style= 에 간격 외 속성: display
+PASS  1.국어_p43
+FAIL  1.국어_p44
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+PASS  1.국어_p901
+FAIL  1.국어_p902
+  - style= 에 간격 외 속성: display
+FAIL  1.국어_p903
+  - style= 에 간격 외 속성: display
+FAIL  1.국어_p904
+  - style= 에 간격 외 속성: border-bottom, color, display, font-weight, text-decoration, white-space
+FAIL  1.국어_p905
+  - <h2 로 시작하지 않음
+PASS  10.실과_p02
+FAIL  10.실과_p03
+  - style= 에 간격 외 속성: display
+FAIL  10.실과_p04
+  - style= 에 간격 외 속성: display
+FAIL  10.실과_p05
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+FAIL  10.실과_p06
+  - style= 에 간격 외 속성: display
+FAIL  10.실과_p07
+  - style= 에 간격 외 속성: display, font-size
+FAIL  10.실과_p08
+  - style= 에 간격 외 속성: color, display, flex-wrap, font-size, font-weight
+FAIL  10.실과_p09
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+FAIL  10.실과_p10
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+FAIL  10.실과_p11
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+FAIL  10.실과_p12
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+FAIL  10.실과_p13
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+  - 마커 잔존: ※
+PASS  10.실과_p901
+PASS  10.실과_p902
+PASS  10.실과_p903
+PASS  10.실과_p904
+PASS  10.실과_p905
+PASS  10.실과_p906
+PASS  10.실과_p907
+PASS  10.실과_p908
+PASS  10.실과_p909
+PASS  10.실과_p910
+PASS  10.실과_p921
+PASS  10.실과_p931
+PASS  10.실과_p932
+PASS  10.실과_p933
+FAIL  10.실과_p934
+  - <h2 로 시작하지 않음
+  - style= 에 간격 외 속성: border-bottom, color, display, font-weight, text-decoration, white-space
+PASS  10.실과_p935
+PASS  11.통합교과_p901
+FAIL  11.통합교과_p902
+  - style= 에 간격 외 속성: color, display, font-size, font-weight, letter-spacing
+FAIL  11.통합교과_p903
+  - style= 에 간격 외 속성: color, display, font-size, font-weight, letter-spacing
+FAIL  11.통합교과_p904
+  - style= 에 간격 외 속성: color, display, font-size, font-weight, letter-spacing
+FAIL  11.통합교과_p905
+  - style= 에 간격 외 속성: display
+FAIL  11.통합교과_p906
+  - style= 에 간격 외 속성: display
+FAIL  11.통합교과_p907
+  - style= 에 간격 외 속성: display
+FAIL  11.통합교과_p908
+  - style= 에 간격 외 속성: display
+FAIL  11.통합교과_p909
+  - style= 에 간격 외 속성: display
+PASS  13.총창_p901
+PASS  13.총창_p902
+PASS  13.총창_p903
+PASS  13.총창_p904
+PASS  13.총창_p905
+FAIL  13.총창_p906
+  - style= 에 간격 외 속성: display
+PASS  13.총창_p907
+PASS  13.총창_p908
+PASS  13.총창_p909
+FAIL  13.총창_p910
+  - style= 에 간격 외 속성: display
+PASS  13.총창_p911
+PASS  13.총창_p912
+PASS  13.총창_p913
+PASS  13.총창_p914
+PASS  13.총창_p915
+FAIL  13.총창_p916
+  - style= 에 간격 외 속성: display
+FAIL  13.총창_p917
+  - style= 에 간격 외 속성: display
+PASS  2.수학_p02
+PASS  2.수학_p03
+FAIL  2.수학_p04
+  - style= 에 간격 외 속성: display
+  - 마커 잔존: ※
+FAIL  2.수학_p05
+  - style= 에 간격 외 속성: border-bottom, display, font-size
+FAIL  2.수학_p06
+  - style= 에 간격 외 속성: border-bottom, color, display, font-size, font-weight
+FAIL  2.수학_p07
+  - style= 에 간격 외 속성: border-bottom, color, display, font-size, font-weight
+FAIL  2.수학_p08
+  - style= 에 간격 외 속성: border-bottom, color, display, font-size, font-weight
+FAIL  2.수학_p09
+  - style= 에 간격 외 속성: border-bottom, color, display, font-size, font-weight
+FAIL  2.수학_p10
+  - style= 에 간격 외 속성: border-bottom, font-size
+FAIL  2.수학_p11
+  - style= 에 간격 외 속성: border-bottom, color, display, font-size, font-weight
+FAIL  2.수학_p12
+  - style= 에 간격 외 속성: border-bottom, color, display, font-size, font-weight
+FAIL  2.수학_p13
+  - style= 에 간격 외 속성: border-bottom, color, display, font-size, font-weight
+FAIL  2.수학_p14
+  - style= 에 간격 외 속성: border-bottom, display, font-size
+FAIL  2.수학_p15
+  - style= 에 간격 외 속성: display
+  - converge #1 에 data-b="s"/"e" 표시 없음 (명시 계약)
+FAIL  2.수학_p16
+  - style= 에 간격 외 속성: border-bottom, color, display, font-size, font-weight
+FAIL  2.수학_p17
+  - style= 에 간격 외 속성: border-bottom, color, display, font-size, font-weight
+FAIL  2.수학_p18
+  - style= 에 간격 외 속성: border-bottom, color, display, font-size, font-weight
+FAIL  2.수학_p19
+  - style= 에 간격 외 속성: border-bottom, color, display, font-size, font-weight
+FAIL  2.수학_p20
+  - style= 에 간격 외 속성: border-bottom, color, display, font-size, font-weight
+FAIL  2.수학_p21
+  - style= 에 간격 외 속성: border-bottom, color, display, font-size, font-weight
+FAIL  2.수학_p22
+  - style= 에 간격 외 속성: border-bottom, display, font-size
+FAIL  2.수학_p23
+  - style= 에 간격 외 속성: border-bottom, color, display, font-size, font-weight
+FAIL  2.수학_p24
+  - style= 에 간격 외 속성: border-bottom, color, display, font-size, font-weight
+FAIL  2.수학_p25
+  - style= 에 간격 외 속성: border-bottom, display, font-size
+FAIL  2.수학_p26
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+FAIL  2.수학_p27
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+FAIL  2.수학_p28
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+FAIL  2.수학_p29
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+FAIL  2.수학_p30
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+FAIL  2.수학_p31
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+FAIL  2.수학_p32
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+PASS  2.수학_p33
+FAIL  2.수학_p34
+  - style= 에 간격 외 속성: display
+FAIL  2.수학_p35
+  - style= 에 간격 외 속성: display
+FAIL  2.수학_p36
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+FAIL  2.수학_p37
+  - <h2 로 시작하지 않음
+FAIL  2.수학_p38
+  - <h2 로 시작하지 않음
+FAIL  2.수학_p39
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+FAIL  2.수학_p40
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+PASS  2.수학_p901
+FAIL  2.수학_p902
+  - <h2 로 시작하지 않음
+  - style= 에 간격 외 속성: border-bottom, color, display, font-size, font-weight, text-decoration, white-space
+FAIL  2.수학_p903
+  - <h2 로 시작하지 않음
+  - style= 에 간격 외 속성: border-bottom, color, display, font-size, font-weight, text-decoration, white-space
+FAIL  2.수학_p904
+  - <h2 로 시작하지 않음
+  - style= 에 간격 외 속성: border-bottom, color, display, font-size, font-weight, text-decoration, white-space
+FAIL  2.수학_p905
+  - <h2 로 시작하지 않음
+  - style= 에 간격 외 속성: border-bottom, color, display, font-size, font-weight, text-decoration, white-space
+FAIL  2.수학_p906
+  - <h2 로 시작하지 않음
+  - kit.css 에 없는 class: rst
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+PASS  3.영어_p02
+PASS  3.영어_p03
+PASS  3.영어_p04
+PASS  3.영어_p05
+PASS  3.영어_p06
+FAIL  3.영어_p07
+  - style= 에 간격 외 속성: align-items
+FAIL  3.영어_p08
+  - style= 에 간격 외 속성: display
+FAIL  3.영어_p09
+  - style= 에 간격 외 속성: display
+FAIL  3.영어_p10
+  - style= 에 간격 외 속성: display, font-style
+FAIL  3.영어_p11
+  - style= 에 간격 외 속성: display, font-style
+FAIL  3.영어_p12
+  - style= 에 간격 외 속성: display
+FAIL  3.영어_p13
+  - style= 에 간격 외 속성: display
+FAIL  3.영어_p14
+  - style= 에 간격 외 속성: display
+FAIL  3.영어_p15
+  - style= 에 간격 외 속성: display
+FAIL  3.영어_p16
+  - style= 에 간격 외 속성: align-items, display
+FAIL  3.영어_p17
+  - style= 에 간격 외 속성: display
+FAIL  3.영어_p18
+  - style= 에 간격 외 속성: display, width
+PASS  3.영어_p931
+PASS  4.사회_p02
+FAIL  4.사회_p03
+  - style= 에 간격 외 속성: display
+PASS  4.사회_p04
+PASS  4.사회_p05
+PASS  4.사회_p06
+PASS  4.사회_p07
+PASS  4.사회_p08
+FAIL  4.사회_p09
+  - style= 에 간격 외 속성: display
+PASS  4.사회_p10
+FAIL  4.사회_p11
+  - kit.css 에 없는 class: hname
+FAIL  4.사회_p12
+  - kit.css 에 없는 class: hname
+PASS  4.사회_p13
+FAIL  4.사회_p14
+  - style= 에 간격 외 속성: display
+PASS  4.사회_p15
+FAIL  4.사회_p16
+  - style= 에 간격 외 속성: display
+PASS  4.사회_p17
+FAIL  4.사회_p18
+  - style= 에 간격 외 속성: display
+FAIL  4.사회_p19
+  - style= 에 간격 외 속성: display
+PASS  4.사회_p20
+PASS  4.사회_p21
+FAIL  4.사회_p22
+  - kit.css 에 없는 class: hname
+PASS  4.사회_p23
+FAIL  4.사회_p24
+  - style= 에 간격 외 속성: display
+PASS  4.사회_p901
+PASS  4.사회_p902
+PASS  4.사회_p903
+PASS  4.사회_p904
+PASS  4.사회_p921
+PASS  5.도덕_p02
+FAIL  5.도덕_p03
+  - <h2 로 시작하지 않음
+PASS  5.도덕_p04
+FAIL  5.도덕_p05
+  - style= 에 간격 외 속성: display
+FAIL  5.도덕_p06
+  - <h2 로 시작하지 않음
+FAIL  5.도덕_p07
+  - kit.css 에 없는 class: kv
+FAIL  5.도덕_p08
+  - kit.css 에 없는 class: kv
+  - style= 에 간격 외 속성: display
+FAIL  5.도덕_p09
+  - kit.css 에 없는 class: kv
+FAIL  5.도덕_p10
+  - kit.css 에 없는 class: kv
+  - style= 에 간격 외 속성: display
+PASS  5.도덕_p11
+FAIL  5.도덕_p12
+  - style= 에 간격 외 속성: display
+PASS  5.도덕_p13
+PASS  5.도덕_p901
+PASS  5.도덕_p902
+PASS  5.도덕_p903
+FAIL  5.도덕_p904
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+PASS  5.도덕_p905
+PASS  6.과학_p02
+PASS  6.과학_p03
+FAIL  6.과학_p04
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p05
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p06
+  - style= 에 간격 외 속성: display
+  (경고) h2 중주제 '물질 (유의사항, 5개념)' 가 회독_6.과학.md 제목과 불일치
+FAIL  6.과학_p07
+  - style= 에 간격 외 속성: display
+  (경고) h2 중주제 '물질 (유의사항, 5개념)' 가 회독_6.과학.md 제목과 불일치
+FAIL  6.과학_p08
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+  (경고) h2 중주제 '물질 (유의사항, 5개념)' 가 회독_6.과학.md 제목과 불일치
+FAIL  6.과학_p09
+  - style= 에 간격 외 속성: display
+  (경고) h2 중주제 '물질 (유의사항, 5개념)' 가 회독_6.과학.md 제목과 불일치
+FAIL  6.과학_p10
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+FAIL  6.과학_p11
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+FAIL  6.과학_p12
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p13
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p14
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p15
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p16
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p17
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p18
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p19
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p20
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p21
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p22
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p23
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+FAIL  6.과학_p24
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p25
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p26
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p27
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p28
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p29
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p30
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p31
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p32
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p33
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+FAIL  6.과학_p34
+  - <h2 로 시작하지 않음
+FAIL  6.과학_p35
+  - <h2 로 시작하지 않음
+FAIL  6.과학_p36
+  - <h2 로 시작하지 않음
+FAIL  6.과학_p37
+  - <h2 로 시작하지 않음
+FAIL  6.과학_p901
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p902
+  - style= 에 간격 외 속성: display
+FAIL  6.과학_p903
+  - style= 에 간격 외 속성: display
+PASS  6.과학_p904
+FAIL  6.과학_p905
+  - style= 에 간격 외 속성: display
+FAIL  7.체육_p02
+  - <h2 로 시작하지 않음
+  - style= 에 간격 외 속성: align-self
+FAIL  7.체육_p03
+  - <h2 로 시작하지 않음
+  - style= 에 간격 외 속성: display
+FAIL  7.체육_p04
+  - style= 에 간격 외 속성: display
+PASS  7.체육_p05
+FAIL  7.체육_p06
+  - style= 에 간격 외 속성: display, white-space
+PASS  7.체육_p07
+PASS  7.체육_p08
+PASS  7.체육_p09
+FAIL  7.체육_p10
+  - style= 에 간격 외 속성: display
+PASS  7.체육_p11
+PASS  7.체육_p12
+PASS  7.체육_p13
+PASS  7.체육_p14
+PASS  7.체육_p15
+PASS  7.체육_p16
+  (경고) h2 중주제 '스포츠 유형별 움직임 기술' 가 회독_7.체육.md 제목과 불일치
+PASS  7.체육_p17
+  (경고) h2 중주제 '스포츠 유형별 움직임 기술' 가 회독_7.체육.md 제목과 불일치
+PASS  7.체육_p18
+  (경고) h2 중주제 '스포츠 유형별 움직임 기술' 가 회독_7.체육.md 제목과 불일치
+PASS  7.체육_p19
+  (경고) h2 중주제 '기술형 스포츠 유형별 활동' 가 회독_7.체육.md 제목과 불일치
+PASS  7.체육_p20
+  (경고) h2 중주제 '기술형 스포츠 유형별 활동' 가 회독_7.체육.md 제목과 불일치
+PASS  7.체육_p21
+  (경고) h2 중주제 '기술형 스포츠 유형별 활동' 가 회독_7.체육.md 제목과 불일치
+PASS  7.체육_p22
+  (경고) h2 중주제 '기술형 스포츠 유형별 활동' 가 회독_7.체육.md 제목과 불일치
+PASS  7.체육_p23
+  (경고) h2 중주제 '기술형 스포츠 유형별 활동' 가 회독_7.체육.md 제목과 불일치
+FAIL  7.체육_p24
+  - style= 에 간격 외 속성: display
+  (경고) h2 중주제 '전략형 스포츠 유형별 활동' 가 회독_7.체육.md 제목과 불일치
+FAIL  7.체육_p25
+  - style= 에 간격 외 속성: display
+  (경고) h2 중주제 '전략형 스포츠 유형별 활동' 가 회독_7.체육.md 제목과 불일치
+FAIL  7.체육_p901
+  - <h2 로 시작하지 않음
+FAIL  7.체육_p902
+  - <h2 로 시작하지 않음
+FAIL  7.체육_p903
+  - <h2 로 시작하지 않음
+  - style= 에 간격 외 속성: display
+FAIL  7.체육_p904
+  - <h2 로 시작하지 않음
+FAIL  7.체육_p905
+  - <h2 로 시작하지 않음
+FAIL  7.체육_p906
+  - <h2 로 시작하지 않음
+PASS  7.체육_p907
+FAIL  7.체육_p908
+  - style= 에 간격 외 속성: display
+PASS  7.체육_p909
+FAIL  7.체육_p910
+  - style= 에 간격 외 속성: display
+FAIL  7.체육_p911
+  - <h2 로 시작하지 않음
+PASS  7.체육_p912
+FAIL  7.체육_p913
+  - style= 에 간격 외 속성: display
+FAIL  7.체육_p921
+  - <h2 로 시작하지 않음
+FAIL  7.체육_p922
+  - <h2 로 시작하지 않음
+FAIL  7.체육_p923
+  - <h2 로 시작하지 않음
+FAIL  7.체육_p924
+  - <h2 로 시작하지 않음
+FAIL  7.체육_p925
+  - <h2 로 시작하지 않음
+FAIL  7.체육_p926
+  - <h2 로 시작하지 않음
+FAIL  7.체육_p927
+  - <h2 로 시작하지 않음
+FAIL  7.체육_p928
+  - <h2 로 시작하지 않음
+FAIL  7.체육_p929
+  - <h2 로 시작하지 않음
+FAIL  7.체육_p930
+  - <h2 로 시작하지 않음
+FAIL  7.체육_p931
+  - <h2 로 시작하지 않음
+FAIL  7.체육_p932
+  - <h2 로 시작하지 않음
+FAIL  7.체육_p933
+  - <h2 로 시작하지 않음
+FAIL  7.체육_p934
+  - <h2 로 시작하지 않음
+FAIL  7.체육_p935
+  - <h2 로 시작하지 않음
+FAIL  7.체육_p936
+  - <h2 로 시작하지 않음
+FAIL  7.체육_p937
+  - <h2 로 시작하지 않음
+FAIL  7.체육_p941
+  - <h2 로 시작하지 않음
+FAIL  8.음악_p02
+  - style= 에 간격 외 속성: align-items
+FAIL  8.음악_p03
+  - style= 에 간격 외 속성: align-items, display
+  - 마커 잔존: ※
+FAIL  8.음악_p04
+  - style= 에 간격 외 속성: align-items, display
+FAIL  8.음악_p05
+  - style= 에 간격 외 속성: align-items, display
+FAIL  8.음악_p06
+  - style= 에 간격 외 속성: align-items
+PASS  8.음악_p07
+FAIL  8.음악_p08
+  - style= 에 간격 외 속성: align-items
+FAIL  8.음악_p09
+  - style= 에 간격 외 속성: align-items, grid-template-columns
+PASS  8.음악_p10
+FAIL  8.음악_p11
+  - style= 에 간격 외 속성: align-items
+FAIL  8.음악_p12
+  - style= 에 간격 외 속성: align-items
+PASS  8.음악_p13
+PASS  8.음악_p14
+FAIL  8.음악_p15
+  - style= 에 간격 외 속성: display
+FAIL  8.음악_p901
+  - style= 에 간격 외 속성: align-items
+FAIL  8.음악_p902
+  - kit.css 에 없는 class: nyc
+  - style= 에 간격 외 속성: display, table-layout, width
+FAIL  8.음악_p903
+  - kit.css 에 없는 class: mel
+  - style= 에 간격 외 속성: display, table-layout, width
+  - 마커 잔존: ※
+  (경고) h2 중주제 '음악 요소 (&#8251;표 — 전부 암기 지정)' 가 회독_8.음악.md 제목과 불일치
+FAIL  8.음악_p921
+  - <h2 로 시작하지 않음
+FAIL  9.미술_p02
+  - style= 에 간격 외 속성: display, width
+PASS  9.미술_p03
+PASS  9.미술_p04
+PASS  9.미술_p05
+PASS  9.미술_p06
+PASS  9.미술_p07
+PASS  9.미술_p08
+FAIL  9.미술_p09
+  - 마커 잔존: ※
+FAIL  9.미술_p10
+  - 마커 잔존: ※
+FAIL  9.미술_p11
+  - style= 에 간격 외 속성: align-items, display, flex-wrap
+PASS  9.미술_p12
+PASS  9.미술_p13
+FAIL  9.미술_p14
+  - style= 에 간격 외 속성: display
+  - 마커 잔존: ※
+FAIL  9.미술_p15
+  - style= 에 간격 외 속성: display
+FAIL  9.미술_p16
+  - style= 에 간격 외 속성: display
+PASS  9.미술_p17
+PASS  9.미술_p18
+PASS  9.미술_p19
+PASS  9.미술_p20
+PASS  9.미술_p901
+PASS  9.미술_p902
+FAIL  9.미술_p903
+  - kit.css 에 없는 class: nyc
+  - style= 에 간격 외 속성: display, table-layout, width
+FAIL  9.미술_p904
+  - style= 에 간격 외 속성: color, display, font-size, font-weight
+PASS  9.미술_p905
+FAIL  9.미술_p921
+  - <h2 로 시작하지 않음
+FAIL  9.미술_p931
+  - <h2 로 시작하지 않음
+검사: 통과 124 · 실패 226 (총 350)

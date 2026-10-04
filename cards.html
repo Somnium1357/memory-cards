@@ -9793,6 +9793,14 @@ function scRenderHome(){ const box=$('studyBox'); if(!box) return;
   $('scGo').onclick=()=>toStudy(null);
   box.querySelectorAll('.sc-row').forEach(r=>r.onclick=()=>toStudy(r.dataset.uid!==(SC.auth&&SC.auth.user_id)?r.dataset.uid:null));
   const rt=$('scRetry'); if(rt) rt.onclick=()=>scSync({manual:true}); }
+/* 친구 화면에 실제로 뜨는 내 숫자(서버 get_group_device_stats의 내 줄) — 올리기가 되는지 확인용(동하 10-04 「체크만 되면 되니까」 · 홈엔 안 둔다).
+   「나」 줄은 이 기기의 채점 로그로 세고, 이 줄은 서버가 친구들에게 내려 주는 값이다. 다르면 다음 동기화(최대 90초 캐시) 뒤 맞춰진다. */
+function scSelfCheck(){ const me=SC.auth&&SC.auth.user_id, m=(SC.members||[]).find(x=>x.user_id===me), t=scToday();
+  const fresh=SC.memDay===scDay(Date.now());
+  const v=(m&&fresh) ? `${(m.answer_count||0).toLocaleString()}장 · ${scFmt(m.active_seconds||0)}` : '아직 안 올라갔어요';
+  const same=m&&fresh&&(m.answer_count||0)===t.n;
+  return `<div class="set-row"><span>친구 화면의 내 기록</span><span class="desc">${v}</span></div>`
+    + (same ? '' : `<div class="sc-msg" style="margin-top:0">이 기기 기준 ${t.n.toLocaleString()}장 · ${scFmt(t.sec)}${SC.membersAt?` · 서버 확인 ${scHM(SC.membersAt)}`:''} — 다음 동기화 뒤 맞춰져요</div>`); }
 function scRenderStudy(){ const b=$('studyBody'); if(!b || !$('scrStudy').classList.contains('on')) return;
   if(!SC.group){ scJoinForm(b, 'scMsgS'); return; }
   const me=SC.auth&&SC.auth.user_id, owner=!!(SC.group.owner_id&&SC.group.owner_id===me), {html, nStudy}=scPeople('study');
@@ -9809,6 +9817,7 @@ function scRenderStudy(){ const b=$('studyBody'); if(!b || !$('scrStudy').classL
     <div class="sc-sec"><div class="h-sec2"><h2>방</h2></div><div class="sc-card">
       <div class="set-row"><span>초대 코드</span><span class="sc-code">${esc(SC.group.invite_code||'—')}</span></div>
       <div class="set-row"><span>내 이름</span><span class="desc">${esc(SC.nick||'—')}</span></div>
+      ${scSelfCheck()}
       ${mod}
       <div class="sc-msg" id="scMsgS"></div>
       ${owner?`<button class="act-btn" id="scRotate" style="margin-top:8px"><span>초대 코드 바꾸기</span><small>지금 코드로는 더 못 들어와요</small></button>`:''}

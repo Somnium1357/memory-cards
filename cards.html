@@ -4848,9 +4848,15 @@ function renderHintBox(c){
   if(!units.length) return;
   units.forEach(u=>{ const i=u.idx;   // 항목 번호는 원래 자리(걸러진 항목이 있어도 로그 번호가 어긋나지 않게)
     const b=document.createElement('button'); b.className='hint-chip'; b.dataset.lab=u.lab?u.lab+' ':'';
+    const shut=()=>{ b.classList.remove('on'); b.innerHTML='<svg class="hc-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>'+esc((u.lab?u.lab+' ':'')+'첫 글자 힌트'); };
     const open=()=>{ b.classList.add('on'); b.textContent=choseong(u.ans); hintUsed.add(i); syncGradeButtons(); };
-    if(hintUsed.has(i)) open(); else b.innerHTML='<svg class="hc-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>'+esc((u.lab?u.lab+' ':'')+'첫 글자 힌트');
-    b.onclick=(ev)=>{ ev.stopPropagation(); if(revealed||hintUsed.has(i)) return; open(); };
+    if(hintUsed.has(i)) open(); else shut();
+    /* 연 칩을 한 번 더 누르면 닫힌다 — **정답 보기 전에만**(동하 10-04 「한 번 탭하면 돌이킬 수가 없어」 · 잘못 누른 것 되돌리기).
+       닫으면 그 항목은 「힌트 연 것」에서 빠지고(로그 h도) 「다시」 고정이 풀린다. 정답을 본 뒤엔 그대로 — 채점 직전 우회가 되지 않게.
+       (09-05 「힌트 토글 = 닫으면 채점 개방」은 기각 목록이었다 — 동하가 직접 다시 요구해 바꿈) */
+    b.onclick=(ev)=>{ ev.stopPropagation(); if(revealed) return;
+      if(hintUsed.has(i)){ hintUsed.delete(i); shut(); syncGradeButtons(); return; }
+      open(); };
     box.appendChild(b);
   });
 }

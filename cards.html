@@ -1569,6 +1569,47 @@ button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inher
 .sc-card{background:var(--c-card);border-radius:var(--r-group);box-shadow:var(--sh-card);padding:12px 20px 16px;display:flex;flex-direction:column;}
 .sc-card .sc-det{padding:0;}
 .sc-card .sc-h:first-child{margin-top:4px;}
+/* 풀이 중 스터디 = 레일을 「피드백 ↔ 스터디」로 전환해 띄워 둔다(10-05 동하 「눌러서 보는 거 말고 띄워 놓고 풀 수 있는 거 · 아이폰에선 안 돼도 됨 ·
+   레일 사이 빈 공간은 너무 좁으니 레일 스터디 전환하는 식으로」) — 아이패드 가로(레일이 붙어 있는 폭)만 · 위 막대 사람 단추 = 전환(기기에 기억) · 덮는 창이 아니라 키를 막지 않는다 */
+#btnStudy{display:none;}
+/* 스터디일 때 레일을 넓힌다(동하 10-05 「스터디 레일 너무 좁은데」) — 카드 열 오른쪽 여백·위 막대 칸이 같은 --insp-w를 쓰니 겹치지 않는다(카드 열이 그만큼 준다) ·
+   전환은 가로에서만 — 세로·좁은 폭의 서랍은 늘 피드백 */
+@media (min-width:1120px) and (orientation:landscape){ #btnStudy.on{display:flex;} body.sc-rail{--insp-w:340px;}
+  #rail.sc-on>:not(#railSc){display:none!important;} #rail.sc-on #railSc{display:flex;flex:1 1 auto;} }
+#btnStudy.pin{color:var(--c-acc);}
+#railSc{display:none;flex-direction:column;min-height:0;}
+#railSc{overflow-y:auto;-webkit-overflow-scrolling:touch;}
+#railSc .rs-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:4px 12px 6px;}
+#railSc .rs-room{min-width:0;font-size:13px;font-weight:600;line-height:18px;color:var(--c-sec);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#railSc .rs-n{flex:0 0 auto;font-size:13px;line-height:18px;color:var(--c-sec);}
+#railSc .rs-n.live{color:var(--c-green);font-weight:600;}
+#railSc .rs-p{padding:12px 12px 14px;display:flex;flex-direction:column;gap:8px;}
+#railSc .rs-p+.rs-p{box-shadow:inset 0 .5px 0 var(--c-sep);}
+#railSc .rs-top{display:flex;align-items:center;gap:10px;}
+#railSc .rs-dot{flex:0 0 auto;width:8px;height:8px;border-radius:4px;}
+#railSc .rs-nm{flex:1;min-width:0;font-size:17px;line-height:22px;color:var(--c-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#railSc .rs-nm small{font-size:13px;color:var(--c-sec);margin-left:4px;}
+#railSc .rs-st{flex:0 0 auto;font-size:13px;line-height:18px;color:var(--c-sec);}
+#railSc .rs-st.live{color:var(--c-green);}
+#railSc .rs-g{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding-left:18px;}
+#railSc .rs-v{display:flex;flex-direction:column;min-width:0;}
+#railSc .rs-v b{font-size:17px;line-height:22px;font-weight:600;color:var(--c-label);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#railSc .rs-v b small{font-size:12px;font-weight:400;color:var(--c-sec);}
+#railSc .rs-v span{font-size:11px;line-height:14px;color:var(--c-sec);}
+#railSc .rs-v.dim b{color:var(--c-sec);font-weight:400;}
+#railSc .rs-gl{display:flex;align-items:center;gap:8px;padding-left:18px;font-size:12px;line-height:16px;color:var(--c-sec);font-variant-numeric:tabular-nums;}
+#railSc .rs-gl .rs-bar{flex:1;}
+#railSc .rs-gl em{font-style:normal;flex:0 0 auto;min-width:64px;text-align:right;}
+#railSc .rs-bar{height:4px;border-radius:2px;background:var(--c-fill);overflow:hidden;}
+#railSc .rs-bar i{display:block;height:100%;border-radius:2px;background:var(--c-acc);}
+#railSc .rs-bar.done i{background:var(--c-green);}
+#railSc .rs-l{padding-left:18px;font-size:13px;line-height:18px;color:var(--c-sec);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#railSc .rs-l b{font-weight:400;color:var(--c-label);}
+#railSc .rs-tl{padding-left:18px;}
+#railSc .rs-strip{display:block;width:100%;height:8px;border-radius:2px;}
+#railSc .rs-ax{display:flex;justify-content:space-between;margin-top:2px;font-size:10px;line-height:12px;color:var(--c-sec);opacity:.8;font-variant-numeric:tabular-nums;}
+#railSc .rs-foot{margin-top:auto;padding:10px 12px 2px;font-size:12px;line-height:16px;color:var(--c-sec);}
+#railSc .rs-err{padding:8px 12px;font-size:13px;line-height:18px;color:var(--c-sec);}
 .sc-foot{font-size:13px;line-height:18px;color:var(--c-sec);padding:0 20px;}
 .sc-code{font-size:17px;font-weight:600;letter-spacing:.08em;font-variant-numeric:tabular-nums;}
 .sc-code-r{display:flex;align-items:center;gap:8px;}
@@ -2101,7 +2142,7 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
     <div id="topbar">
       <div class="tb-l"><button class="tb-btn glass-c" id="btnHome" title="홈" aria-label="홈으로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button><span id="saveBadge" title="미저장분 있음"></span></div>
       <div id="tbProg"><span id="tbSess"></span><span class="tb-pbar"><span id="tbBar"></span></span><span id="tbCounts"></span></div>
-      <div class="tb-r"><button class="tb-btn" id="btnPause" title="잠시 멈춤" aria-label="잠시 멈춤"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4.5" width="4" height="15" rx="1.2"/><rect x="14" y="4.5" width="4" height="15" rx="1.2"/></svg></button><button class="tb-btn" id="btnUndo" title="되돌리기" aria-label="되돌리기" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button class="tb-btn" id="btnMore" title="피드백 · 이 카드" aria-label="피드백 · 이 카드"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="18.5" cy="12" r="1.8"/></svg></button></div>
+      <div class="tb-r"><button class="tb-btn" id="btnStudy" title="스터디" aria-label="스터디"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><path d="M15.5 4.9a3.2 3.2 0 0 1 0 6.2M17.5 14.7c1.6.7 2.7 2.4 3 4.8"/></svg></button><button class="tb-btn" id="btnPause" title="잠시 멈춤" aria-label="잠시 멈춤"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4.5" width="4" height="15" rx="1.2"/><rect x="14" y="4.5" width="4" height="15" rx="1.2"/></svg></button><button class="tb-btn" id="btnUndo" title="되돌리기" aria-label="되돌리기" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button class="tb-btn" id="btnMore" title="피드백 · 이 카드" aria-label="피드백 · 이 카드"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="18.5" cy="12" r="1.8"/></svg></button></div>
     </div>
 
     <!-- 풀이 -->
@@ -2631,6 +2672,7 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
     <button class="rbtn" id="rInfo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg>카드 정보</button>
     <!-- @주석 「추가」(지도·사례·정의·이름) 버튼은 09-24 동하 결정으로 뺐다 — 지도·이름 사용 0 · 사례 = 칩 「사례 추가」 · 정의 = 메모.
          이미 달린 @주석은 「플래그 · @주석」 목록과 is:ann 검색에서 그대로 읽힌다(쓰기만 없앴다). -->
+    <div id="railSc"></div>   <!-- 스터디(10-05 · 아이패드 가로) -->
     <div class="rail-bottom">
       <button class="rbtn" id="rOffAll" style="display:none" title="같은 열거에서 쪼개진 낱장 전부 끄기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="7" height="6" rx="1.5"/><rect x="14" y="5" width="7" height="6" rx="1.5"/><rect x="3" y="14" width="7" height="6" rx="1.5"/><path d="M15 17l2 2 4-4"/></svg><span id="rOffAllLab">형제 끄기</span></button>
       <button class="rbtn" id="rOff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v8"/><path d="M6.4 7.2a7.5 7.5 0 1 0 11.2 0"/></svg>끄기</button>
@@ -8931,7 +8973,7 @@ function commitMemo(){
   return false;
 }
 function syncRail(){
-  commitMemo();
+  commitMemo(); try{ scRenderDock(); }catch(e){}   // 레일 스터디 — 내 장수는 채점마다(10-05)
   const c=cur(); const s=c?state.cards[c.id]:null;
   const ann=(s&&s.ann)||[];
   document.querySelectorAll('.rbtn.ann').forEach(b=>{
@@ -9866,7 +9908,48 @@ function scDetMine(){ const L=[], me=SC.auth&&SC.auth.user_id;
   L.push(`<div class="sc-line sc-hint">응답 시간 기준 · 이 기기에서 푼 것만 · 세션 이름으로 묶어요</div>`);
   return L.join(''); }
 const SC_CHEV='<svg class="sc-chev" viewBox="0 0 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 1l6 6 6-6"/></svg>';
-function scRender(){ scRenderHome(); scRenderStudy(); scRenderSet(); }
+function scRender(){ scRenderHome(); scRenderStudy(); scRenderSet(); scRenderDock(); }
+/* 풀이 중 스터디 = 레일 전환(10-05) — 사람 줄(점 · 이름 · 상태·시간 · 장수/목표) · 내 줄은 채점마다(syncRail) · 친구는 동기화(30초)마다 다시 그린다 · 기본 = 피드백 */
+const K_SC_DOCK='cards_sc_dock_v1';
+function scDockOn(){ return lsGet(K_SC_DOCK)==='1'; }
+/* 실시간 중심(동하 10-05 「좌우 넓히고 처음 보여 줬던 느낌으로 정보량 · 일 단위보단 실시간 중심」) — 사람마다 펼친 카드:
+   10-05 「글자가 잡스럽고 톤이 안 맞음 · 정보량은 그대로」 → 늘어놓은 글을 숫자 칸 넷(오늘 · 최근 1시간 · 공부 시간 · 분당 장수)으로 · 목표 막대 · 지금 세션 · 시간대 띠(지금 칸 표시) */
+function scLiteStrip(bs){ const now=scSlot(Date.now()); let r='';
+  for(const b of bs) r+=`<rect x="${b.slot+.08}" y="0" width=".84" height="10" fill="var(--c-acc)"/>`;
+  return `<div class="rs-tl"><svg class="rs-strip" viewBox="0 0 96 10" preserveAspectRatio="none" aria-label="오늘 15분 단위 활동"><rect x="0" y="0" width="96" height="10" fill="var(--c-fill)"/>${r}<rect x="${now}" y="0" width=".4" height="10" fill="var(--c-sec)"/></svg>`
+    +`<div class="rs-ax">${[0,24,48,72,96].map(sl=>`<span>${scSlotHM(sl%96).slice(0,2)}</span>`).join('')}</div></div>`; }
+const scClock=s=>{ const m=Math.floor((s||0)/60); return Math.floor(m/60)+':'+String(m%60).padStart(2,'0'); };   // 레일 칸 — 1:42
+function scAgo(t){ if(!isFinite(t)) return ''; const d=Math.max(0,Date.now()-t)/1000; return d<60?'방금':d<3600?Math.floor(d/60)+'분 전':scHM(t); }
+function scRenderDock(){ const box=$('railSc'); if(!box) return; const has=!!SC.group, on=has&&scDockOn();
+  $('btnStudy').classList.toggle('on', has); $('btnStudy').classList.toggle('pin', on); $('rail').classList.toggle('sc-on', on); document.body.classList.toggle('sc-rail', on);
+  if(!on){ box.innerHTML=''; return; }
+  const me=SC.auth&&SC.auth.user_id, t=scToday(), myS=scStatus(), fresh=SC.memDay===scDay(Date.now()), nowSl=scSlot(Date.now());
+  const rank={studying:0, paused:1, online:2, offline:3};
+  let rows=(SC.members||[]).filter(m=>m.user_id!==me).sort((a,b)=>rank[scMemberStatus(a)]-rank[scMemberStatus(b)] || (b.answer_count||0)-(a.answer_count||0));
+  const nStudy=rows.filter(m=>scMemberStatus(m)==='studying').length+(myS==='studying'?1:0);
+  rows=[{user_id:me, mine:true}, ...rows];
+  const myB=scMyBuckets(), {ev}=scEvents(), myLast=ev.reduce((x,e)=>Math.max(x,e.t||0),0)||NaN;
+  const html=rows.map(m=>{ const st=m.mine?(myS==='stopped'?'online':myS):scMemberStatus(m), live=st==='studying';
+    const n=m.mine?t.n:(fresh?(m.answer_count||0):null), sec=m.mine?t.sec:(fresh?(m.active_seconds||0):null);
+    const cg=m.mine?(SC.goalCards||0):(m.card_goal||0), tg=m.mine?(SC.goalMin||0):(m.time_goal_minutes||0);
+    const bs=m.mine?myB:(fresh?(m.activity_buckets||[]):[]);
+    const hr=bs.filter(b=>b.slot>nowSl-4 && b.slot<=nowSl).reduce((a,b)=>a+(b.answer_count||0),0);   // 최근 1시간 = 지금 칸 포함 15분 칸 넷
+    const last=m.mine?myLast:Date.parse(m.updated_at||'');
+    const deck=m.mine?(curSess&&curSess.name):m.current_deck_name;
+    const rate=(n&&sec>=60)?(Math.round(n/(sec/60)*10)/10).toLocaleString():'—';
+    const v=(val,lab,dim)=>`<div class="rs-v${dim?' dim':''}"><b>${val}</b><span>${lab}</span></div>`;
+    const L=[];
+    L.push(`<div class="rs-top"><span class="rs-dot" style="background:${live?'var(--c-green)':st==='offline'?'var(--c-sep)':'var(--c-acc)'}"></span><span class="rs-nm">${m.mine?`${esc(SC.nick||'나')}<small>나</small>`:esc(m.display_name||'친구')}</span><span class="rs-st${live?' live':''}">${SC_ST[st]}${isFinite(last)?` · ${scAgo(last)}`:''}</span></div>`);
+    L.push(`<div class="rs-g">${v(n==null?'—':`${n.toLocaleString()}<small>장</small>`,'오늘',!n)}${v(n==null?'—':`${hr.toLocaleString()}<small>장</small>`,'최근 1시간',!hr)}${v(sec==null?'—':scClock(sec),'공부 시간',!sec)}${v(rate,'분당 장수',rate==='—')}</div>`);
+    if(cg&&n!=null) L.push(`<div class="rs-gl"><div class="rs-bar${n>=cg?' done':''}"><i style="width:${Math.min(100,n/cg*100).toFixed(1)}%"></i></div><em>${n.toLocaleString()} / ${cg.toLocaleString()}장</em></div>`);
+    if(tg&&sec!=null) L.push(`<div class="rs-gl"><div class="rs-bar${sec>=tg*60?' done':''}"><i style="width:${Math.min(100,sec/(tg*60)*100).toFixed(1)}%"></i></div><em>${scClock(sec)} / ${scClock(tg*60)}</em></div>`);
+    if(deck) L.push(`<div class="rs-l">지금 <b>${esc(deck)}</b></div>`);
+    if(m.mine||fresh) L.push(scLiteStrip(bs));
+    return `<div class="rs-p">${L.join('')}</div>`; }).join('');
+  const tot=rows.reduce((a,m)=>a+(m.mine?t.n:(fresh?(m.answer_count||0):0)),0);
+  box.innerHTML=`<div class="rs-h"><span class="rs-room">${esc(SC.group.name||'스터디')}</span><span class="rs-n${nStudy?' live':''}">${nStudy?`${nStudy}명 공부 중`:''}</span></div>${html}`
+    +`<div class="rs-foot">방 오늘 ${tot.toLocaleString()}장${SC.err?' · 친구 기록을 못 받았어요':SC.membersAt?` · ${scHM(SC.membersAt)}에 받음`:''}</div>`; }
+$('btnStudy').onclick=()=>{ lsSet(K_SC_DOCK, scDockOn()?'0':'1'); scRenderDock(); };
 const SC_RCHEV='<svg class="s2-chev" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m1.5 1.5 6 6-6 6"/></svg>';
 /* 사람 줄 — 홈 = 누르면 스터디 화면으로 · 스터디 화면 = 친구 줄을 누르면 그 자리에서 펼친다(덱 · 목표 · 오늘 시간대 띠) */
 function scPeople(where){

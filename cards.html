@@ -1556,6 +1556,17 @@ button.sc-row{font:inherit;background:none;border:0;cursor:pointer;}
 .sc-bar i{display:block;width:100%;max-width:28px;border-radius:4px;background:var(--c-acc);opacity:.55;}
 .sc-bar i.t{opacity:1;}
 .sc-bar i.z{height:1px;background:var(--c-sep);opacity:1;border-radius:0;}
+/* 15분 1등 띠 · 7일 선 그래프(10-05 친구 요청 · 애드온과 같은 규칙) — 사람 색 = 나 강조색 · 친구는 방에 든 순서로 팔레트 */
+.sc-lgs{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px;font-size:13px;line-height:18px;color:var(--c-sec);}
+.sc-lg{display:inline-flex;align-items:center;white-space:nowrap;}
+.sc-lg i{display:inline-block;width:8px;height:8px;border-radius:4px;margin-right:6px;}
+.sc-lg b{color:var(--c-label);font-weight:600;margin:0 2px 0 6px;font-variant-numeric:tabular-nums;}
+.sc-lg.z b{color:var(--c-sec);font-weight:400;}
+.sc-wkw{position:relative;margin:2px 4px 4px;}
+.sc-wk{display:block;width:100%;height:110px;overflow:visible;}
+.sc-dot{position:absolute;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;box-shadow:0 0 0 2px var(--c-card);}
+.sc-dot.me{width:9px;height:9px;margin:-4.5px 0 0 -4.5px;}
+.sc-wkm{font-size:11px;line-height:14px;font-weight:600;color:var(--c-sec);margin-top:10px;font-variant-numeric:tabular-nums;}
 .sc-bn{font-size:11px;line-height:14px;font-weight:600;color:var(--c-sec);font-variant-numeric:tabular-nums;min-height:14px;}
 .sc-bd{font-size:11px;line-height:14px;font-weight:600;color:var(--c-sec);}
 button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inherit;font-size:13px;line-height:18px;color:var(--c-sec);margin:-10px 20px 0;padding:0;}
@@ -1609,6 +1620,9 @@ button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inher
 #railSc .rs-strip{display:block;width:100%;height:8px;border-radius:2px;}
 #railSc .rs-ax{display:flex;justify-content:space-between;margin-top:2px;font-size:10px;line-height:12px;color:var(--c-sec);opacity:.8;font-variant-numeric:tabular-nums;}
 #railSc .rs-foot{margin-top:auto;padding:10px 12px 2px;font-size:12px;line-height:16px;color:var(--c-sec);}
+#railSc .rs-lead{padding:0 12px 10px;}
+#railSc .rs-lead .rs-strip{margin-left:0;width:100%;}
+#railSc .rs-l0{font-size:11px;line-height:14px;font-weight:600;color:var(--c-sec);margin-bottom:4px;}
 #railSc .rs-err{padding:8px 12px;font-size:13px;line-height:18px;color:var(--c-sec);}
 .sc-foot{font-size:13px;line-height:18px;color:var(--c-sec);padding:0 20px;}
 .sc-code{font-size:17px;font-weight:600;letter-spacing:.08em;font-variant-numeric:tabular-nums;}
@@ -9739,9 +9753,9 @@ async function scPushReviews(tok){   // 🔴 방 합계의 유일한 재료(10-0
       part.forEach(x=>sent.add(x.t+'|'+x.id)); rm.forEach(k=>sent.delete(k)); S[d]=[...sent]; scSave(); } } }
 let scInputAt=0;
 function scStatus(){ if(document.visibilityState!=='visible' || !$('scrSolve').classList.contains('on')) return 'stopped';
-  return Date.now()-scInputAt<60000 ? 'studying' : 'paused'; }
-function scMemberStatus(m){   // 애드온 _current_member_status — 90초 넘게 소식이 없으면 오프라인
-  const t=m.updated_at?Date.parse(m.updated_at):NaN; if(!isFinite(t) || Date.now()-t>90000) return 'offline';
+  return Date.now()-scInputAt<120000 ? 'studying' : 'paused'; }   // 2분(10-05 친구 요청 「상태 변화가 지나치게 잦음」 · 애드온과 같게 · 시간 셈은 로그 간격 규칙 그대로)
+function scMemberStatus(m){   // 애드온 _current_member_status — 180초 넘게 소식이 없으면 오프라인(10-05 90→180 · 친구 요청)
+  const t=m.updated_at?Date.parse(m.updated_at):NaN; if(!isFinite(t) || Date.now()-t>180000) return 'offline';
   return m.status==='studying'||m.status==='paused' ? m.status : 'online'; }
 async function scFetchToday(tok, gid, day){
   const mem=await scReq('GET','/rest/v1/group_members',{token:tok, query:{select:'user_id,joined_at', group_id:'eq.'+gid, order:'joined_at.asc'}})||[];
@@ -9763,7 +9777,8 @@ async function scSync(o){ o=o||{};
   scBusy=true;
   let stage='st';   // 지금 하는 단계 — 실패하면 그 단계 이름으로 남긴다(애드온 record_status: 기록 공유 · 상태 공유 · 친구 조회)
   try{ const uid=SC.auth.user_id, canon=await scNick(uid), status=o.status||scStatus();
-    const deck=(SC.shareDeck!==false && status==='studying' && curSess && curSess.name) ? String(curSess.name).slice(0,300) : null;   // 공유는 켰을 때(기본 켬 · 애드온 10-04 「UX 후속」과 같게 — 끄면 false) · 푸는 중일 때만
+    const today=scDay(Date.now()), known=(curSess&&curSess.name) ? String(curSess.name) : (SC.lastDeck && SC.lastDeckDay===today ? SC.lastDeck : null);
+    const deck=(SC.shareDeck!==false && known) ? known.slice(0,300) : null;   // 10-05 친구 요청: 접속 중이면 공부 중이 아니어도 덱이 바뀔 때까지 · 오늘 연 덱만(그날 처음 켜서 정보 없으면 비움)   // 공유는 켰을 때(기본 켬 · 애드온 10-04 「UX 후속」과 같게 — 끄면 false) · 푸는 중일 때만
     const mem=await scAuthed(async tok=>{
       if(SC.group.day_start_hour===undefined && !o.keepalive){   // 옛 방 정보엔 시간대가 없다 — 한 번 받아 채운다
         const g=(await scGroups(tok)).find(x=>x.id===SC.group.id); SC.group=Object.assign({}, SC.group, g||{});
@@ -9778,7 +9793,8 @@ async function scSync(o){ o=o||{};
       const t=scToday(); SC.rev=Math.max(Date.now(), (SC.rev||0)+1);   // 판 번호 = 늘기만 하면 된다(서버가 옛 판은 무시)
       await scReq('POST','/rest/v1/rpc/record_device_day',{token:tok, body:{target_group:SC.group.id, source_device:scDev(), target_day:t.day, snapshot_revision:SC.rev,
         seconds_total:t.sec, answers_total:t.n, activity_status:status, time_goal:Math.min(1440, SC.goalMin||0), cards_goal:Math.min(10000, SC.goalCards||0)}, keepalive:o.keepalive});
-      if((SC.deckPub||null)!==deck || SC.deckGid!==SC.group.id){ await scReq('POST','/rest/v1/rpc/set_current_deck',{token:tok, body:{target_group:SC.group.id, source_device:scDev(), deck_name:deck}, keepalive:o.keepalive}); SC.deckPub=deck; SC.deckGid=SC.group.id; }
+      /* 🔴 서버는 90초 안에 갱신된 덱만 돌려준다(get_group_current_decks) — 바뀔 때만 보내면 1분 반 뒤 친구 화면에서 사라졌다 · 45초마다 다시 보낸다(30초 박동과 겹쳐도 90초 안) */
+      if((SC.deckPub||null)!==deck || SC.deckGid!==SC.group.id || (deck && Date.now()-(SC.deckAt||0)>=45000)){ await scReq('POST','/rest/v1/rpc/set_current_deck',{token:tok, body:{target_group:SC.group.id, source_device:scDev(), deck_name:deck}, keepalive:o.keepalive}); SC.deckPub=deck; SC.deckGid=SC.group.id; SC.deckAt=Date.now(); }
       if(!o.keepalive) scOkMark('st');
       /* 친구 목록은 90초 캐시(애드온) — 30초 박동은 상태만 올린다 · 펼쳐 보거나 손으로 누르면 바로 */
       if(o.keepalive || (!o.force && !o.manual && Date.now()-(SC.membersAt||0)<85000)) return null;
@@ -9792,7 +9808,7 @@ async function scSync(o){ o=o||{};
     if(e.status!==401 && !o.keepalive){ scFail++; scHold=Date.now()+[60,120,240,300][Math.min(scFail,4)-1]*1000; } scSave(); }
   finally{ scBusy=false; if(!o.keepalive) scRender(); } }
 /* 계정을 바꿔도 이 기기 것은 남긴다 — 설치 ID · 목표 · 세션 이름 공유 · 세션별 속도 기록 */
-const scKeep=()=>({goalMin:SC.goalMin, goalCards:SC.goalCards, dev:SC.dev, shareDeck:SC.shareDeck, dk:SC.dk, lastDeck:SC.lastDeck});
+const scKeep=()=>({goalMin:SC.goalMin, goalCards:SC.goalCards, dev:SC.dev, shareDeck:SC.shareDeck, dk:SC.dk, lastDeck:SC.lastDeck, lastDeckDay:SC.lastDeckDay});
 async function scGroups(tok){   // 애드온 list_groups — 내가 든 방들(가입 순)
   const r=await scReq('GET','/rest/v1/group_members',{token:tok, query:{select:'group_id,joined_at,study_groups(id,name,invite_code,owner_id,created_at,time_zone,day_start_hour)', user_id:'eq.'+SC.auth.user_id, order:'joined_at.asc'}})||[];
   return r.map(x=>Object.assign({}, x.study_groups||{}, {id:(x.study_groups&&x.study_groups.id)||x.group_id})); }
@@ -9850,7 +9866,7 @@ const scDur=ms=>ms<60000 ? Math.round(ms/1000)+'초' : scFmt(ms/1000);
 /* ── 세션별 속도 기록(애드온 history.py) — 채점마다 이 기기에 「방 하루 × 세션 이름」으로 장수·응답 시간을 쌓는다. 로그엔 세션이 안 남아서다 ── */
 function scDeckAdd(entry){ if(!curSess||!curSess.name||!entry) return;
   const d=scDay(logTs(entry)), nm=String(curSess.name), ms=(entry[3]&&entry[3].ms)||0;
-  const D=SC.dk=SC.dk||{}; const r=(D[d]=D[d]||{})[nm]=D[d][nm]||{s:0,n:0}; r.s+=ms/1000; r.n++; SC.lastDeck=nm;
+  const D=SC.dk=SC.dk||{}; const r=(D[d]=D[d]||{})[nm]=D[d][nm]||{s:0,n:0}; r.s+=ms/1000; r.n++; SC.lastDeck=nm; SC.lastDeckDay=d;
   const ks=Object.keys(D).sort(); while(ks.length>32) delete D[ks.shift()];
   scSave(); }
 function scCompare(nm, mode){   // 오늘 평균 vs 어제 / 최근 30일 최고 — 표본이 작으면 %를 내지 않는다(오늘 5분·10장 · 비교 날 10분·20장)
@@ -9876,7 +9892,7 @@ function scStrip(uid, buckets){
   let r=''; for(const b of buckets){ const on=scSel&&scSel.uid===uid&&scSel.slot===b.slot; r+=`<rect x="${b.slot+.08}" y="0" width=".84" height="10" fill="var(--c-acc)"${scSel&&scSel.uid===uid&&!on?' opacity=".45"':''}/>`; }
   const ax=[0,24,48,72,96].map(sl=>`<span>${scSlotHM(sl%96).slice(0,2)}</span>`).join('');
   const sel=scSel&&scSel.uid===uid ? buckets.find(b=>b.slot===scSel.slot) : null;
-  return `<svg class="sc-strip" data-uid="${esc(uid)}" viewBox="0 0 96 10" preserveAspectRatio="none" role="img" aria-label="오늘 15분 단위 활동"><rect x="0" y="0" width="96" height="10" fill="var(--c-fill)"/>${r}</svg>`
+  return `<svg class="sc-strip" data-uid="${esc(uid)}" viewBox="0 0 96 10" preserveAspectRatio="none" role="img" aria-label="오늘 15분 단위 활동"><rect x="0" y="0" width="96" height="10" fill="var(--c-fill)"/>${r}${scNowLine()}</svg>`
     + `<div class="sc-ax">${ax}</div>`
     + (sel ? `<div class="sc-line">${scSlotHM(sel.slot)}–${scSlotHM((sel.slot+1)%96)} · ${(sel.answer_count||0).toLocaleString()}장 · ${scDur(sel.time_ms||0)}</div>` : (buckets.length?`<div class="sc-line sc-hint">띠를 누르면 그 15분을 보여 줘요</div>`:'')); }
 function scMyBuckets(){ const {D, ev}=scEvents(), m={};
@@ -9890,6 +9906,52 @@ function scDetFriend(m){ const L=[];
   else if(!m.activity_known && !(m.activity_buckets||[]).length) L.push(`<div class="sc-line">아직 받은 기록이 없어요</div>`);
   else L.push(scStrip(m.user_id, m.activity_buckets||[]));
   return L.join(''); }
+/* ── 사람 색 — 나 = 강조색 · 친구 = 방에 든 순서(SC.members는 joined_at 순)로 팔레트(애드온과 같은 순서) ── */
+const SC_PAL=['var(--c-green)','var(--c-orange)','var(--c-purple)','var(--c-pink)','var(--c-teal)','var(--c-brown,#A2845E)','var(--c-indigo)'];   // 디자인_언어 §2.4 「스터디 사람 색」 — 테마 변수라 다크에서 다크 값
+function scColor(uid){ const me=SC.auth&&SC.auth.user_id; if(uid===me) return 'var(--c-acc)'; const fr=(SC.members||[]).filter(m=>m.user_id!==me).map(m=>m.user_id), i=fr.indexOf(uid); return SC_PAL[(i<0?0:i)%SC_PAL.length]; }
+/* ── 15분 1등(10-05 친구 요청 「15분별로 누가 많이 했는지」) — 칸마다 답한 수가 가장 많은 사람 · 공동 1등이면 아무도(회색) · 1등 횟수 = 혼자 1등인 칸 수 ── */
+let scLSel=null;
+function scLeaderData(){ const me=SC.auth&&SC.auth.user_id, fresh=SC.memDay===scDay(Date.now());
+  const ppl=[{uid:me, name:SC.nick||'나', bs:scMyBuckets()}, ...(SC.members||[]).filter(m=>m.user_id!==me).map(m=>({uid:m.user_id, name:m.display_name||'친구', bs:fresh?(m.activity_buckets||[]):[]}))];
+  const slots={}; for(const p of ppl) for(const b of p.bs){ const n=b.answer_count||0; if(n>0) (slots[b.slot]=slots[b.slot]||[]).push({uid:p.uid, name:p.name, n}); }
+  const lead={}, wins={}; for(const sl in slots){ const a=slots[sl].sort((x,y)=>y.n-x.n), tie=a.length>1&&a[0].n===a[1].n; lead[sl]=tie?null:a[0].uid; if(!tie) wins[a[0].uid]=(wins[a[0].uid]||0)+1; }
+  return {ppl, slots, lead, wins}; }
+function scLeadStrip(L, cls){ let r=''; const sel=cls!=='rs-strip'&&scLSel!=null;
+  for(const sl in L.slots){ const u=L.lead[sl], on=Number(sl)===scLSel;
+    r+=`<rect x="${Number(sl)+.08}" y="0" width=".84" height="10" fill="${u?scColor(u):'var(--c-sec)'}" opacity="${u?(sel&&!on?.55:1):.45}"/>`; }
+  return `<svg class="${cls}" viewBox="0 0 96 10" preserveAspectRatio="none" role="img" aria-label="15분마다 1등"><rect x="0" y="0" width="96" height="10" fill="var(--c-fill)"/>${r}${scNowLine()}</svg>`; }
+function scLeadSec(){ const L=scLeaderData(), keys=Object.keys(L.slots).map(Number); if(!keys.length) return '';
+  if(scLSel==null || !L.slots[scLSel]) scLSel=Math.max(...keys);
+  const a=L.slots[scLSel];   // 등수 = 1·1·3(같은 수는 같은 등수 · 애드온과 같게)
+  const line=`${scSlotHM(scLSel)}–${scSlotHM((scLSel+1)%96)} · `+a.map((x,i)=>`${a.findIndex(y=>y.n===x.n)+1}등 ${esc(x.name)} <b>${x.n.toLocaleString()}</b>장`).join(' · ');
+  const ax=[0,24,48,72,96].map(sl=>`<span>${scSlotHM(sl%96).slice(0,2)}</span>`).join('');
+  const lg=L.ppl.map(p=>`<span class="sc-lg${L.wins[p.uid]?'':' z'}"><i style="background:${scColor(p.uid)}"></i>${esc(p.name)}<b>${(L.wins[p.uid]||0).toLocaleString()}</b>번</span>`).join('');
+  return `<div class="sc-sec"><div class="h-sec2"><h2>15분 1등</h2><span class="sc-g">오늘</span></div><div class="sc-card">${scLeadStrip(L,'sc-strip sc-lead')}<div class="sc-ax">${ax}</div><div class="sc-line" style="margin-top:6px">${line}</div><div class="sc-lgs">${lg}</div></div></div>`; }
+/* ── 최근 7일 선 그래프 — 나 vs 친구(10-05 친구 요청 「막대 말고 선으로 비교」) · 지난 날은 get_group_device_stats를 날마다 한 번 받아 기기에 둔다(지난 날은 안 바뀐다) · 오늘은 지금 받은 값 ── */
+let scWkBusy=false, scWkAt=0;
+async function scWeekFetch(){ if(scWkBusy||!SC.group||!SC.auth) return; const days=scWeek().days;
+  if(!SC.wk||SC.wk.g!==SC.group.id) SC.wk={g:SC.group.id, d:{}};
+  const miss=days.slice(0,6).filter(d=>!SC.wk.d[d]); if(!miss.length || Date.now()-scWkAt<60000) return;
+  scWkBusy=true; scWkAt=Date.now();
+  try{ await scAuthed(async tok=>{ for(const d of miss){ const st=await scReq('POST','/rest/v1/rpc/get_group_device_stats',{token:tok, body:{target_group:SC.group.id, target_day:d}})||[]; const m={}; st.forEach(r=>{ if(m[r.user_id]==null) m[r.user_id]=r.answer_count||0; }); SC.wk.d[d]=m; } });
+    for(const k of Object.keys(SC.wk.d)) if(k<days[0]) delete SC.wk.d[k]; scSave(); scRenderStudy(); }catch(e){} finally{ scWkBusy=false; } }
+function scWeekChart(w){ const me=SC.auth&&SC.auth.user_id, fresh=SC.memDay===scDay(Date.now()), D=(SC.wk&&SC.wk.g===(SC.group&&SC.group.id))?SC.wk.d:{};
+  const ppl=[{uid:me, name:SC.nick||'나'}, ...(SC.members||[]).filter(m=>m.user_id!==me).map(m=>({uid:m.user_id, name:m.display_name||'친구', m}))];
+  const val=(p,d,i)=>{ if(i===6) return p.uid===me ? scToday().n : (fresh?(p.m.answer_count||0):null); if(p.uid===me) return w.by[d].n; const r=D[d]; return r ? (r[p.uid]||0) : null; };   // 내 선 = 이 기기 기록(서버엔 방에 들기 전 기록이 없다 · 애드온과 같게)
+  const S=ppl.map(p=>({p, v:w.days.map((d,i)=>val(p,d,i))}));
+  /* 선만 SVG(폭에 맞춰 늘고 굵기는 그대로 · non-scaling-stroke) — 글자(날짜·최댓값)는 HTML이라 화면 폭과 상관없이 같은 크기 */
+  const mx=Math.max(1,...S.flatMap(x=>x.v.filter(v=>v!=null))), W=600, H=100, xs=i=>i*W/6, ys=v=>4+(1-v/mx)*(H-8);
+  let g='';
+  for(const x of [...S].reverse()){ const c=scColor(x.p.uid), wd=x.p.uid===me?2.5:1.5; let seg=[];
+    const flush=()=>{ if(seg.length>1) g+=`<polyline points="${seg.join(' ')}" fill="none" stroke="${c}" stroke-width="${wd}" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;
+      else if(seg.length===1) g+=`<polyline points="${seg[0]} ${seg[0]}" fill="none" stroke="${c}" stroke-width="${wd+3}" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`; seg=[]; };
+    x.v.forEach((v,i)=>{ if(v==null){ flush(); return; } seg.push(`${xs(i).toFixed(1)},${ys(v).toFixed(1)}`); }); flush(); }
+  const ax=w.days.map(d=>`<span>${Number(d.slice(8))}</span>`).join('');
+  const lg=S.map(x=>`<span class="sc-lg"><i style="background:${scColor(x.p.uid)}"></i>${esc(x.p.name)}<b>${x.v.reduce((a,v)=>a+(v||0),0).toLocaleString()}</b>장</span>`).join('');
+  /* 끝점(오늘 또는 마지막 값) = HTML 점 — 늘어나는 SVG 안 원은 찌그러진다 */
+  const dots=S.map(x=>{ let i=6; while(i>=0&&x.v[i]==null) i--; if(i<0) return ''; const me1=x.p.uid===me;
+    return `<i class="sc-dot${me1?' me':''}" style="left:${(xs(i)/W*100).toFixed(2)}%;top:${(ys(x.v[i])/H*100).toFixed(2)}%;background:${scColor(x.p.uid)}"></i>`; }).reverse().join('');
+  return `<div class="sc-wkm">최대 ${mx.toLocaleString()}장</div><div class="sc-wkw"><svg class="sc-wk" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="최근 7일 답한 수 — 나와 친구"><line x1="0" x2="${W}" y1="4" y2="4" stroke="var(--c-sep)" stroke-width="1" stroke-dasharray="3 4" vector-effect="non-scaling-stroke"/><line x1="0" x2="${W}" y1="${H-1}" y2="${H-1}" stroke="var(--c-sep)" stroke-width="1" vector-effect="non-scaling-stroke"/>${g}</svg>${dots}</div><div class="sc-ax">${ax}</div><div class="sc-lgs">${lg}</div>`; }
 /* 내 목표 — 시간·장수를 따로 정하고 따로 지운다(애드온 10-04) · 빈칸/0 = 목표 없음 · 바꾼 칸만 저장한다(다른 칸을 옛 값으로 덮지 않게) */
 function scGoalEd(){ return `<div class="sc-goal"><span style="flex:1">시간 목표</span><input id="scGoalMinS" type="number" inputmode="numeric" min="0" max="1440" placeholder="없음" value="${SC.goalMin||''}"><span class="u">분</span>${SC.goalMin?'<button class="btn-ghost sc-gx" data-g="goalMin">지우기</button>':''}</div>`
   + `<div class="sc-goal"><span style="flex:1">장수 목표</span><input id="scGoalCardsS" type="number" inputmode="numeric" min="0" max="10000" placeholder="없음" value="${SC.goalCards||''}"><span class="u">장</span>${SC.goalCards?'<button class="btn-ghost sc-gx" data-g="goalCards">지우기</button>':''}</div>`
@@ -9905,7 +9967,7 @@ function scDetMine(){ const L=[], me=SC.auth&&SC.auth.user_id;
   const bars=w.days.map((d,k)=>{ const v=w.by[d], h=v.n?Math.max(3,Math.round(v.n/mx*56)):0;
     return `<div class="sc-bar" title="${d} · ${v.n.toLocaleString()}장 · ${scFmt(v.s)}"><span class="sc-bn">${v.n?v.n.toLocaleString():''}</span>${h?`<i style="height:${h}px"${k===6?' class="t"':''}></i>`:'<i class="z"></i>'}<span class="sc-bd">${Number(d.slice(8))}</span></div>`; }).join('');
   const diff=w.n-w.pn;
-  L.push(`<div class="sc-h">최근 7일</div><div class="sc-line">${w.act}일 공부 · ${w.n.toLocaleString()}장 · ${scFmt(w.s)}</div><div class="sc-bars">${bars}</div>`
+  L.push(`<div class="sc-h">최근 7일 · 나와 친구</div><div class="sc-line">${w.act}일 공부 · ${w.n.toLocaleString()}장 · ${scFmt(w.s)}</div>${SC.group?scWeekChart(w):`<div class="sc-bars">${bars}</div>`}`
     + `<div class="sc-line sc-hint">이전 7일(같은 시각까지) ${w.pn.toLocaleString()}장 · ${scFmt(w.ps)}${w.pn||w.n?` (${diff>=0?'+':'−'}${Math.abs(diff).toLocaleString()}장)`:''}</div>`);
   const nm=SC.lastDeck;
   L.push(`<div class="sc-h sc-hrow"><span>세션 속도</span><span class="seg" id="scCmpSeg"><button data-m="yesterday"${scCmp==='yesterday'?' class="on"':''}>어제</button><button data-m="best"${scCmp==='best'?' class="on"':''}>최고</button></span></div>`);
@@ -9926,9 +9988,12 @@ const K_SC_DOCK='cards_sc_dock_v1';
 function scDockOn(){ return lsGet(K_SC_DOCK)==='1'; }
 /* 실시간 중심(동하 10-05 「좌우 넓히고 처음 보여 줬던 느낌으로 정보량 · 일 단위보단 실시간 중심」) — 사람마다 펼친 카드:
    10-05 「글자가 잡스럽고 톤이 안 맞음 · 정보량은 그대로」 → 늘어놓은 글을 숫자 칸 넷(오늘 · 최근 1시간 · 공부 시간 · 분당 장수)으로 · 목표 막대 · 지금 세션 · 시간대 띠(지금 칸 표시) */
-function scLiteStrip(bs){ const now=scSlot(Date.now()); let r='';
-  for(const b of bs) r+=`<rect x="${b.slot+.08}" y="0" width=".84" height="10" fill="var(--c-acc)"/>`;
-  return `<div class="rs-tl"><svg class="rs-strip" viewBox="0 0 96 10" preserveAspectRatio="none" aria-label="오늘 15분 단위 활동"><rect x="0" y="0" width="96" height="10" fill="var(--c-fill)"/>${r}<rect x="${now}" y="0" width=".4" height="10" fill="var(--c-sec)"/></svg>`
+/* 지금 시각 선(10-05 친구 요청) — 방 하루 안 위치(15분 칸 + 칸 안 분) */
+function scNowX(){ const [h,m]=scHM(Date.now()).split(':').map(Number); return ((((h-scDSH())%24+24)%24)*60+m)/15; }
+function scNowLine(){ return `<rect x="${Math.min(95.6,scNowX()).toFixed(2)}" y="0" width=".4" height="10" fill="var(--c-label)" opacity=".55"/>`; }
+function scLiteStrip(bs, c){ let r='';   // c = 그 사람 색(15분 1등 띠와 같은 색)
+  for(const b of bs) r+=`<rect x="${b.slot+.08}" y="0" width=".84" height="10" fill="${c||'var(--c-acc)'}"/>`;
+  return `<div class="rs-tl"><svg class="rs-strip" viewBox="0 0 96 10" preserveAspectRatio="none" aria-label="오늘 15분 단위 활동"><rect x="0" y="0" width="96" height="10" fill="var(--c-fill)"/>${r}${scNowLine()}</svg>`
     +`<div class="rs-ax">${[0,24,48,72,96].map(sl=>`<span>${scSlotHM(sl%96).slice(0,2)}</span>`).join('')}</div></div>`; }
 const scClock=s=>{ const m=Math.floor((s||0)/60); return Math.floor(m/60)+':'+String(m%60).padStart(2,'0'); };   // 레일 칸 — 1:42
 function scAgo(t){ if(!isFinite(t)) return ''; const d=Math.max(0,Date.now()-t)/1000; return d<60?'방금':d<3600?Math.floor(d/60)+'분 전':scHM(t); }
@@ -9938,7 +10003,7 @@ function scRenderDock(){ const box=$('railSc'); if(!box) return; const has=!!SC.
   const me=SC.auth&&SC.auth.user_id, t=scToday(), myS=scStatus(), fresh=SC.memDay===scDay(Date.now()), nowSl=scSlot(Date.now());
   const rank={studying:0, paused:1, online:2, offline:3};
   let rows=(SC.members||[]).filter(m=>m.user_id!==me).sort((a,b)=>rank[scMemberStatus(a)]-rank[scMemberStatus(b)] || (b.answer_count||0)-(a.answer_count||0));
-  const nStudy=rows.filter(m=>scMemberStatus(m)==='studying').length+(myS==='studying'?1:0);
+  const nStudy=rows.filter(m=>scMemberStatus(m)!=='offline').length+1;   // 접속 중 = 오프라인 아닌 사람 + 나(10-05 친구 요청 「몇 명이 공부 중 말고 접속 중」)
   rows=[{user_id:me, mine:true}, ...rows];
   const myB=scMyBuckets(), {ev}=scEvents(), myLast=ev.reduce((x,e)=>Math.max(x,e.t||0),0)||NaN;
   const html=rows.map(m=>{ const st=m.mine?(myS==='stopped'?'online':myS):scMemberStatus(m), live=st==='studying';
@@ -9953,13 +10018,14 @@ function scRenderDock(){ const box=$('railSc'); if(!box) return; const has=!!SC.
     const L=[];
     L.push(`<div class="rs-top"><span class="rs-dot" style="background:${live?'var(--c-green)':st==='offline'?'var(--c-sep)':'var(--c-acc)'}"></span><span class="rs-nm">${m.mine?`${esc(SC.nick||'나')}<small>나</small>`:esc(m.display_name||'친구')}</span><span class="rs-st${live?' live':''}">${SC_ST[st]}${isFinite(last)?` · ${scAgo(last)}`:''}</span></div>`);
     L.push(`<div class="rs-g">${v(n==null?'—':`${n.toLocaleString()}<small>장</small>`,'오늘',!n)}${v(n==null?'—':`${hr.toLocaleString()}<small>장</small>`,'최근 1시간',!hr)}${v(sec==null?'—':scClock(sec),'공부 시간',!sec)}${v(rate,'분당 장수',rate==='—')}</div>`);
-    if(cg&&n!=null) L.push(`<div class="rs-gl"><div class="rs-bar${n>=cg?' done':''}"><i style="width:${Math.min(100,n/cg*100).toFixed(1)}%"></i></div><em>${n.toLocaleString()} / ${cg.toLocaleString()}장</em></div>`);
-    if(tg&&sec!=null) L.push(`<div class="rs-gl"><div class="rs-bar${sec>=tg*60?' done':''}"><i style="width:${Math.min(100,sec/(tg*60)*100).toFixed(1)}%"></i></div><em>${scClock(sec)} / ${scClock(tg*60)}</em></div>`);
+    const pc=scColor(m.user_id);   // 목표 막대·띠 = 그 사람 색
+    if(cg&&n!=null) L.push(`<div class="rs-gl"><div class="rs-bar"><i style="width:${Math.min(100,n/cg*100).toFixed(1)}%;background:${pc}"></i></div><em>${n.toLocaleString()} / ${cg.toLocaleString()}장</em></div>`);
+    if(tg&&sec!=null) L.push(`<div class="rs-gl"><div class="rs-bar"><i style="width:${Math.min(100,sec/(tg*60)*100).toFixed(1)}%;background:${pc}"></i></div><em>${scClock(sec)} / ${scClock(tg*60)}</em></div>`);
     if(deck) L.push(`<div class="rs-l">지금 <b>${esc(deck)}</b></div>`);
-    if(m.mine||fresh) L.push(scLiteStrip(bs));
+    if(m.mine||fresh) L.push(scLiteStrip(bs, pc));
     return `<div class="rs-p">${L.join('')}</div>`; }).join('');
   const tot=rows.reduce((a,m)=>a+(m.mine?t.n:(fresh?(m.answer_count||0):0)),0);
-  box.innerHTML=`<div class="rs-h"><span class="rs-room">${esc(SC.group.name||'스터디')}</span><span class="rs-n${nStudy?' live':''}">${nStudy?`${nStudy}명 공부 중`:''}</span></div>${html}`
+  box.innerHTML=`<div class="rs-h"><span class="rs-room">${esc(SC.group.name||'스터디')}</span><span class="rs-n">${nStudy}명 접속 중</span></div>${(()=>{ const L=scLeaderData(); return Object.keys(L.slots).length?`<div class="rs-lead"><div class="rs-l0">15분 1등</div>${scLeadStrip(L,'rs-strip')}</div>`:''; })()}${html}`
     +`<div class="rs-foot">방 오늘 ${tot.toLocaleString()}장${SC.err?' · 친구 기록을 못 받았어요':SC.membersAt?` · ${scHM(SC.membersAt)}에 받음`:''}</div>`; }
 $('btnStudy').onclick=()=>{ lsSet(K_SC_DOCK, scDockOn()?'0':'1'); scRenderDock(); };
 const SC_RCHEV='<svg class="s2-chev" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m1.5 1.5 6 6-6 6"/></svg>';
@@ -9970,7 +10036,7 @@ function scPeople(where){
   let rows=(SC.members||[]).filter(m=>m.user_id!==me);
   const rank={studying:0, paused:1, online:2, offline:3};
   rows.sort((a,b)=>rank[scMemberStatus(a)]-rank[scMemberStatus(b)] || (b.answer_count||0)-(a.answer_count||0));
-  const nStudy=rows.filter(m=>scMemberStatus(m)==='studying').length+(myS==='studying'?1:0);
+  const nStudy=rows.filter(m=>scMemberStatus(m)!=='offline').length+1;   // 접속 중 = 오프라인 아닌 사람 + 나(10-05 친구 요청 「몇 명이 공부 중 말고 접속 중」)
   rows=[{user_id:me, mine:true}, ...rows];
   const html=rows.map(m=>{ const st=m.mine?(myS==='stopped'?'online':myS):scMemberStatus(m);
     const n=m.mine?t.n:(fresh?(m.answer_count||0):null), sec=m.mine?t.sec:(fresh?(m.active_seconds||0):null);
@@ -9986,7 +10052,7 @@ function scPeople(where){
 function scRenderHome(){ const box=$('studyBox'); if(!box) return;
   if(!SC.group){ box.innerHTML=''; return; }
   const {html, nStudy}=scPeople('home');
-  box.innerHTML=`<div class="h-sec2"><h2>스터디</h2><button class="sc-g sc-go" id="scGo">${esc(SC.group.name||'')}${nStudy?` · ${nStudy}명 공부 중`:''}${SC_RCHEV}</button></div><div class="sc-list">${html}</div>${SC.err?`<button class="sc-err" id="scRetry">${esc(SC.err)} — 다시 시도</button>`:''}`;
+  box.innerHTML=`<div class="h-sec2"><h2>스터디</h2><button class="sc-g sc-go" id="scGo">${esc(SC.group.name||'')} · ${nStudy}명 접속 중${SC_RCHEV}</button></div><div class="sc-list">${html}</div>${SC.err?`<button class="sc-err" id="scRetry">${esc(SC.err)} — 다시 시도</button>`:''}`;
   const toStudy=u=>{ scOpen=u||null; scSel=null; go('scrStudy'); };
   $('scGo').onclick=()=>toStudy(null);
   box.querySelectorAll('.sc-row').forEach(r=>r.onclick=()=>toStudy(r.dataset.uid||null));   // 내 줄 = 스터디 화면에서 목표 칸을 펴 둔다
@@ -10033,7 +10099,8 @@ function scRenderStudy(){ const b=$('studyBody'); if(!b || !$('scrStudy').classL
       + (others.length ? others.map(m=>`<div class="set-row"><span>${esc(m.display_name||'친구')}</span><button class="btn-ghost sc-kick" data-uid="${esc(m.user_id)}">내보내기</button></div>`).join('') : `<div class="sc-msg">아직 다른 사람이 없어요</div>`)
       + `<div class="sc-h">차단한 사람</div>` + (scBans==null ? `<div class="sc-msg">불러오는 중…</div>` : scBans.length ? scBans.map(x=>`<div class="set-row"><span>${esc(x.name)}</span><button class="btn-ghost sc-unban" data-uid="${esc(x.user_id)}">차단 풀기</button></div>`).join('') : `<div class="sc-msg">없어요</div>`)
       + `<div class="sc-msg">내보낸 사람은 같은 계정으로 다시 못 들어와요 — 차단을 풀면 초대 코드로 다시 들어올 수 있어요</div></details>`; }
-  b.innerHTML=`<div class="sc-sec"><div class="h-sec2"><h2>${esc(SC.group.name||'스터디')}</h2><span class="sc-g">${nStudy?`${nStudy}명 공부 중`:''}</span></div><div class="sc-list">${html}</div>${SC.err?`<button class="sc-err" id="scRetryS">${esc(SC.err)} — 다시 시도</button>`:''}</div>
+  b.innerHTML=`<div class="sc-sec"><div class="h-sec2"><h2>${esc(SC.group.name||'스터디')}</h2><span class="sc-g">${nStudy}명 접속 중</span></div><div class="sc-list">${html}</div>${SC.err?`<button class="sc-err" id="scRetryS">${esc(SC.err)} — 다시 시도</button>`:''}</div>
+    ${scLeadSec()}
     <div class="sc-sec"><div class="h-sec2"><h2>내 기록</h2></div><div class="sc-card">${scDetMine()}</div></div>
     <div class="sc-sec"><div class="h-sec2"><h2>방</h2></div><div class="sc-card">
       <div class="set-row"><span>초대 코드</span><span class="sc-code-r"><b class="sc-code">${esc(SC.group.invite_code||'—')}</b><button class="btn-ghost" id="scCopyCode">복사</button><button class="btn-ghost" id="scCopyMsg">안내 복사</button></span></div>
@@ -10061,6 +10128,9 @@ function scRenderStudy(){ const b=$('studyBody'); if(!b || !$('scrStudy').classL
     const c=await scAuthed(tok=>scReq('POST','/rest/v1/rpc/rotate_study_group_invite',{token:tok, body:{target_group:SC.group.id}}));
     if(typeof c!=='string'||c.length!==4) throw new Error('새 코드를 받지 못했어요'); SC.group.invite_code=c; scSave(); return `새 초대 코드 ${c}`; }, 'scMsgS');
   scBtn('scLeaveRoom', async()=>{ if(!confirm(`「${SC.group.name||'스터디'}」에서 나갈까요? 이 방에 올린 내 기록도 지워져요.${owner?' 방장은 다음 사람에게 넘어가요(혼자면 방이 없어져요).':''}`)) return; await scLeaveRoom(); return '방에서 나왔어요'; }, 'scMsgS');
+  b.querySelectorAll('.sc-lead').forEach(g=>g.onclick=e=>{ const r=g.getBoundingClientRect(), sl=Math.max(0,Math.min(95,Math.floor((e.clientX-r.left)/r.width*96))), L=scLeaderData();
+    let best=null; for(const k of Object.keys(L.slots).map(Number)){ if(best==null||Math.abs(k-sl)<Math.abs(best-sl)) best=k; } if(best!=null&&Math.abs(best-sl)<=2){ scLSel=best; scRenderStudy(); } });
+  scWeekFetch();
   const sb=$('scStBox'); if(sb) sb.ontoggle=()=>{ scStOpen=sb.open; }; const sr=$('scStRetry'); if(sr) sr.onclick=()=>scSync({manual:true});
   const mb=$('scModBox'); if(mb) mb.ontoggle=()=>{ if(mb.open && scBans==null) scLoadBans().then(()=>scRenderStudy()).catch(e=>{ const m2=$('scMsgS'); if(m2) m2.textContent=scErrKo(e); }); };
   b.querySelectorAll('.sc-kick').forEach(k=>k.onclick=async()=>{ const m=(SC.members||[]).find(x=>x.user_id===k.dataset.uid);

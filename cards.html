@@ -1999,6 +1999,32 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
 #hdPop .hp-g .cv{width:14px;height:14px;flex:0 0 auto;color:var(--c-ter);transition:transform .18s;}
 #hdPop .hp-grp.open .hp-g .cv{transform:rotate(90deg);}
 #hdPop .hp-kids .hp-r{box-shadow:inset 0 .5px 0 var(--c-sep);}
+/* 회독본 목차 = 왼쪽 사이드바 안(10-05 동하 「목차쪽은 배포본이 나은듯 · 플로팅 버튼 빼고 · 왼쪽 사이드바를 전환하는 느낌으로」) —
+   판을 보는 동안 사이드바가 「목차 ↔ 메뉴」로 바뀐다 · 꼴 = 공개 사이트 목차(과목 이름 · 대주제 ▼ · 지금 절 파란색) · 아이폰은 왼쪽 사이드바가 없어 ≡ 시트 그대로 */
+#hsToc,#hsTocRow{display:none;}
+@media (min-width:760px){
+  #ovlHd.dock #hdTocBtn{display:none!important;}
+  body.hd-dock #hSide.toc-able #hsTocRow{display:flex;}
+  #hSide.toc-on>:not(#hsToc){display:none!important;}
+  #hSide.toc-on{overflow:hidden;}
+  #hSide.toc-on #hsToc{display:flex;}
+}
+#hsToc{flex-direction:column;flex:1 1 auto;min-height:0;}   /* 머리(‹ 메뉴 · 과목)는 서 있고 목록만 구른다 */
+#hsToc .ht-list{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:0 -12px -12px;padding:0 12px 12px;}
+#hsToc .ht-back{display:flex;align-items:center;gap:2px;align-self:flex-start;height:36px;padding:0 10px 0 2px;border-radius:10px;color:var(--c-acc);font-size:16px;}
+#hsToc .ht-back svg{width:20px;height:20px;}
+#hsToc .ht-back:active{background:var(--c-fill);}
+#hsToc .ht-subj{font-size:28px;line-height:34px;font-weight:700;letter-spacing:-.02em;padding:2px 8px 10px;color:var(--c-label);}
+#hsToc .ht-grp{margin-top:4px;}
+#hsToc .ht-gh{display:flex;align-items:center;}
+#hsToc .ht-gh .cv{flex:0 0 auto;width:24px;height:34px;display:flex;align-items:center;justify-content:center;color:var(--c-label);}
+#hsToc .ht-gh .cv svg{width:11px;height:11px;transition:transform .18s;}
+#hsToc .ht-grp.shut .cv svg{transform:rotate(-90deg);}
+#hsToc .ht-grp.shut .ht-kids{display:none;}
+#hsToc .ht-gt{flex:1;min-width:0;min-height:34px;padding:6px 8px 6px 2px;border-radius:10px;text-align:left;font-size:16px;line-height:22px;font-weight:600;color:var(--c-label);}
+#hsToc .ht-s{display:block;width:100%;min-height:32px;padding:6px 8px 6px 26px;border-radius:10px;text-align:left;font-size:15px;line-height:20px;color:var(--c-sec);}
+#hsToc .ht-gt:active,#hsToc .ht-s:active{background:var(--c-fill);}
+#hsToc .ht-gt.on,#hsToc .ht-s.on{color:var(--c-acc);font-weight:600;}
 #hdPop .hp-r .n{margin-right:2px;min-width:22px;color:var(--c-ter);font-size:13px;font-variant-numeric:tabular-nums;}
 /* 질문 띠·목록 — 모양만(번호가 왼쪽 밖으로 잘리던 것 포함) */
 #hdQ{margin:0 16px 8px;padding:6px;gap:8px;border:0;border-radius:var(--r-group);background:var(--c-card);box-shadow:var(--sh-card);}
@@ -2060,6 +2086,7 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
     <div class="hs-head"><span class="hs-title">카드</span><span class="hs-dday" id="hDday"></span></div>
     <div class="hs-tiles" id="hTiles"></div>
     <nav class="hs-nav"><div class="hs-grp">보기</div>
+      <button class="hs-row" id="hsTocRow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5h16M9 10.5h11M9 15.5h11M4 20.5h16"/></svg>목차</button>
       <button class="hs-row" id="hsHd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5z"/><path d="M12 6.5v13"/></svg>회독본</button>
       <button class="hs-row" id="ctOpen" title="음악·미술·체육 2022 내용 체계표 — 가리고 쓰기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M9.5 4.5v15"/></svg>내용 체계표</button>
       <button class="hs-row" data-go="scrList"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg>라이브러리</button>
@@ -2067,6 +2094,7 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
       <button class="hs-row" data-go="scrStudy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9" r="2.6"/><path d="M15.8 14.6c2.4-.3 4.3 1.2 4.8 4.4"/></svg>스터디</button>
     </nav>
     <div class="hs-bottom"><button class="hs-row" id="btnSettings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>설정</button><div class="h-foot" id="hFoot"></div></div>
+    <div id="hsToc"></div>   <!-- 회독본 목차(판을 보는 동안 · 10-05) -->
   </aside>
   <div id="main">
     <div id="banner"></div>
@@ -13101,7 +13129,7 @@ function hdDock(on){
   const wide=window.matchMedia('(min-width:760px)').matches;
   const dock = !!on && (wide ? $('app').dataset.screen!=='solve' : $('scrHome').classList.contains('on'));
   $('ovlHd').classList.toggle('dock', dock); document.body.classList.toggle('hd-dock', dock);
-  if(!dock){ $('ovlHd').classList.remove('side'); document.body.classList.remove('hd-side','hd-ready'); }
+  if(!dock){ $('ovlHd').classList.remove('side'); document.body.classList.remove('hd-side','hd-ready'); $('hSide').classList.remove('toc-on','toc-able'); }
   else requestAnimationFrame(()=>requestAnimationFrame(()=>document.body.classList.add('hd-ready')));   // 전환은 자리 잡은 뒤부터(여는 순간 사이드바가 미끄러져 나가 보이지 않게)
   /* 강조 = 지금 목적지(회독본) — 닫으면 go()와 같은 규칙으로 되돌린다 */
   if(dock){ document.querySelectorAll('#hSide .hs-tile.on, #hSide .hs-row.on, #tabBar .tab.on').forEach(b=>b.classList.remove('on'));
@@ -13119,6 +13147,7 @@ function hdNavHi(){ if(!$('ovlHd').classList.contains('dock')) return; const ct=
 function hdNavCapture(ev){
   if(!$('ovlHd').classList.contains('show') || !$('ovlHd').classList.contains('dock')) return;
   const b=ev.target.closest && ev.target.closest('button'); if(!b) return;
+  if(b.id==='hsTocRow' || b.closest('#hsToc')) return;     // 사이드바 목차·「목차」 줄 = 창 안에서 처리(10-05)
   if(b.id==='hsHd' || b.id==='tabHd'){ ev.stopPropagation(); ev.preventDefault(); if(hdIsPan()) hdSubjPop(); else hdBrowse(); return; }   // 판을 보는 중 = 과목 시트 · 내용 체계표 등 다른 페이지면 회독본을 연다(동하 09-30 「내용체계표 들어갔다가 회독본으로 가면 이상하게 동작」)
   if(b.id==='ctOpen'){ setTimeout(hdNavHi,0); return; }       // 내용 체계표도 이 창에서 연다(강조는 열린 뒤 그 줄로)
   closeHoedok();
@@ -13134,6 +13163,8 @@ function hdEmbed(){
       if(d.body.classList.contains('tocopen')){ d.body.classList.remove('tocopen'); const sb=d.querySelector('aside.sidebar'); if(sb) sb.classList.remove('open'); } }
   }catch(e){}
   $('hdTocBtn').style.display = pan ? '' : 'none';
+  $('hSide').classList.toggle('toc-able', pan);                // 판을 보는 중 = 사이드바에 「목차」 줄(10-05)
+  if($('hSide').classList.contains('toc-on')) hsTocMode(pan);  // 사이드바 목차를 편 채 과목이 바뀌면 새 판 목차로
   let inHd=false; try{ inHd=/\/hoedok\//.test(decodeURI($('hdFrame').contentWindow.location.pathname)); }catch(e){}
   $('hdSubj').disabled=!inHd;                                  // 내용 체계표 등 판 밖 페이지에선 과목 시트를 안 연다
 }
@@ -13162,12 +13193,7 @@ function hdTocPop(){
   if($('hdPop').classList.contains('on') && $('hdPop').classList.contains('toc')){ hdPopClose(); return; }
   let d, w; try{ w=$('hdFrame').contentWindow; d=w.document; }catch(e){ return; }
   const tv=d.querySelector('aside.sidebar .toc-view'); if(!tv){ toast('이 페이지엔 목차가 없어요'); return; }
-  /* 지금 절 = 화면 위쪽에 걸린 마지막 제목(h2/h3) */
-  let curId=''; const y=w.scrollY+80;
-  const idOf=a=>{ try{ return decodeURIComponent((a.getAttribute('href')||'').replace(/^#/,'')); }catch(e){ return ''; } };
-  /* 지금 절 = 목차가 가리키는 자리 중 화면 위쪽을 지난 마지막 것(제목 태그·id 붙는 자리가 판마다 달라 목차 링크 기준으로 잰다) */
-  { let best=-1e9; for(const a of tv.querySelectorAll('a[href^="#"]')){ const id=idOf(a), el=id&&d.getElementById(id); if(!el||!el.getClientRects().length) continue;
-      const top=el.getBoundingClientRect().top+w.scrollY; if(top<=y && top>best){ best=top; curId=id; } } }
+  const idOf=hdTocIdOf, curId=hdTocCur(tv, w, d);
   let html='<div class="hp-h">목차 · '+esc(hdCurFile().replace(/\.html$/,''))+'</div>', gi=0;
   const grps=tv.querySelectorAll('details.tgrp');
   /* 대주제는 접어 둔다 — 지금 읽는 대주제만 펼침(동하 09-29 「목차 좀 접어야 될 듯」) · 대주제 줄 = 펼치기/접기(절이 없으면 그 자리로) */
@@ -13182,13 +13208,58 @@ function hdTocPop(){
   else for(const a of tv.querySelectorAll('a[href^="#"]')) html+=`<button class="hp-r${idOf(a)===curId?' cur':''}" data-id="${esc(idOf(a))}">${esc(a.textContent.trim())}</button>`;
   const p=hdPopOpen(html, true);
   p.querySelectorAll('[data-tg]').forEach(b=>b.onclick=()=>b.parentElement.classList.toggle('open'));
-  p.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>{ hdPopClose(); try{ w.location.replace(w.location.href.split('#')[0]+'#'+b.dataset.id); }catch(e){}   /* 🔴 절대 주소로 — 부모에서 부른 replace('#…')는 부모 문서 기준으로 풀려 iframe에 앱이 떴다 */
-    setTimeout(()=>{ try{ const el=d.getElementById(b.dataset.id); if(el) el.scrollIntoView({block:'start'}); hdSaveSpot(); }catch(e){} }, 60); });
+  p.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>{ hdPopClose(); hdTocJump(b.dataset.id); });
   const c=p.querySelector('.cur'); if(c) c.scrollIntoView({block:'center'});
 }
 $('hdTocBtn').onclick=hdTocPop;
+function hdTocIdOf(a){ try{ return decodeURIComponent((a.getAttribute('href')||'').replace(/^#/,'')); }catch(e){ return ''; } }
+/* 지금 절 = 목차가 가리키는 자리 중 화면 위쪽을 지난 마지막 것(제목 태그·id 붙는 자리가 판마다 달라 목차 링크 기준으로 잰다) */
+function hdTocCur(tv, w, d){ let curId='', best=-1e9; const y=w.scrollY+80;
+  for(const a of tv.querySelectorAll('a[href^="#"]')){ const id=hdTocIdOf(a), el=id&&d.getElementById(id); if(!el||!el.getClientRects().length) continue;
+    const top=el.getBoundingClientRect().top+w.scrollY; if(top<=y && top>best){ best=top; curId=id; } }
+  return curId; }
+/* 목차에서 누르면 그 자리(해시 replace → 판이 접힌 절을 편다 · 히스토리 안 쌓음) */
+function hdTocJump(id){ let w, d; try{ w=$('hdFrame').contentWindow; d=w.document; }catch(e){ return; }
+  try{ w.location.replace(w.location.href.split('#')[0]+'#'+id); }catch(e){}   /* 🔴 절대 주소로 — 부모에서 부른 replace('#…')는 부모 문서 기준으로 풀려 iframe에 앱이 떴다 */
+  setTimeout(()=>{ try{ const el=d.getElementById(id); if(el) el.scrollIntoView({block:'start'}); hdSaveSpot(); }catch(e){} }, 60); }
+/* 사이드바 목차(10-05) — 판의 목차(aside.sidebar .toc-view)를 왼쪽 사이드바 안에 공개 사이트 꼴로 다시 그린다 · 대주제는 다 펼침(▼로 접기) ·
+   지금 절은 판을 굴리면 따라간다 · 누르면 그 자리로 가고 사이드바를 접는다(본문 위로 덮는 패널이라) ·
+   대주제는 읽는 것만 펼친다(동하 10-05 「읽는 쪽만 펼치고 공개도 맞춰」 · 공개 사이트 rn-shell.js와 같은 규칙) — 읽는 대주제가 바뀔 때만 접고 편다 */
+let _hsTocW=null, _hsTocT=0, _hsTocG=null;
+function hsTocRender(){
+  let w, d; try{ w=$('hdFrame').contentWindow; d=w.document; }catch(e){ return false; }
+  const tv=d && d.querySelector('aside.sidebar .toc-view'); if(!tv) return false;
+  const idOf=hdTocIdOf, cv='<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 3.5h9L6 9z" fill="currentColor"/></svg>';
+  let html=`<button class="ht-back" id="hsTocBack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>메뉴</button>`
+    +`<div class="ht-subj">${esc(hdCurFile().replace(/\.html$/,'').replace(/^\d+\./,''))}</div><div class="ht-list">`;
+  const grps=tv.querySelectorAll('details.tgrp');
+  if(grps.length){ for(const g of grps){ const gh=g.querySelector('summary a'), kids=[...g.querySelectorAll('nav a')];
+      html+='<div class="ht-grp shut"><div class="ht-gh">'+(kids.length?`<button class="cv" data-tg="1" aria-label="접기">${cv}</button>`:'<span class="cv"></span>')
+        +(gh?`<button class="ht-gt" data-id="${esc(idOf(gh))}">${esc(gh.textContent.trim())}</button>`:'')+'</div>';
+      if(kids.length){ html+='<div class="ht-kids">'; for(const a of kids) html+=`<button class="ht-s" data-id="${esc(idOf(a))}">${esc(a.textContent.trim())}</button>`; html+='</div>'; }
+      html+='</div>'; } }
+  else for(const a of tv.querySelectorAll('a[href^="#"]')) html+=`<button class="ht-s" data-id="${esc(idOf(a))}">${esc(a.textContent.trim())}</button>`;
+  const box=$('hsToc'); box.innerHTML=html+'</div>'; _hsTocG=null;
+  $('hsTocBack').onclick=()=>hsTocMode(false);
+  box.querySelectorAll('[data-tg]').forEach(b=>b.onclick=()=>b.closest('.ht-grp').classList.toggle('shut'));
+  box.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>{ hdSideSet(false); hdTocJump(b.dataset.id); });
+  if(_hsTocW!==w){ _hsTocW=w; w.addEventListener('scroll', ()=>{ const n=Date.now(); if(n-_hsTocT<120) return; _hsTocT=n; hsTocHi(false); }, {passive:true}); }
+  return true;
+}
+function hsTocHi(center){
+  if(!$('hSide').classList.contains('toc-on')) return;
+  let w, d; try{ w=$('hdFrame').contentWindow; d=w.document; }catch(e){ return; }
+  const tv=d && d.querySelector('aside.sidebar .toc-view'); if(!tv) return;
+  const cur=hdTocCur(tv, w, d); let hit=null;
+  $('hsToc').querySelectorAll('[data-id]').forEach(b=>{ const on=b.dataset.id===cur; b.classList.toggle('on', on); if(on) hit=b; });
+  const g=hit ? hit.closest('.ht-grp') : $('hsToc').querySelector('.ht-grp');
+  if(g && g!==_hsTocG){ _hsTocG=g; $('hsToc').querySelectorAll('.ht-grp').forEach(x=>x.classList.toggle('shut', x!==g)); }
+  if(hit) hit.scrollIntoView({block:center?'center':'nearest'});
+}
+function hsTocMode(on){ const ok=!!on && hsTocRender(); $('hSide').classList.toggle('toc-on', ok); if(ok) hsTocHi(true); }
+$('hsTocRow').onclick=()=>hsTocMode(true);
 function hdSideSet(on){ $('ovlHd').classList.toggle('side', on); document.body.classList.toggle('hd-side', on); }
-$('hdSideBtn').onclick=()=>{ hdPopClose(); hdSideSet(!document.body.classList.contains('hd-side')); };   // 사이드바 = 회독본 위로 덮어 펴기/접기(연 동안만)
+$('hdSideBtn').onclick=()=>{ hdPopClose(); const open=!document.body.classList.contains('hd-side'); if(open) hsTocMode(hdIsPan()); hdSideSet(open); };   // 사이드바 = 회독본 위로 덮어 펴기/접기(연 동안만) · 판을 보는 중이면 목차로 연다(10-05)
 $('hdSideScrim').onclick=()=>hdSideSet(false);   // 사이드바 펴기/접기 — 연 동안만(닫으면 다음엔 다시 접힘)
 /* 🔴 **프래그먼트 스크롤을 직접 해 준다**(`hdOnLoad`). iframe은 숨은 채로 로드가 끝나는 일이 있어
    브라우저가 `#앵커`로 안 옮겨 준다(실측: 앵커는 있는데 스크롤 0 · 그 자리는 68,959px 아래였다).

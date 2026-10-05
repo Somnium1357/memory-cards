@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 238" width="340" height="238">
+  <defs><marker id="ar-bany" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+  <g class="ln" stroke="currentColor" stroke-width="1.1" fill="none">
+    <rect x="41" y="2" width="150" height="30" rx="6"/>
+    <rect x="1" y="52" width="230" height="44" rx="6"/>
+    <rect x="1" y="124" width="230" height="44" rx="6"/>
+    <rect x="258" y="52" width="80" height="44" rx="6" stroke-width="2"/>
+    <rect x="258" y="124" width="80" height="44" rx="6" stroke-width="2"/>
+    <rect x="56" y="194" width="120" height="42" rx="6" stroke-width="2"/>
+  </g>
+  <g stroke="currentColor" stroke-width="1.2" fill="none" marker-end="url(#ar-bany)">
+    <line x1="116" y1="32" x2="116" y2="49"/>
+    <line x1="116" y1="96" x2="116" y2="121"/>
+    <line x1="116" y1="168" x2="116" y2="191"/>
+    <line x1="231" y1="74" x2="255" y2="74"/>
+    <line x1="231" y1="146" x2="255" y2="146"/>
+  </g>
+  <g class="tx" fill="currentColor" font-size="13" text-anchor="middle">
+    <text x="116" y="22">반의어 쌍 A / B</text>
+    <text x="116" y="71">중간 속성 O, 정도 부사 가능?</text>
+    <text x="116" y="143">'X가 A이면 Y가 B이다' 성립?</text>
+    <text x="298" y="71" font-weight="700">등급</text>
+    <text x="298" y="143" font-weight="700">관계</text>
+    <text x="116" y="214" font-weight="700">상보</text>
+  </g>
+  <g class="tx" fill="currentColor" font-size="11" text-anchor="middle" opacity=".7">
+    <text x="116" y="88">둘 다 부정 가능</text>
+    <text x="116" y="160">관계·방향 대립</text>
+    <text x="298" y="88">높다/낮다</text>
+    <text x="298" y="160">부모/자식</text>
+    <text x="116" y="229">살다/죽다, 참/거짓</text>
+    <text x="243" y="68">O</text>
+    <text x="243" y="140">O</text>
+    <text x="124" y="113" text-anchor="start">X</text>
+    <text x="124" y="185" text-anchor="start">X</text>
+  </g>
+</svg>

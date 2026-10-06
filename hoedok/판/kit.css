@@ -915,11 +915,22 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 main.wrap h4.sgsub.sgsub{font-size:.82em;line-height:1.45;font-weight:600;color:var(--v2acc);border-bottom:1px solid var(--v2rule);padding-bottom:3px;}
 :root.v2 main.wrap h3.sggrade.sggrade{font-size:1.02em;line-height:1.35;font-weight:700;color:var(--v2ink);padding-bottom:.3em;border-bottom:1px solid var(--v2ink);}
 
-/* 10-06 음악 기호 크기(동하 「음표랑 기호들이 너무 작아」 · 1차 2.6em 은 크기 제각각·줄 넘침으로 되돌림) — ♩♪♯♭♮ 는 시스템 글꼴로(본문 글자 크기) · 음악 기호 블록(쉼표·16분·온음표·늘임표·세뇨)은 NotoMusic: 문장 안 1.7em · 표 칸 2.1em · 줄 높이 안에 */
+/* 10-06 음악 기호(동하 「음표랑 기호들이 너무 작아」 → 「크기 제각각·줄 넘침」 → 기호마다 맞춤) — NotoMusic 실측(100px):
+   줄기 음표(16분·2분) 높이 101 · ♩♪ 57(→ ×1.77) · 쉼표(16·8·4) 100 · 온음표 0~26 · 2분쉼 24~38 · 온쉼 37~52 · 늘임표 64~100 · 세뇨 16~84.
+   배율로 음표 머리·쉼표 높이를 맞추고, vertical-align 으로 잉크 가운데를 본문 x-높이 가운데(≈.35em)에 둔다(line-height 0 = 줄 안 늘어남).
+   ♯♭♮ 는 시스템 글꼴(.mt · 본문 크기). */
 .mt{font-family:"Apple Symbols","Segoe UI Symbol","Noto Sans Symbols 2",system-ui,sans-serif;}
-.ms{font-family:"NotoMusic",serif;font-size:1.7em;line-height:1;vertical-align:-.18em;}
-td>.ms,td>.mt{font-size:2.1em;line-height:1.15;}
-.ms.ms-fer{font-size:1.25em;vertical-align:-.5em;}
-tr:has(>td>.ms)>td,tr:has(>td>.mt)>td{vertical-align:middle;}
-td>.ms,td>.mt{vertical-align:middle;display:inline-block;}
-.ms.ms-whole{transform:translateY(-.28em);}   /* 온음표 글리프는 상자 아래쪽에 그려져 칸에서 낮아 보인다(동하 「온음 줄 안 맞음」) */
+.ms{font-family:"NotoMusic",serif;font-size:1.25em;line-height:0;vertical-align:-.22em;}
+.ms.q{font-size:2.21em;vertical-align:-.12em;}
+.ms.w{vertical-align:.15em;}
+.ms.h2{vertical-align:-.03em;}
+.ms.h1{vertical-align:-.165em;}
+.ms.fer{font-size:.95em;vertical-align:-.45em;}
+.ms.seg{font-size:1em;vertical-align:-.15em;}
+td>.ms{font-size:1.8em;vertical-align:-.31em;}
+td>.ms.q{font-size:3.19em;vertical-align:-.17em;}
+td>.ms.w{vertical-align:.06em;}
+td>.ms.h2{vertical-align:-.12em;}
+td>.ms.h1{vertical-align:-.25em;}
+tr:has(>td>.ms)>td{vertical-align:middle;height:2.4em;}
+.mid>.mt:only-child{font-size:1.7em;line-height:1.1;}   /* 조표 머리처럼 기호만 홀로 선 칸 */

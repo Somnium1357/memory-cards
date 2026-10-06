@@ -1609,7 +1609,7 @@ button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inher
 .st-fb .ts small{color:var(--c-sec);font-size:13px;margin-left:6px;}
 .st-fb a{color:var(--c-acc);font-size:13px;font-variant-numeric:tabular-nums;}
 .st-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
-@media (max-width:759px){ .st-tiles,.st-fbn{grid-template-columns:repeat(2,minmax(0,1fr));} .st-two{grid-template-columns:1fr;} }
+@media (max-width:759px){ .st-tiles,.st-fbn{grid-template-columns:repeat(2,minmax(0,1fr));} .st-two{grid-template-columns:minmax(0,1fr);} }   /* 1fr이면 긴 유입 주소(nowrap)만큼 칸이 늘어 폰에서 좌우 스크롤(10-06) */
 .sc-sec{display:flex;flex-direction:column;gap:6px;}
 .sc-card{background:var(--c-card);border-radius:var(--r-group);box-shadow:var(--sh-card);padding:12px 20px 16px;display:flex;flex-direction:column;}
 .sc-card .sc-det{padding:0;}

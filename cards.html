@@ -1627,7 +1627,10 @@ button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inher
   #rail.sc-on>:not(#railSc){display:none!important;} #rail.sc-on #railSc{display:flex;flex:1 1 auto;} }
 #btnStudy.pin{color:var(--c-acc);}
 #railSc{display:none;flex-direction:column;min-height:0;}
-#railSc{overflow-y:auto;-webkit-overflow-scrolling:touch;}
+#railSc{overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:manipulation;}   /* manipulation = 두 번 톡 확대를 끈다(찌르기 · 10-07) */
+#railSc .rs-p[data-uid]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+@keyframes rsPk{from{background:color-mix(in srgb, var(--pk) 24%, transparent);}to{background:transparent;}}
+#railSc .rs-p.rs-pk{animation:rsPk .8s ease-out;}
 #railSc .rs-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:4px 12px 6px;}
 #railSc .rs-room{min-width:0;font-size:13px;font-weight:600;line-height:18px;color:var(--c-sec);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 #railSc .rs-n{flex:0 0 auto;font-size:13px;line-height:18px;color:var(--c-sec);}
@@ -10175,11 +10178,26 @@ function scRenderDock(){ const box=$('railSc'); if(!box) return; const has=!!SC.
     if(tg&&sec!=null) L.push(`<div class="rs-gl"><div class="rs-bar"><i style="width:${Math.min(100,sec/(tg*60)*100).toFixed(1)}%;background:${pc}"></i></div><em>${scClock(sec)} / ${scClock(tg*60)}</em></div>`);
     if(deck) L.push(`<div class="rs-l">지금 <b>${esc(deck)}</b></div>`);
     if(m.mine||fresh) L.push(scLiteStrip(bs, pc));
-    return `<div class="rs-p">${L.join('')}</div>`; }).join('');
+    return `<div class="rs-p"${m.mine?'':` data-uid="${esc(m.user_id)}"`}>${L.join('')}</div>`; }).join('');
   const tot=rows.reduce((a,m)=>a+(m.mine?t.n:(fresh?(m.answer_count||0):0)),0);
   box.innerHTML=`<div class="rs-h"><span class="rs-room">${esc(SC.group.name||'스터디')}</span><span class="rs-n">${nStudy}명 접속 중</span></div>${(()=>{ const L=scLeaderData(); return Object.keys(L.slots).length?`<div class="rs-lead"><div class="rs-l0">10분 1등</div>${scLeadStrip(L,'rs-strip')}</div>`:''; })()}${html}`
     +`<div class="rs-foot">방 오늘 ${tot.toLocaleString()}장${SC.err?' · 친구 기록을 못 받았어요':SC.membersAt?` · ${scHM(SC.membersAt)}에 받음`:''}</div>`; }
 $('btnStudy').onclick=()=>{ lsSet(K_SC_DOCK, scDockOn()?'0':'1'); scRenderDock(); };
+/* 레일 찌르기 = 친구 칸 두 번 톡(10-07 동하 — 칸에 버튼·글자·알약·한 줄 모음을 얹는 안 다 기각 · 한 번 톡은 잘못 누른다).
+   레일은 30초·실시간마다 다시 그려진다 → 상자에 위임 · 같은 칸 350ms·20px 안 · 스크롤은 pointercancel이라 안 잡힌다 */
+let scDbl=null; const scPokeFly=new Set();
+$('railSc').addEventListener('pointerup', e=>{ const p=e.target.closest('.rs-p[data-uid]'); if(!p || e.button>0) return;
+  const uid=p.dataset.uid, now=Date.now(), d=scDbl;
+  if(d && d.uid===uid && now-d.t<350 && Math.hypot(e.clientX-d.x, e.clientY-d.y)<20){ scDbl=null; scRailPoke(p, uid); }
+  else scDbl={uid, t:now, x:e.clientX, y:e.clientY}; });
+async function scRailPoke(p, uid){ const m=(SC.members||[]).find(x=>x.user_id===uid), nm=(m&&m.display_name)||'친구';
+  if(Date.now()<scPokeOff){ toast('아직 친구 서버에 없는 기능이에요'); return; }
+  if((scPokeCool[uid]||0)>Date.now() || scPokeFly.has(uid)){ toast('같은 사람은 1분에 한 번 찌를 수 있어요'); return; }
+  p.style.setProperty('--pk', scColor(uid)); p.classList.remove('rs-pk'); void p.offsetWidth; p.classList.add('rs-pk');   // 그 사람 색으로 한 번 반짝
+  scPokeFly.add(uid);
+  try{ await scPoke(uid); toast(`${nm}님을 콕 찔렀어요`); }
+  catch(er){ if(scPokeGone(er)){ scPokeOff=Date.now()+30*60000; toast('아직 친구 서버에 없는 기능이에요'); } else toast(scErrKo(er)); }
+  finally{ scPokeFly.delete(uid); } }
 const SC_RCHEV='<svg class="s2-chev" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m1.5 1.5 6 6-6 6"/></svg>';
 /* 사람 줄 — 홈 = 누르면 스터디 화면으로 · 스터디 화면 = 친구 줄을 누르면 그 자리에서 펼친다(덱 · 목표 · 오늘 시간대 띠) */
 function scPeople(where){

@@ -914,7 +914,3 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
    (가)(나)(.sgsub · kit.js) = 한 단계 낮춤(작게 · 600) — 파랑·괘선은 유지 · 학년군 머리 h3(.sggrade) = 머리줄(.r-head) 꼴 */
 :root.v2 main.wrap h4.sgsub.sgsub{font-size:.82em;line-height:1.45;font-weight:600;color:var(--v2acc);border-bottom:1px solid var(--v2rule);padding-bottom:3px;}
 :root.v2 main.wrap h3.sggrade.sggrade{font-size:1.02em;line-height:1.35;font-weight:700;color:var(--v2ink);padding-bottom:.3em;border-bottom:1px solid var(--v2ink);}
-
-/* 10-06 동하 「음표랑 기호들이 너무 작아」: 음악 기호(U+1D100~ · ♩♪♫♬ · ♭♮♯)는 NotoMusic 글리프가 본문 글자보다 작게 그려진다 → 조각에서 span.ms 로 감싸 키움(글자 무변) */
-.ms{font-family:"NotoMusic",serif;font-size:2.6em;line-height:0;vertical-align:-.12em;}   /* NotoMusic 글리프는 오선 기준이라 em 의 절반쯤으로 그려진다 → 2.6em · 줄 높이는 안 늘게 0 */
-.ms.ms-fer{font-size:1.6em;vertical-align:-.62em;}   /* 늘임표(𝄐)는 오선 위쪽에 그려지는 글리프라 작게·아래로 */

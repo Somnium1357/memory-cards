@@ -1543,7 +1543,8 @@ button.sc-row{font:inherit;background:none;border:0;cursor:pointer;}
 .sc-row.open .sc-chev{transform:rotate(180deg);}
 .sc-det{padding:0 20px 16px 46px;display:flex;flex-direction:column;gap:4px;}
 .sc-h{font-size:13px;line-height:18px;font-weight:600;color:var(--c-sec);margin-top:10px;}
-.sc-pubhead{display:flex;gap:8px;justify-content:flex-end;margin:4px 0 2px;}   /* 공개 방 목록 머리(10-06) */
+.sc-pubhead{display:flex;gap:8px;justify-content:flex-end;margin:4px 0 10px;}
+.sc-brow{padding:5px 0;}   /* 버튼(44)이 든 줄 — 줄 높이와 같아 위아래 버튼이 붙었다(10-06) */   /* 공개 방 목록 머리(10-06) */
 .sc-chk{display:flex;align-items:center;gap:8px;font-size:15px;color:var(--c-label);margin-top:10px;}
 .sc-hrow{display:flex;align-items:center;justify-content:space-between;gap:12px;}
 .sc-hrow .seg{flex:0 0 auto;}
@@ -10240,8 +10241,8 @@ function scRenderStudy(){ const b=$('studyBody'); if(!b || !$('scrStudy').classL
   let mod='';
   if(owner){ const others=(SC.members||[]).filter(m=>m.user_id!==me);
     mod=`<details class="sc-more sc-fold" id="scModBox"${modOpen?' open':''}><summary><span>멤버 관리</span>${SC_CHEV}</summary>`
-      + (others.length ? others.map(m=>`<div class="set-row"><span>${esc(m.display_name||'친구')}</span><span class="sc-code-r"><button class="btn-ghost sc-owner" data-uid="${esc(m.user_id)}">방장 넘기기</button><button class="btn-ghost sc-kick" data-uid="${esc(m.user_id)}">내보내기</button></span></div>`).join('')
-          + `<button class="btn-ghost" id="scCleanup" style="margin-top:8px">14일 넘게 안 온 사람 정리</button>` : `<div class="sc-msg">아직 다른 사람이 없어요</div>`)
+      + (others.length ? others.map(m=>`<div class="set-row sc-brow"><span>${esc(m.display_name||'친구')}</span><span class="sc-code-r"><button class="btn-ghost sc-owner" data-uid="${esc(m.user_id)}">방장 넘기기</button><button class="btn-ghost sc-kick" data-uid="${esc(m.user_id)}">내보내기</button></span></div>`).join('')
+          + `<button class="btn-ghost" id="scCleanup" style="margin-top:10px">14일 넘게 안 온 사람 정리</button>` : `<div class="sc-msg">아직 다른 사람이 없어요</div>`)
       + `<div class="sc-h">차단한 사람</div>` + (scBans==null ? `<div class="sc-msg">불러오는 중…</div>` : scBans.length ? scBans.map(x=>`<div class="set-row"><span>${esc(x.name)}</span><button class="btn-ghost sc-unban" data-uid="${esc(x.user_id)}">차단 풀기</button></div>`).join('') : `<div class="sc-msg">없어요</div>`)
       + `<div class="sc-msg">내보낸 사람은 같은 계정으로 다시 못 들어와요 — 차단을 풀면 초대 코드로 다시 들어올 수 있어요</div></details>`; }
   b.innerHTML=`<div class="sc-sec"><div class="h-sec2"><h2>${esc(SC.group.name||'스터디')}</h2><span class="sc-g">${nStudy}명 접속 중</span></div><div class="sc-list">${html}</div>${SC.err?`<button class="sc-err" id="scRetryS">${esc(SC.err)} — 다시 시도</button>`:''}</div>
@@ -10346,7 +10347,7 @@ async function scLoadPublic(force){ if(!SC.auth || scPubBusy || (!force && scPub
 function scPubList(){ if(scPub==null) return `<div class="sc-msg">불러오는 중…</div>`;
   if(!scPub.length) return `<div class="sc-msg">지금 들어갈 수 있는 공개 방이 없어요</div>`;
   const cur=SC.group&&SC.group.id;
-  return scPub.map(g=>`<div class="set-row"><span>${esc(g.name||'스터디')}<small class="desc"> · ${(g.studying_count||0)}명 공부 중 · ${(g.member_count||0)}/8${g.time_zone&&g.time_zone!==scHereTz()?' · '+esc(scTzName(g.time_zone)):''}</small></span>`
+  return scPub.map(g=>`<div class="set-row sc-brow"><span>${esc(g.name||'스터디')}<small class="desc"> · ${(g.studying_count||0)}명 공부 중 · ${(g.member_count||0)}/8${g.time_zone&&g.time_zone!==scHereTz()?' · '+esc(scTzName(g.time_zone)):''}</small></span>`
     +(g.id===cur?`<span class="desc">지금 방</span>`:`<button class="btn-ghost sc-pubjoin" data-code="${esc(g.invite_code)}" data-name="${esc(g.name||'스터디')}">참여</button>`)+`</div>`).join(''); }
 function scPubBlock(msgId){ return `<div class="sc-pubhead"><button class="btn-ghost" id="scPubRf">새로고침</button><button class="btn-ghost" id="scPubQuick">빠른 참여</button></div><div id="scPubBox" data-msg="${esc(msgId)}">${scPubList()}</div>`; }
 function scPubPaint(){ const box=$('scPubBox'); if(!box) return; box.innerHTML=scPubList(); scPubWire(box.dataset.msg||'scMsgS'); }

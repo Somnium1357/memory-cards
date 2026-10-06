@@ -1580,6 +1580,8 @@ button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inher
 #siteBody{display:flex;flex-direction:column;gap:22px;padding-bottom:24px;}
 .st-sub{font-size:13px;line-height:18px;color:var(--c-sec);margin-bottom:-10px;}   /* 위로 끌어올리면 .sub-body 윗여백 흐림(16)에 덮인다(10-06 동하) — 아래 칸 쪽으로만 붙인다 */
 .st-sub a{color:var(--c-sec);}
+.st-rf{border:0;background:none;padding:0;font:inherit;font-weight:600;color:var(--c-acc);cursor:pointer;}.st-rf:disabled{color:var(--c-ter);cursor:default;}
+.st-msg{margin-top:4px;color:var(--c-sec);}   /* 새로고침 결과·안내(10-06) */
 .st-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;}
 .st-tile{background:var(--c-card);border-radius:var(--r-group);box-shadow:var(--sh-card);padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0;}
 .st-tile b{font-size:28px;line-height:34px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--c-label);}
@@ -10027,10 +10029,37 @@ function scRender(){ scRenderHome(); scRenderStudy(); scRenderSet(); scRenderDoc
 /* ═══ 공개 사이트 화면(10-06 동하 「사이트 UI가 별로 · 카드앱에 통계랑 별도로 · 피드백+처리 내역도」) ═══
    방문 = data/site-stats.json(GitHub Actions 15분 · GoatCounter API — 동하 기기의 AdGuard가 goatcounter를 막아 앱이 직접 못 부른다)
    피드백 = data/site-feedback.json(루틴 4-d 뒤 site_feedback.py · 🔴 건수·상태만 — 원문은 「시트 열기」로 동하 구글 계정에서) */
-let SITE={st:null, fb:null, at:0, busy:false};
+let SITE={st:null, fb:null, at:0, busy:false, ref:false, msg:'', chk:0};
+const SITE_WF='site-stats.yml';
+/* 마지막 확인 = 받기 실행이 끝난 시각(10-06) — 방문이 없으면 숫자가 같아 data에 커밋이 안 생겨 st.at이 옛 시각으로 남았다(「갱신이 안 돼」로 보임) */
+async function siteLastRun(){ if(!cfg||!cfg.token) return 0;
+  try{ const r=await fetch(`https://api.github.com/repos/${cfg.owner}/${cfg.repo}/actions/workflows/${SITE_WF}/runs?status=success&per_page=1`,{headers:ghHeaders(),cache:'no-store'});
+    if(!r.ok) return 0; const j=await r.json(); const x=(j.workflow_runs||[])[0]; return x?Date.parse(x.updated_at)||0:0; }catch(e){ return 0; } }
+async function siteStatsFresh(){   // raw 주소는 5분 캐시 — 새로고침 뒤엔 API로 바로 읽는다
+  try{ const r=await fetch(ghUrl('site-stats.json', dataBr()),{headers:{...ghHeaders(),Accept:'application/vnd.github.raw+json'},cache:'no-store'});
+    if(!r.ok) return null; const s=await r.text(); return s.trim()?JSON.parse(s):null; }catch(e){ return null; } }
 async function siteOpen(){ siteRender(); if(SITE.busy || Date.now()-SITE.at<60000) return; SITE.busy=true;
-  try{ const [st, fb]=await Promise.all([rawGet('site-stats.json', dataBr()), rawGet('site-feedback.json', dataBr())]); SITE.st=st; SITE.fb=fb; SITE.at=Date.now(); }
+  try{ const [st, fb, chk]=await Promise.all([rawGet('site-stats.json', dataBr()), rawGet('site-feedback.json', dataBr()), siteLastRun()]); SITE.st=st; SITE.fb=fb; SITE.chk=chk; SITE.at=Date.now(); }
   finally{ SITE.busy=false; siteRender(); } }
+/* 수동 새로고침(10-06 동하) — GitHub에 받기 실행을 한 번 요청하고, 끝나면 API로 바로 읽는다(GitHub 예약 실행은 밀리거나 빠진다) */
+async function siteRefresh(){ if(SITE.ref) return;
+  if(!cfg||!cfg.token){ SITE.msg='이 기기에 GitHub 토큰이 없어요(설정 › 동기화)'; siteRender(); return; }
+  SITE.ref=true; SITE.msg='GitHub에 받기 요청 중…'; siteRender();
+  const t0=Date.now()-10000, base=`https://api.github.com/repos/${cfg.owner}/${cfg.repo}/actions/workflows/${SITE_WF}`;
+  try{
+    const r=await fetch(base+'/dispatches',{method:'POST',headers:{...ghHeaders(),'Content-Type':'application/json'},body:JSON.stringify({ref:'main'})});
+    if(r.status===403||r.status===404){ SITE.msg='이 기기 토큰에 Actions 권한이 없어요 — GitHub 토큰 설정에서 「Actions: Read and write」를 켜 주세요'; return; }
+    if(!r.ok){ SITE.msg=`요청이 안 됐어요(${r.status})`; return; }
+    SITE.msg='받는 중… 보통 30초 안팎'; siteRender();
+    for(let i=0;i<30;i++){ await new Promise(z=>setTimeout(z,4000));
+      const q=await fetch(base+'/runs?event=workflow_dispatch&per_page=3',{headers:ghHeaders(),cache:'no-store'}).then(x=>x.ok?x.json():null).catch(()=>null);
+      const run=q&&(q.workflow_runs||[]).find(x=>Date.parse(x.created_at)>=t0);
+      if(!run||run.status!=='completed') continue;
+      if(run.conclusion!=='success'){ SITE.msg='GitHub 쪽 받기가 실패했어요 — 잠시 뒤 다시 눌러 보세요'; return; }
+      const st=await siteStatsFresh(); if(st) SITE.st=st; SITE.chk=Date.parse(run.updated_at)||Date.now(); SITE.at=Date.now(); SITE.msg=''; return; }
+    SITE.msg='GitHub가 아직 처리 중이에요 — 잠시 뒤 다시 열어 보세요';
+  } catch(e){ SITE.msg='연결이 안 됐어요'; }
+  finally{ SITE.ref=false; siteRender(); } }
 function sitePageName(p){ p=decodeURIComponent(String(p||'')).replace(/^\/review-notes/,''); if(p===''||p==='/'||/\/index\.html$/.test(p)) return '첫 화면';
   if(/report\.html$/.test(p)) return '피드백 페이지'; const m=p.match(/\d+\.(.+?)\.html$/); return m?m[1]:p; }
 const SITE_KO={'Phones':'휴대폰','Tablets':'태블릿','Computer monitors':'컴퓨터','Larger monitors':'큰 모니터','(unknown)':'알 수 없음','Unknown':'알 수 없음',
@@ -10041,7 +10070,8 @@ function siteAgo(iso){ const t=Date.parse(iso||''); if(!isFinite(t)) return '—
 function siteRank(list, nameOf){ const mx=Math.max(1,...list.map(x=>x.n)); return list.map(x=>`<div class="st-rank"><span class="nm">${esc(nameOf?nameOf(x):(SITE_KO[x.name]||x.name))}</span><span class="br"><i style="width:${(x.n/mx*100).toFixed(1)}%"></i></span><span class="n">${x.n.toLocaleString()}</span></div>`).join(''); }
 function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.contains('on')) return;
   const st=SITE.st, fb=SITE.fb, L=[];
-  L.push(`<div class="st-sub"><a href="https://imgostudy.github.io/review-notes/" target="_blank" rel="noopener">imgostudy.github.io/review-notes</a>${st?` · 방문 통계 ${siteAgo(st.at)} 받음`:''}</div>`);
+  const chk=Math.max(Date.parse(st&&st.at||'')||0, SITE.chk||0);
+  L.push(`<div class="st-sub"><a href="https://imgostudy.github.io/review-notes/" target="_blank" rel="noopener">imgostudy.github.io/review-notes</a>${chk?` · 방문 통계 ${siteAgo(new Date(chk).toISOString())} 확인`:''} · <button class="st-rf" id="siteRf"${SITE.ref?' disabled':''}>새로고침</button>${SITE.msg?`<div class="st-msg">${esc(SITE.msg)}</div>`:''}</div>`);
   if(!st) L.push(`<div class="sc-sec"><div class="sc-card"><div class="sc-line">${SITE.busy?'불러오는 중…':'방문 통계가 아직 없어요 — GitHub가 15분마다 받아 와요(저장소 Secrets에 GoatCounter 열쇠가 있어야 시작돼요)'}</div></div></div>`);
   else {
     const days=st.days||[], today=days[days.length-1]||{n:0, hourly:[]}, yest=days[days.length-2]||{n:0};
@@ -10067,7 +10097,7 @@ function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.c
       +(iss.length?iss.map(x=>`<div class="st-fb"><span class="st-chip ${x.state==='open'?'wait':'fixed'}">${x.state==='open'?'열림':'닫힘'}</span><span class="ts">이슈 #${x.n}<small>${esc(String(x.at||'').slice(0,10))}</small></span><a href="${esc(x.url)}" target="_blank" rel="noopener">보기</a></div>`).join(''):'')
       +`<div class="st-links"><a class="btn-ghost" href="${esc(fb.sheet)}" target="_blank" rel="noopener">시트 열기</a><a class="btn-ghost" href="${esc(fb.issuesUrl)}" target="_blank" rel="noopener">이슈</a><a class="btn-ghost" href="https://imgostudy.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a></div>`
       +`<div class="sc-line sc-hint" style="margin-top:6px">원문은 「시트 열기」로 봐요 — 여기엔 시각·과목·처리 상태만 와요(공개 저장소라서) · 테스트 ${c('test')}건은 숨김</div></div></div>`); }
-  b.innerHTML=L.join(''); }
+  b.innerHTML=L.join(''); const rf=$('siteRf'); if(rf) rf.onclick=siteRefresh; }
 
 /* 풀이 중 스터디 = 레일 전환(10-05) — 사람 줄(점 · 이름 · 상태·시간 · 장수/목표) · 내 줄은 채점마다(syncRail) · 친구는 동기화(30초)마다 다시 그린다 · 기본 = 피드백 */
 const K_SC_DOCK='cards_sc_dock_v1';

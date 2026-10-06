@@ -1,0 +1,72 @@
+# 공개 사이트(imgostudy.github.io/review-notes) 방문 통계 → data 브랜치 site-stats.json (10-06)
+# GoatCounter API를 GitHub가 대신 부른다 — 동하 기기의 AdGuard DNS 보호가 goatcounter를 막아서 카드앱이 직접 못 부른다.
+# 열쇠 = 저장소 Secrets 「GOATCOUNTER_TOKEN」(GoatCounter → Settings → API · 「Read statistics」만). 없으면 아무것도 안 하고 끝난다.
+name: site-stats
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: site-stats
+  cancel-in-progress: false
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fetch GoatCounter stats
+        env:
+          GC_TOKEN: ${{ secrets.GOATCOUNTER_TOKEN }}
+          GC_SITE: https://imgostudy.goatcounter.com
+        run: |
+          if [ -z "$GC_TOKEN" ]; then echo "GOATCOUNTER_TOKEN 없음 — 건너뜀"; exit 0; fi
+          python3 - <<'PY'
+          import json, os, urllib.request, urllib.parse, datetime as dt, time
+          site, tok = os.environ["GC_SITE"], os.environ["GC_TOKEN"]
+          now = dt.datetime.now(dt.timezone.utc).replace(minute=0, second=0, microsecond=0) + dt.timedelta(hours=1)
+          def get(path, **q):
+              url = site + "/api/v0/" + path + ("?" + urllib.parse.urlencode(q, doseq=True) if q else "")
+              for i in range(3):
+                  try:
+                      req = urllib.request.Request(url, headers={"Authorization": "Bearer " + tok, "Content-Type": "application/json"})
+                      with urllib.request.urlopen(req, timeout=30) as r: return json.load(r)
+                  except urllib.error.HTTPError as e:
+                      if e.code == 429 and i < 2: time.sleep(int(e.headers.get("Retry-After") or 3)); continue
+                      raise
+          iso = lambda t: t.strftime("%Y-%m-%dT%H:00:00Z")
+          s30, s7 = iso(now - dt.timedelta(days=30)), iso(now - dt.timedelta(days=7))
+          end = iso(now)
+          total = get("stats/total", start=s30, end=end)
+          hits = get("stats/hits", start=s7, end=end, limit=30, group="day")
+          out = {
+              "at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+              "site": "https://imgostudy.github.io/review-notes/",
+              "total30": total.get("total", 0),
+              "days": [{"day": s["day"], "n": s.get("daily", 0), "hourly": s.get("hourly") or []} for s in total.get("stats", [])],
+              "pages7": [{"path": h.get("path"), "title": h.get("title") or "", "n": h.get("count", 0),
+                          "days": [x.get("daily", 0) for x in (h.get("stats") or [])]} for h in hits.get("hits", []) if not h.get("event")],
+          }
+          for page in ("toprefs", "systems", "browsers", "sizes"):
+              try:
+                  r = get("stats/" + page, start=s7, end=end, limit=8)
+                  out[page] = [{"name": x.get("name") or "(직접)", "n": x.get("count", 0)} for x in r.get("stats", [])]
+              except Exception as e:
+                  out[page] = []; print(page, "실패:", e)
+          json.dump(out, open("site-stats.json", "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+          print("total30", out["total30"], "pages", len(out["pages7"]))
+          PY
+      - name: Commit to data branch
+        if: hashFiles('site-stats.json') != ''
+        run: |
+          git init -q pub && cd pub
+          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          git fetch -q --depth 1 origin data && git checkout -q -B data FETCH_HEAD
+          git config user.name "site-stats" && git config user.email "site-stats@users.noreply.github.com"
+          # 숫자가 같으면 커밋하지 않는다(at만 바뀐 것) — data 브랜치 이력을 아낀다
+          old=$(python3 -c "import json;d=json.load(open('site-stats.json'));d.pop('at',None);print(json.dumps(d,sort_keys=True))" 2>/dev/null || echo "")
+          new=$(python3 -c "import json;d=json.load(open('../site-stats.json'));d.pop('at',None);print(json.dumps(d,sort_keys=True))")
+          if [ "$old" = "$new" ]; then echo "변화 없음"; exit 0; fi
+          cp ../site-stats.json site-stats.json && git add site-stats.json && git commit -q -m "공개 사이트 방문 통계"
+          for i in 1 2 3; do git push -q origin HEAD:data && exit 0; git fetch -q --depth 1 origin data && git rebase -q FETCH_HEAD || exit 1; done; exit 1

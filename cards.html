@@ -9835,8 +9835,10 @@ async function scSync(o){ o=o||{};
     const today=scDay(Date.now()), known=(curSess&&curSess.name) ? String(curSess.name) : (SC.lastDeck && SC.lastDeckDay===today ? SC.lastDeck : null);
     const deck=(SC.shareDeck!==false && known) ? known.slice(0,300) : null;   // 10-05 친구 요청: 접속 중이면 공부 중이 아니어도 덱이 바뀔 때까지 · 오늘 연 덱만(그날 처음 켜서 정보 없으면 비움)   // 공유는 켰을 때(기본 켬 · 애드온 10-04 「UX 후속」과 같게 — 끄면 false) · 푸는 중일 때만
     const mem=await scAuthed(async tok=>{
-      if(SC.group.day_start_hour===undefined && !o.keepalive){   // 옛 방 정보엔 시간대가 없다 — 한 번 받아 채운다
-        const g=(await scGroups(tok)).find(x=>x.id===SC.group.id); SC.group=Object.assign({}, SC.group, g||{});
+      /* 방 정보(이름·방장·시간대)는 5분마다 다시 받는다(10-06) — 방장이 시간대를 바꿀 수 있게 됐는데(애드온 bc81ba9) 처음 한 번만 받아,
+         서버는 새 시간대로 15분 칸을 주고 앱은 옛 시간대(서울)로 그려 띠가 통째로 밀렸다. 옛 방 정보엔 시간대가 없으면 그때도 받는다. */
+      if(!o.keepalive && (SC.group.day_start_hour===undefined || Date.now()-(SC.groupAt||0)>5*60000)){
+        const g=(await scGroups(tok)).find(x=>x.id===SC.group.id); SC.group=Object.assign({}, SC.group, g||{}); SC.groupAt=Date.now();
         if(!Number.isInteger(SC.group.day_start_hour)) SC.group.day_start_hour=4; scSave(); }
       /* 🔴 방에 뜨는 이름(10-04 닉네임) — **서버 profiles.display_name이 기준**. 이 기기가 처음 붙을 때(SC.nick 없음) 서버 이름부터 읽는다
          — 안 그러면 아이디로 새로 로그인한 기기가 기본 이름(XXX-XXX)으로 남이 바꾼 닉네임을 덮어쓴다. 원하는 이름 = SC.customName || 기본 이름. */

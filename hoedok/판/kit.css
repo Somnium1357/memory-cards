@@ -914,3 +914,12 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
    (가)(나)(.sgsub · kit.js) = 한 단계 낮춤(작게 · 600) — 파랑·괘선은 유지 · 학년군 머리 h3(.sggrade) = 머리줄(.r-head) 꼴 */
 :root.v2 main.wrap h4.sgsub.sgsub{font-size:.82em;line-height:1.45;font-weight:600;color:var(--v2acc);border-bottom:1px solid var(--v2rule);padding-bottom:3px;}
 :root.v2 main.wrap h3.sggrade.sggrade{font-size:1.02em;line-height:1.35;font-weight:700;color:var(--v2ink);padding-bottom:.3em;border-bottom:1px solid var(--v2ink);}
+
+/* 10-06 음악 기호 크기(동하 「음표랑 기호들이 너무 작아」 · 1차 2.6em 은 크기 제각각·줄 넘침으로 되돌림) — ♩♪♯♭♮ 는 시스템 글꼴로(본문 글자 크기) · 음악 기호 블록(쉼표·16분·온음표·늘임표·세뇨)은 NotoMusic: 문장 안 1.7em · 표 칸 2.1em · 줄 높이 안에 */
+.mt{font-family:"Apple Symbols","Segoe UI Symbol","Noto Sans Symbols 2",system-ui,sans-serif;}
+.ms{font-family:"NotoMusic",serif;font-size:1.7em;line-height:1;vertical-align:-.18em;}
+td>.ms,td>.mt{font-size:2.1em;line-height:1.15;}
+.ms.ms-fer{font-size:1.25em;vertical-align:-.5em;}
+tr:has(>td>.ms)>td,tr:has(>td>.mt)>td{vertical-align:middle;}
+td>.ms,td>.mt{vertical-align:middle;display:inline-block;}
+.ms.ms-whole{transform:translateY(-.28em);}   /* 온음표 글리프는 상자 아래쪽에 그려져 칸에서 낮아 보인다(동하 「온음 줄 안 맞음」) */

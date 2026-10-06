@@ -5808,6 +5808,7 @@ function pushLog(entry){             // 새 채점 = 이번 주 파일에 append
   state.log.push(entry);
   markDirty('log', wk);
   try{ scDeckAdd(entry); }catch(e){}   // 스터디 「세션 속도」 — 이 기기에만 쌓는다
+  try{ scRtTick(entry); }catch(e){}    // 스터디 실시간(10-06) — 방 친구에게 「한 장」을 바로
 }
 function dropLogEntry(e){            // undo — 그 항목 하나만 지목해 제거
   /* 길이로 잘라내면 안 된다. 채점과 되돌리기 사이에 원격 병합이 끼면 rebuildLog()가
@@ -9856,7 +9857,7 @@ async function scSync(o){ o=o||{};
       /* 친구 목록은 90초 캐시(애드온) — 30초 박동은 상태만 올린다 · 펼쳐 보거나 손으로 누르면 바로 */
       if(o.keepalive || (!o.force && !o.manual && Date.now()-(SC.membersAt||0)<85000)) return null;
       stage='mem'; const r=await scFetchToday(tok, SC.group.id, t.day); scOkMark('mem'); return r; });
-    if(mem){ SC.members=mem; SC.membersAt=Date.now(); SC.memDay=scDay(Date.now());
+    if(mem){ SC.members=mem; SC.membersAt=Date.now(); SC.memDay=scDay(Date.now()); try{ scRtMerge(); }catch(e){}
       const mine=mem.find(m=>m.user_id===uid);   // 다른 기기에서 이름을 바꿨으면 따라간다(서버가 기준)
       if(mine && mine.display_name && mine.display_name!==SC.nick){ SC.nick=mine.display_name; SC.customName=mine.display_name===canon?'':mine.display_name; } }
     delete SC.err; scFail=0; scHold=0; if(SC.ok) delete SC.ok.e; scSave();
@@ -10327,7 +10328,7 @@ async function scLeaveRoom(){ const g=SC.group;
   catch(e){ if(!/not a member/i.test(e.message||'')) throw e; }   // 이미 내보내졌거나 나간 방 = 나간 것으로 본다(안 그러면 방 정보에 갇힌다 · 애드온 리뷰 10-04)
   scDropRoom(); }
 /* 방 정보 비우기 — 나가기 성공 · 서버가 「멤버 아님」이라고 할 때(방장이 내보냄 등) 둘 다 여기로. 그래야 입구(초대 코드)가 다시 뜬다 */
-function scDropRoom(){ delete SC.group; delete SC.members; delete SC.err; delete SC.rv; SC.deckPub=null; scOpen=null; scSave();
+function scDropRoom(){ try{ scRtClose(); }catch(e){} scRt.live={}; delete SC.group; delete SC.members; delete SC.err; delete SC.rv; SC.deckPub=null; scOpen=null; scSave();
   const a=$('scBox'), c=$('studyBody'); if(a) a.dataset.m=''; if(c) c.dataset.m=''; }
 async function scLoadBans(){ const g=SC.group; const r=await scAuthed(tok=>scReq('POST','/rest/v1/rpc/list_study_group_bans',{token:tok, body:{target_group:g.id}}))||[];
   scBans=await Promise.all(r.filter(x=>x&&x.user_id).map(async x=>({user_id:x.user_id, name:await scNick(x.user_id)}))); }
@@ -10335,6 +10336,66 @@ async function scRemove(uid){ const g=SC.group; await scAuthed(tok=>scReq('POST'
   if(SC.members) SC.members=SC.members.filter(m=>m.user_id!==uid); }
 async function scModerate(uid, blocked){ const g=SC.group; await scAuthed(tok=>scReq('POST','/rest/v1/rpc/moderate_study_group_member',{token:tok, body:{target_group:g.id, target_user:uid, blocked}}));
   if(blocked && SC.members) SC.members=SC.members.filter(m=>m.user_id!==uid); await scLoadBans(); }
+/* ═══ 스터디 실시간(10-06 · 친구 애드온 4084c13 realtime.py와 같은 길) ═══
+   Supabase Realtime(Phoenix) 채널 `realtime:room:<방 id>` — broadcast review_tick(채점마다 · slot = 10분 칸) · member_state(상태·덱·이름) ·
+   room_ping(들어오면 「지금 상태 보내 줘」) + presence track. 🔴 애드온은 이 연결이 살아 있으면 DB 쓰기를 30초 → 5분으로 늦춘다 —
+   DB만 읽으면 친구가 최대 5분 늦게, 180초 규칙에 걸려 오프라인으로 보인다. 실패해도 30초 DB 동기화는 그대로(덧붙이는 길).
+   DB로 친구 목록을 다시 받으면(85초) 실시간으로 받은 상태·장수·칸을 그 위에 다시 얹는다(scRtMerge — 더 새것·더 큰 수가 이긴다). */
+const SC_RT_URL=SC_URL.replace(/^http/,'ws')+'/realtime/v1/websocket';
+let scRt={ws:null, topic:null, joined:false, ref:0, hb:0, retry:0, rt:0, last:'', gid:null, live:{}, day:'', paint:0};
+function scRtSend(o){ const ws=scRt.ws; if(!ws || ws.readyState!==1) return false; o.ref=String(++scRt.ref); try{ ws.send(JSON.stringify(o)); return true; }catch(e){ return false; } }
+function scRtOpen(){ if(!SC.group || !SC.auth || typeof WebSocket==='undefined' || document.visibilityState!=='visible') return;
+  if(scRt.ws && scRt.gid===SC.group.id && scRt.ws.readyState<=1) return;
+  scRtClose(); scRt.gid=SC.group.id;
+  let ws; try{ ws=new WebSocket(SC_RT_URL+'?apikey='+encodeURIComponent(SC_KEY)+'&vsn=1.0.0'); }catch(e){ return; }
+  scRt.ws=ws;
+  ws.onopen=()=>{ scRt.retry=0; scRt.topic='realtime:room:'+SC.group.id;
+    scRtSend({topic:scRt.topic, event:'phx_join', payload:{config:{broadcast:{self:false}, presence:{key:SC.auth.user_id}}}});
+    clearInterval(scRt.hb); scRt.hb=setInterval(()=>scRtSend({topic:'phoenix', event:'heartbeat', payload:{}}), 25000); };
+  ws.onmessage=ev=>{ let m; try{ m=JSON.parse(ev.data); }catch(e){ return; } try{ scRtOn(m); }catch(e){} };
+  ws.onclose=()=>{ if(scRt.ws!==ws) return; scRt.ws=null; scRt.joined=false; clearInterval(scRt.hb); scRtRetry(); };
+  ws.onerror=()=>{}; }
+function scRtRetry(){ if(!SC.group || document.visibilityState!=='visible') return; clearTimeout(scRt.rt);
+  const d=Math.min(30000, 2000*2**Math.min(scRt.retry++, 4)); scRt.rt=setTimeout(scRtOpen, d); }   // 2·4·8·16·30초(애드온과 같게)
+function scRtClose(){ clearTimeout(scRt.rt); clearInterval(scRt.hb); const ws=scRt.ws; scRt.ws=null; scRt.joined=false; scRt.last='';
+  if(ws){ try{ if(scRt.topic && ws.readyState===1) ws.send(JSON.stringify({topic:scRt.topic, event:'phx_leave', payload:{}, ref:String(++scRt.ref)})); ws.close(); }catch(e){} } }
+function scRtMeta(force){ const st=force||scStatus(), today=scDay(Date.now());
+  const known=(curSess&&curSess.name) ? String(curSess.name) : (SC.lastDeck && SC.lastDeckDay===today ? SC.lastDeck : null);
+  return {user_id:SC.auth.user_id, status:st, current_deck_name:(SC.shareDeck!==false && known) ? known.slice(0,300) : null, display_name:SC.nick||undefined}; }
+function scRtPresence(force){ if(!scRt.joined || !SC.auth) return; const meta=scRtMeta(force), k=JSON.stringify(meta); if(k===scRt.last) return; scRt.last=k;
+  scRtSend({topic:scRt.topic, event:'presence', payload:{type:'presence', event:'track', payload:meta}});
+  scRtSend({topic:scRt.topic, event:'broadcast', payload:{type:'broadcast', event:'member_state', payload:meta}}); }
+function scRtTick(entry){ if(!scRt.joined || !SC.auth) return; const t=logTs(entry), ms=(entry[3]&&entry[3].ms)||0;
+  if(scDay(t)!==scDay(Date.now())) return;
+  scRtSend({topic:scRt.topic, event:'broadcast', payload:{type:'broadcast', event:'review_tick', payload:{user_id:SC.auth.user_id, slot:scSlot(t), answers:1, time_ms:Math.max(0,Math.round(ms))}}});
+  scRtPresence(); }
+function scRtLive(uid){ const d=scDay(Date.now()); if(scRt.day!==d){ scRt.day=d; scRt.live={}; } return scRt.live[uid]=scRt.live[uid]||{at:0, n:0, bk:{}}; }
+function scRtApply(uid){ const L=scRt.live[uid], m=(SC.members||[]).find(x=>x.user_id===uid); if(!L || !m) return false;
+  if(L.at && L.at>(Date.parse(m.updated_at||'')||0)){ if(L.status) m.status=L.status; if(L.hasDeck) m.current_deck_name=L.deck; m.updated_at=new Date(L.at).toISOString(); }
+  if(L.n>(m.answer_count||0)) m.answer_count=L.n;
+  const bs=m.activity_buckets=m.activity_buckets||[];
+  for(const sl in L.bk){ const s=Number(sl), b=bs.find(x=>x.slot===s), v=L.bk[sl];
+    if(!b) bs.push({slot:s, answer_count:v.answer_count, time_ms:v.time_ms}); else { b.answer_count=Math.max(b.answer_count||0, v.answer_count); b.time_ms=Math.max(b.time_ms||0, v.time_ms); } }
+  if(Object.keys(L.bk).length){ bs.sort((a,b)=>a.slot-b.slot); m.activity_known=true; }
+  return true; }
+function scRtMerge(){ if(scRt.day!==scDay(Date.now())) return; for(const uid in scRt.live) scRtApply(uid); }
+function scRtPaint(){ clearTimeout(scRt.paint); scRt.paint=setTimeout(()=>{ try{ scRender(); }catch(e){} }, 400); }
+function scRtState(uid, meta){ if(!uid || !SC.auth || uid===SC.auth.user_id || !meta) return; const L=scRtLive(uid);
+  L.at=Date.now(); if(meta.status) L.status=meta.status; if('current_deck_name' in meta){ L.deck=meta.current_deck_name; L.hasDeck=true; }
+  if(scRtApply(uid)) scRtPaint(); }
+function scRtOn(m){ const ev=m.event, p=m.payload||{};
+  if(ev==='phx_reply' && m.topic===scRt.topic && !scRt.joined){ if(p.status==='ok'){ scRt.joined=true; scRt.last='';
+      scRtSend({topic:scRt.topic, event:'broadcast', payload:{type:'broadcast', event:'room_ping', payload:{user_id:SC.auth.user_id}}}); scRtPresence(); } return; }
+  if(ev==='broadcast'){ const e2=p.event, q=p.payload||{}, uid=String(q.user_id||'');
+    if(e2==='review_tick' && uid && uid!==SC.auth.user_id){ const L=scRtLive(uid), m=(SC.members||[]).find(x=>x.user_id===uid), a=Math.max(0,Number(q.answers)||1), ms=Math.max(0,Number(q.time_ms)||0), s=Number(q.slot)||0;
+      L.n=Math.max(L.n, (m&&m.answer_count)||0)+a; const v=L.bk[s]=L.bk[s]||{answer_count:0, time_ms:0};
+      const mb=m&&(m.activity_buckets||[]).find(x=>x.slot===s); v.answer_count=Math.max(v.answer_count, (mb&&mb.answer_count)||0)+a; v.time_ms=Math.max(v.time_ms, (mb&&mb.time_ms)||0)+ms;
+      L.at=Date.now(); L.status=L.status||'studying'; if(scRtApply(uid)) scRtPaint(); }
+    else if(e2==='member_state') scRtState(uid, q);
+    else if(e2==='room_ping' && uid && uid!==SC.auth.user_id){ scRt.last=''; scRtPresence(); }
+    return; }
+  if(ev==='presence_state'){ for(const k in p){ const x=((p[k]||{}).metas||[])[0]; if(x) scRtState(k, x); } return; }
+  if(ev==='presence_diff'){ const j=p.joins||{}; for(const k in j){ const x=((j[k]||{}).metas||[])[0]; if(x) scRtState(k, x); } return; } }
 /* 방 관리(10-06 · 애드온 bc81ba9 · 20261006_room_management) — 방장만 · 서버가 권한을 다시 본다 */
 async function scTransfer(uid){ const g=SC.group; await scAuthed(tok=>scReq('POST','/rest/v1/rpc/transfer_room_ownership',{token:tok, body:{target_group:g.id, new_owner_id:uid}})); g.owner_id=uid; scSave(); }
 async function scSetTz(tz){ const g=SC.group; await scAuthed(tok=>scReq('POST','/rest/v1/rpc/update_room_timezone',{token:tok, body:{target_group:g.id, new_timezone:tz}})); g.time_zone=tz; scSave(); }
@@ -10421,10 +10482,10 @@ function scRenderSet(){ const b=$('scBox'); if(!b) return;
   const rd=$('scRecDone'); if(rd) rd.onclick=()=>{ scRec=null; b.dataset.m=''; scRenderSet(); };
   $('scOpenStudy').onclick=()=>{ $('ovlSettings').classList.remove('show'); go('scrStudy'); }; }
 /* 30초마다 올리고 받기(애드온과 같은 주기) · 앱을 내리면 「접속 중」으로 한 번 · 풀이 화면에서 손대면 「공부 중」 */
-setInterval(()=>{ if(SC.group && document.visibilityState==='visible') scSync(); else if(SC.group) scRenderHome(); }, 30000);
+setInterval(()=>{ if(SC.group && document.visibilityState==='visible'){ scSync(); scRtOpen(); scRtPresence(); } else if(SC.group) scRenderHome(); if(!SC.group) scRtClose(); }, 30000);   // 실시간 연결·상태도 같은 박자(10-06)
 ['pointerdown','keydown'].forEach(ev=>document.addEventListener(ev, ()=>{ scInputAt=Date.now(); }, true));
 document.addEventListener('visibilitychange', ()=>{ if(!SC.group) return;
-  if(document.visibilityState==='hidden') scSync({keepalive:true, status:'stopped'}); else scSync(); });
+  if(document.visibilityState==='hidden'){ scSync({keepalive:true, status:'stopped'}); try{ scRtPresence('stopped'); }catch(e){} scRtClose(); } else { scSync(); scRtOpen(); } });
 function renderHome(){
   try{ if(DATA.length && !planIncomplete) basisCheck(); }catch(e){}
   try{ snapSoon(); }catch(e){}         // 앱 현황 스냅숏 — 부팅 뒤 첫 홈에서 그날 morning을 잡는다(10분 스로틀 · 실패 무시)

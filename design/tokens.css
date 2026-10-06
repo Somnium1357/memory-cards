@@ -1,0 +1,135 @@
+/* 카드앱 디자인 토큰 — cards.html 의 실제 값(2026-10-07)을 그대로 떼어 낸 것.
+   설명 = design/DESIGN.md
+   쓰는 법: 이 파일을 넣고 규칙은 var(--c-*) · var(--t-*) · var(--r-*) · var(--sp-*) 만 쓴다.
+   테마 = <html data-theme="white|paper|dark"> · 속성이 없으면 자동(기기 라이트 → data-light="white|paper" 쪽, 기본 paper · 기기 다크 → dark).
+   풀이처럼 오래 보는 화면은 루트에 data-screen="solve" 를 달면 강조색이 한 톤 차분해진다. */
+:root {
+  --c-brown: #A2845E;   /* 스터디 사람 색 여섯째 — 앱에선 var(--c-brown,#A2845E) 기본값으로 쓴다 */
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  --font-music: "NotoMusic", var(--font);          /* 음표·쉼표 기호 — 24px 이상 */
+
+  /* ── 글자 크기 (px / 줄 높이) · iOS 기본 단계 ── */
+  --t-large: 34px;  --t-large-lh: 41px;   /* 화면 제목 · 700 · -0.025em */
+  --t-title2: 22px; --t-title2-lh: 28px;  /* 시트 안 큰 제목 · 700 */
+  --t-title3: 20px; --t-title3-lh: 25px;  /* 구역 제목 · 700 · -0.015em */
+  --t-body: 17px;   --t-body-lh: 22px;    /* 목록 줄 · 버튼 */
+  --t-sub: 15px;    --t-sub-lh: 20px;     /* 부제 · 알약 버튼 */
+  --t-foot: 13px;   --t-foot-lh: 18px;    /* 보조 설명 · 칩 · 구역 머리 */
+  --t-cap: 12px;    --t-cap-lh: 16px;     /* 수치 이름표 */
+  /* 풀이 카드 글자 단계 — 아이폰 값은 아래 @media에서 */
+  --t-q: 24px;  --t-q-long: 20px;          /* 질문: 앞면·답면 같은 크기 · 200자 넘으면 long */
+  --t-ans-short: 38px;                      /* 답 ≤12자 · 700 */
+  --t-ans-mid: 28px;                        /* 답 ≤30자 · 700 */
+  --t-ans-body: 19px;                       /* 긴 답 · 구조형 · 항목 · 500 (구조형 라벨 = --t-foot 600) */
+  --t-cell: 17px; --t-cell-sym: 26px;       /* 표 칸 글자 · 기호 칸 */
+
+  /* ── 모서리 (동심 — 바깥 = 안 + 여백) ── */
+  --r-card: 30px;     /* 풀이 카드 */
+  --r-panel: 26px;    /* 사이드바 · 되짚기 · 시트 */
+  --r-group: 22px;    /* inset grouped 목록 · 구역 카드 */
+  --r-tile: 16px;     /* 타일 · 표 칸 묶음 */
+  --r-cell: 12px;     /* 표 칸 · 사이드바 줄 */
+  --r-pill: 999px;    /* 캡슐 버튼 · 칩 */
+
+  /* ── 간격 · 여백 ── */
+  --sp-m: 20px;       /* 아이패드 바깥 여백 = 칸 사이 */
+  --sp-top: 40px;     /* 상태바 24 + 유리 15 + 1 */
+  --sp-bot: 28px;     /* 홈 인디케이터 20 + 8 */
+  --side-w: 300px;    /* 사이드바 */
+  --insp-w: 236px;    /* 되짚기 패널 */
+  --tap: 44px;        /* 최소 누름 크기 */
+  --grade-h: 56px;    /* 채점 버튼 (아이폰 54) */
+  --read-max: 980px;  /* 데스크탑 본문 최대 폭 */
+}
+@media (max-width: 500px) {           /* 아이폰 */
+  :root { --sp-m: 16px; --sp-top: 62px; --sp-bot: 42px; --grade-h: 54px;
+          --t-q: 18px; --t-q-long: 16px; --t-ans-short: 30px; --t-ans-mid: 22px; --t-ans-body: 17px; --t-cell: 15px; --t-cell-sym: 22px; }
+}
+@media (hover: hover) and (pointer: fine) and (min-width: 1300px) {   /* 데스크탑 */
+  :root { --sp-m: 24px; --sp-top: 24px; --sp-bot: 24px; }
+}
+
+/* ══ 테마 셋: 화이트 · 페이퍼 · 다크 ══
+   <html data-theme="white|paper|dark">  — 없으면 자동: 기기 라이트 → data-light(white|paper, 기본 paper) · 기기 다크 → 다크
+   (앱은 설정값을 data-theme에, 「자동일 때 라이트 쪽」 선택을 data-light에 적는다) */
+
+/* ── 공통(라이트 계열) + 화이트 면 ── */
+:root, :root[data-theme="white"] {
+  color-scheme: light;
+  --c-bg: #F2F2F7; --c-card: #FFFFFF; --c-fill: #EFEFF4; --c-tile: #FFFFFF;
+  --c-label: #1D1D1F; --c-sec: #6E6E73; --c-ter: #8E8E93; --c-sep: #E3E3E8; --c-chev: #C4C4C9;
+  --c-glass: rgba(255,255,255,.72); --c-glass-ring: rgba(0,0,0,.06); --c-glass-shadow: rgba(0,0,0,.08);
+  --sh-card: 0 1px 3px rgba(0,0,0,.04);
+  --sh-big: 0 1px 3px rgba(0,0,0,.04), 0 12px 32px rgba(0,0,0,.05);
+  /* 바깥 화면 = 기본 톤(애플 시스템 색) — 풀이 화면은 아래 [data-screen="solve"]가 중간 톤으로 덮는다 */
+  --c-acc: #007AFF; --c-acc-fill: #007AFF; --c-acc-tint: rgba(0,122,255,.10); --c-acc-glow: rgba(0,122,255,.25);
+  --c-orange: #FF9500; --c-green: #34C759; --c-red: #FF3B30; --c-purple: #AF52DE;
+  --c-indigo: #5856D6; --c-teal: #30B0C7; --c-pink: #FF2D55; --c-danger: #D70015;
+  /* 채점 4색: 글자 / 면 — 버튼 = 면 + 글자 + 바닥 inset 0 -3px 0 글자색 */
+  --c-again: #D1453B; --c-again-bg: rgba(209,69,59,.11);
+  --c-hard:  #C7731A; --c-hard-bg:  rgba(199,115,26,.13);
+  --c-good:  #2A8A52; --c-good-bg:  rgba(42,138,82,.13);
+  --c-easy:  #2A6AD8; --c-easy-bg:  rgba(42,106,216,.11);
+  --c-dim: rgba(0,0,0,.28); --c-toast: rgba(30,30,32,.92);
+}
+
+/* ── 페이퍼 면(따뜻한 미색) — 강조·채점 색은 라이트와 같다 ── */
+:root[data-theme="paper"], :root:not([data-theme])[data-light="paper"], :root:not([data-theme]):not([data-light]) {
+  --c-bg: #F2EEE6; --c-card: #FBF9F4; --c-fill: #ECE7DD; --c-tile: #FBF9F4;
+  --c-label: #2B2824; --c-sec: #6E6860; --c-ter: #8E877C; --c-sep: #E2DCD0; --c-chev: #C7BFB2;
+  --c-glass: rgba(251,249,244,.78); --c-glass-ring: rgba(60,40,10,.07); --c-glass-shadow: rgba(60,40,10,.08);
+  --sh-card: 0 1px 3px rgba(60,40,10,.05);
+  --sh-big: 0 1px 3px rgba(60,40,10,.05), 0 12px 32px rgba(60,40,10,.06);
+}
+
+/* ── 다크(자동) ── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]):not([data-theme]):not([data-theme]) {   /* 우선순위 (0,4,0) — 자동 페이퍼 선택자 (0,3,0)를 이겨야 한다 */
+    color-scheme: dark;
+    --c-bg: #000000; --c-card: #1C1C1E; --c-fill: #2C2C2E; --c-tile: #2C2C2E;
+    --c-label: #F5F5F7; --c-sec: #98989F; --c-ter: #8D8D93; --c-sep: #38383A; --c-chev: #5A5A5F;
+    --c-acc: #0A84FF; --c-acc-fill: #0A84FF; --c-acc-tint: rgba(10,132,255,.20); --c-acc-glow: rgba(10,132,255,.35);
+    --c-orange: #FF9F0A; --c-green: #30D158; --c-red: #FF453A; --c-purple: #BF5AF2;
+    --c-indigo: #5E5CE6; --c-teal: #40C8E0; --c-pink: #FF375F; --c-danger: #FF6961;
+    --c-again: #FF7F74; --c-again-bg: rgba(255,127,116,.20);
+    --c-hard:  #F4AA55; --c-hard-bg:  rgba(244,170,85,.20);
+    --c-good:  #62CC88; --c-good-bg:  rgba(98,204,136,.18);
+    --c-easy:  #79AEFF; --c-easy-bg:  rgba(121,174,255,.22);
+    --c-glass: rgba(36,36,38,.72); --c-glass-ring: rgba(255,255,255,.10); --c-glass-shadow: rgba(0,0,0,.55);
+    --sh-card: 0 0 0 0.5px rgba(255,255,255,.07);
+    --sh-big: 0 0 0 0.5px rgba(255,255,255,.07);
+    --c-dim: rgba(0,0,0,.55); --c-toast: rgba(58,58,60,.95);
+  }
+}
+/* ── 다크(강제) — 위 블록과 값이 같아야 한다 ── */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --c-bg: #000000; --c-card: #1C1C1E; --c-fill: #2C2C2E; --c-tile: #2C2C2E;
+  --c-label: #F5F5F7; --c-sec: #98989F; --c-ter: #8D8D93; --c-sep: #38383A; --c-chev: #5A5A5F;
+  --c-acc: #0A84FF; --c-acc-fill: #0A84FF; --c-acc-tint: rgba(10,132,255,.20); --c-acc-glow: rgba(10,132,255,.35);
+  --c-orange: #FF9F0A; --c-green: #30D158; --c-red: #FF453A; --c-purple: #BF5AF2;
+  --c-indigo: #5E5CE6; --c-teal: #40C8E0; --c-pink: #FF375F; --c-danger: #FF6961;
+  --c-again: #FF7F74; --c-again-bg: rgba(255,127,116,.20);
+  --c-hard:  #F4AA55; --c-hard-bg:  rgba(244,170,85,.20);
+  --c-good:  #62CC88; --c-good-bg:  rgba(98,204,136,.18);
+  --c-easy:  #79AEFF; --c-easy-bg:  rgba(121,174,255,.22);
+  --c-glass: rgba(36,36,38,.72); --c-glass-ring: rgba(255,255,255,.10); --c-glass-shadow: rgba(0,0,0,.55);
+  --sh-card: 0 0 0 0.5px rgba(255,255,255,.07);
+  --sh-big: 0 0 0 0.5px rgba(255,255,255,.07);
+  --c-dim: rgba(0,0,0,.55); --c-toast: rgba(58,58,60,.95);
+}
+
+/* ── 풀이 화면 = 중간 톤 (풀이 화면 루트에 data-screen="solve") ── */
+[data-screen="solve"] {
+  --c-acc: #2A6AD8; --c-acc-fill: #2A6AD8; --c-acc-tint: rgba(42,106,216,.10); --c-acc-glow: transparent;
+  --c-orange: #E8900F; --c-danger: var(--c-sec);   /* 끄기 = 회색 */
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]):not([data-theme]):not([data-theme]) [data-screen="solve"] {
+    --c-acc: #6FA3FF; --c-acc-fill: #3D7BE8; --c-acc-tint: rgba(111,163,255,.18); --c-orange: #FFB14A;
+  }
+}
+:root[data-theme="dark"] [data-screen="solve"] {
+  --c-acc: #6FA3FF; --c-acc-fill: #3D7BE8; --c-acc-tint: rgba(111,163,255,.18); --c-orange: #FFB14A;
+}
+

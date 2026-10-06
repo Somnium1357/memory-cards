@@ -10033,7 +10033,8 @@ async function siteOpen(){ siteRender(); if(SITE.busy || Date.now()-SITE.at<6000
   finally{ SITE.busy=false; siteRender(); } }
 function sitePageName(p){ p=decodeURIComponent(String(p||'')).replace(/^\/review-notes/,''); if(p===''||p==='/'||/\/index\.html$/.test(p)) return '첫 화면';
   if(/report\.html$/.test(p)) return '피드백 페이지'; const m=p.match(/\d+\.(.+?)\.html$/); return m?m[1]:p; }
-const SITE_KO={'Phones':'휴대폰','Tablets':'태블릿','Computer monitors':'컴퓨터','Larger monitors':'큰 모니터','(unknown)':'알 수 없음','Unknown':'알 수 없음'};
+const SITE_KO={'Phones':'휴대폰','Tablets':'태블릿','Computer monitors':'컴퓨터','Larger monitors':'큰 모니터','(unknown)':'알 수 없음','Unknown':'알 수 없음',
+  '(직접)':'직접 · 메신저 링크',phone:'휴대폰',largephone:'큰 휴대폰',tablet:'태블릿',desktop:'컴퓨터',desktophd:'큰 모니터',unknown:'알 수 없음'};   // GoatCounter 화면 크기 = 이름 없이 종류 코드로 온다
 function siteTs(t){ const m=String(t||'').match(/(\d+)\.\s*(\d+)\.\s*(\d+)\s*(오전|오후)\s*(\d+):(\d+)/); if(!m) return String(t||'');   // 시트 타임스탬프 「2026. 10. 3 오전 9:25:21」 → 「10/3 09:25」
   let h=Number(m[5])%12+(m[4]==='오후'?12:0); return `${Number(m[2])}/${Number(m[3])} ${String(h).padStart(2,'0')}:${m[6]}`; }
 function siteAgo(iso){ const t=Date.parse(iso||''); if(!isFinite(t)) return '—'; const m=Math.round((Date.now()-t)/60000); return m<1?'방금':m<60?`${m}분 전`:m<1440?`${Math.round(m/60)}시간 전`:`${Math.round(m/1440)}일 전`; }

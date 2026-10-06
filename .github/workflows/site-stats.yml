@@ -34,6 +34,8 @@ jobs:
                       with urllib.request.urlopen(req, timeout=30) as r: return json.load(r)
                   except urllib.error.HTTPError as e:
                       if e.code == 429 and i < 2: time.sleep(int(e.headers.get("Retry-After") or 3)); continue
+                      print("HTTP", e.code, path, (e.read() or b"")[:300].decode("utf-8", "replace"))
+                      if e.code == 404: return {}
                       raise
           iso = lambda t: t.strftime("%Y-%m-%dT%H:00:00Z")
           s30, s7 = iso(now - dt.timedelta(days=30)), iso(now - dt.timedelta(days=7))

@@ -10076,6 +10076,23 @@ const SITE_KO={'Phones':'휴대폰','Tablets':'태블릿','Computer monitors':'�
 function siteTs(t){ const m=String(t||'').match(/(\d+)\.\s*(\d+)\.\s*(\d+)\s*(오전|오후)\s*(\d+):(\d+)/); if(!m) return String(t||'');   // 시트 타임스탬프 「2026. 10. 3 오전 9:25:21」 → 「10/3 09:25」
   let h=Number(m[5])%12+(m[4]==='오후'?12:0); return `${Number(m[2])}/${Number(m[3])} ${String(h).padStart(2,'0')}:${m[6]}`; }
 function siteAgo(iso){ const t=Date.parse(iso||''); if(!isFinite(t)) return '—'; const m=Math.round((Date.now()-t)/60000); return m<1?'방금':m<60?`${m}분 전`:m<1440?`${Math.round(m/60)}시간 전`:`${Math.round(m/1440)}일 전`; }
+/* 들어온 경로 짧게(10-06 동하) — 주소 그대로면 폰에서 잘려 어느 글인지 몰랐다 → 「다음 카페 · educationstudy」 꼴 · 같은 이름은 합친다 */
+function siteRef(nm){ if(SITE_KO[nm]) return SITE_KO[nm];
+  const s=String(nm||'').replace(/^https?:\/\//,'').replace(/[?#].*$/,''), [host0, ...seg]=s.split('/'), host=host0.replace(/^(www|m)\./,''), a=(seg[0]||'');
+  if(/^cafe\.daum\.net$/.test(host)) return a&&!/^_/.test(a)?`다음 카페 · ${a}`:'다음 카페';
+  if(/^cafe\.naver\.com$/.test(host)) return a&&!/\.(nhn|naver)$/.test(a)?`네이버 카페 · ${a}`:'네이버 카페';
+  if(/^blog\.naver\.com$/.test(host)) return a?`네이버 블로그 · ${a}`:'네이버 블로그';
+  if(/(^|\.)naver\.com$/.test(host)) return '네이버';
+  if(/(^|\.)daum\.net$/.test(host)) return '다음';
+  if(/^google\.|(^|\.)google\.[a-z.]+$/i.test(host)||/^google$/i.test(s)) return '구글';
+  if(/(^|\.)(kakao\.com|kakao\.talk)$/.test(host)||/kakao/i.test(s)) return '카카오톡';
+  if(/^(t\.co|x\.com|twitter\.com)$/.test(host)) return 'X';
+  if(/(^|\.)instagram\.com$/.test(host)) return '인스타그램';
+  if(/(^|\.)(youtube\.com|youtu\.be)$/.test(host)) return '유튜브';
+  if(/(^|\.)bing\.com$/.test(host)||/^bing$/i.test(s)) return '빙';
+  return host||s; }
+function siteRefs(list){ const m=new Map(); (list||[]).forEach(x=>{ const k=siteRef(x.name); m.set(k,(m.get(k)||0)+(x.n||0)); });
+  return [...m].map(([name,n])=>({name,n})).sort((a,b)=>b.n-a.n); }
 function siteRank(list, nameOf){ const mx=Math.max(1,...list.map(x=>x.n)); return list.map(x=>`<div class="st-rank"><span class="nm">${esc(nameOf?nameOf(x):(SITE_KO[x.name]||x.name))}</span><span class="br"><i style="width:${(x.n/mx*100).toFixed(1)}%"></i></span><span class="n">${x.n.toLocaleString()}</span></div>`).join(''); }
 function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.contains('on')) return;
   const st=SITE.st, fb=SITE.fb, L=[];
@@ -10095,7 +10112,7 @@ function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.c
     const pages=(st.pages7||[]).filter(x=>x.n>0);
     if(pages.length) L.push(`<div class="sc-sec"><div class="h-sec2"><h2>많이 읽힌 페이지</h2><span class="sc-g">7일</span></div><div class="sc-card">${siteRank(pages.slice(0,13), x=>sitePageName(x.path))}</div></div>`);
     const two=[['toprefs','들어온 경로'],['systems','기기'],['browsers','브라우저'],['sizes','화면']].filter(([k])=>(st[k]||[]).length);
-    if(two.length) L.push(`<div class="st-two">${two.map(([k,t])=>`<div class="sc-sec"><div class="h-sec2"><h2>${t}</h2><span class="sc-g">7일</span></div><div class="sc-card">${siteRank(st[k].slice(0,6))}</div></div>`).join('')}</div>`);
+    if(two.length) L.push(`<div class="st-two">${two.map(([k,t])=>`<div class="sc-sec"><div class="h-sec2"><h2>${t}</h2><span class="sc-g">7일</span></div><div class="sc-card">${(k==='toprefs'?siteRank(siteRefs(st[k]).slice(0,6), x=>x.name):siteRank(st[k].slice(0,6)))}</div></div>`).join('')}</div>`);
   }
   /* 피드백 — 수거함 상태(고침 · 보고만 · 테스트) + 대기(시트에 있는데 루틴이 아직 안 본 것) + 이슈 */
   if(fb){ const it=fb.items||[], c=k=>it.filter(x=>x.status===k).length, iss=fb.issues||[], open=iss.filter(x=>x.state==='open').length;

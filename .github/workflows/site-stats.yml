@@ -52,8 +52,15 @@ jobs:
           }
           for page in ("toprefs", "systems", "browsers", "sizes"):
               try:
-                  r = get("stats/" + page, start=s7, end=end, limit=8)
-                  out[page] = [{"name": x.get("name") or "(직접)", "n": x.get("count", 0)} for x in r.get("stats", [])]
+                  r = get("stats/" + page, start=s7, end=end, limit=12)
+                  rows = []
+                  for x in r.get("stats", []):
+                      nm = x.get("name") or x.get("id") or ""
+                      if page == "toprefs":
+                          if nm.startswith("imgostudy.github.io"): continue   # 사이트 안에서 옮겨 다닌 것 — 바깥 유입만
+                          nm = nm or "(직접)"
+                      if x.get("count", 0) > 0: rows.append({"name": nm or "알 수 없음", "n": x.get("count", 0)})
+                  out[page] = rows
               except Exception as e:
                   out[page] = []; print(page, "실패:", e)
           json.dump(out, open("site-stats.json", "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))

@@ -1,5 +1,5 @@
 /* 카드앱 디자인 토큰 — cards.html 의 실제 값(2026-10-07)을 그대로 떼어 낸 것.
-   설명 = design/DESIGN.md
+   설명 = DESIGN.md(같은 폴더) · https://raw.githubusercontent.com/Somnium1357/memory-cards/main/design/DESIGN.md
    쓰는 법: 이 파일을 넣고 규칙은 var(--c-*) · var(--t-*) · var(--r-*) · var(--sp-*) 만 쓴다.
    테마 = <html data-theme="white|paper|dark"> · 속성이 없으면 자동(기기 라이트 → data-light="white|paper" 쪽, 기본 paper · 기기 다크 → dark).
    풀이처럼 오래 보는 화면은 루트에 data-screen="solve" 를 달면 강조색이 한 톤 차분해진다. */

@@ -10361,7 +10361,8 @@ function scRtClose(){ clearTimeout(scRt.rt); clearInterval(scRt.hb); const ws=sc
   if(ws){ try{ if(scRt.topic && ws.readyState===1) ws.send(JSON.stringify({topic:scRt.topic, event:'phx_leave', payload:{}, ref:String(++scRt.ref)})); ws.close(); }catch(e){} } }
 function scRtMeta(force){ const st=force||scStatus(), today=scDay(Date.now());
   const known=(curSess&&curSess.name) ? String(curSess.name) : (SC.lastDeck && SC.lastDeckDay===today ? SC.lastDeck : null);
-  return {user_id:SC.auth.user_id, status:st, current_deck_name:(SC.shareDeck!==false && known) ? known.slice(0,300) : null, display_name:SC.nick||undefined}; }
+  const td=scToday();   // 오늘 합계도 싣는다(10-06 「시간이 안 간다」 — 애드온은 실시간 중 DB를 5분마다만 써서 시간이 5분씩 멈춰 보였다 · 애드온은 모르는 칸이라 무시)
+  return {user_id:SC.auth.user_id, status:st, current_deck_name:(SC.shareDeck!==false && known) ? known.slice(0,300) : null, display_name:SC.nick||undefined, study_day:td.day, active_seconds:td.sec, answer_count:td.n}; }
 function scRtPresence(force){ if(!scRt.joined || !SC.auth) return; const meta=scRtMeta(force), k=JSON.stringify(meta); if(k===scRt.last) return; scRt.last=k;
   scRtSend({topic:scRt.topic, event:'presence', payload:{type:'presence', event:'track', payload:meta}});
   scRtSend({topic:scRt.topic, event:'broadcast', payload:{type:'broadcast', event:'member_state', payload:meta}}); }
@@ -10373,6 +10374,7 @@ function scRtLive(uid){ const d=scDay(Date.now()); if(scRt.day!==d){ scRt.day=d;
 function scRtApply(uid){ const L=scRt.live[uid], m=(SC.members||[]).find(x=>x.user_id===uid); if(!L || !m) return false;
   if(L.at && L.at>(Date.parse(m.updated_at||'')||0)){ if(L.status) m.status=L.status; if(L.hasDeck) m.current_deck_name=L.deck; m.updated_at=new Date(L.at).toISOString(); }
   if(L.n>(m.answer_count||0)) m.answer_count=L.n;
+  if((L.sec||0)>(m.active_seconds||0)) m.active_seconds=L.sec;
   const bs=m.activity_buckets=m.activity_buckets||[];
   for(const sl in L.bk){ const s=Number(sl), b=bs.find(x=>x.slot===s), v=L.bk[sl];
     if(!b) bs.push({slot:s, answer_count:v.answer_count, time_ms:v.time_ms}); else { b.answer_count=Math.max(b.answer_count||0, v.answer_count); b.time_ms=Math.max(b.time_ms||0, v.time_ms); } }
@@ -10382,6 +10384,8 @@ function scRtMerge(){ if(scRt.day!==scDay(Date.now())) return; for(const uid in 
 function scRtPaint(){ clearTimeout(scRt.paint); scRt.paint=setTimeout(()=>{ try{ scRender(); }catch(e){} }, 400); }
 function scRtState(uid, meta){ if(!uid || !SC.auth || uid===SC.auth.user_id || !meta) return; const L=scRtLive(uid);
   L.at=Date.now(); if(meta.status) L.status=meta.status; if('current_deck_name' in meta){ L.deck=meta.current_deck_name; L.hasDeck=true; }
+  if((!meta.study_day || meta.study_day===scDay(Date.now())) && Number.isFinite(+meta.active_seconds)) L.sec=Math.max(L.sec||0, +meta.active_seconds);   // 합계가 실려 오면(카드앱끼리 · 애드온이 따라오면) 시간도 바로
+  if((!meta.study_day || meta.study_day===scDay(Date.now())) && Number.isFinite(+meta.answer_count)) L.n=Math.max(L.n||0, +meta.answer_count);
   if(scRtApply(uid)) scRtPaint(); }
 function scRtOn(m){ const ev=m.event, p=m.payload||{};
   if(ev==='phx_reply' && m.topic===scRt.topic && !scRt.joined){ if(p.status==='ok'){ scRt.joined=true; scRt.last='';

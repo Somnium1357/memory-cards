@@ -4,7 +4,7 @@
 name: site-stats
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "4,19,34,49 * * * *"   # 정각·15분 단위는 GitHub가 붐벼 예약을 버린다(10-06 3시간 0회) — 덜 붐비는 분
   workflow_dispatch:
 permissions:
   contents: write

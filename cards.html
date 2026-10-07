@@ -11332,7 +11332,9 @@ function setExamRet(v){
 /* 🔴 일정 기준 도장(basis) — 목표율·집중 암기·시험 목표율·개인 파라미터가 바뀌면 **그날 큐도 다시 맞춘다**(동하 09-23 「집중 암기는 큐에 그날 반영」 ·
    리뷰 09-23: 09-21 집중 암기 확대 날 176장이 큐 밖). 설정을 바꾼 기기는 setFocus 등이 곧바로 resync하지만, **다른 기기**는 부팅·병합으로 값만 받고
    오늘 큐는 옛 기준 그대로였다. 자동 세션마다 큐를 짠 기준을 적어 두고, 홈을 그릴 때 기준이 달라졌으면 한 번 resync한다. */
-function basisKey(){ return [fsrsCfg.ret, curricRet(), fsrsCfg.focusAt||0, examRet(), fsrsCfg.wAt||''].join('|'); }
+function basisKey(){ return [fsrsCfg.ret, curricRet(), fsrsCfg.focusAt||0, examRet(), fsrsCfg.wAt||'', 'r2'].join('|'); }   // 끝 꼬리 = 판(아래 주석)
+/* 도장 끝 꼬리('r2') = 오늘 목록을 모든 기기에서 한 번 다시 맞추고 싶을 때 올리는 꼬리(10-07 r2 — 10:39 옛 버전 기기가 0.88을 소급 적용해 담은 목록이
+   23:44에 되살아나 일일 복습 1,840 · 총창 21 · 교육과정 72 · 연문 13장이 「오늘」에 남았다 · 복습일 10-08~10-19 카드). 도장이 달라지면 basisCheck가 resyncQueues 한 번. */
 function basisCheck(){ const b=basisKey(), tk=todayKey();
   if(logIncomplete) return;            // 🔴 지난 주 로그를 못 받은 부팅 — 도장은 낡은 채로 둔다(다음 부팅이 맞춘다 · 리뷰 09-25 L1-3)
   if(sessions.some(sx=>!isFixed(sx) && sx.day===tk && sx.basis && sx.basis!==b)) resyncQueues();

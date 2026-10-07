@@ -9814,6 +9814,10 @@ async function scPushReviews(tok){   // 🔴 방 합계의 유일한 재료(10-0
 let scInputAt=0;
 function scStatus(){ if(document.visibilityState!=='visible' || !$('scrSolve').classList.contains('on')) return 'stopped';
   return Date.now()-scInputAt<120000 ? 'studying' : 'paused'; }   // 2분(10-05 친구 요청 「상태 변화가 지나치게 잦음」 · 애드온과 같게 · 시간 셈은 로그 간격 규칙 그대로)
+/* 친구 순서 = 오늘 공부량(10-07 · 애드온 0.1.5 sort_room_members — 답 수 ↓ · 공부 시간 ↓ · 이름 ↑ · 상태 순 폐기) · 나는 늘 맨 위 ·
+   날이 바뀌어 어제 숫자면(fresh 아님) 0으로 친다 */
+function scFriendOrder(fresh){ const v=(m,k)=>fresh?Math.max(0,+m[k]||0):0, nm=m=>String(m.display_name||m.user_id||'');
+  return (a,b)=>v(b,'answer_count')-v(a,'answer_count') || v(b,'active_seconds')-v(a,'active_seconds') || (nm(a)<nm(b)?-1:nm(a)>nm(b)?1:0); }
 function scMemberStatus(m){   // 애드온 _current_member_status — 180초 넘게 소식이 없으면 오프라인(10-05 90→180 · 친구 요청)
   const t=m.updated_at?Date.parse(m.updated_at):NaN; if(!isFinite(t) || Date.now()-t>180000) return 'offline';
   return m.status==='studying'||m.status==='paused' ? m.status : 'online'; }
@@ -10156,8 +10160,7 @@ function scRenderDock(){ const box=$('railSc'); if(!box) return; const has=!!SC.
   $('btnStudy').classList.toggle('on', has); $('btnStudy').classList.toggle('pin', on); $('rail').classList.toggle('sc-on', on); document.body.classList.toggle('sc-rail', on);
   if(!on){ box.innerHTML=''; return; }
   const me=SC.auth&&SC.auth.user_id, t=scToday(), myS=scStatus(), fresh=SC.memDay===scDay(Date.now()), nowSl=scSlot(Date.now());
-  const rank={studying:0, paused:1, online:2, offline:3};
-  let rows=(SC.members||[]).filter(m=>m.user_id!==me).sort((a,b)=>rank[scMemberStatus(a)]-rank[scMemberStatus(b)] || (b.answer_count||0)-(a.answer_count||0));
+  let rows=(SC.members||[]).filter(m=>m.user_id!==me).sort(scFriendOrder(fresh));
   const nStudy=rows.filter(m=>scMemberStatus(m)!=='offline').length+1;   // 접속 중 = 오프라인 아닌 사람 + 나(10-05 친구 요청 「몇 명이 공부 중 말고 접속 중」)
   rows=[{user_id:me, mine:true}, ...rows];
   const myB=scMyBuckets(), {ev}=scEvents(), myLast=ev.reduce((x,e)=>Math.max(x,e.t||0),0)||NaN;
@@ -10204,8 +10207,7 @@ function scPeople(where){
   const me=SC.auth&&SC.auth.user_id, t=scToday(), myS=scStatus(), today=scDay(Date.now());
   const fresh=SC.memDay===today;   // 날이 바뀌면 어제 숫자를 오늘처럼 보이지 않는다
   let rows=(SC.members||[]).filter(m=>m.user_id!==me);
-  const rank={studying:0, paused:1, online:2, offline:3};
-  rows.sort((a,b)=>rank[scMemberStatus(a)]-rank[scMemberStatus(b)] || (b.answer_count||0)-(a.answer_count||0));
+  rows.sort(scFriendOrder(fresh));
   const nStudy=rows.filter(m=>scMemberStatus(m)!=='offline').length+1;   // 접속 중 = 오프라인 아닌 사람 + 나(10-05 친구 요청 「몇 명이 공부 중 말고 접속 중」)
   rows=[{user_id:me, mine:true}, ...rows];
   const html=rows.map(m=>{ const st=m.mine?(myS==='stopped'?'online':myS):scMemberStatus(m);

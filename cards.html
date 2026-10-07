@@ -9910,7 +9910,7 @@ async function scSync(o){ o=o||{};
     if(e.status!==401 && !o.keepalive){ scFail++; scHold=Date.now()+[60,120,240,300][Math.min(scFail,4)-1]*1000; } scSave(); }
   finally{ scBusy=false; if(!o.keepalive) scRender(); } }
 /* 계정을 바꿔도 이 기기 것은 남긴다 — 설치 ID · 목표 · 세션 이름 공유 · 세션별 속도 기록 */
-const scKeep=()=>({goalMin:SC.goalMin, goalCards:SC.goalCards, dev:SC.dev, shareDeck:SC.shareDeck, dk:SC.dk, lastDeck:SC.lastDeck, lastDeckDay:SC.lastDeckDay});
+const scKeep=()=>({goalMin:SC.goalMin, goalCards:SC.goalCards, dev:SC.dev, shareDeck:SC.shareDeck, dnd:SC.dnd, confetti:SC.confetti, dk:SC.dk, lastDeck:SC.lastDeck, lastDeckDay:SC.lastDeckDay});
 async function scGroups(tok){   // 애드온 list_groups — 내가 든 방들(가입 순)
   const r=await scReq('GET','/rest/v1/group_members',{token:tok, query:{select:'group_id,joined_at,study_groups(id,name,invite_code,owner_id,created_at,time_zone,day_start_hour)', user_id:'eq.'+SC.auth.user_id, order:'joined_at.asc'}})||[];
   return r.map(x=>Object.assign({}, x.study_groups||{}, {id:(x.study_groups&&x.study_groups.id)||x.group_id})); }
@@ -10002,7 +10002,7 @@ function scMyBuckets(){ const {D, ev}=scEvents(), m={};
   for(const x of ev){ if(x.d!==D) continue; const sl=scSlot(x.t); const b=m[sl]=m[sl]||{slot:sl, answer_count:0, time_ms:0}; b.answer_count++; b.time_ms+=x.ms; }
   return Object.values(m).sort((a,b)=>a.slot-b.slot); }
 function scDetFriend(m){ const L=[];
-  if(Date.now()>=scPokeOff){ const cool=(scPokeCool[m.user_id]||0)>Date.now(); L.push(`<div class="sc-pokerow"><button class="btn-ghost sc-poke" data-uid="${esc(m.user_id)}"${cool?' disabled':''}>${cool?'찔렀어요':'찌르기'}</button></div>`); }   // 찌르기(10-07 · 애드온 PR #7 머지)
+  if(Date.now()>=scPokeOff){ const cool=(scPokeCool[m.user_id]||0)>Date.now(); L.push(`<div class="sc-pokerow"><button class="btn-ghost sc-poke" data-uid="${esc(m.user_id)}"${cool||m.dnd?' disabled':''}>${m.dnd?'방해 금지 중':cool?'찔렀어요':'찌르기'}</button></div>`); }   // 찌르기(10-07 · 애드온 PR #7 머지)
   if(m.current_deck_name) L.push(`<div class="sc-line">지금 <b>${esc(m.current_deck_name)}</b></div>`);
   const tg=m.time_goal_minutes||0, cg=m.card_goal||0; if(tg||cg) L.push(`<div class="sc-line">목표 ${[tg?tg+'분':'', cg?cg.toLocaleString()+'장':''].filter(Boolean).join(' · ')}</div>`);
   L.push(`<div class="sc-h">오늘 시간대</div>`);
@@ -10209,7 +10209,7 @@ function scRenderDock(){ const box=$('railSc'); if(!box) return; const has=!!SC.
     const rate=(n&&sec>=60)?(Math.round(n/(sec/60)*10)/10).toLocaleString():'—';
     const v=(val,lab,dim)=>`<div class="rs-v${dim?' dim':''}"><b>${val}</b><span>${lab}</span></div>`;
     const L=[];
-    L.push(`<div class="rs-top"><span class="rs-dot" style="background:${live?'var(--c-green)':st==='offline'?'var(--c-sep)':'var(--c-acc)'}"></span><span class="rs-nm">${m.mine?`${esc(SC.nick||'나')}<small>나</small>`:esc(m.display_name||'친구')}</span><span class="rs-st${live?' live':''}">${SC_ST[st]}${isFinite(last)?` · ${scAgo(last)}`:''}</span></div>`);
+    L.push(`<div class="rs-top"><span class="rs-dot" style="background:${live?'var(--c-green)':st==='offline'?'var(--c-sep)':'var(--c-acc)'}"></span><span class="rs-nm">${m.mine?`${esc(SC.nick||'나')}<small>나</small>`:esc(m.display_name||'친구')}</span><span class="rs-st${live?' live':''}">${SC_ST[st]}${(m.mine?SC.dnd:m.dnd)?' · 방해 금지':''}${isFinite(last)?` · ${scAgo(last)}`:''}</span></div>`);
     L.push(`<div class="rs-g">${v(n==null?'—':`${n.toLocaleString()}<small>장</small>`,'오늘',!n)}${v(n==null?'—':`${hr.toLocaleString()}<small>장</small>`,'최근 1시간',!hr)}${v(sec==null?'—':scClock(sec),'공부 시간',!sec)}${v(rate,'분당 장수',rate==='—')}</div>`);
     const pc=scColor(m.user_id);   // 목표 막대·띠 = 그 사람 색
     if(cg&&n!=null) L.push(`<div class="rs-gl"><div class="rs-bar"><i style="width:${Math.min(100,n/cg*100).toFixed(1)}%;background:${pc}"></i></div><em>${n.toLocaleString()} / ${cg.toLocaleString()}장</em></div>`);
@@ -10229,6 +10229,7 @@ $('railSc').addEventListener('pointerup', e=>{ const p=e.target.closest('.rs-p[d
   if(d && d.uid===uid && now-d.t<350 && Math.hypot(e.clientX-d.x, e.clientY-d.y)<20){ scDbl=null; scRailPoke(p, uid); }
   else scDbl={uid, t:now, x:e.clientX, y:e.clientY}; });
 async function scRailPoke(p, uid){ const m=(SC.members||[]).find(x=>x.user_id===uid), nm=(m&&m.display_name)||'친구';
+  if(m&&m.dnd){ toast(`${nm}님은 방해 금지 중이에요`); return; }
   if(Date.now()<scPokeOff){ toast('아직 친구 서버에 없는 기능이에요'); return; }
   if((scPokeCool[uid]||0)>Date.now() || scPokeFly.has(uid)){ toast('같은 사람은 1분에 한 번 찌를 수 있어요'); return; }
   p.style.setProperty('--pk', scColor(uid)); p.classList.remove('rs-pk'); void p.offsetWidth; p.classList.add('rs-pk');   // 그 사람 색으로 한 번 반짝
@@ -10248,7 +10249,7 @@ function scPeople(where){
   const html=rows.map(m=>{ const st=m.mine?(myS==='stopped'?'online':myS):scMemberStatus(m);
     const n=m.mine?t.n:(fresh?(m.answer_count||0):null), sec=m.mine?t.sec:(fresh?(m.active_seconds||0):null);
     const cg=m.mine?(SC.goalCards||0):(m.card_goal||0), tg=m.mine?(SC.goalMin||0):(m.time_goal_minutes||0);
-    const stTxt=(!m.mine && st==='offline' && m.updated_at) ? `마지막 ${scHM(Date.parse(m.updated_at))}` : SC_ST[st];
+    const stTxt=((!m.mine && st==='offline' && m.updated_at) ? `마지막 ${scHM(Date.parse(m.updated_at))}` : SC_ST[st])+((m.mine?SC.dnd:(m.dnd&&st!=='offline'))?' · 방해 금지':'');
     const deckTxt=!m.mine && m.current_deck_name && st!=='offline' ? ` · ${esc(m.current_deck_name)}` : '';   // 친구가 지금 푸는 덱 — 줄에서 바로(애드온 10-04)
     const open=where==='study' && scOpen===m.user_id, tap=true;   // 내 줄도 누른다 — 목표를 그 자리에서(애드온 10-04 「내 시간·답변 수치를 눌러 목표」)
     return `<${tap?'button':'div'} class="sess2 sc-row${open?' open':''}" data-uid="${esc(m.user_id||'')}"${where==='study'?` aria-expanded="${open}"`:''}><span class="s2-dot" style="background:${st==='studying'?'var(--c-green)':st==='offline'?'transparent':'var(--c-acc)'}"></span>
@@ -10397,6 +10398,27 @@ async function scRemove(uid){ const g=SC.group; await scAuthed(tok=>scReq('POST'
   if(SC.members) SC.members=SC.members.filter(m=>m.user_id!==uid); }
 async function scModerate(uid, blocked){ const g=SC.group; await scAuthed(tok=>scReq('POST','/rest/v1/rpc/moderate_study_group_member',{token:tok, body:{target_group:g.id, target_user:uid, blocked}}));
   if(blocked && SC.members) SC.members=SC.members.filter(m=>m.user_id!==uid); await scLoadBans(); }
+/* 10분 1등 축포(10-08 · 애드온 0.1.7 confetti.py) — 10분 칸이 넘어가면 방금 끝난 칸에서 내가 1등(공동 포함 · 1장 이상)이면 한 번 터뜨린다.
+   혼자 푼 칸도 1등이다(애드온과 같게) · 방해 금지·축포 끔이면 안 한다 · 같은 칸은 하루 한 번 · 화면이 보일 때 30초 박자로 본다(넘긴 뒤 최대 30초 늦게).
+   동작 줄이기(prefers-reduced-motion)면 알림만 */
+let scCelSlot=null; const scCelDone=new Set();
+function scCelebrate(){ if(!SC.group || !SC.auth) return; const now=Date.now(), cur=scSlot(now);
+  if(scCelSlot==null || scCelSlot===cur){ scCelSlot=cur; return; } scCelSlot=cur;
+  if(SC.dnd || SC.confetti===false || cur===0) return;   // 0칸의 앞 칸은 어제다
+  const prev=cur-1, k=scDay(now)+':'+prev; if(scCelDone.has(k)) return;
+  const a=scLeaderData().slots[prev]; if(!a || !a.length) return;   // scLeaderData가 칸마다 많은 순으로 정렬해 둔다
+  const top=a[0].n, mine=a.find(x=>x.uid===SC.auth.user_id); if(!mine || mine.n!==top || top<=0) return;
+  scCelDone.add(k); scConfetti(); toast(`10분 ${a.filter(x=>x.n===top).length>1?'공동 1등':'1등'}이에요 · ${top.toLocaleString()}장`); }
+function scConfetti(){ try{ if(matchMedia('(prefers-reduced-motion: reduce)').matches) return; }catch(e){}
+  let cv=$('scConf'); if(!cv){ cv=document.createElement('canvas'); cv.id='scConf'; cv.style.cssText='position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9999'; document.body.appendChild(cv); }
+  const dpr=Math.min(2, window.devicePixelRatio||1), W=innerWidth, H=innerHeight; cv.width=W*dpr; cv.height=H*dpr; const g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0);
+  const C=['#34C759','#FF9500','#AF52DE','#FF2D55','#30B0C7'], P=[];   // 애드온과 같은 색 · 아래 가운데(높이 70%)에서 위로 60도 부채꼴
+  for(let i=0;i<46;i++){ const a=-Math.PI/2+(Math.random()-.5)*Math.PI/3, v=9+Math.random()*9; P.push({x:W/2, y:H*.7, vx:Math.cos(a)*v, vy:Math.sin(a)*v, s:5+Math.random()*5, r:Math.random()*6.28, vr:(Math.random()-.5)*.3, c:C[i%C.length]}); }
+  const t0=performance.now(); cancelAnimationFrame(scConfetti.raf);
+  const step=t=>{ const e=t-t0; g.clearRect(0,0,W,H); if(e>2200){ cv.remove(); return; } g.globalAlpha=e<1500?1:1-(e-1500)/700;
+    for(const q of P){ q.vy+=.38; q.vx*=.985; q.vy*=.985; q.x+=q.vx; q.y+=q.vy; q.r+=q.vr; g.save(); g.translate(q.x,q.y); g.rotate(q.r); g.fillStyle=q.c; g.fillRect(-q.s/2,-q.s*.3,q.s,q.s*.6); g.restore(); }
+    scConfetti.raf=requestAnimationFrame(step); };
+  scConfetti.raf=requestAnimationFrame(step); }
 /* 찌르기(10-07 · 애드온 PR #7 머지 · 20261006_member_pokes) — 같은 사람 1분에 한 번 · 한 시간 30번(서버가 막는다).
    받기 = fetch_my_pokes(안 본 것만 · 서버가 본 것으로 표시 — 한 계정 여러 기기면 먼저 받은 기기에만 뜬다).
    서버에 없으면(404 · PGRST202) 버튼을 숨기고 30분 뒤 다시 본다. */
@@ -10407,7 +10429,7 @@ async function scPokeFetch(){ if(!SC.auth || !SC.group || scPokeBusy || Date.now
   try{ const r=await scAuthed(tok=>scReq('POST','/rest/v1/rpc/fetch_my_pokes',{token:tok, body:{target_group:SC.group.id}}))||[];
     if(Array.isArray(r) && r.length){ const c={}; r.forEach(x=>{ if(x && x.from_user) c[x.from_user]=(c[x.from_user]||0)+1; });
       const names=await Promise.all(Object.keys(c).map(async u=>{ const m=(SC.members||[]).find(x=>x.user_id===u); const nm=(m&&m.display_name)||await scNick(u); return c[u]>1?`${nm}님(${c[u]}번)`:`${nm}님`; }));
-      if(names.length){ toast(`${names.join(', ')}이 콕 찔렀어요`); try{ if(navigator.vibrate) navigator.vibrate(80); }catch(e){} } } }
+      if(names.length && !SC.dnd){ toast(`${names.join(', ')}이 콕 찔렀어요`); try{ if(navigator.vibrate) navigator.vibrate(80); }catch(e){} } } }
   catch(e){ if(scPokeGone(e)){ scPokeOff=Date.now()+30*60000; } }
   finally{ scPokeBusy=false; } }
 /* ═══ 스터디 실시간(10-06 · 친구 애드온 4084c13 realtime.py와 같은 길) ═══
@@ -10439,7 +10461,7 @@ function scRtClose(){ clearTimeout(scRt.rt); clearInterval(scRt.hb); const ws=sc
 function scRtMeta(force){ const st=force||scStatus(), today=scDay(Date.now());
   const known=(curSess&&curSess.name) ? String(curSess.name) : (SC.lastDeck && SC.lastDeckDay===today ? SC.lastDeck : null);
   const td=scToday();   // 오늘 합계도 싣는다(10-06 「시간이 안 간다」 — 애드온은 실시간 중 DB를 5분마다만 써서 시간이 5분씩 멈춰 보였다 · 애드온은 모르는 칸이라 무시)
-  return {user_id:SC.auth.user_id, status:st, current_deck_name:(SC.shareDeck!==false && known) ? known.slice(0,300) : null, display_name:SC.nick||undefined, study_day:td.day, active_seconds:td.sec, answer_count:td.n}; }
+  return {user_id:SC.auth.user_id, status:st, current_deck_name:(SC.shareDeck!==false && known) ? known.slice(0,300) : null, display_name:SC.nick||undefined, study_day:td.day, active_seconds:td.sec, answer_count:td.n, dnd:!!SC.dnd}; }   // dnd = 방해 금지(애드온 0.1.7 · presence에만 · DB엔 없다)
 function scRtPresence(force){ if(!scRt.joined || !SC.auth) return; const meta=scRtMeta(force), k=JSON.stringify(meta); if(k===scRt.last) return; scRt.last=k;
   scRtSend({topic:scRt.topic, event:'presence', payload:{type:'presence', event:'track', payload:meta}});
   scRtSend({topic:scRt.topic, event:'broadcast', payload:{type:'broadcast', event:'member_state', payload:meta}}); }
@@ -10449,6 +10471,7 @@ function scRtTick(entry){ if(!scRt.joined || !SC.auth) return; const t=logTs(ent
   scRtPresence(); }
 function scRtLive(uid){ const d=scDay(Date.now()); if(scRt.day!==d){ scRt.day=d; scRt.live={}; } return scRt.live[uid]=scRt.live[uid]||{at:0, n:0, bk:{}}; }
 function scRtApply(uid){ const L=scRt.live[uid], m=(SC.members||[]).find(x=>x.user_id===uid); if(!L || !m) return false;
+  if(L.hasDnd) m.dnd=L.dnd;   // DB로 목록을 다시 받아도(85초) 실시간 값을 다시 얹는다
   if(L.at && L.at>(Date.parse(m.updated_at||'')||0)){ if(L.status) m.status=L.status; if(L.hasDeck) m.current_deck_name=L.deck; m.updated_at=new Date(L.at).toISOString(); }
   if(L.n>(m.answer_count||0)) m.answer_count=L.n;
   if((L.sec||0)>(m.active_seconds||0)) m.active_seconds=L.sec;
@@ -10460,7 +10483,7 @@ function scRtApply(uid){ const L=scRt.live[uid], m=(SC.members||[]).find(x=>x.us
 function scRtMerge(){ if(scRt.day!==scDay(Date.now())) return; for(const uid in scRt.live) scRtApply(uid); }
 function scRtPaint(){ clearTimeout(scRt.paint); scRt.paint=setTimeout(()=>{ try{ scRender(); }catch(e){} }, 400); }
 function scRtState(uid, meta){ if(!uid || !SC.auth || uid===SC.auth.user_id || !meta) return; const L=scRtLive(uid);
-  L.at=Date.now(); if(meta.status) L.status=meta.status; if('current_deck_name' in meta){ L.deck=meta.current_deck_name; L.hasDeck=true; }
+  L.at=Date.now(); if(meta.status) L.status=meta.status; if('current_deck_name' in meta){ L.deck=meta.current_deck_name; L.hasDeck=true; } if('dnd' in meta){ L.dnd=!!meta.dnd; L.hasDnd=true; }
   if((!meta.study_day || meta.study_day===scDay(Date.now())) && Number.isFinite(+meta.active_seconds)) L.sec=Math.max(L.sec||0, +meta.active_seconds);   // 합계가 실려 오면(카드앱끼리 · 애드온이 따라오면) 시간도 바로
   if((!meta.study_day || meta.study_day===scDay(Date.now())) && Number.isFinite(+meta.answer_count)) L.n=Math.max(L.n||0, +meta.answer_count);
   if(scRtApply(uid)) scRtPaint(); }
@@ -10534,7 +10557,7 @@ function scRenderSet(){ const b=$('scBox'); if(!b) return;
     b.innerHTML=`<button class="act-btn" id="scOpenStudy"><span>스터디 방에 들어가기</span><small>초대 코드 · 방 만들기 · 아이디 로그인</small></button>`;
     $('scOpenStudy').onclick=()=>{ $('ovlSettings').classList.remove('show'); go('scrStudy'); }; return; }
   const g=SC.group;
-  const key=['in',g&&g.id,g&&g.invite_code,SC.nick,SC.err,SC.shareDeck!==false,SC.goalMin,SC.goalCards,SC.kind,SC.username,scRec].join('|'); if(b.dataset.m===key) return; b.dataset.m=key;
+  const key=['in',g&&g.id,g&&g.invite_code,SC.nick,SC.err,SC.shareDeck!==false,!!SC.dnd,SC.confetti!==false,SC.goalMin,SC.goalCards,SC.kind,SC.username,scRec].join('|'); if(b.dataset.m===key) return; b.dataset.m=key;
   const out=(t,sm)=>`<button class="act-btn" id="scLogout" style="margin-top:8px"><span>${t}</span><small>${sm}</small></button>`;
   const acct = SC.kind==='user'
     ? `<div class="set-row"><span>아이디</span><span class="desc">${esc(SC.username||'')}</span></div><div class="sc-msg" style="margin-top:0">다른 기기에선 스터디 화면 › 아이디로 로그인 — 같은 사람으로 떠요</div>` + out('로그아웃','이 기기만')
@@ -10548,13 +10571,17 @@ function scRenderSet(){ const b=$('scBox'); if(!b) return;
       + scRow(`<input id="scName" type="text" maxlength="16" autocomplete="off" spellcheck="false" placeholder="영문·숫자 2~16자 · 비우면 기본 이름" value="${esc(SC.customName||'')}" style="flex:1 1 150px;min-width:0"><button class="btn-ghost" id="scNameSave" style="flex:0 0 auto">바꾸기</button>`)
       + `<div class="sc-msg">친구 안키·카드앱 모두 이 이름으로 떠요 · 비우고 바꾸면 기본 이름(XXX-XXX 꼴)으로</div></details>
     <div class="sc-goal"><span style="flex:1">하루 목표</span><input id="scGoalMin" type="number" inputmode="numeric" min="0" max="1440" placeholder="0" value="${SC.goalMin||''}"><span class="u">분</span><input id="scGoalCards" type="number" inputmode="numeric" min="0" max="10000" placeholder="0" value="${SC.goalCards||''}"><span class="u">장</span></div>
-    <div class="tgl-row" id="scShareRow"><span>푸는 세션 이름 보여 주기</span><div class="tgl${SC.shareDeck!==false?' on':''}" id="scShare" role="switch" aria-checked="${SC.shareDeck!==false}"></div></div>` : '')
+    <div class="tgl-row" id="scShareRow"><span>푸는 세션 이름 보여 주기</span><div class="tgl${SC.shareDeck!==false?' on':''}" id="scShare" role="switch" aria-checked="${SC.shareDeck!==false}"></div></div>
+    <div class="tgl-row" id="scDndRow"><span>방해 금지</span><div class="tgl${SC.dnd?' on':''}" role="switch" aria-checked="${!!SC.dnd}"></div></div>
+    <div class="tgl-row" id="scConfRow"><span>10분 1등 축포</span><div class="tgl${SC.confetti!==false?' on':''}" role="switch" aria-checked="${SC.confetti!==false}"></div></div>` : '')
     + acct + rec
     + `<div class="sc-msg" id="scMsg">${SC.err?esc(SC.err):''}</div>`
     + (g ? `<button class="act-btn" id="scOpenStudy" style="margin-top:8px"><span>스터디 화면 열기</span><small>${esc(g.name||'')} · 코드 ${esc(g.invite_code||'—')}</small></button>`
          : `<button class="act-btn" id="scOpenStudy" style="margin-top:8px"><span>스터디 방에 들어가기</span><small>초대 코드 · 방 만들기</small></button>`);
   if(g){ $('scGoalMin').onchange=()=>scGoalSet('goalMin', $('scGoalMin').value); $('scGoalCards').onchange=()=>scGoalSet('goalCards', $('scGoalCards').value);   // 바꾼 칸만(10-04 애드온 「관리창의 수정하지 않은 값이 덮어쓰지 않게」)
-    $('scShareRow').onclick=()=>{ SC.shareDeck=SC.shareDeck===false; scSave(); b.dataset.m=''; scRenderSet(); scSync({manual:true}); }; }
+    $('scShareRow').onclick=()=>{ SC.shareDeck=SC.shareDeck===false; scSave(); b.dataset.m=''; scRenderSet(); scSync({manual:true}); };
+    $('scDndRow').onclick=()=>{ SC.dnd=!SC.dnd; scSave(); b.dataset.m=''; scRenderSet(); scRender(); scRt.last=''; scRtPresence(); toast(SC.dnd?'방해 금지를 켰어요 — 찌르기 알림·축포가 안 와요':'방해 금지를 껐어요'); };
+    $('scConfRow').onclick=()=>{ SC.confetti=SC.confetti===false; scSave(); b.dataset.m=''; scRenderSet(); if(SC.confetti!==false) scConfetti(); }; }
   scBtn('scBind', async()=>{ await scAcct('bind', {username:$('scBId').value, password:$('scBPw').value}); return '아이디를 만들었어요 — 복구 코드를 적어 두세요'; });
   $('scLogout').onclick=scLogout;
   scBtn('scNameSave', async()=>{ const v=String($('scName').value||'').trim();
@@ -10564,7 +10591,7 @@ function scRenderSet(){ const b=$('scBox'); if(!b) return;
   const rd=$('scRecDone'); if(rd) rd.onclick=()=>{ scRec=null; b.dataset.m=''; scRenderSet(); };
   $('scOpenStudy').onclick=()=>{ $('ovlSettings').classList.remove('show'); go('scrStudy'); }; }
 /* 30초마다 올리고 받기(애드온과 같은 주기) · 앱을 내리면 「접속 중」으로 한 번 · 풀이 화면에서 손대면 「공부 중」 */
-setInterval(()=>{ if(SC.group && document.visibilityState==='visible'){ scSync(); scRtOpen(); scRtPresence(); scPokeFetch(); } else if(SC.group) scRenderHome(); if(!SC.group) scRtClose(); }, 30000);   // 실시간 연결·상태도 같은 박자(10-06)
+setInterval(()=>{ if(SC.group && document.visibilityState==='visible'){ scSync(); scRtOpen(); scRtPresence(); scPokeFetch(); scCelebrate(); } else if(SC.group) scRenderHome(); if(!SC.group) scRtClose(); }, 30000);   // 실시간 연결·상태도 같은 박자(10-06)
 ['pointerdown','keydown'].forEach(ev=>document.addEventListener(ev, ()=>{ scInputAt=Date.now(); }, true));
 document.addEventListener('visibilitychange', ()=>{ if(!SC.group) return;
   if(document.visibilityState==='hidden'){ scSync({keepalive:true, status:'stopped'}); try{ scRtPresence('stopped'); }catch(e){} scRtClose(); } else { scSync(); scRtOpen(); } });

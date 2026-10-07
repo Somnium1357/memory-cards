@@ -1308,6 +1308,20 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 #cScope .sc-first{flex:0 0 auto;font-size:15px;font-weight:600;line-height:18px;}   /* 과목명만 살짝 크게(동하 09-24) — 줄 높이 18 그대로라 카드 위치 무변 */
 #phaseLine{flex:0 1 auto;min-width:0;padding:0;min-height:0;font-size:13px;font-weight:400;color:var(--c-sec);text-align:right;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* 풀이 화면 스터디 배지(10-08 · 친구 speaking-matrix에서 · 동하 「깔끔해서 괜찮다」) — 방에 있을 때만 · 레일이 떠 있으면(아이패드 가로·PC) 숨김 */
+#scBadge{display:none;flex:0 1 auto;min-width:0;align-items:center;gap:5px;padding:3px 9px;border-radius:10px;background:var(--c-fill);font-size:12px;font-weight:600;line-height:18px;color:var(--c-sec);white-space:nowrap;overflow:hidden;cursor:pointer;-webkit-user-select:none;user-select:none;}
+#scBadge.on{display:inline-flex;}
+#scBadge .d{width:6px;height:6px;border-radius:3px;background:var(--c-green);flex:0 0 auto;}
+#scBadge b{color:var(--c-label);font-weight:700;}
+#scBadge .ld{min-width:0;overflow:hidden;text-overflow:ellipsis;}
+#scBadge .rs-strip{width:46px;height:7px;border-radius:2px;flex:0 0 auto;}
+#scBadge .rs-strip>rect:first-child{fill:var(--c-card);}   /* 띠 바탕 = 배지 바탕과 같으면 눈금만 떠 보인다(페이퍼) */
+@keyframes sbPk{from{background:color-mix(in srgb, var(--pk) 32%, var(--c-fill));}to{background:var(--c-fill);}}
+#scBadge.rs-pk{animation:sbPk .8s ease-out;}
+#cHead:has(#scBadge.on){flex-wrap:wrap;row-gap:8px;}   /* 폰 = 한 줄에 다 안 들면 배지만 아래 줄로(과목·이유가 같이 잘리던 것) */
+#cHead:has(#scBadge.on) #scBadge{order:3;}
+@media (min-width:601px){ #cHead:has(#scBadge.on) #scBadge{order:0;} }
+@media (min-width:1120px) and (orientation:landscape){ body.sc-rail #scBadge{display:none;} }
 #cardScroll{flex:1 1 auto;min-height:0;display:block;}   /* 🔴 block — flex면 #cSplit이 칸 높이로 줄어들어 긴 문면이 가림 면과 겹쳤다(09-24 아이폰 실측) */
 #cSplit{min-height:100%;display:flex;flex-direction:column;}
 #cUpper{flex:42 1 0;display:flex;flex-direction:column;justify-content:center;padding:12px 0;}
@@ -2033,6 +2047,7 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
 #lightRow{margin-top:8px;}
 #ovlSettings .tgl-row{min-height:44px;padding:0;}
 #ovlSettings .tgl-row+.tgl-row{box-shadow:inset 0 .5px 0 var(--c-sep);}
+#ovlSettings .tgl-row+details.sc-fold, #ovlSettings details.sc-fold>summary+.tgl-row{box-shadow:inset 0 .5px 0 var(--c-sep);}
 #ovlSettings .act-btn{width:100%;display:flex;justify-content:space-between;align-items:center;}
 
 /* 세션 줄 = 색 점 12 (아이콘 네모 대신 · 09-24) — 구분선은 글자 시작(20 + 12 + 14)부터 */
@@ -2208,7 +2223,7 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
         <!-- 🔴 디자인 이식 09-24: 카드 = 위아래 반반. 답면 내용은 **앞면에서도 미리 채워 visibility:hidden**으로 깔고 가림 면으로 덮는다 →
              앞면↔답면에서 질문·선·버튼이 1px도 안 움직인다(디자인_언어 §1-1 · §7.1). 가림은 visibility라 글자가 선택·낭독되지 않는다. -->
         <div id="card">
-          <div id="cHead"><div id="cScope"></div><div id="phaseLine"></div></div>
+          <div id="cHead"><div id="cScope"></div><span id="scBadge" role="button" aria-label="스터디 · 두 번 누르면 찌르기"></span><div id="phaseLine"></div></div>
           <div id="cardScroll"><div id="cSplit">
             <div id="cUpper">
               <div class="c-imgs front" id="cImgF"></div>
@@ -8693,6 +8708,7 @@ function showCard(){
   showDiag(c,false);
   renderImgs($('cImgF'), c, 'f'); renderImgs($('cImgB'), c, 'b');   // 앞면 그림은 바로 · 뒷면 그림은 #cBackWrap 안이라 공개 전엔 부모가 숨긴다
   phase = isNew(c) ? 'new' : 'review';   // 신규 묶음을 다 풀고 잔량으로 넘어가면 라벨도 따라간다
+  try{ scRenderBadge(); }catch(e){}
   $('phaseLine').textContent = whyNow(c);   // 이 카드가 왜 지금 나왔는지 (동하 2026-08-21)
   $('ohWhy').textContent = whyNow(c);       // 아이폰 = 한 손 막대 가운데(디자인 §7.1)
   fillBack(c);                              // 답면을 미리 깔아 둔다(가려진 채) — 공개해도 선·버튼이 안 움직인다
@@ -9910,7 +9926,7 @@ async function scSync(o){ o=o||{};
     if(e.status!==401 && !o.keepalive){ scFail++; scHold=Date.now()+[60,120,240,300][Math.min(scFail,4)-1]*1000; } scSave(); }
   finally{ scBusy=false; if(!o.keepalive) scRender(); } }
 /* 계정을 바꿔도 이 기기 것은 남긴다 — 설치 ID · 목표 · 세션 이름 공유 · 세션별 속도 기록 */
-const scKeep=()=>({goalMin:SC.goalMin, goalCards:SC.goalCards, dev:SC.dev, shareDeck:SC.shareDeck, dnd:SC.dnd, confetti:SC.confetti, dk:SC.dk, lastDeck:SC.lastDeck, lastDeckDay:SC.lastDeckDay});
+const scKeep=()=>({goalMin:SC.goalMin, goalCards:SC.goalCards, dev:SC.dev, shareDeck:SC.shareDeck, dnd:SC.dnd, confetti:SC.confetti, badge:SC.badge, dk:SC.dk, lastDeck:SC.lastDeck, lastDeckDay:SC.lastDeckDay});
 async function scGroups(tok){   // 애드온 list_groups — 내가 든 방들(가입 순)
   const r=await scReq('GET','/rest/v1/group_members',{token:tok, query:{select:'group_id,joined_at,study_groups(id,name,invite_code,owner_id,created_at,time_zone,day_start_hour)', user_id:'eq.'+SC.auth.user_id, order:'joined_at.asc'}})||[];
   return r.map(x=>Object.assign({}, x.study_groups||{}, {id:(x.study_groups&&x.study_groups.id)||x.group_id})); }
@@ -10086,7 +10102,7 @@ function scDetMine(){ const L=[], me=SC.auth&&SC.auth.user_id;
   L.push(`<div class="sc-line sc-hint">응답 시간 기준 · 이 기기에서 푼 것만 · 세션 이름으로 묶어요</div>`);
   return L.join(''); }
 const SC_CHEV='<svg class="sc-chev" viewBox="0 0 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 1l6 6 6-6"/></svg>';
-function scRender(){ scRenderHome(); scRenderStudy(); scRenderSet(); scRenderDock(); }
+function scRender(){ scRenderHome(); scRenderStudy(); scRenderSet(); scRenderDock(); scRenderBadge(); }
 /* ═══ 공개 사이트 화면(10-06 동하 「사이트 UI가 별로 · 카드앱에 통계랑 별도로 · 피드백+처리 내역도」) ═══
    방문 = data/site-stats.json(GitHub Actions 15분 · GoatCounter API — 동하 기기의 AdGuard가 goatcounter를 막아 앱이 직접 못 부른다)
    피드백 = data/site-feedback.json(루틴 4-d 뒤 site_feedback.py · 🔴 건수·상태만 — 원문은 「시트 열기」로 동하 구글 계정에서) */
@@ -10228,6 +10244,31 @@ $('railSc').addEventListener('pointerup', e=>{ const p=e.target.closest('.rs-p[d
   const uid=p.dataset.uid, now=Date.now(), d=scDbl;
   if(d && d.uid===uid && now-d.t<350 && Math.hypot(e.clientX-d.x, e.clientY-d.y)<20){ scDbl=null; scRailPoke(p, uid); }
   else scDbl={uid, t:now, x:e.clientX, y:e.clientY}; });
+/* 풀이 화면 배지 — 「● 3명 · 나 5장 · 1위 K7M 12장 · 1등 띠」. 혼자면 나 = 오늘 장수 · 같이면 나·1위 = 지금 10분 칸(친구 0565cf2 A·B안).
+   두 번 톡 = 찌르기(레일과 같은 규칙 · 10-07 「한 번 톡은 잘못 누른다」) — 접속 중이고 방해 금지 아닌 친구를 돌아가며(친구 1710c79) · 한 번 톡은 카드로 안 넘긴다 */
+function scRenderBadge(){ const b=$('scBadge'); if(!b) return;
+  if(!SC.group || !SC.auth || SC.badge===false){ if(b.classList.contains('on')){ b.classList.remove('on'); b.innerHTML=''; b.dataset.h=''; } return; }
+  const me=SC.auth.user_id, now=Date.now(), on=(SC.members||[]).filter(m=>m.user_id!==me && scMemberStatus(m)!=='offline'), n=on.length+1, L=scLeaderData();
+  let mid, ld='';
+  if(n===1){ mid=`나 <b>${scToday().n.toLocaleString()}</b>장`; ld='혼자 공부 중'; }
+  else { const a=L.slots[scSlot(now)]||[], mine=a.find(x=>x.uid===me); mid=`나 <b>${mine?mine.n:0}</b>장`;
+    if(a.length){ const top=a[0].n, t1=a.filter(x=>x.n===top); ld=t1.length>1?`공동 1위 ${top}장`:`1위 ${t1[0].uid===me?'나':esc(t1[0].name)} ${top}장`; } }
+  const strip=Object.keys(L.slots).length?scLeadStrip(L,'rs-strip'):'';
+  const h=`<span class="d"></span><span>${n}명</span><span>·</span><span>${mid}</span>${ld?`<span>·</span><span class="ld">${ld}</span>`:''}${strip}`;
+  if(b.dataset.h!==h){ b.dataset.h=h; b.innerHTML=h; } b.classList.add('on'); }
+async function scBadgePoke(){ const b=$('scBadge'), me=SC.auth&&SC.auth.user_id; if(!SC.group || !me) return;
+  if(Date.now()<scPokeOff){ toast('아직 친구 서버에 없는 기능이에요'); return; }
+  const fr=(SC.members||[]).filter(m=>m.user_id!==me && scMemberStatus(m)!=='offline'); if(!fr.length){ toast('접속 중인 친구가 없어요'); return; }
+  const ok=fr.filter(m=>!m.dnd); if(!ok.length){ toast('다들 방해 금지 중이에요'); return; }
+  const now=Date.now(), ready=ok.filter(m=>(scPokeCool[m.user_id]||0)<=now && !scPokeFly.has(m.user_id));
+  if(!ready.length){ const w=Math.min(...ok.map(m=>scPokeCool[m.user_id]||now)); toast(`모두 찔렀어요 — ${Math.max(1,Math.ceil((w-now)/1000))}초 뒤에 다시`); return; }
+  const m=ready[0], uid=m.user_id, nm=m.display_name||'친구';
+  b.style.setProperty('--pk', scColor(uid)); b.classList.remove('rs-pk'); void b.offsetWidth; b.classList.add('rs-pk');
+  scPokeFly.add(uid);
+  try{ await scPoke(uid); toast(`${nm}님을 콕 찔렀어요`); }
+  catch(er){ if(scPokeGone(er)){ scPokeOff=Date.now()+30*60000; toast('아직 친구 서버에 없는 기능이에요'); } else toast(scErrKo(er)); }
+  finally{ scPokeFly.delete(uid); } }
+let scBdT=0; $('scBadge').addEventListener('click', e=>{ e.stopPropagation(); const t=Date.now(); if(t-scBdT<350){ scBdT=0; scBadgePoke(); } else scBdT=t; });
 async function scRailPoke(p, uid){ const m=(SC.members||[]).find(x=>x.user_id===uid), nm=(m&&m.display_name)||'친구';
   if(m&&m.dnd){ toast(`${nm}님은 방해 금지 중이에요`); return; }
   if(Date.now()<scPokeOff){ toast('아직 친구 서버에 없는 기능이에요'); return; }
@@ -10494,7 +10535,9 @@ function scRtOn(m){ const ev=m.event, p=m.payload||{};
     if(e2==='review_tick' && uid && uid!==SC.auth.user_id){ const L=scRtLive(uid), m=(SC.members||[]).find(x=>x.user_id===uid), a=Math.max(0,Number(q.answers)||1), ms=Math.max(0,Number(q.time_ms)||0), s=Number(q.slot)||0;
       L.n=Math.max(L.n, (m&&m.answer_count)||0)+a; const v=L.bk[s]=L.bk[s]||{answer_count:0, time_ms:0};
       const mb=m&&(m.activity_buckets||[]).find(x=>x.slot===s); v.answer_count=Math.max(v.answer_count, (mb&&mb.answer_count)||0)+a; v.time_ms=Math.max(v.time_ms, (mb&&mb.time_ms)||0)+ms;
-      L.at=Date.now(); L.status=L.status||'studying'; if(scRtApply(uid)) scRtPaint(); }
+      L.at=Date.now(); L.status=L.status||'studying';
+      const bd=$('scBadge'); if(bd && bd.classList.contains('on')){ bd.style.setProperty('--pk', scColor(uid)); bd.classList.remove('rs-pk'); void bd.offsetWidth; bd.classList.add('rs-pk'); }
+      if(scRtApply(uid)) scRtPaint(); }
     else if(e2==='member_state') scRtState(uid, q);
     else if(e2==='room_ping' && uid && uid!==SC.auth.user_id){ scRt.last=''; scRtPresence(); }
     return; }
@@ -10557,7 +10600,7 @@ function scRenderSet(){ const b=$('scBox'); if(!b) return;
     b.innerHTML=`<button class="act-btn" id="scOpenStudy"><span>스터디 방에 들어가기</span><small>초대 코드 · 방 만들기 · 아이디 로그인</small></button>`;
     $('scOpenStudy').onclick=()=>{ $('ovlSettings').classList.remove('show'); go('scrStudy'); }; return; }
   const g=SC.group;
-  const key=['in',g&&g.id,g&&g.invite_code,SC.nick,SC.err,SC.shareDeck!==false,!!SC.dnd,SC.confetti!==false,SC.goalMin,SC.goalCards,SC.kind,SC.username,scRec].join('|'); if(b.dataset.m===key) return; b.dataset.m=key;
+  const key=['in',g&&g.id,g&&g.invite_code,SC.nick,SC.err,SC.shareDeck!==false,!!SC.dnd,SC.confetti!==false,SC.badge!==false,SC.goalMin,SC.goalCards,SC.kind,SC.username,scRec].join('|'); if(b.dataset.m===key) return; b.dataset.m=key;
   const out=(t,sm)=>`<button class="act-btn" id="scLogout" style="margin-top:8px"><span>${t}</span><small>${sm}</small></button>`;
   const acct = SC.kind==='user'
     ? `<div class="set-row"><span>아이디</span><span class="desc">${esc(SC.username||'')}</span></div><div class="sc-msg" style="margin-top:0">다른 기기에선 스터디 화면 › 아이디로 로그인 — 같은 사람으로 떠요</div>` + out('로그아웃','이 기기만')
@@ -10567,21 +10610,26 @@ function scRenderSet(){ const b=$('scBox'); if(!b) return;
   const rec=scRec ? `<div class="sc-rec"><div class="sc-h" style="margin-top:0">복구 코드 — 지금 한 번만 보여요</div><code id="scRecCode">${esc(scRec)}</code>`
       + `<div class="sc-msg">비밀번호를 잊으면 이 코드로만 되찾아요. 어딘가에 적어 두세요(쓰면 새 코드로 바뀌어요).</div>`
       + `<div style="display:flex;gap:8px;margin-top:8px"><button class="btn-ghost" id="scRecCopy">복사</button><button class="btn-ghost" id="scRecDone">적어 뒀어요</button></div></div>` : '';
+  const scMoreOpen=!!($('scMoreBox')&&$('scMoreBox').open);   // 세부 설정(10-08 · 설정이 길어져 드물게 바꾸는 셋을 접음) — 안에서 켜고 끄면 다시 그려도 펼친 채
   b.innerHTML=(g ? `<details class="sc-more sc-fold" id="scNameBox"><summary><span>방에 뜨는 내 이름</span><span class="sc-name-r"><span class="desc">${esc(SC.nick||'—')}</span>${SC_CHEV}</span></summary>`
       + scRow(`<input id="scName" type="text" maxlength="16" autocomplete="off" spellcheck="false" placeholder="영문·숫자 2~16자 · 비우면 기본 이름" value="${esc(SC.customName||'')}" style="flex:1 1 150px;min-width:0"><button class="btn-ghost" id="scNameSave" style="flex:0 0 auto">바꾸기</button>`)
       + `<div class="sc-msg">친구 안키·카드앱 모두 이 이름으로 떠요 · 비우고 바꾸면 기본 이름(XXX-XXX 꼴)으로</div></details>
     <div class="sc-goal"><span style="flex:1">하루 목표</span><input id="scGoalMin" type="number" inputmode="numeric" min="0" max="1440" placeholder="0" value="${SC.goalMin||''}"><span class="u">분</span><input id="scGoalCards" type="number" inputmode="numeric" min="0" max="10000" placeholder="0" value="${SC.goalCards||''}"><span class="u">장</span></div>
-    <div class="tgl-row" id="scShareRow"><span>푸는 세션 이름 보여 주기</span><div class="tgl${SC.shareDeck!==false?' on':''}" id="scShare" role="switch" aria-checked="${SC.shareDeck!==false}"></div></div>
     <div class="tgl-row" id="scDndRow"><span>방해 금지</span><div class="tgl${SC.dnd?' on':''}" role="switch" aria-checked="${!!SC.dnd}"></div></div>
-    <div class="tgl-row" id="scConfRow"><span>10분 1등 축포</span><div class="tgl${SC.confetti!==false?' on':''}" role="switch" aria-checked="${SC.confetti!==false}"></div></div>` : '')
+    <details class="sc-more sc-fold" id="scMoreBox"${scMoreOpen?' open':''}><summary><span>세부 설정</span>${SC_CHEV}</summary>
+    <div class="tgl-row" id="scShareRow"><span>푸는 세션 이름 보여 주기</span><div class="tgl${SC.shareDeck!==false?' on':''}" id="scShare" role="switch" aria-checked="${SC.shareDeck!==false}"></div></div>
+    <div class="tgl-row" id="scBadgeRow"><span>풀이 화면 배지</span><div class="tgl${SC.badge!==false?' on':''}" role="switch" aria-checked="${SC.badge!==false}"></div></div>
+    <div class="tgl-row" id="scConfRow"><span>10분 1등 축포</span><div class="tgl${SC.confetti!==false?' on':''}" role="switch" aria-checked="${SC.confetti!==false}"></div></div></details>` : '')
     + acct + rec
     + `<div class="sc-msg" id="scMsg">${SC.err?esc(SC.err):''}</div>`
     + (g ? `<button class="act-btn" id="scOpenStudy" style="margin-top:8px"><span>스터디 화면 열기</span><small>${esc(g.name||'')} · 코드 ${esc(g.invite_code||'—')}</small></button>`
          : `<button class="act-btn" id="scOpenStudy" style="margin-top:8px"><span>스터디 방에 들어가기</span><small>초대 코드 · 방 만들기</small></button>`);
   if(g){ $('scGoalMin').onchange=()=>scGoalSet('goalMin', $('scGoalMin').value); $('scGoalCards').onchange=()=>scGoalSet('goalCards', $('scGoalCards').value);   // 바꾼 칸만(10-04 애드온 「관리창의 수정하지 않은 값이 덮어쓰지 않게」)
-    $('scShareRow').onclick=()=>{ SC.shareDeck=SC.shareDeck===false; scSave(); b.dataset.m=''; scRenderSet(); scSync({manual:true}); };
-    $('scDndRow').onclick=()=>{ SC.dnd=!SC.dnd; scSave(); b.dataset.m=''; scRenderSet(); scRender(); scRt.last=''; scRtPresence(); toast(SC.dnd?'방해 금지를 켰어요 — 찌르기 알림·축포가 안 와요':'방해 금지를 껐어요'); };
-    $('scConfRow').onclick=()=>{ SC.confetti=SC.confetti===false; scSave(); b.dataset.m=''; scRenderSet(); if(SC.confetti!==false) scConfetti(); }; }
+    /* 🔴 줄이 아니라 스위치에 건다 — 줄 글자를 누르면 공통 처리(「토글 줄 어디를 눌러도」)가 스위치를 한 번 더 눌러 두 번 바뀌었다(10-08) */
+    $('scShareRow').querySelector('.tgl').onclick=()=>{ SC.shareDeck=SC.shareDeck===false; scSave(); b.dataset.m=''; scRenderSet(); scSync({manual:true}); };
+    $('scDndRow').querySelector('.tgl').onclick=()=>{ SC.dnd=!SC.dnd; scSave(); b.dataset.m=''; scRenderSet(); scRender(); scRt.last=''; scRtPresence(); toast(SC.dnd?'방해 금지를 켰어요 — 찌르기 알림·축포가 안 와요':'방해 금지를 껐어요'); };
+    $('scBadgeRow').querySelector('.tgl').onclick=()=>{ SC.badge=SC.badge===false; scSave(); b.dataset.m=''; scRenderSet(); scRenderBadge(); };
+    $('scConfRow').querySelector('.tgl').onclick=()=>{ SC.confetti=SC.confetti===false; scSave(); b.dataset.m=''; scRenderSet(); if(SC.confetti!==false) scConfetti(); }; }
   scBtn('scBind', async()=>{ await scAcct('bind', {username:$('scBId').value, password:$('scBPw').value}); return '아이디를 만들었어요 — 복구 코드를 적어 두세요'; });
   $('scLogout').onclick=scLogout;
   scBtn('scNameSave', async()=>{ const v=String($('scName').value||'').trim();

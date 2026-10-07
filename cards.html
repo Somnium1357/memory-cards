@@ -5080,14 +5080,44 @@ const isCurric=isFocus;                    // 옛 이름(09-14) — 호출처 �
 function curricRet(){ return fsrsCfg.cret||CRET_DEF; }
 /* 🔴 `next`를 부르는 자리는 전부 이 문을 지난다(rate · replayLog · 간격 미리보기 · 시뮬) — 한 곳이라도 `engine`을 직접 쓰면
    실시간과 재계산이 갈려 앱을 켤 때마다 due가 바뀐다(등가성). */
-function engFor(id){ return isCurric(BYID[id]) ? engineC : engine; }
-function buildEngine(){
-  const mk=ret=>{ const p={
+/* 🔴 **목표율은 소급하지 않는다**(10-07 메타 발주 · 동하 「1은 발주」 — 0.86 → 0.88 한 칸에 그날 due +2,000장이었다).
+   목표율(ret)·집중 암기 목표율(cret)을 **적용 시각이 붙은 이력**(`retHist`·`cretHist` = [{at, ret}])으로 두고,
+   채점 한 건은 **그 채점 시각에 유효했던 목표율**로 간격을 뽑는다(rate·replayLog 같은 문 = engFor(id, t)).
+   → 바꿔도 이미 잡힌 due는 그대로 · 카드가 돌아와 채점될 때부터 새 간격(안키 기본 동작 · 한 사이클 뒤 수렴).
+   ▸ 이력 이전(at < RET_HIST_FROM)에 정한 값은 옛 규칙(소급)이었으므로 **「처음부터 유효」인 바탕 한 칸**(at 0 · by = 정한 시각)으로 접는다 —
+     그래서 배포 순간 due가 1장도 안 움직인다. 바탕끼리는 by가 큰 쪽이 이긴다(낡은 캐시 값이 섞여도 같은 결과).
+   ▸ 병합 = 합집합(기기 둘이 같은 이력을 읽는다 · 로컬 설정 금지). ret/retAt은 옛 기기·도구 호환용으로 「지금 값」을 그대로 쓴다.
+   ▸ 개인 파라미터(w)·집중 암기 대상(focus)·시험날 클램프(xret)는 그대로 소급이다(적용 버튼·대상 변경 = 사람이 보고 누르는 일). */
+const RET_HIST_FROM=Date.parse('2026-10-07T10:00:00+09:00');   // 배포 직전 — 동하가 0.86을 다시 정한 시각(09:49)보다 뒤
+function retHistAdd(h, ret, at){       // 한 칸 넣기 — 바뀌었으면 true
+  if(!(ret>0 && ret<1)) return false; at=+at||0;
+  if(at<RET_HIST_FROM){ const b=h.find(x=>x.at===0);
+    if(!b){ h.unshift({at:0, ret, by:at}); return true; }
+    if(at>(b.by||0) && (b.ret!==ret || b.by!==at)){ b.ret=ret; b.by=at; return true; } return false; }
+  const x=h.find(x=>x.at===at); if(x){ if(x.ret===ret) return false; x.ret=ret; return true; }
+  h.push({at, ret}); h.sort((a,b)=>a.at-b.at); return true; }
+function retHistMerge(h, src){ let ch=false; for(const x of (Array.isArray(src)?src:[])){ if(!x) continue;
+  ch = (x.at===0 ? retHistAdd(h, +x.ret, +x.by||0) : retHistAdd(h, +x.ret, +x.at)) || ch; } return ch; }
+function retOn(h, t, def){ if(!h || !h.length) return def; let r=h[0].ret; for(const x of h){ if(x.at<=t) r=x.ret; else break; } return r; }
+/* 지금 값(ret/retAt)과 이력 맞추기 — 지금 값을 이력에 넣고, 이력 끝이 더 새것이면 지금 값을 끝으로 */
+function retHistFix(){
+  fsrsCfg.retHist=fsrsCfg.retHist||[]; fsrsCfg.cretHist=fsrsCfg.cretHist||[];
+  if(fsrsCfg.retAt) retHistAdd(fsrsCfg.retHist, fsrsCfg.ret, fsrsCfg.retAt);
+  if(fsrsCfg.cretAt) retHistAdd(fsrsCfg.cretHist, curricRet(), fsrsCfg.cretAt);
+  const a=fsrsCfg.retHist[fsrsCfg.retHist.length-1]; if(a && a.at>(fsrsCfg.retAt||0)){ fsrsCfg.ret=a.ret; fsrsCfg.retAt=a.at; }
+  const c=fsrsCfg.cretHist[fsrsCfg.cretHist.length-1]; if(c && c.at>(fsrsCfg.cretAt||0)){ fsrsCfg.cret=c.ret; fsrsCfg.cretAt=c.at; } }
+let _engs=new Map();
+function engOf(ret){ let e=_engs.get(ret); if(!e){ const p={
     request_retention: ret,
     enable_fuzz: true,    // 버스트 투입 시 due 뭉침 방지 (동하 승인 2026-08-19)
     enable_short_term: false,   // 당일 재학습 단계를 쓰지 않는다 (당일 재출 없음 — 2026-08-21)
-  }; if(Array.isArray(fsrsCfg.w)&&fsrsCfg.w.length) p.w=fsrsCfg.w; return FSRS.fsrs(FSRS.generatorParameters(p)); };
-  engine = mk(fsrsCfg.ret); engineC = mk(curricRet());
+  }; if(Array.isArray(fsrsCfg.w)&&fsrsCfg.w.length) p.w=fsrsCfg.w; e=FSRS.fsrs(FSRS.generatorParameters(p)); _engs.set(ret, e); } return e; }
+/* t = 채점 시각(ms). 🔴 rate·replayLog는 반드시 t를 넘긴다 — 빼면 「지금 목표율」로 뽑혀 소급이 되살아난다 */
+function engFor(id, t){ const cur=isCurric(BYID[id]); if(t===undefined) return cur?engineC:engine;
+  return engOf(cur ? retOn(fsrsCfg.cretHist, t, curricRet()) : retOn(fsrsCfg.retHist, t, fsrsCfg.ret)); }
+function buildEngine(){
+  retHistFix(); _engs=new Map();       // w가 바뀌면 엔진을 새로 — 목표율별 캐시도 버린다
+  engine = engOf(fsrsCfg.ret); engineC = engOf(curricRet());
 }
 buildEngine();
 /* ── 개인 맞춤 파라미터 파일 (루틴 소유 · 앱은 **읽기만**) ────────────────────
@@ -5707,8 +5737,8 @@ function applyFiles(marksFile, fbFile){   // 파일 두 벌 → 메모리 state.
 function sessFile(){ return {v:1, sessions:[...sessions, ...sessTomb], hoedok:state.hoedok||{}, read:state.read||{},
   fc:state.fc||{},                        // 주간 예측 스냅숏 — 「지난주 예측 vs 실제」의 밑천(메타가 읽는다)
   cap:intake.cap, capAt:intake.capAt||0,
-  ret:fsrsCfg.ret, retAt:fsrsCfg.retAt||0,
-  cret:fsrsCfg.cret, cretAt:fsrsCfg.cretAt||0,      // 집중 암기 목표율(09-14 교육과정 → 09-17 집중 암기) — 같은 규칙
+  ret:fsrsCfg.ret, retAt:fsrsCfg.retAt||0, retHist:fsrsCfg.retHist||[],     // 목표율 이력(10-07 비소급) — 병합 = 합집합
+  cret:fsrsCfg.cret, cretAt:fsrsCfg.cretAt||0, cretHist:fsrsCfg.cretHist||[],      // 집중 암기 목표율(09-14 교육과정 → 09-17 집중 암기) — 같은 규칙
   focus:fsrsCfg.focus||null, focusAt:fsrsCfg.focusAt||0,   // 집중 암기 대상 {units,mids} — 더 새것이 이긴다 · null = 기본(2022 개정 교육과정)
   xret:fsrsCfg.xret, xretAt:fsrsCfg.xretAt||0,      // 시험날 목표율 — ret과 같은 「더 새것이 이긴다」 규칙
   fw:fsrsCfg.w||null, fwAt:fsrsCfg.wAt||'',
@@ -5724,7 +5754,7 @@ function applyLogEntry(sx, e){        // rate()와 같은 규칙으로 한 건 �
   const ts=logTs(e), num=e[2], day=dayKey(new Date(ts));
   if(sx.d!==day){
     const fc = sx.fsrs?fsrsRevive(sx.fsrs):FSRS.createEmptyCard(new Date(ts));
-    const r=engFor(e[0]).next(fc, new Date(ts), RATING[num]);   // 갈래별 목표율(교육과정=cret)
+    const r=engFor(e[0], ts).next(fc, new Date(ts), RATING[num]);   // 갈래별 · 그 채점 시각의 목표율(10-07 비소급)
     const nc=r.card;
     nc.due=clampDue(nc.due, e[0], nc);       // 시험날 목표율 클램프
     sx.fsrs=fsrsSerialize(nc); sx.d=day;
@@ -6150,6 +6180,9 @@ function mergeSessInto(remote){
     fsrsCfg.ret=remote.ret; fsrsCfg.retAt=remote.retAt; buildEngine(); mergedSched=true; }
   if(remote && remote.cret!==undefined && (remote.cretAt||0) > (fsrsCfg.cretAt||0)){
     fsrsCfg.cret=remote.cret; fsrsCfg.cretAt=remote.cretAt; buildEngine(); mergedSched=true; }
+  if(remote){ fsrsCfg.retHist=fsrsCfg.retHist||[]; fsrsCfg.cretHist=fsrsCfg.cretHist||[];   // 목표율 이력 — 합집합(10-07) · 칸이 늘면 재계산
+    const ch=retHistMerge(fsrsCfg.retHist, remote.retHist) | retHistMerge(fsrsCfg.cretHist, remote.cretHist);
+    if(ch){ buildEngine(); mergedSched=true; } }
   if(remote && remote.focusAt!==undefined && (remote.focusAt||0) > (fsrsCfg.focusAt||0)){   // 집중 암기 대상 — 같은 규칙 · 대상이 바뀌면 due가 움직인다
     fsrsCfg.focus=remote.focus||null; fsrsCfg.focusAt=remote.focusAt; _focusSel=null; mergedSched=true; }
   /* 시험날 목표율도 같은 규칙 — 바뀌면 **due가 움직이므로** 재계산 플래그를 세운다(F1-5와 같은 자리) */
@@ -7106,6 +7139,8 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
       if(sf.cap!==undefined){ intake.cap=sf.cap; intake.capAt=sf.capAt||0; }
       if(sf.ret!==undefined && (sf.retAt||0) > (fsrsCfg.retAt||0)){ fsrsCfg.ret=sf.ret; fsrsCfg.retAt=sf.retAt; buildEngine(); }
       if(sf.cret!==undefined && (sf.cretAt||0) > (fsrsCfg.cretAt||0)){ fsrsCfg.cret=sf.cret; fsrsCfg.cretAt=sf.cretAt; buildEngine(); }
+      fsrsCfg.retHist=fsrsCfg.retHist||[]; fsrsCfg.cretHist=fsrsCfg.cretHist||[];
+      if(retHistMerge(fsrsCfg.retHist, sf.retHist) | retHistMerge(fsrsCfg.cretHist, sf.cretHist)) buildEngine();   // 목표율 이력(10-07)
       if(sf.focusAt!==undefined && (sf.focusAt||0) > (fsrsCfg.focusAt||0)){ fsrsCfg.focus=sf.focus||null; fsrsCfg.focusAt=sf.focusAt; _focusSel=null; }
       if(sf.xret!==undefined && (sf.xretAt||0) > (fsrsCfg.xretAt||0)){ fsrsCfg.xret=sf.xret; fsrsCfg.xretAt=sf.xretAt; }
       if(sf.fwAt!==undefined && (sf.fwAt||'') > (fsrsCfg.wAt||'')){ fsrsCfg.w=sf.fw||null; fsrsCfg.wAt=sf.fwAt||''; buildEngine(); }
@@ -8845,7 +8880,7 @@ function intervalsPreview(c){ // 채점 버튼 위 다음 간격 미리보기
   for(const [num,lab] of [[1,'giAgain'],[2,'giHard'],[3,'giGood'],[4,'giEasy']]){
     if(!firstToday){ $(lab).textContent='기록만'; continue; }   // 당일 재출이 없어져 사실상 안 뜨는 경로
     try{
-      const r=engFor(c.id).next(fc, now, RATING[num]);
+      const r=engFor(c.id, +now).next(fc, now, RATING[num]);
       let due=clampDue(r.card.due, c.id, r.card);
       const days=Math.max(0,Math.round((due-now)/86400000));
       $(lab).textContent = days<1?'<1일':(days<30?days+'일':(days/30.4).toFixed(1)+'개월');
@@ -8879,7 +8914,7 @@ function rate(num){
   if(firstToday && !reN && curSess){ pgBump(curSess, 1); undoSnap.pg=curSess.id; }   // 진행 막대(09-24) — 되돌리면 doUndo가 -1
   if(firstToday && !reN){                  // 그날 첫 채점만 FSRS 반영 (재출은 절대 아니다)
     const fc = s.fsrs?fsrsRevive(s.fsrs):FSRS.createEmptyCard(now);
-    const r=engFor(c.id).next(fc, now, RATING[num]);   // 갈래별 목표율 — replayLog와 같은 문
+    const r=engFor(c.id, +now).next(fc, now, RATING[num]);   // 갈래별 목표율 — replayLog와 같은 문(채점 시각)
     const nc=r.card;
     nc.due=clampDue(nc.due, c.id, nc);      // 시험날 목표율 클램프
     s.fsrs=fsrsSerialize(nc); s.d=tk;
@@ -11235,7 +11270,8 @@ $('btnSettings').onclick=()=>{
   $('btnSettings').classList.toggle('on', pg); if(pg) sd.classList.add('set-on');
   try{ scRenderSet(); }catch(e){}   // 스터디 칸은 열 때 한 번 더 그린다(계정 상태가 바뀌었을 수 있다)
   $('ovlSettings').classList.add('show'); };
-/* 복습 강도(목표 기억률) — 바꾸면 전 카드 due가 한 번에 옮겨진다.
+/* 복습 강도(목표 기억률) — 🔴 10-07부터 **비소급**: 바꿔도 이미 잡힌 due는 그대로, 다음 채점부터 새 간격(engFor 위 주석 · retHist).
+   아래는 옛(소급) 시절 설명 — 「바꾸면 전 카드 due가 한 번에 옮겨진다」는 이제 개인 파라미터(w)에만 해당한다.
    🔴 **로그·S·D는 안 건드린다.** FSRS는 같은 S에서 간격 배수만 다시 뽑으므로 `replayLog()`로
    전량 재계산하면 그대로 반영된다(인수인계 §3의 「로그가 유일한 정본」과 어긋나지 않는다).
    ⚠ 낮추면 due가 일제히 뒤로 밀려 「갑자기 한가해진」 착시가 나므로 얼마나 달라졌는지 알려 준다. */
@@ -11334,13 +11370,13 @@ function setRetention(v){
   const before=dueTodayCount();
   fsrsCfg.ret=v; fsrsCfg.retAt=Date.now();
   buildEngine();
-  replayLog();                   // 전량 재계산 — 로그가 정본이라 여기서 due가 다시 뽑힌다
+  replayLog();                   // 전량 재계산 — 10-07부터 비소급이라 이미 잡힌 due는 그대로 나온다(이력 끝 칸 = 지금부터)
   restReset();                   // due가 통째로 움직였으니 실효 due 캐시·백로그 계획을 버린다
   cacheState(); markDirty('sess');
   const q=resyncQueues();                 // 🔴 오늘 목록까지 맞춘다 (동하 실기 피드백)
   renderRetUI(); renderHome();
   const after=dueTodayCount();
-  toast(`${Math.round(v*100)}% — 오늘 풀 것 ${before} → ${after}장`
+  toast(`${Math.round(v*100)}% — 다음 채점부터 적용돼요`+(after!==before?` · 오늘 풀 것 ${before} → ${after}장`:' · 이미 잡힌 복습일은 그대로예요')
     + (q.add||q.del ? ` · 오늘 목록 ${q.add?`+${q.add}`:''}${q.add&&q.del?' ':''}${q.del?`−${q.del}`:''}` : ''));
 }
 function setCurricRet(v){   // 교육과정 갈래 목표율 — setRetention과 같은 삼종 세트(재계산 → 캐시 버림 → 오늘 큐)
@@ -11353,7 +11389,7 @@ function setCurricRet(v){   // 교육과정 갈래 목표율 — setRetention과
   const q=resyncQueues(); TRAJ=null; TRAJ_KEY='';
   renderRetUI(); renderHome();
   const after=dueTodayCount();
-  toast(`교육과정 ${Math.round(v*100)}% — 오늘 풀 것 ${before} → ${after}장`
+  toast(`집중 암기 ${Math.round(v*100)}% — 다음 채점부터 적용돼요`+(after!==before?` · 오늘 풀 것 ${before} → ${after}장`:' · 이미 잡힌 복습일은 그대로예요')
     + (q.add||q.del ? ` · 오늘 목록 ${q.add?`+${q.add}`:''}${q.add&&q.del?' ':''}${q.del?`−${q.del}`:''}` : ''));
 }
 /* 끌 때마다 재계산하면 무겁다(전량 replayLog) — 숫자만 따라가고 **손을 뗄 때** 한 번 적용한다 */
@@ -11975,7 +12011,7 @@ let _fcRange='all';   // 기억 곡선 기간(1주·1달·1년·전체) — 기�
 function forgetChart(c){
   let F; try{ F=forgetSeries(c); }catch(e){ return ''; }
   if(!F) return '';
-  const eng=engFor(c.id), DAY=86400000, now=Date.now(), P=F.pts;
+  const eng=engFor(c.id, Date.now()), DAY=86400000, now=Date.now(), P=F.pts;
   let ret=0.9; try{ ret=eng.parameters.request_retention||eng.param.request_retention||ret; }catch(e){}
   const R=(a,t)=>{ try{ return eng.forgetting_curve(Math.max(0,(t-a.t)/DAY), a.S); }catch(e){ return 1; } };
   /* 창: 끝 = 오늘·다음 복습 중 늦은 날 + 여유 · 시작 = 기간(전체면 첫 복습) */

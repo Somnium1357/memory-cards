@@ -11338,7 +11338,19 @@ function basisKey(){ return [fsrsCfg.ret, curricRet(), fsrsCfg.focusAt||0, examR
 function basisCheck(){ const b=basisKey(), tk=todayKey();
   if(logIncomplete) return;            // 🔴 지난 주 로그를 못 받은 부팅 — 도장은 낡은 채로 둔다(다음 부팅이 맞춘다 · 리뷰 09-25 L1-3)
   if(sessions.some(sx=>!isFixed(sx) && sx.day===tk && sx.basis && sx.basis!==b)) resyncQueues();
-  for(const sx of sessions){ if(!isFixed(sx) && sx.day===tk && !sx.basis) sx.basis=b; } }   // 도장 없는 옛 세션은 조용히 찍기만
+  for(const sx of sessions){ if(!isFixed(sx) && sx.day===tk && !sx.basis) sx.basis=b; }   // 도장 없는 옛 세션은 조용히 찍기만
+  pruneStaleQueues(); }
+/* 🔴 낡은 사본이 되살린 「오늘 볼 이유 없는 카드」 걷기(10-07 버그 조사) — 병합은 「합집합 − 툼스톤」이라, 앱이 스스로 뺀 카드(resyncQueues 등 · 툼스톤 없음)는
+   오래 닫혀 있던 기기의 사본이 들어오면 그대로 되살아난다. 10-07: 10:45 옛 버전 기기가 소급 0.88로 담은 2,199장 목록을 품고 있다가 23:44에 열리며
+   일일 복습에 1,847장(복습일 10-08~10-19)을 되살렸다(툼스톤 상한 800이라 표시로는 못 막는다). → 자동 세션의 오늘 큐는 resyncQueues와 같은 기준
+   (오늘 푼 것 · 묻음 · 신규 · due)만 남긴다. 추가는 안 한다(채우기는 refill·resync 몫). 지난 로그를 못 받은 부팅에선 안 한다(basisCheck 가드). */
+function pruneStaleQueues(){ const tk=todayKey(); let n=0;
+  for(const sx of sessions){ if(isFixed(sx) || sx.day!==tk || !Array.isArray(sx.q)) continue;
+    const before=sx.q.length;
+    sx.q=sx.q.filter(id=>{ const c=BYID[id]; if(!c) return false; return settledToday(c)||buried(c)||isNew(c)||isDue(c); });
+    if(sx.q.length!==before){ n+=before-sx.q.length; if(curSess&&curSess.id===sx.id){ requeueLive(sx); counts(); } } }
+  if(n){ console.info('[queue] 오늘 볼 이유 없는 카드 '+n+'장 걷음(낡은 사본)'); saveSessionsSoon(); }
+  return n; }
 /* 오늘 사람이 뺀 카드(「빼기」·「큐 비우기」 qDel 툼스톤) — 다시 채우는 두 자리(refillSess·resyncQueues)가 같이 본다(리뷰 09-25 L23-4) */
 function delTodayOf(sx, id){ const t=sx.qDel&&sx.qDel[id]; return !!t && dayKey(new Date(t))===todayKey(); }
 function resyncQueues(){

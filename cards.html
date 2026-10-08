@@ -1429,6 +1429,8 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 #flagTypes{gap:6px;padding:2px 12px 6px;}
 .ft-chip{min-height:34px;padding:0 12px;border:0;border-radius:17px;background:var(--c-fill);color:var(--c-label);font-size:13px;font-weight:400;}
 .ft-chip.on{background:var(--c-acc-tint);color:var(--c-acc);font-weight:600;border:0;}
+.st-fbf{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;}   /* 공개 사이트 피드백 칩 필터(10-08) */
+.st-more{display:block;width:100%;min-height:44px;border:0;background:none;color:var(--c-acc);font:inherit;font-size:15px;cursor:pointer;}
 #flagMemoRow,#flagMemoRow.on{display:block;padding:0;margin:2px 12px 6px;}
 #flagMemo{min-height:36px;border-radius:10px;background:var(--c-fill);border:0;padding:0 12px;font-size:16px;color:var(--c-label);}
 .rail-sep{height:1px;transform:scaleY(.5);background:var(--c-sep);margin:8px 12px;}
@@ -1619,7 +1621,8 @@ button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inher
 .st-fbn{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;}
 .st-chip{display:inline-block;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:10px;background:var(--c-fill);color:var(--c-sec);}
 .st-chip.fixed{background:color-mix(in srgb,var(--c-green) 16%,transparent);color:var(--c-green);}
-.st-chip.held{background:color-mix(in srgb,var(--c-orange) 16%,transparent);color:var(--c-orange);}
+.st-chip.held{background:var(--c-fill);color:var(--c-sec);}   /* 보류 = 닫혔지만 안 고침(10-08 · 이슈식) */
+.st-chip.review{background:color-mix(in srgb,var(--c-orange) 16%,transparent);color:var(--c-orange);}
 .st-chip.wait{background:color-mix(in srgb,var(--c-acc) 14%,transparent);color:var(--c-acc);}
 .st-fb{display:flex;align-items:center;gap:10px;min-height:44px;font-size:15px;line-height:20px;}
 .st-fb+.st-fb{box-shadow:inset 0 .5px 0 var(--c-sep);}
@@ -10138,7 +10141,8 @@ async function siteRefresh(){ if(SITE.ref) return;
   } catch(e){ SITE.msg='연결이 안 됐어요'; }
   finally{ SITE.ref=false; siteRender(); } }
 function sitePageName(p){ p=decodeURIComponent(String(p||'')).replace(/^\/review-notes/,''); if(p===''||p==='/'||/\/index\.html$/.test(p)) return '첫 화면';
-  if(/report\.html$/.test(p)) return '피드백 페이지'; const m=p.match(/\d+\.(.+?)\.html$/); return m?m[1]:p; }
+  if(/report\.html$/.test(p)) return '피드백 페이지'; if(/quiz\.html$/.test(p)) return '쪽지시험'; if(/status\.html$/.test(p)) return '처리 현황';
+  const m=p.match(/\d+\.(.+?)\.html$/); return m?m[1]:p; }
 const SITE_KO={'Phones':'휴대폰','Tablets':'태블릿','Computer monitors':'컴퓨터','Larger monitors':'큰 모니터','(unknown)':'알 수 없음','Unknown':'알 수 없음',
   '(직접)':'직접 · 메신저 링크',phone:'휴대폰',largephone:'큰 휴대폰',tablet:'태블릿',desktop:'컴퓨터',desktophd:'큰 모니터',unknown:'알 수 없음'};   // GoatCounter 화면 크기 = 이름 없이 종류 코드로 온다
 function siteTs(t){ const m=String(t||'').match(/(\d+)\.\s*(\d+)\.\s*(\d+)\s*(오전|오후)\s*(\d+):(\d+)/); if(!m) return String(t||'');   // 시트 타임스탬프 「2026. 10. 3 오전 9:25:21」 → 「10/3 09:25」
@@ -10147,8 +10151,8 @@ function siteAgo(iso){ const t=Date.parse(iso||''); if(!isFinite(t)) return '—
 /* 들어온 경로 짧게(10-06 동하) — 주소 그대로면 폰에서 잘려 어느 글인지 몰랐다 → 「다음 카페 · educationstudy」 꼴 · 같은 이름은 합친다 */
 function siteRef(nm){ if(SITE_KO[nm]) return SITE_KO[nm];
   const s=String(nm||'').replace(/^https?:\/\//,'').replace(/[?#].*$/,''), [host0, ...seg]=s.split('/'), host=host0.replace(/^(www|m)\./,''), a=(seg[0]||'');
-  if(/^cafe\.daum\.net$/.test(host)) return a&&!/^_/.test(a)?`다음 카페 · ${a}`:'다음 카페';
-  if(/^cafe\.naver\.com$/.test(host)) return a&&!/\.(nhn|naver)$/.test(a)?`네이버 카페 · ${a}`:'네이버 카페';
+  if(/^cafe\.daum\.net$/.test(host)) return '다음 카페';   // 10-08 — 카페 이름·글 주소로 갈라져 「다음 카페 · educ…」가 따로 서던 것 → 하나로
+  if(/^cafe\.naver\.com$/.test(host)) return '네이버 카페';
   if(/^blog\.naver\.com$/.test(host)) return a?`네이버 블로그 · ${a}`:'네이버 블로그';
   if(/(^|\.)naver\.com$/.test(host)) return '네이버';
   if(/(^|\.)daum\.net$/.test(host)) return '다음';
@@ -10169,29 +10173,51 @@ function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.c
   if(!st) L.push(`<div class="sc-sec"><div class="sc-card"><div class="sc-line">${SITE.busy?'불러오는 중…':'방문 통계가 아직 없어요 — GitHub가 15분마다 받아 와요(저장소 Secrets에 GoatCounter 열쇠가 있어야 시작돼요)'}</div></div></div>`);
   else {
     const days=st.days||[], today=days[days.length-1]||{n:0, hourly:[]}, yest=days[days.length-2]||{n:0};
+    const f0=days.findIndex(d=>d.n>0), fresh=f0>0, dd=fresh?days.slice(f0):days;   // 사이트를 연 날(첫 방문)부터 — 30일이 다 차기 전엔 앞이 빈 막대였다(10-08)
     const sum=k=>days.slice(-k).reduce((a,d)=>a+(d.n||0),0);
-    L.push(`<div class="st-tiles">${[[today.n,'오늘'],[yest.n,'어제'],[sum(7),'7일'],[st.total30??sum(30),'30일']].map(([v,l])=>`<div class="st-tile"><b>${(v||0).toLocaleString()}</b><span>${l}</span></div>`).join('')}</div>`);
-    const mx=Math.max(1,...days.map(d=>d.n||0));
-    const bars=days.map((d,i)=>`<i class="${d.n?'':'z'}${i===days.length-1?' t':''}" style="height:${d.n?Math.max(3,Math.round(d.n/mx*96)):1}px" title="${esc(d.day)} · ${d.n}"></i>`).join('');
-    const ax=days.length?[days[0], days[Math.floor(days.length/2)], days[days.length-1]].map(d=>`<span>${Number(d.day.slice(5,7))}/${Number(d.day.slice(8))}</span>`).join(''):'';
-    L.push(`<div class="sc-sec"><div class="h-sec2"><h2>최근 30일</h2><span class="sc-g">하루 방문</span></div><div class="sc-card"><div class="st-bars">${bars}</div><div class="sc-ax">${ax}</div></div></div>`);
+    L.push(`<div class="st-tiles">${[[today.n,'오늘'],[yest.n,'어제'],[sum(7),'7일'],[st.total30??sum(30),fresh?'누적':'30일']].map(([v,l])=>`<div class="st-tile"><b>${(v||0).toLocaleString()}</b><span>${l}</span></div>`).join('')}</div>`);
+    const mx=Math.max(1,...dd.map(d=>d.n||0));
+    const bars=dd.map((d,i)=>`<i class="${d.n?'':'z'}${i===dd.length-1?' t':''}" style="height:${d.n?Math.max(3,Math.round(d.n/mx*96)):1}px" title="${esc(d.day)} · ${d.n}"></i>`).join('');
+    const ax=dd.length?[...new Set([0, Math.floor((dd.length-1)/2), dd.length-1])].map(i=>dd[i]).map(d=>`<span>${Number(d.day.slice(5,7))}/${Number(d.day.slice(8))}</span>`).join(''):'';
+    L.push(`<div class="sc-sec"><div class="h-sec2"><h2>${fresh?'연 날부터':'최근 30일'}</h2><span class="sc-g">하루 방문</span></div><div class="sc-card"><div class="st-bars">${bars}</div><div class="sc-ax">${ax}</div></div></div>`);
     const hr=(today.hourly||[]).length===24?today.hourly:Array(24).fill(0), hmx=Math.max(1,...hr);
     L.push(`<div class="sc-sec"><div class="h-sec2"><h2>오늘 시간대</h2><span class="sc-g">시간별</span></div><div class="sc-card"><div class="st-bars" style="height:64px">${hr.map((n,h)=>`<i class="${n?'':'z'}" style="height:${n?Math.max(3,Math.round(n/hmx*64)):1}px" title="${h}시 · ${n}"></i>`).join('')}</div><div class="sc-ax"><span>0</span><span>6</span><span>12</span><span>18</span><span>24</span></div></div></div>`);
     const pages=(st.pages7||[]).filter(x=>x.n>0);
     if(pages.length) L.push(`<div class="sc-sec"><div class="h-sec2"><h2>많이 읽힌 페이지</h2><span class="sc-g">7일</span></div><div class="sc-card">${siteRank(pages.slice(0,13), x=>sitePageName(x.path))}</div></div>`);
+    /* 이용(10-08) — 사이트가 남기는 이벤트 30일 합: quiz/start/<범위> · quiz/done · search/<말> · search-none/<말> · pdf/<파일> */
+    if(Array.isArray(st.events)){ const ev=st.events, pre=k=>ev.filter(x=>String(x.path||'').indexOf(k)===0).map(x=>({name:String(x.path).slice(k.length), n:x.n||0})), tot=a=>a.reduce((s,x)=>s+x.n,0);
+      const qs=pre('quiz/start/'), qd=tot(ev.filter(x=>x.path==='quiz/done').map(x=>({n:x.n||0}))), sh=pre('search/'), sn=pre('search-none/'), pf=pre('pdf/');
+      const tiles=a=>`<div class="st-fbn">${a.map(([v,l])=>`<div class="st-tile"><b>${(v||0).toLocaleString()}</b><span>${l}</span></div>`).join('')}</div>`;
+      const rank=(a,k)=>a.length?`<div class="sc-card" style="margin-top:10px">${siteRank(a.sort((x,y)=>y.n-x.n).slice(0,k), x=>x.name)}</div>`:'';
+      const pdfName=n=>{ const m=n.match(/^\d+\.(.+)$/); return m?m[1]+' 합본':n; };
+      L.push(`<div class="sc-sec"><div class="h-sec2"><h2>쪽지시험</h2><span class="sc-g">30일</span></div>${tiles([[tot(qs),'시작'],[qd,'끝까지']])}${rank(qs,6)}</div>`);
+      L.push(`<div class="sc-sec"><div class="h-sec2"><h2>검색</h2><span class="sc-g">30일</span></div>${tiles([[tot(sh)+tot(sn),'검색'],[tot(sn),'결과 없음']])}${rank(sh,8)}${sn.length?`<div class="h-sec2" style="margin-top:14px"><h2 style="font-size:15px">결과가 없던 말</h2></div>`+rank(sn,8):''}</div>`);
+      L.push(`<div class="sc-sec"><div class="h-sec2"><h2>PDF 받기</h2><span class="sc-g">30일</span></div>${tiles([[tot(pf),'받기'],[pf.length,'파일 종류']])}${rank(pf.map(x=>({name:pdfName(x.name), n:x.n})),8)}</div>`); }
     const two=[['toprefs','들어온 경로'],['systems','기기'],['browsers','브라우저'],['sizes','화면']].filter(([k])=>(st[k]||[]).length);
     if(two.length) L.push(`<div class="st-two">${two.map(([k,t])=>`<div class="sc-sec"><div class="h-sec2"><h2>${t}</h2><span class="sc-g">7일</span></div><div class="sc-card">${(k==='toprefs'?siteRank(siteRefs(st[k]).slice(0,6), x=>x.name):siteRank(st[k].slice(0,6)))}</div></div>`).join('')}</div>`);
   }
-  /* 피드백 — 수거함 상태(고침 · 보고만 · 테스트) + 대기(시트에 있는데 루틴이 아직 안 본 것) + 이슈 */
-  if(fb){ const it=fb.items||[], c=k=>it.filter(x=>x.status===k).length, iss=fb.issues||[], open=iss.filter(x=>x.state==='open').length;
-    const lab={fixed:'고침', held:'보고만', test:'테스트'};
+  /* 피드백 = GitHub 이슈처럼(10-08 동하 「미결이 없음 · github issue라고 생각하고」) — 열림(대기 · 검토 중 · 열린 이슈) / 닫힘(반영 · 보류 · 닫힌 이슈) 칩 ·
+     새것이 위 · 8줄 넘으면 더 보기 · 대기 = 시트에 있는데 루틴이 아직 안 본 줄(건수만 온다 — 원문은 공개 저장소에 안 싣는다) · 이름은 공개 처리 현황과 같게(반영 · 검토 중 · 보류) */
+  if(fb){ const it=(fb.items||[]).filter(x=>x.status!=='test'), iss=fb.issues||[], nTest=(fb.items||[]).length-it.length;
+    const tk=t=>{ const m=String(t||'').match(/(\d+)\.\s*(\d+)\.\s*(\d+)\s*(오전|오후)\s*(\d+):(\d+)/); if(!m) return 0; return Date.UTC(+m[1],+m[2]-1,+m[3],Number(m[5])%12+(m[4]==='오후'?12:0),+m[6]); };
+    const LB={fixed:['fixed','반영'], review:['review','검토 중'], held:['held','보류']};
+    const row=x=>`<div class="st-fb"><span class="st-chip ${LB[x.status]?LB[x.status][0]:''}">${LB[x.status]?LB[x.status][1]:esc(x.status)}</span><span class="ts">${esc(x.subj)}<small>${esc(siteTs(x.ts))}</small></span>${(x.commits||[]).map(h=>`<a href="https://github.com/Somnium1357/memory-cards/commit/${esc(h)}" target="_blank" rel="noopener">${esc(h.slice(0,7))}</a>`).join(' ')}<small style="color:var(--c-sec);font-size:13px">${esc(x.done||'')}</small></div>`;
+    const irow=x=>`<div class="st-fb"><span class="st-chip ${x.state==='open'?'wait':'held'}">이슈</span><span class="ts">#${x.n}<small>${esc(String(x.at||'').slice(0,10))}</small></span><a href="${esc(x.url)}" target="_blank" rel="noopener">보기</a></div>`;
+    const byNew=(a,b)=>tk(b.ts)-tk(a.ts);
+    const openR=[...(fb.pending?[`<div class="st-fb"><span class="st-chip wait">대기</span><span class="ts">${fb.pending.toLocaleString()}건</span><a href="${esc(fb.sheet)}" target="_blank" rel="noopener">시트</a></div>`]:[]),
+                 ...it.filter(x=>x.status==='review').sort(byNew).map(row), ...iss.filter(x=>x.state==='open').map(irow)];
+    const closedR=[...it.filter(x=>x.status!=='review').sort(byNew).map(row), ...iss.filter(x=>x.state!=='open').map(irow)];
+    const nOpen=(fb.pending||0)+it.filter(x=>x.status==='review').length+iss.filter(x=>x.state==='open').length;
+    const tab=SITE.fbf||'open', rows=tab==='open'?openR:closedR, cut=SITE.fbAll?rows:rows.slice(0,8);
     L.push(`<div class="sc-sec"><div class="h-sec2"><h2>피드백</h2><span class="sc-g">${siteAgo(fb.at)} 정리</span></div>`
-      +`<div class="st-fbn">${[[fb.pending||0,'대기'],[c('fixed'),'고침'],[c('held'),'보고만'],[open,'열린 이슈']].map(([v,l])=>`<div class="st-tile"><b>${(v||0).toLocaleString()}</b><span>${l}</span></div>`).join('')}</div>`
-      +`<div class="sc-card" style="margin-top:10px">${it.filter(x=>x.status!=='test').map(x=>`<div class="st-fb"><span class="st-chip ${x.status}">${lab[x.status]}</span><span class="ts">${esc(x.subj)}<small>${esc(siteTs(x.ts))}</small></span>${(x.commits||[]).map(h=>`<a href="https://github.com/Somnium1357/memory-cards/commit/${esc(h)}" target="_blank" rel="noopener">${esc(h.slice(0,7))}</a>`).join(' ')}<small style="color:var(--c-sec);font-size:13px">${esc(x.done||'')}</small></div>`).join('')||'<div class="sc-line">아직 받은 피드백이 없어요</div>'}`
-      +(iss.length?iss.map(x=>`<div class="st-fb"><span class="st-chip ${x.state==='open'?'wait':'fixed'}">${x.state==='open'?'열림':'닫힘'}</span><span class="ts">이슈 #${x.n}<small>${esc(String(x.at||'').slice(0,10))}</small></span><a href="${esc(x.url)}" target="_blank" rel="noopener">보기</a></div>`).join(''):'')
+      +`<div class="st-fbf"><button type="button" class="ft-chip${tab==='open'?' on':''}" data-fbf="open">열림 ${nOpen.toLocaleString()}</button><button type="button" class="ft-chip${tab==='closed'?' on':''}" data-fbf="closed">닫힘 ${closedR.length.toLocaleString()}</button></div>`
+      +`<div class="sc-card" style="margin-top:10px">${cut.join('')||`<div class="sc-line">${tab==='open'?'열린 피드백이 없어요':'닫힌 피드백이 없어요'}</div>`}`
+      +(rows.length>cut.length?`<button type="button" class="st-more" id="siteFbMore">${(rows.length-cut.length).toLocaleString()}건 더 보기</button>`:'')
       +`<div class="st-links"><a class="btn-ghost" href="${esc(fb.sheet)}" target="_blank" rel="noopener">시트 열기</a><a class="btn-ghost" href="${esc(fb.issuesUrl)}" target="_blank" rel="noopener">이슈</a><a class="btn-ghost" href="https://imgostudy.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a></div>`
-      +`<div class="sc-line sc-hint" style="margin-top:6px">원문은 「시트 열기」로 봐요 — 여기엔 시각·과목·처리 상태만 와요(공개 저장소라서) · 테스트 ${c('test')}건은 숨김</div></div></div>`); }
-  b.innerHTML=L.join(''); const rf=$('siteRf'); if(rf) rf.onclick=siteRefresh; }
+      +`<div class="sc-line sc-hint" style="margin-top:6px">원문은 「시트 열기」로 봐요 — 여기엔 시각·과목·처리 상태만 와요(공개 저장소라서) · 테스트 ${nTest}건은 숨김</div></div></div>`); }
+  b.innerHTML=L.join(''); const rf=$('siteRf'); if(rf) rf.onclick=siteRefresh;
+  b.querySelectorAll('[data-fbf]').forEach(x=>x.onclick=()=>{ SITE.fbf=x.dataset.fbf; SITE.fbAll=false; siteRender(); });
+  const mo=$('siteFbMore'); if(mo) mo.onclick=()=>{ SITE.fbAll=true; siteRender(); }; }
 
 /* 풀이 중 스터디 = 레일 전환(10-05) — 사람 줄(점 · 이름 · 상태·시간 · 장수/목표) · 내 줄은 채점마다(syncRail) · 친구는 동기화(30초)마다 다시 그린다 · 기본 = 피드백 */
 const K_SC_DOCK='cards_sc_dock_v1';
@@ -11571,14 +11597,17 @@ function renderFwUI(){
   if(cand){ const pct=Math.round((1-cand.llNew/cand.llOld)*1000)/10;
     h+=`<div class="fw-cand"><div class="fw-ct">새 맞춤값</div>
       <div class="fw-cs">${md(cand.at)} 계산 · 채점 ${cand.n.toLocaleString()}건 · 최근 7일 예측 오차 ${cand.llOld.toFixed(4)} → ${cand.llNew.toFixed(4)} (${pct}% 나음)</div>
-      ${fwFcTable(cand)}<button class="btn-ghost" id="fwApply">적용</button></div>`; }
+      ${fwFcTable(cand)}<div class="fw-btns"><button class="btn-ghost" id="fwApply">적용</button><button class="btn-ghost" id="fwDrop">닫기</button></div></div>`; }
   else if(fileCand) h+=`<div class="set-row"><span>새 맞춤값(파일) · ${md(fileCand.at)}</span><button class="btn-ghost" id="fwApplyFile">적용</button></div>`;
   if(_fwMsg) h+=`<div class="fw-msg">${esc(_fwMsg)}</div>`;
-  h+=`<div class="fw-btns"><button class="btn-ghost" id="fwCalc"${_fwBusy?' disabled':''}>${_fwBusy?'계산 중…':'계산'}</button>${applied?'<button class="btn-ghost" id="fwReset">표준값으로</button>':''}</div>`;
+  h+=`<div class="fw-btns"><button class="btn-ghost" id="fwCalc"${_fwBusy?' disabled':''}>${_fwBusy?'계산 중…':'계산'}</button>${applied?'<button class="btn-ghost" id="fwReset">표준값으로</button>':''}${_fwMsg&&!_fwBusy?'<button class="btn-ghost" id="fwMsgX">닫기</button>':''}</div>`;
   box.innerHTML=h;
   const ap=$('fwApply'); if(ap) ap.onclick=()=>{ const c=fwCand(); if(!c) return; applyFw(c.w, c.at); lsDel(K_FW_CAND); renderFwUI(); };
   const af=$('fwApplyFile'); if(af) af.onclick=()=>applyFw(FSRSP.w, FSRSP.at);
   const cb=$('fwCalc'); if(cb) cb.onclick=fwCompute;
+  /* 계산 결과 닫기(10-08 동하) — 후보는 버린다(다시 「계산」하면 된다) · 안내 글은 지운다 */
+  const dr=$('fwDrop'); if(dr) dr.onclick=()=>{ lsDel(K_FW_CAND); _fwMsg=''; renderFwUI(); };
+  const mx=$('fwMsgX'); if(mx) mx.onclick=()=>{ _fwMsg=''; renderFwUI(); };
   const rs=$('fwReset'); if(rs) rs.onclick=()=>{ lsDel(K_FW_CAND); _fwMsg=''; applyFw(null, new Date().toISOString()); };
 }
 function fwFcTable(c){           // 적용 전 7일 예보 — 날짜가 줄 · 지금/새 값이 칸(폰에서 글자가 세로로 서지 않게 · 10-01 동하)

@@ -10118,13 +10118,45 @@ async function siteLastRun(){ if(!cfg||!cfg.token) return 0;
 async function siteStatsFresh(){   // raw 주소는 5분 캐시 — 새로고침 뒤엔 API로 바로 읽는다
   try{ const r=await fetch(ghUrl('site-stats.json', dataBr()),{headers:{...ghHeaders(),Accept:'application/vnd.github.raw+json'},cache:'no-store'});
     if(!r.ok) return null; const s=await r.text(); return s.trim()?JSON.parse(s):null; }catch(e){ return null; } }
+/* 바로 받기(10-08 동하 「업데이트할 때마다 시간이 많이 든다 · 기기마다 코드 넣기 싫다」) — GoatCounter 읽기 열쇠를 카드앱 레포 Actions **변수** GOATCOUNTER_READ 에 한 번 두고,
+   기기 GitHub 토큰(Variables: 읽기)으로 꺼내 GoatCounter API를 직접 부른다(CORS 허용 확인 · 1~2초). 워크플로 site-stats.yml과 같은 모양으로 SITE.st를 만든다.
+   🔴 AdGuard가 imgostudy.goatcounter.com을 막으면 fetch가 터진다 → 조용히 기존 길(Actions 실행 → site-stats.json)로. 열쇠는 기기 localStorage에만(코드·공개 저장소 X) · 401이면 버리고 다시 꺼낸다. */
+const GC_API='https://imgostudy.goatcounter.com/api/v0/', GC_VAR='GOATCOUNTER_READ', K_GC='cards_gc_read_v1';
+let gcTok=null, gcNo=0;
+async function gcToken(){ if(gcTok) return gcTok; const c=lsGet(K_GC); if(c){ gcTok=c; return c; }
+  if(!cfg||!cfg.token||Date.now()<gcNo) return null;
+  const r=await fetch(`https://api.github.com/repos/${cfg.owner}/${cfg.repo}/actions/variables/${GC_VAR}`,{headers:ghHeaders(),cache:'no-store'}).catch(()=>null);
+  if(!r||!r.ok){ gcNo=Date.now()+10*60000; return null; }   // 변수 없음·토큰 권한 없음 — 10분 뒤 다시
+  const j=await r.json().catch(()=>null); if(!j||!j.value) return null; gcTok=String(j.value).trim(); lsSet(K_GC, gcTok); return gcTok; }
+async function gcGet(tok, path, q){ const u=new URL(GC_API+path); for(const k in q) u.searchParams.set(k, q[k]);
+  for(let i=0;i<3;i++){ const r=await fetch(u,{headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},cache:'no-store'});
+    if(r.status===429){ await new Promise(z=>setTimeout(z,(+r.headers.get('Retry-After')||2)*1000)); continue; }
+    if(r.status===401||r.status===403){ const e=new Error('gc auth'); e.auth=1; throw e; }
+    if(!r.ok) throw new Error('gc '+r.status); return r.json(); }
+  throw new Error('gc 429'); }
+async function siteDirect(){ const tok=await gcToken().catch(()=>null); if(!tok) return false;
+  try{ const now=new Date(); now.setUTCMinutes(0,0,0); now.setUTCHours(now.getUTCHours()+1);
+    const iso=d=>d.toISOString().slice(0,13)+':00:00Z', end=iso(now), s30=iso(new Date(now-30*864e5)), s7=iso(new Date(now-7*864e5));
+    const total=await gcGet(tok,'stats/total',{start:s30,end}), hits=await gcGet(tok,'stats/hits',{start:s7,end,limit:100,group:'day'}), evs=await gcGet(tok,'stats/hits',{start:s30,end,limit:100});
+    const out={at:new Date().toISOString(), site:'https://imgostudy.github.io/review-notes/', total30:total.total||0,
+      days:(total.stats||[]).map(x=>({day:x.day, n:x.daily||0, hourly:x.hourly||[]})),
+      pages7:(hits.hits||[]).filter(h=>!h.event).slice(0,30).map(h=>({path:h.path, title:h.title||'', n:h.count||0, days:(h.stats||[]).map(x=>x.daily||0)})),
+      events:(evs.hits||[]).filter(h=>h.event&&(h.count||0)>0).map(h=>({path:h.path, n:h.count}))};
+    for(const pg of ['toprefs','systems','browsers','sizes']){
+      try{ const r=await gcGet(tok,'stats/'+pg,{start:s7,end,limit:12});
+        out[pg]=(r.stats||[]).map(x=>{ let nm=x.name||x.id||''; if(pg==='toprefs'){ if(nm.indexOf('imgostudy.github.io')===0) return null; nm=nm||'(직접)'; } return (x.count||0)>0?{name:nm||'알 수 없음', n:x.count}:null; }).filter(Boolean); }
+      catch(e){ if(e.auth) throw e; out[pg]=[]; } }
+    SITE.st=out; SITE.chk=Date.now(); SITE.at=Date.now(); SITE.direct=true; return true; }
+  catch(e){ if(e.auth){ lsDel(K_GC); gcTok=null; } return false; } }
 async function siteOpen(){ siteRender(); if(SITE.busy || Date.now()-SITE.at<60000) return; SITE.busy=true;
   try{ const [st, fb, chk]=await Promise.all([rawGet('site-stats.json', dataBr()), rawGet('site-feedback.json', dataBr()), siteLastRun()]); SITE.st=st; SITE.fb=fb; SITE.chk=chk; SITE.at=Date.now(); }
-  finally{ SITE.busy=false; siteRender(); } }
+  finally{ SITE.busy=false; siteRender(); if(!SITE.ref && Date.now()-(SITE.dAt||0)>60000){ SITE.dAt=Date.now(); siteDirect().then(ok=>{ if(ok) siteRender(); }); } } }
 /* 수동 새로고침(10-06 동하) — GitHub에 받기 실행을 한 번 요청하고, 끝나면 API로 바로 읽는다(GitHub 예약 실행은 밀리거나 빠진다) */
 async function siteRefresh(){ if(SITE.ref) return;
   if(!cfg||!cfg.token){ SITE.msg='이 기기에 GitHub 토큰이 없어요(설정 › 동기화)'; siteRender(); return; }
-  SITE.ref=true; SITE.msg='GitHub에 받기 요청 중…'; siteRender();
+  SITE.ref=true; SITE.msg='받는 중…'; siteRender();
+  if(await siteDirect()){ SITE.msg=''; SITE.ref=false; siteRender(); return; }   // 바로 받기(위) — 안 되면 아래 기존 길
+  SITE.msg='GitHub에 받기 요청 중…'; siteRender();
   const t0=Date.now()-10000, base=`https://api.github.com/repos/${cfg.owner}/${cfg.repo}/actions/workflows/${SITE_WF}`;
   try{
     const r=await fetch(base+'/dispatches',{method:'POST',headers:{...ghHeaders(),'Content-Type':'application/json'},body:JSON.stringify({ref:'main'})});

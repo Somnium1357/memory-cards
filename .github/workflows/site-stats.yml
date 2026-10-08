@@ -41,14 +41,16 @@ jobs:
           s30, s7 = iso(now - dt.timedelta(days=30)), iso(now - dt.timedelta(days=7))
           end = iso(now)
           total = get("stats/total", start=s30, end=end)
-          hits = get("stats/hits", start=s7, end=end, limit=30, group="day")
+          hits = get("stats/hits", start=s7, end=end, limit=100, group="day")   # 100 = 이벤트가 페이지 칸을 밀어내지 않게(10-08)
+          evs = get("stats/hits", start=s30, end=end, limit=100)               # 이벤트(10-08) — pdf/· quiz/· search/· search-none/ · 30일 합
           out = {
               "at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
               "site": "https://imgostudy.github.io/review-notes/",
               "total30": total.get("total", 0),
               "days": [{"day": s["day"], "n": s.get("daily", 0), "hourly": s.get("hourly") or []} for s in total.get("stats", [])],
               "pages7": [{"path": h.get("path"), "title": h.get("title") or "", "n": h.get("count", 0),
-                          "days": [x.get("daily", 0) for x in (h.get("stats") or [])]} for h in hits.get("hits", []) if not h.get("event")],
+                          "days": [x.get("daily", 0) for x in (h.get("stats") or [])]} for h in hits.get("hits", []) if not h.get("event")][:30],
+              "events": [{"path": h.get("path"), "n": h.get("count", 0)} for h in evs.get("hits", []) if h.get("event") and h.get("count", 0) > 0],
           }
           for page in ("toprefs", "systems", "browsers", "sizes"):
               try:

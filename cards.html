@@ -10149,8 +10149,14 @@ async function siteDirect(){ const tok=await gcToken().catch(()=>null); if(!tok)
       catch(e){ if(e.auth) throw e; out[pg]=[]; } }
     SITE.st=out; SITE.chk=Date.now(); SITE.at=Date.now(); SITE.direct=true; return true; }
   catch(e){ if(e.auth){ lsDel(K_GC); gcTok=null; } return false; } }
+/* 대기 피드백 실시간(10-08 동하 「시트에 열린 피드백 있는데 앱에 안 떠」) — site-feedback.json은 루틴·QC가 돌 때만 새로라 그 뒤 들어온 건 안 보였다.
+   피드백 시트 「앱_대기」 탭(「대기」와 같은 조건 · 타임스탬프·과목 두 칸만 · 원문 없음)을 웹에 게시(CSV) — 이 탭만 공개 · 다른 탭은 401 · 구글이 몇 분 간격으로 새로 */
+const SITE_PEND_CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vTgYCftZOObbxcZS6GW8t19CDikJvKT9IRlrCDyX3yTvwHOultBYoE9sZ9HmKJ-qF9Sw5QaHpL8ZWx4/pub?gid=21&single=true&output=csv';
+async function sitePend(){ try{ const r=await fetch(SITE_PEND_CSV+'&t='+Date.now(),{cache:'no-store'}); if(!r.ok) return null;
+    return (await r.text()).split(String.fromCharCode(10)).map(l=>l.trim()).slice(1).map(l=>{ const [ts,subj]=l.split(','); return {ts:(ts||'').trim(), subj:(subj||'').trim()}; }).filter(x=>/^\d{4}-\d\d-\d\d \d\d:\d\d$/.test(x.ts)); }
+  catch(e){ return null; } }
 async function siteOpen(){ siteRender(); if(SITE.busy || Date.now()-SITE.at<60000) return; SITE.busy=true;
-  try{ const [st, fb, chk]=await Promise.all([rawGet('site-stats.json', dataBr()), rawGet('site-feedback.json', dataBr()), siteLastRun()]); SITE.st=st; SITE.fb=fb; SITE.chk=chk; SITE.at=Date.now(); }
+  try{ const [st, fb, chk, pend]=await Promise.all([rawGet('site-stats.json', dataBr()), rawGet('site-feedback.json', dataBr()), siteLastRun(), sitePend()]); SITE.st=st; SITE.fb=fb; SITE.chk=chk; SITE.pend=pend; SITE.at=Date.now(); }
   finally{ SITE.busy=false; siteRender(); if(!SITE.ref && Date.now()-(SITE.dAt||0)>60000){ SITE.dAt=Date.now(); siteDirect().then(ok=>{ if(ok) siteRender(); }); } } }
 /* 수동 새로고침(10-06 동하) — GitHub에 받기 실행을 한 번 요청하고, 끝나면 API로 바로 읽는다(GitHub 예약 실행은 밀리거나 빠진다) */
 async function siteRefresh(){ if(SITE.ref) return;
@@ -10239,10 +10245,16 @@ function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.c
     const row=x=>`<div class="st-fb"><span class="st-chip ${LB[x.status]?LB[x.status][0]:''}">${LB[x.status]?LB[x.status][1]:esc(x.status)}</span><span class="ts">${esc(x.subj)}<small>${esc(siteTs(x.ts))}</small></span>${(x.commits||[]).map(h=>`<a href="https://github.com/Somnium1357/memory-cards/commit/${esc(h)}" target="_blank" rel="noopener">${esc(h.slice(0,7))}</a>`).join(' ')}<small style="color:var(--c-sec);font-size:13px">${esc(x.done||'')}</small></div>`;
     const irow=x=>`<div class="st-fb"><span class="st-chip ${x.state==='open'?'wait':'held'}">이슈</span><span class="ts">#${x.n}<small>${esc(String(x.at||'').slice(0,10))}</small></span><a href="${esc(x.url)}" target="_blank" rel="noopener">보기</a></div>`;
     const byNew=(a,b)=>tk(b.ts)-tk(a.ts);
-    const openR=[...(fb.pending?[`<div class="st-fb"><span class="st-chip wait">대기</span><span class="ts">${fb.pending.toLocaleString()}건</span><a href="${esc(fb.sheet)}" target="_blank" rel="noopener">시트</a></div>`]:[]),
+    const mk=t=>{ const v=tk(t); if(!v) return ''; const d=new Date(v); return d.toISOString().slice(0,16).replace('T',' '); };
+    const seen=new Set((fb.items||[]).map(x=>mk(x.ts)).filter(Boolean));
+    const pend=Array.isArray(SITE.pend)?SITE.pend.filter(x=>!seen.has(x.ts)).sort((a,b)=>b.ts<a.ts?-1:1):null;
+    const pTs=t=>{ const m=t.match(/^\d{4}-(\d\d)-(\d\d) (\d\d:\d\d)$/); return m?`${+m[1]}/${+m[2]} ${m[3]}`:t; };
+    const pendR=pend?pend.map(x=>`<div class="st-fb"><span class="st-chip wait">대기</span><span class="ts">${esc(x.subj||'—')}<small>${esc(pTs(x.ts))}</small></span><a href="${esc(fb.sheet)}" target="_blank" rel="noopener">시트</a></div>`)
+      :(fb.pending?[`<div class="st-fb"><span class="st-chip wait">대기</span><span class="ts">${fb.pending.toLocaleString()}건</span><a href="${esc(fb.sheet)}" target="_blank" rel="noopener">시트</a></div>`]:[]);
+    const openR=[...pendR,
                  ...it.filter(x=>x.status==='review').sort(byNew).map(row), ...iss.filter(x=>x.state==='open').map(irow)];
     const closedR=[...it.filter(x=>x.status!=='review').sort(byNew).map(row), ...iss.filter(x=>x.state!=='open').map(irow)];
-    const nOpen=(fb.pending||0)+it.filter(x=>x.status==='review').length+iss.filter(x=>x.state==='open').length;
+    const nOpen=(pend?pend.length:(fb.pending||0))+it.filter(x=>x.status==='review').length+iss.filter(x=>x.state==='open').length;
     const tab=SITE.fbf||'open', rows=tab==='open'?openR:closedR, cut=SITE.fbAll?rows:rows.slice(0,8);
     L.push(`<div class="sc-sec"><div class="h-sec2"><h2>피드백</h2><span class="sc-g">${siteAgo(fb.at)} 정리</span></div>`
       +`<div class="st-fbf"><button type="button" class="ft-chip${tab==='open'?' on':''}" data-fbf="open">열림 ${nOpen.toLocaleString()}</button><button type="button" class="ft-chip${tab==='closed'?' on':''}" data-fbf="closed">닫힘 ${closedR.length.toLocaleString()}</button></div>`

@@ -6352,10 +6352,14 @@ async function snapPut(){
   _snapBusy=true;
   try{
     const tk=todayKey(); let mine=snapBuild(); _snapFile.days[tk]=mine;
-    /* 충돌(첫 PUT은 sha가 없어 늘 여기로 온다) = 원격을 받아 날짜별로 합친다 — 오늘 칸은 내 새 값이 이기고 morning만 더 이른 것 */
-    await ghPut(SNAP_PATH, snapFileBody, (rm)=>{ snapMerge(rm); const cur=_snapFile.days[tk];
+    /* 원격과 날짜별로 합친다 — 오늘 칸은 내 새 값이 이기고 morning만 더 이른 것 */
+    const join=(rm)=>{ snapMerge(rm); const cur=_snapFile.days[tk];
       const m=[mine.morning, cur&&cur.morning].filter(Boolean).sort((a,b)=>(a.at||'')<(b.at||'')?-1:1)[0];
-      _snapFile.days[tk]=Object.assign({}, mine, {morning:m, ym:mine.ym||(cur&&cur.ym)||null}); });
+      _snapFile.days[tk]=Object.assign({}, mine, {morning:m, ym:mine.ym||(cur&&cur.ym)||null}); };
+    /* 🔴 판 번호(sha)를 모르면 먼저 받아 합친다(10-09 감사 A2) — 예전엔 첫 PUT이 늘 409 → GET → 재PUT(앱 열 때마다 3왕복 · 74KB 헛올림).
+       ghGet이 sha를 채운다(없으면 null = 새 파일). 충돌 재시도는 그대로 둔다(다른 기기가 그 사이 올린 경우). */
+    if(sha[SNAP_PATH]===undefined){ const rm=await ghGet(SNAP_PATH); if(rm) join(rm); }
+    await ghPut(SNAP_PATH, snapFileBody, join);
   }catch(e){ console.warn('[스냅숏] 못 올림 — 앱 동작과 무관 · 다음 기회에', e); }
   finally{ _snapAt=Date.now(); _snapBusy=false; }
 }

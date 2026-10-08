@@ -1610,6 +1610,7 @@ button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inher
 .st-bars i{flex:1 1 0;min-width:0;border-radius:3px 3px 0 0;background:var(--c-acc);opacity:.55;}
 .st-bars i.t{opacity:1;}
 .st-bars i.z{height:1px!important;background:var(--c-sep);opacity:1;border-radius:0;}
+.st-bars i.f{opacity:.45;}   /* 아직 안 온 날(14칸 창이 차기 전) */
 .st-rank{display:flex;align-items:center;gap:10px;min-height:40px;}
 .st-rank+.st-rank{box-shadow:inset 0 .5px 0 var(--c-sep);}
 .st-rank .nm{flex:0 0 38%;min-width:0;font-size:15px;line-height:20px;color:var(--c-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -10205,13 +10206,15 @@ function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.c
   if(!st) L.push(`<div class="sc-sec"><div class="sc-card"><div class="sc-line">${SITE.busy?'불러오는 중…':'방문 통계가 아직 없어요 — GitHub가 15분마다 받아 와요(저장소 Secrets에 GoatCounter 열쇠가 있어야 시작돼요)'}</div></div></div>`);
   else {
     const days=st.days||[], today=days[days.length-1]||{n:0, hourly:[]}, yest=days[days.length-2]||{n:0};
-    const f0=days.findIndex(d=>d.n>0), fresh=f0>0, dd=fresh?days.slice(-Math.max(14, days.length-f0)):days;   // 최소 14칸(10-08 「막대 셋이면 너무 못생김」) · 연 지 14일 넘으면 연 날부터   // 사이트를 연 날(첫 방문)부터 — 30일이 다 차기 전엔 앞이 빈 막대였다(10-08)
+    const f0=days.findIndex(d=>d.n>0), fresh=f0>0, W14=14;   // 14칸 미끄럼 창(10-08 동하 「배포 첫날이 맨 왼쪽 · 슬라이딩 윈도우처럼」)
+    const real=fresh?days.slice(f0):days, dd=real.length>=W14?real.slice(-W14):[...real, ...Array.from({length:W14-real.length},(_,i)=>{ const t=new Date(real[real.length-1].day+'T00:00:00Z'); t.setUTCDate(t.getUTCDate()+i+1); return {day:t.toISOString().slice(0,10), n:0, fut:true}; })];   // 14일이 차기 전 = 연 날이 맨 왼쪽 · 오른쪽은 올 날(빈칸) · 차면 한 칸씩 밀림   // 사이트를 연 날(첫 방문)부터 — 30일이 다 차기 전엔 앞이 빈 막대였다(10-08)
     const sum=k=>days.slice(-k).reduce((a,d)=>a+(d.n||0),0);
     L.push(`<div class="st-tiles">${[[today.n,'오늘'],[yest.n,'어제'],[sum(7),'7일'],[st.total30??sum(30),fresh?'누적':'30일']].map(([v,l])=>`<div class="st-tile"><b>${(v||0).toLocaleString()}</b><span>${l}</span></div>`).join('')}</div>`);
     const mx=Math.max(1,...dd.map(d=>d.n||0));
-    const bars=dd.map((d,i)=>`<i class="${d.n?'':'z'}${i===dd.length-1?' t':''}" style="height:${d.n?Math.max(3,Math.round(d.n/mx*96)):1}px" title="${esc(d.day)} · ${d.n}"></i>`).join('');
+    const lastReal=dd.reduce((k,d,i)=>d.fut?k:i,0);
+    const bars=dd.map((d,i)=>`<i class="${d.n?'':'z'}${i===lastReal?' t':''}${d.fut?' f':''}" style="height:${d.n?Math.max(3,Math.round(d.n/mx*96)):1}px" title="${esc(d.day)} · ${d.n}"></i>`).join('');
     const ax=dd.length?[...new Set([0, Math.floor((dd.length-1)/2), dd.length-1])].map(i=>dd[i]).map(d=>`<span>${Number(d.day.slice(5,7))}/${Number(d.day.slice(8))}</span>`).join(''):'';
-    L.push(`<div class="sc-sec"><div class="h-sec2"><h2>최근 ${dd.length}일</h2><span class="sc-g">하루 방문</span></div><div class="sc-card"><div class="st-bars">${bars}</div><div class="sc-ax">${ax}</div></div></div>`);
+    L.push(`<div class="sc-sec"><div class="h-sec2"><h2>${real.length>=W14?'최근 14일':'연 날부터'}</h2><span class="sc-g">하루 방문</span></div><div class="sc-card"><div class="st-bars">${bars}</div><div class="sc-ax">${ax}</div></div></div>`);
     const hr=(today.hourly||[]).length===24?today.hourly:Array(24).fill(0), hmx=Math.max(1,...hr);
     L.push(`<div class="sc-sec"><div class="h-sec2"><h2>오늘 시간대</h2><span class="sc-g">시간별</span></div><div class="sc-card"><div class="st-bars" style="height:64px">${hr.map((n,h)=>`<i class="${n?'':'z'}" style="height:${n?Math.max(3,Math.round(n/hmx*64)):1}px" title="${h}시 · ${n}"></i>`).join('')}</div><div class="sc-ax"><span>0</span><span>6</span><span>12</span><span>18</span><span>24</span></div></div></div>`);
     const pages=(st.pages7||[]).filter(x=>x.n>0);

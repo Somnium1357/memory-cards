@@ -1534,6 +1534,17 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 .s2-r small{font-size:15px;font-weight:400;color:var(--c-sec);margin-left:1px;}
 .s2-dash{font-size:17px;color:var(--c-sec);}
 #scrHome .plan-warn{border-radius:var(--r-group);margin:0;}
+/* 공개 피드백 추가 요청(10-09 · fb_auto) — 홈 줄 하나 + 시트 */
+.fa-row{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:0 16px;background:var(--c-card);border-radius:var(--r-group);box-shadow:var(--sh-card);color:var(--c-label);font-size:17px;text-align:left;}
+.fa-row .fa-t{flex:1;min-width:0;}
+.fa-row .fa-s{font-size:15px;color:var(--c-sec);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:50%;}
+.fa-row .s2-chev{width:9px;height:15px;color:var(--c-ter,var(--c-sec));flex:none;}
+.fa-it{background:var(--c-card);border-radius:var(--r-group);padding:14px 16px 6px;margin-top:12px;}
+.fa-it .fa-m{font-size:13px;color:var(--c-sec);}
+.fa-it .fa-g{font-size:15px;line-height:21px;color:var(--c-label);margin-top:4px;}
+.fa-it .fa-p{font-size:16px;line-height:23px;font-weight:600;color:var(--c-label);margin-top:10px;padding:10px 12px;background:var(--c-fill);border-radius:12px;}
+.fa-it .fa-e{font-size:13px;line-height:18px;color:var(--c-sec);margin-top:6px;}
+#ovlAsk .sheet{background:var(--c-bg);}
 .s2-chev{width:8px;height:14px;color:var(--c-chev);}
 /* 스터디 현황(10-01) — 세션 목록과 같은 inset 목록 · 줄 = 상태 점 + 이름 + 「상태 · 시간」 + 오른쪽 장수 */
 #studyBox{display:flex;flex-direction:column;gap:16px;}
@@ -2289,6 +2300,7 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
         </div>
         <div class="hs-tiles" id="hTilesP"></div>
         <div id="hHero"></div>
+        <div id="fbAsk"></div>
         <div id="planWarn" class="plan-warn"></div>
         <div class="h-sec2"><h2>세션</h2><button id="btnNewSess" aria-label="새 세션" title="새 세션"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
         <div id="sessList"></div>
@@ -2900,6 +2912,7 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
 </div></div>
 
 <!-- 카드 상세 -->
+<div class="ovl" id="ovlAsk"><div class="sheet" id="askSheet"></div></div>
 <div class="ovl" id="ovlCard"><div class="sheet wide" id="csSheet"></div></div>
 <!-- 세션 끝 (UX 정리안 §7 · 09-24) — 큐가 비면 세션 화면 위에 뜬다. 닫으면 종전대로 세션 화면 -->
 <div class="ovl" id="ovlEnd"><div class="sheet end-sheet" id="endBody"></div></div>
@@ -10321,6 +10334,38 @@ function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.c
   b.querySelectorAll('[data-fbf]').forEach(x=>x.onclick=()=>{ SITE.fbf=x.dataset.fbf; SITE.fbAll=false; siteRender(); });
   const mo=$('siteFbMore'); if(mo) mo.onclick=()=>{ SITE.fbAll=true; siteRender(); }; }
 
+/* ═══ 공개 피드백 추가 요청(10-09 동하 「보충 요청은 내가 예/아니오」 · fb_auto) ═══
+   PC 수신기(listen.py asks_out)가 data 브랜치 fb-asks.json 에 올린 「보충 요청」(요지·제안·근거 인용 · 원문 없음) → 홈 「추가 요청 N건」 줄 → 시트 [보류][추가]
+   답 = Firebase ans/<id> 에 1(추가)·0(보류) — 폰 알림 버튼과 같은 칸 · 이미 답한 것(ans 에 있음)은 안 보인다 · PC가 답을 받아 처리하는 쪽은 §5.0 -4 ④
+   rawGet 을 쓰지 않는다 — 실패가 rawNetFail(부팅 「못 받았다」)로 번지면 안 된다(없어도 그만인 파일) */
+const FB_ANS='https://rn-feedback-signal-default-rtdb.asia-southeast1.firebasedatabase.app/ans';
+let ASK={items:[], ans:{}, at:0, busy:false};
+async function askLoad(force){ if(ASK.busy || !cfg || !cfg.owner || (!force && Date.now()-ASK.at<300000)) return; ASK.busy=true;
+  try{ const [d, a]=await Promise.all([
+      fetch(`https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${encodeURIComponent(dataBr()||'data')}/fb-asks.json?t=${Date.now()}`,{cache:'no-store'}).then(r=>r.ok?r.json():(r.status===404?{items:[]}:null)).catch(()=>null),
+      fetch(FB_ANS+'.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null)]);
+    if(d) ASK.items=Array.isArray(d.items)?d.items:[]; if(a&&typeof a==='object') ASK.ans=a; ASK.at=Date.now(); }
+  finally{ ASK.busy=false; askRender(); } }
+function askOpenList(){ return ASK.items.filter(x=>x&&x.id&&!(x.id in ASK.ans)); }
+function askRender(){ const box=$('fbAsk'); if(!box) return; const L=askOpenList();
+  const subj=[...new Set(L.map(x=>x.subj).filter(Boolean))].join(' · ');
+  box.innerHTML=L.length?`<button type="button" class="fa-row" id="fbAskBtn"><span class="fa-t">추가 요청 ${L.length}건</span><span class="fa-s">${esc(subj)}</span>${SC_RCHEV}</button>`:'';
+  const bt=$('fbAskBtn'); if(bt) bt.onclick=()=>{ askSheet(); $('ovlAsk').classList.add('show'); };
+  if($('ovlAsk').classList.contains('show')) askSheet(); }
+function askSheet(){ const L=askOpenList(), sh=$('askSheet');
+  if(!L.length){ $('ovlAsk').classList.remove('show'); return; }
+  sh.innerHTML=`<button class="sheet-x" id="askX" title="닫기">✕</button><h2>추가 요청</h2>`+L.map(x=>`<div class="fa-it" data-id="${esc(x.id)}">
+    <div class="fa-m">${esc(x.subj||'')} · ${esc(siteTs(x.ts))}</div>
+    <div class="fa-g">${esc(x.gist||'')}</div>
+    <div class="fa-p">${esc(x.proposal||'')}</div>
+    ${(x.ev||[]).map(e=>`<div class="fa-e">${esc(String(e.src||'').replace(/\.(pdf|txt|md)$/i,''))}${e.page?` p.${esc(e.page)}`:''} · 「${esc(e.quote||'')}」</div>`).join('')}
+    <div class="btn-row"><button class="btn-ghost" data-v="0">보류</button><button class="btn-primary" data-v="1">추가</button></div></div>`).join('');
+  $('askX').onclick=()=>$('ovlAsk').classList.remove('show');
+  sh.querySelectorAll('.fa-it [data-v]').forEach(b=>b.onclick=async()=>{ const it=b.closest('.fa-it'), id=it.dataset.id, v=+b.dataset.v;
+    it.querySelectorAll('[data-v]').forEach(x=>x.disabled=true);
+    const r=await fetch(`${FB_ANS}/${encodeURIComponent(id)}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:String(v)}).catch(()=>null);
+    if(!r||!r.ok){ toast('못 보냈어요 — 잠시 뒤 다시 눌러 주세요'); it.querySelectorAll('[data-v]').forEach(x=>x.disabled=false); return; }
+    ASK.ans[id]=v; toast(v?'추가할게요':'보류했어요'); askRender(); }); }
 /* 풀이 중 스터디 = 레일 전환(10-05) — 사람 줄(점 · 이름 · 상태·시간 · 장수/목표) · 내 줄은 채점마다(syncRail) · 친구는 동기화(30초)마다 다시 그린다 · 기본 = 피드백 */
 const K_SC_DOCK='cards_sc_dock_v1';
 function scDockOn(){ return lsGet(K_SC_DOCK)==='1'; }
@@ -10782,6 +10827,7 @@ function renderHome(){
   renderFoot();
   cleanupTempSessions();
   renderPlanWarn();
+  askRender(); askLoad();   // 공개 피드백 추가 요청(10-09) — 5분 스로틀
   renderSessRows();
   try{ scRender(); if(SC.group && Date.now()-(SC.membersAt||0)>90000) scSync(); }catch(e){}   // 스터디 현황 — 홈을 그릴 때 90초 넘었으면 한 번 받아 온다(애드온 친구 캐시)
   syncThemeSeg();
@@ -12402,6 +12448,7 @@ function renderCardSheet(){
   $('csClose').onclick=closeCardSheet;
 }
 $('ovlCard').onclick=(e)=>{ if(e.target===$('ovlCard'))closeCardSheet(); };
+$('ovlAsk').onclick=(e)=>{ if(e.target===$('ovlAsk'))$('ovlAsk').classList.remove('show'); };
 /* pick=true = **사람이 그 카드를 지목했다.** 오늘 이미 푼 카드도 거르지 않는다(playSess·showCard).
    상세에서 「바로 풀기」한 한 장이 그렇다 — 목록 세션은 조건으로 뽑은 묶음이라 안 준다.
    그쪽까지 주면 방금 푼 카드가 목록 세션에 섞여 되돌아온다. */

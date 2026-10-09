@@ -69,6 +69,14 @@
         노트가 3학년은 h2 단원 > h3 성취기준, 4학년부터는 h3 단원 > h4 성취기준이라 칸 단위가 섞이던 것을 「칸 = 성취기준」 하나로 */
   var STD=/\[\d+[가-힣]+\s?\d{2}-\d{2}\]/;
   /* 본문 최상위 갈래(레이블 + 들여쓴 하위)를 .grp 로 묶어 둔다 — 평소 display:contents · 긴 칸만 .split 때 단으로 */
+  /* 10-10 QC: 갈래로 쪼갤 줄기는 블록 자식이 하나라도 있을 때만 — 「용어 : 설명」 한 줄짜리 .ind(자식 = <span>·글자뿐)를
+     span 마다 .grp 로 감싸 세 줄로 깨던 것(10-09 수학 「0의 역할」 · 국어 「예 : 로미오와 줄리엣」 · 조각에서 <div> 로 감싸 피했던 것의 근본 수리).
+     종전 기준(자식 요소 둘 이상)은 그대로 두고 「전부 인라인」만 뺀다 — 숨은 메모 span·빈 앵커가 섞인 줄기(도덕 「기원·효과」 · 총창 「자율·자치활동」)는 종전대로 */
+  var BLK=/^(DIV|UL|OL|TABLE|P|FIGURE|SECTION|DL|PRE|BLOCKQUOTE|DETAILS|H[1-6]|HR)$/;
+  function blk(x){
+    if(!x || x.children.length<2) return false;
+    return [].some.call(x.children, function(c){ return BLK.test(c.tagName); });
+  }
   function wrapGrps(cell, body){
     /* 쪽 이음새로 끊긴 같은 겉싸개(.ind2>.stack · .ind2 · .stack)를 하나로 — 6사03-01 「인권」이 다음 쪽(p19)에서 새 겉싸개로 시작 */
     var sig=function(e){ if(!e || e.nodeType!==1) return ''; var s=e.className; if(e.children.length===1 && e.firstElementChild.classList.contains('stack')) s+='>stack'; return s; };
@@ -99,7 +107,7 @@
     /* 갈래 담는 줄기 — .ind2>.stack · .stack · .ind2(4사05-01처럼 stack 없이 바로) · .ind>.stack · .ind 중 자식 둘 이상인 첫 것 */
     var st=null;
     [':scope > .ind2 > .stack', ':scope > .stack', ':scope > .ind2', ':scope > .ind > .stack', ':scope > .ind'].some(function(q){
-      var x=body.querySelector(q); if(x && x.children.length>=2){ st=x; return true; } return false; });
+      var x=body.querySelector(q); if(blk(x)){ st=x; return true; } return false; });
     if(!st) return;
     var g=null, k=0, n0=0;
     [].slice.call(st.children).forEach(function(n){
@@ -112,7 +120,7 @@
     (function nest(parent, d){
       if(d>2) return;
       parent.querySelectorAll(':scope > .grp.k').forEach(function(gp){
-        var inner=gp.querySelector(':scope > .ind > .stack') || gp.querySelector(':scope > .ind'); if(!inner || inner.children.length<2) return;
+        var inner=gp.querySelector(':scope > .ind > .stack') || gp.querySelector(':scope > .ind'); if(!blk(inner)) return;
         var g2=null, has=false;
         [].slice.call(inner.children).forEach(function(x){
           if(x.classList.contains('ind') && g2){ g2.classList.add('k'); has=true; g2.appendChild(x); return; }

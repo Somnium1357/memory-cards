@@ -10210,7 +10210,7 @@ async function siteDirect(onPart){ const tok=await gcToken().catch(()=>null); if
   try{ const now=new Date(); now.setUTCMinutes(0,0,0); now.setUTCHours(now.getUTCHours()+1);
     const iso=d=>d.toISOString().slice(0,13)+':00:00Z', end=iso(now), s30=iso(new Date(now-30*864e5)), s7=iso(new Date(now-7*864e5));
     const [total, hits, evs]=await Promise.all([gcGet(tok,'stats/total',{start:s30,end}), gcGet(tok,'stats/hits',{start:s7,end,limit:100,group:'day'}), gcGet(tok,'stats/hits',{start:s30,end,limit:100})]);
-    const out={at:new Date().toISOString(), site:'https://imgostudy.github.io/review-notes/', total30:total.total||0,
+    const out={src:'gc', at:new Date().toISOString(), site:'https://imgostudy.github.io/review-notes/', total30:total.total||0,
       days:(total.stats||[]).map(x=>({day:x.day, n:x.daily||0, hourly:x.hourly||[]})),
       pages7:(hits.hits||[]).filter(h=>!h.event).slice(0,30).map(h=>({path:h.path, title:h.title||'', n:h.count||0, days:(h.stats||[]).map(x=>x.daily||0)})),
       events:(evs.hits||[]).filter(h=>h.event&&(h.count||0)>0).map(h=>({path:h.path, n:h.count}))};
@@ -10232,13 +10232,13 @@ async function sitePend(){ try{ const r=await fetch(SITE_PEND_CSV+'&t='+Date.now
   catch(e){ return null; } }
 async function siteOpen(){
   /* 10-09 — 열자마자 = 이 기기가 마지막으로 바로 받은 값(Actions 파일은 15분 묵어 「옛 정보」로 보였다) · 바로 받기는 다른 파일과 **같이** 시작한다(전엔 다 받은 뒤에 시작) */
-  if(!SITE.st){ try{ const c=JSON.parse(lsGet(K_SITE_LAST)||'null'); if(c&&c.days){ SITE.st=c; SITE.chk=Date.parse(c.at)||0; } }catch(e){} }
+  if(!SITE.st){ try{ const c=JSON.parse(lsGet(K_SITE_LAST)||'null'); if(c&&c.days){ c.src='gc'; SITE.st=c; SITE.chk=Date.parse(c.at)||0; } }catch(e){} }
   siteRender(); if(SITE.busy || Date.now()-SITE.at<60000) return; SITE.busy=true;
   const direct=(!SITE.ref && Date.now()-(SITE.dAt||0)>60000)?(SITE.dAt=Date.now(), siteDirect(siteRender)):Promise.resolve(false);
   try{ const [st, fb, chk, pend]=await Promise.all([rawGet('site-stats.json', dataBr()), rawGet('site-feedback.json', dataBr()), siteLastRun(), sitePend()]);
     if(!SITE.direct && st && (Date.parse(st.at)||0)>=(Date.parse(SITE.st&&SITE.st.at)||0)) SITE.st=st;   // 바로 받은 값이 이미 있으면 덮지 않는다
     SITE.fb=fb; SITE.chk=Math.max(SITE.chk||0, chk||0); SITE.pend=pend; SITE.at=Date.now(); }
-  finally{ SITE.busy=false; siteRender(); direct.then(ok=>{ if(ok) siteRender(); }); } }
+  finally{ SITE.busy=false; siteRender(); direct.then(ok=>{ if(!ok && SITE.dErr && !SITE.ref) SITE.msg=`바로 받기 안 됨(${SITE.dErr})`; siteRender(); }); } }   // 10-09 「다시 열면 GitHub본」 — 열 때 실패도 이유를 띄운다
 async function siteRefresh(){ if(SITE.ref) return;
   if(!cfg||!cfg.token){ SITE.msg='이 기기에 GitHub 토큰이 없어요(설정 › 동기화)'; siteRender(); return; }
   SITE.ref=true; SITE.msg='받는 중…'; siteRender(); gcNo=0; SITE.dErr='';   // 손으로 누른 새로고침은 10분 쉬기를 무시하고 다시 해 본다
@@ -10288,7 +10288,7 @@ function siteRank(list, nameOf){ const mx=Math.max(1,...list.map(x=>x.n)); retur
 function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.contains('on')) return;
   const st=SITE.st, fb=SITE.fb, L=[];
   const chk=Math.max(Date.parse(st&&st.at||'')||0, SITE.chk||0);
-  L.push(`<div class="st-sub"><a href="https://imgostudy.github.io/review-notes/" target="_blank" rel="noopener">imgostudy.github.io/review-notes</a>${chk?` · 방문 통계 ${siteAgo(new Date(chk).toISOString())} 확인`:''} · <button class="st-rf" id="siteRf"${SITE.ref?' disabled':''}>새로고침</button>${SITE.msg?`<div class="st-msg">${esc(SITE.msg)}</div>`:''}</div>`);
+  L.push(`<div class="st-sub"><a href="https://imgostudy.github.io/review-notes/" target="_blank" rel="noopener">imgostudy.github.io/review-notes</a>${chk?` · 방문 통계 ${siteAgo(new Date(chk).toISOString())} 확인${st&&st.src!=='gc'?'(GitHub 파일)':''}`:''} · <button class="st-rf" id="siteRf"${SITE.ref?' disabled':''}>새로고침</button>${SITE.msg?`<div class="st-msg">${esc(SITE.msg)}</div>`:''}</div>`);
   if(!st) L.push(`<div class="sc-sec"><div class="sc-card"><div class="sc-line">${SITE.busy?'불러오는 중…':'방문 통계가 아직 없어요 — GitHub가 15분마다 받아 와요(저장소 Secrets에 GoatCounter 열쇠가 있어야 시작돼요)'}</div></div></div>`);
   else {
     const days=st.days||[], today=days[days.length-1]||{n:0, hourly:[]}, yest=days[days.length-2]||{n:0};

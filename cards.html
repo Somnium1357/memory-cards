@@ -10321,7 +10321,8 @@ function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.c
   L.push(`<div class="st-sub"><a href="https://imgostudy.github.io/review-notes/" target="_blank" rel="noopener">imgostudy.github.io/review-notes</a>${SITE.dRun?' · 방문 통계 받는 중…':chk?` · 방문 통계 ${siteAgo(new Date(chk).toISOString())} 확인${st&&st.src!=='gc'?'(GitHub 파일)':''}`:''} · <button class="st-rf" id="siteRf"${SITE.ref?' disabled':''}>새로고침</button>${(SITE.msg||SITE.szErr)?`<div class="st-msg">${esc(SITE.msg||SITE.szErr)}</div>`:''}</div>`);
   if(!st) L.push(`<div class="sc-sec"><div class="sc-card"><div class="sc-line">${SITE.busy?'불러오는 중…':'방문 통계가 아직 없어요 — GitHub가 15분마다 받아 와요(저장소 Secrets에 GoatCounter 열쇠가 있어야 시작돼요)'}</div></div></div>`);
   else {
-    const days=st.days||[], today=days[days.length-1]||{n:0, hourly:[]}, yest=days[days.length-2]||{n:0};
+    const tdK=new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);   // 밤 11시대엔 받는 끝(지금+1시간)이 다음 날로 넘어가 아직 안 온 「내일」 칸이 끝에 붙는다(10-09 폰 「오늘 0 · 어제 739」) — 기기 날짜까지만
+    const days=(st.days||[]).filter(d=>!d.day||d.day<=tdK), today=days[days.length-1]||{n:0, hourly:[]}, yest=days[days.length-2]||{n:0};
     const f0=days.findIndex(d=>d.n>0), fresh=f0>0, W14=14;   // 14칸 미끄럼 창(10-08 동하 「배포 첫날이 맨 왼쪽 · 슬라이딩 윈도우처럼」)
     const real=fresh?days.slice(f0):days, dd=real.length>=W14?real.slice(-W14):[...real, ...Array.from({length:W14-real.length},(_,i)=>{ const t=new Date(real[real.length-1].day+'T00:00:00Z'); t.setUTCDate(t.getUTCDate()+i+1); return {day:t.toISOString().slice(0,10), n:0, fut:true}; })];   // 14일이 차기 전 = 연 날이 맨 왼쪽 · 오른쪽은 올 날(빈칸) · 차면 한 칸씩 밀림   // 사이트를 연 날(첫 방문)부터 — 30일이 다 차기 전엔 앞이 빈 막대였다(10-08)
     const sum=k=>days.slice(-k).reduce((a,d)=>a+(d.n||0),0);

@@ -10208,7 +10208,8 @@ async function gcGet(tok, path, q){ const u=new URL(GC_API+path); for(const k in
     if(r.status===401||r.status===403){ const e=new Error('gc auth'); e.auth=1; throw e; }
     if(!r.ok) throw new Error('GoatCounter '+r.status); return r.json(); }
   throw new Error('gc 429'); }
-async function siteDirect(onPart){ SITE.dRun=true; try{ return await siteDirect0(onPart); } finally{ SITE.dRun=false; } }   // 받는 동안 머리 줄 「받는 중…」(10-09 동하 「몇 초 옛 값」)
+let siteDirP=null;   // 도는 중이면 같은 약속을 돌려준다(열기 + 새로고침이 겹치면 동시 8개 → 429 · 10-09 패드 빈 막대)
+function siteDirect(onPart){ if(siteDirP) return siteDirP; SITE.dRun=true; return siteDirP=siteDirect0(onPart).finally(()=>{ SITE.dRun=false; siteDirP=null; }); }   // 받는 동안 머리 줄 「받는 중…」(10-09 동하 「몇 초 옛 값」)
 async function siteDirect0(onPart){ const tok=await gcToken().catch(()=>null); if(!tok) return false;
   /* 10-09 동하 「옛 정보가 뜨다가 10초 뒤 갱신」 — 7번을 차례로 부르면 ~13초(일별 둘이 3.5초씩). GoatCounter는 한꺼번에 6개면 429 · 4개까진 받는다(실측)
      → 1차 = 타일·막대·이용(3개 동시 · ~3.5초) 받자마자 그림(onPart) → 2차 = 경로·기기·브라우저·화면(4개 동시 · ~1.3초) */
@@ -10236,10 +10237,11 @@ const K_SITE_LAST='cards_site_last_v1';
    → 막대 높이는 그대로 두고 그 날짜 UTC 하루의 **비율**로만 나눈다. 지난날은 안 바뀌니 기기에 두고 어제·오늘(UTC)·빈 날만 다시 받는다(4개씩 · 429). */
 const K_SITE_SZ='cards_site_sz_v1';
 async function siteSzDays(tok, out){ let c={}; try{ c=JSON.parse(lsGet(K_SITE_SZ)||'{}')||{}; }catch(e){}
+  c={...(out.szDays||{}), ...c};   // 받기 실패한 날은 GitHub 파일·직전 값으로 둔다(10-09 패드 첫 열기 = 2차 4개 직후 4개 → 429로 어제·오늘이 빈 막대)
   const days=(out.days||[]).map(d=>d.day), f0=(out.days||[]).findIndex(d=>d.n>0), want=(f0<0?[]:days.slice(f0)).slice(-14);
-  const fresh=new Date(Date.now()-864e5).toISOString().slice(0,10), need=want.filter(d=>!c[d]||d>=fresh);
-  for(let i=0;i<need.length;i+=4) await Promise.all(need.slice(i,i+4).map(async d=>{
-    try{ const r=await gcGet(tok,'stats/sizes',{start:d+'T00:00:00Z', end:d+'T00:00:00Z'}), x={p:0,t:0,d:0};
+  const today=new Date().toISOString().slice(0,10), need=want.filter(d=>!(c[d]&&c[d].f));   // f = UTC 하루가 끝난 뒤 받은 값(굳음) — 파일 값·오늘 값은 다시 받는다
+  for(let i=0;i<need.length;i+=2) await Promise.all(need.slice(i,i+2).map(async d=>{   // 2개씩(2차 바로 뒤라 4개면 429)
+    try{ const r=await gcGet(tok,'stats/sizes',{start:d+'T00:00:00Z', end:d+'T00:00:00Z'}), x={p:0,t:0,d:0}; if(d<today) x.f=1;
       (r.stats||[]).forEach(s=>{ const k=s.id==='phone'?'p':s.id==='tablet'?'t':/^desktop/.test(s.id)?'d':''; if(k) x[k]+=s.count||0; }); c[d]=x; }
     catch(e){ if(e.auth) throw e; } }));
   const keep={}; want.forEach(d=>{ if(c[d]) keep[d]=c[d]; }); lsSet(K_SITE_SZ, JSON.stringify(keep)); out.szDays=keep; }

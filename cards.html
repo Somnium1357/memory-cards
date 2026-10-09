@@ -1544,6 +1544,9 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 .fa-it .fa-g{font-size:15px;line-height:21px;color:var(--c-label);margin-top:4px;}
 .fa-it .fa-p{font-size:16px;line-height:23px;font-weight:600;color:var(--c-label);margin-top:10px;padding:10px 12px;background:var(--c-fill);border-radius:12px;}
 .fa-it .fa-e{font-size:13px;line-height:18px;color:var(--c-sec);margin-top:6px;}
+.fa-it .fa-note{display:block;width:100%;box-sizing:border-box;margin-top:10px;padding:9px 12px;border:0;border-radius:12px;background:var(--c-fill);color:var(--c-label);font:inherit;font-size:15px;line-height:21px;resize:none;outline:0;}
+.fa-it .fa-note:focus{box-shadow:inset 0 0 0 2px var(--c-acc);}
+.fa-it .fa-note::placeholder{color:var(--c-ter,var(--c-sec));}
 #ovlAsk .sheet{background:var(--c-bg);}
 .s2-chev{width:8px;height:14px;color:var(--c-chev);}
 /* 스터디 현황(10-01) — 세션 목록과 같은 inset 목록 · 줄 = 상태 점 + 이름 + 「상태 · 시간」 + 오른쪽 장수 */
@@ -4962,7 +4965,7 @@ function logPath(wk){ return `cards-log-${wk}.json`; }
    ⚠ Pages 상대경로로 읽는 것(`cards-data.json`·`cards-plan.json`·`hoedok/`)은 **그대로 main**이다. */
 const DATA_BRANCH_DEF='data';
 function dataBr(){ const b=(cfg&&cfg.dataBranch!==undefined)?cfg.dataBranch:DATA_BRANCH_DEF; return b||''; }
-function onData(path){ return path===MARKS_PATH || path===SESS_PATH || path===YM_PATH || path===FB_PATH || path==='cards-snapshot.json' || /^cards-log-/.test(path); }   // 피드백도 data(09-30 QC · 동하 「채점이랑 비슷하게」 — main 커밋이 몇 분마다 Pages 배포를 취소시켰다)   // 스냅숏 = 세션이 읽는 앱 현황(09-28)   // YM_PATH = 연문 상태(data 브랜치)
+function onData(path){ return path===MARKS_PATH || path===SESS_PATH || path===YM_PATH || path===FB_PATH || path==='fb-notes.json' || path==='cards-snapshot.json' || /^cards-log-/.test(path); }   // 피드백도 data(09-30 QC · 동하 「채점이랑 비슷하게」 — main 커밋이 몇 분마다 Pages 배포를 취소시켰다)   // 스냅숏 = 세션이 읽는 앱 현황(09-28)   // YM_PATH = 연문 상태(data 브랜치)
 function refFor(path){ return onData(path) ? dataBr() : ''; }   // '' = 기본 브랜치(main)
 /* 🔴 1단계 = **양쪽 읽기 · 한쪽 쓰기.** 옛 앱을 물고 있는 기기가 `main`에 쓴 것을 여기서 건진다.
    🔴 **2단계(2026-09-05 동하 확인 · 「다 보여」)** — 09-02 이후 `main`에 앱 커밋 0 · 아이패드·PC 모두 새 앱으로 `data`에 저장하는 것을
@@ -10383,6 +10386,13 @@ function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.c
    답 = Firebase ans/<id> 에 1(추가)·0(보류) — 폰 알림 버튼과 같은 칸 · 이미 답한 것(ans 에 있음)은 안 보인다 · PC가 답을 받아 처리하는 쪽은 §5.0 -4 ④
    rawGet 을 쓰지 않는다 — 실패가 rawNetFail(부팅 「못 받았다」)로 번지면 안 된다(없어도 그만인 파일) */
 const FB_ANS='https://rn-feedback-signal-default-rtdb.asia-southeast1.firebasedatabase.app/ans';
+/* 메모(10-09 동하 「모델한테 말해야 할 일이 있는데」 · 예: 「~는 범위 — 5개 전부」) — 메모는 모델에게 가는 지시라 아무나 쓰는 Firebase 칸에 싣지 않는다:
+   이 기기 GitHub 열쇠로 data 브랜치 fb-notes.json {id: {note, mode: add|redo, at}} 에 쓰고 → 추가 = ans 1(수신기가 메모를 같이 읽음) · 다시 제안 = 신호 칸(sig)만 깨운다 */
+const FB_NOTES='fb-notes.json', FB_SIG='https://rn-feedback-signal-default-rtdb.asia-southeast1.firebasedatabase.app/sig.json';
+async function askNote(id, note, mode){ let cur=null; try{ cur=await ghGet(FB_NOTES); }catch(e){ return false; }
+  const put=await ghPut(FB_NOTES, ()=>({...(cur||{}), [id]:{note:note.slice(0,300), mode, at:Date.now()}}), r=>{ cur=r; }).then(()=>true).catch(()=>false);
+  if(put && mode==='redo') await fetch(FB_SIG,{method:'PUT',headers:{'Content-Type':'application/json'},body:String(Date.now())}).catch(()=>null);
+  return put; }
 let ASK={items:[], ans:{}, at:0, busy:false};
 async function askLoad(force){ if(ASK.busy || !cfg || !cfg.owner || (!force && Date.now()-ASK.at<300000)) return; ASK.busy=true;
   try{ const [d, a]=await Promise.all([
@@ -10403,12 +10413,18 @@ function askSheet(){ const L=askOpenList(), sh=$('askSheet');
     <div class="fa-g">${esc(x.gist||'')}</div>
     <div class="fa-p">${esc(x.proposal||'')}</div>
     ${(x.ev||[]).map(e=>`<div class="fa-e">${esc(String(e.src||'').replace(/\.(pdf|txt|md)$/i,''))}${e.page?` p.${esc(e.page)}`:''} · 「${esc(e.quote||'')}」</div>`).join('')}
-    <div class="btn-row"><button class="btn-ghost" data-v="0">보류</button><button class="btn-primary" data-v="1">추가</button></div></div>`).join('');
+    <textarea class="fa-note" rows="1" placeholder="모델에게 메모 (선택)"></textarea>
+    <div class="btn-row"><button class="btn-ghost" data-v="0">보류</button><button class="btn-ghost" data-v="2" disabled>다시 제안</button><button class="btn-primary" data-v="1">추가</button></div></div>`).join('');
   $('askX').onclick=()=>$('ovlAsk').classList.remove('show');
-  sh.querySelectorAll('.fa-it [data-v]').forEach(b=>b.onclick=async()=>{ const it=b.closest('.fa-it'), id=it.dataset.id, v=+b.dataset.v;
-    it.querySelectorAll('[data-v]').forEach(x=>x.disabled=true);
+  sh.querySelectorAll('.fa-note').forEach(t=>t.oninput=()=>{ t.style.height=''; t.style.height=t.scrollHeight+'px'; t.closest('.fa-it').querySelector('[data-v="2"]').disabled=!t.value.trim(); });
+  sh.querySelectorAll('.fa-it [data-v]').forEach(b=>b.onclick=async()=>{ const it=b.closest('.fa-it'), id=it.dataset.id, v=+b.dataset.v, note=(it.querySelector('.fa-note').value||'').trim();
+    it.querySelectorAll('[data-v],.fa-note').forEach(x=>x.disabled=true);
+    const back=()=>{ it.querySelectorAll('[data-v],.fa-note').forEach(x=>x.disabled=false); it.querySelector('[data-v="2"]').disabled=!note; };
+    if(note && v!==0 && !(cfg&&cfg.token)){ toast('메모는 GitHub 연결된 기기에서만 보낼 수 있어요'); back(); return; }
+    if(note && v!==0 && !await askNote(id, note, v===2?'redo':'add')){ toast('메모를 못 보냈어요 — 잠시 뒤 다시 눌러 주세요'); back(); return; }
+    if(v===2){ ASK.ans[id]=2; toast('메모대로 다시 제안받을게요'); askRender(); return; }
     const r=await fetch(`${FB_ANS}/${encodeURIComponent(id)}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:String(v)}).catch(()=>null);
-    if(!r||!r.ok){ toast('못 보냈어요 — 잠시 뒤 다시 눌러 주세요'); it.querySelectorAll('[data-v]').forEach(x=>x.disabled=false); return; }
+    if(!r||!r.ok){ toast('못 보냈어요 — 잠시 뒤 다시 눌러 주세요'); back(); return; }
     ASK.ans[id]=v; toast(v?'추가할게요':'보류했어요'); askRender(); }); }
 /* 풀이 중 스터디 = 레일 전환(10-05) — 사람 줄(점 · 이름 · 상태·시간 · 장수/목표) · 내 줄은 채점마다(syncRail) · 친구는 동기화(30초)마다 다시 그린다 · 기본 = 피드백 */
 const K_SC_DOCK='cards_sc_dock_v1';

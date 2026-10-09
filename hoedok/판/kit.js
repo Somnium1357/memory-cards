@@ -8,6 +8,14 @@
   });
 })();
 
+/* 10-09 동하(폰 가독성) — 용어 안 손 줄바꿈 <br>(패드 옆 칸과 높이 맞춤용 · 「원의 넓이 구하는<br>식 만들기」)을
+   넓은 화면에선 줄바꿈 · 폰(≤560px)에선 띄어쓰기로 서는 .tbr 로 바꾼다(kit.css). 패드 화면은 1px 도 안 움직인다(수학 9,509 요소 실측). */
+(function(){
+  document.querySelectorAll('main .term br').forEach(function(b){
+    var s=document.createElement('span'); s.className='tbr'; s.textContent=' '; b.parentNode.replaceChild(s,b);
+  });
+})();
+
 /* ── 절 카드 (09-24 개편 · 앱 디자인 언어) — 절 제목(h2)·대주제 배너(.part)는 카드 바깥, 그 뒤 내용은 .sect 카드 한 장.
    조립기의 쪽(.pg) 구조와 앵커는 그대로 — 쪽이 절 경계에 걸리면 쪽 껍데기를 복제해 양쪽 카드에 나눠 담는다(id 는 첫 조각만).
    🔴 다른 스크립트(눈금·꺾쇠·접기)보다 먼저 돈다 — 재배치 뒤의 자리를 재야 한다. ── */

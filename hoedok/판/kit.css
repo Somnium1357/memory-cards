@@ -934,3 +934,13 @@ td>.ms.h2{vertical-align:-.12em;}
 td>.ms.h1{vertical-align:-.25em;}
 tr:has(>td>.ms)>td{vertical-align:middle;height:2.4em;}
 .mid>.mt:only-child{font-size:1.7em;line-height:1.1;}   /* 조표 머리처럼 기호만 홀로 선 칸 */
+
+/* 10-09 동하(가독성) — ① 회색 괄호(부연·식 「(→ r × (1/2·2πr))」)는 한 덩어리: 줄에 안 들어가면 통째로 다음 줄 · 한 줄보다 길 때만 안에서 접힘(폰·패드 공통 · 수학 패드 11곳 → 1곳)
+   ② 용어 안 줄바꿈(.tbr = kit.js 가 <br> 을 바꾼 것)은 넓은 화면에서만 · ③ 폰에서 괄호 묶음(converge)의 결과 칸이 120px 를 잡아 항목 칸이 한 줄 4글자로 눌리던 것 */
+.desc .quiet,.term .quiet{display:inline-block;max-width:100%;}
+.term .tbr{display:block;height:0;overflow:hidden;}
+@media (max-width:560px){
+  .term .tbr{display:inline;height:auto;}
+  main .converge>.link{flex:0 1 auto !important;min-width:min-content !important;max-width:6.5em !important;}
+  main .converge>.stack,main .converge>.bracket{flex:1 1 auto;min-width:7.5em;}
+}

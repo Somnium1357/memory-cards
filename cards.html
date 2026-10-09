@@ -10195,13 +10195,13 @@ let gcTok=null, gcNo=0;
 async function gcToken(){ if(gcTok) return gcTok; const c=lsGet(K_GC); if(c){ gcTok=c; return c; }
   if(!cfg||!cfg.token||Date.now()<gcNo) return null;
   const r=await fetch(`https://api.github.com/repos/${cfg.owner}/${cfg.repo}/actions/variables/${GC_VAR}`,{headers:ghHeaders(),cache:'no-store'}).catch(()=>null);
-  if(!r||!r.ok){ gcNo=Date.now()+10*60000; return null; }   // 변수 없음·토큰 권한 없음 — 10분 뒤 다시
-  const j=await r.json().catch(()=>null); if(!j||!j.value) return null; gcTok=String(j.value).trim(); lsSet(K_GC, gcTok); return gcTok; }
+  if(!r||!r.ok){ gcNo=Date.now()+10*60000; SITE.dErr=r?`GitHub 변수 ${r.status}`:'GitHub 변수 연결 실패'; return null; }   // 변수 없음·토큰 권한 없음 — 10분 뒤 다시(손 새로고침은 바로)
+  const j=await r.json().catch(()=>null); if(!j||!j.value){ SITE.dErr='GitHub 변수 비어 있음'; return null; } gcTok=String(j.value).trim(); lsSet(K_GC, gcTok); return gcTok; }
 async function gcGet(tok, path, q){ const u=new URL(GC_API+path); for(const k in q) u.searchParams.set(k, q[k]);
-  for(let i=0;i<3;i++){ const r=await fetch(u,{headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},cache:'no-store'});
+  for(let i=0;i<3;i++){ const r=await fetch(u,{headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},cache:'no-store'}).catch(e=>{ const x=new Error('GoatCounter 연결 실패 · '+(e&&e.message||e)); x.net=1; throw x; });
     if(r.status===429){ await new Promise(z=>setTimeout(z,(+r.headers.get('Retry-After')||2)*1000)); continue; }
     if(r.status===401||r.status===403){ const e=new Error('gc auth'); e.auth=1; throw e; }
-    if(!r.ok) throw new Error('gc '+r.status); return r.json(); }
+    if(!r.ok) throw new Error('GoatCounter '+r.status); return r.json(); }
   throw new Error('gc 429'); }
 async function siteDirect(onPart){ const tok=await gcToken().catch(()=>null); if(!tok) return false;
   /* 10-09 동하 「옛 정보가 뜨다가 10초 뒤 갱신」 — 7번을 차례로 부르면 ~13초(일별 둘이 3.5초씩). GoatCounter는 한꺼번에 6개면 429 · 4개까진 받는다(실측)
@@ -10221,7 +10221,7 @@ async function siteDirect(onPart){ const tok=await gcToken().catch(()=>null); if
       catch(e){ if(e.auth) throw e; } }));
     lsSet(K_SITE_LAST, JSON.stringify(out));   // 다음에 열 때 먼저 보여 줄 값(이 기기만)
     return true; }
-  catch(e){ if(e.auth){ lsDel(K_GC); gcTok=null; } return false; } }
+  catch(e){ SITE.dErr=e.auth?'GoatCounter 열쇠 거부':String(e&&e.message||e).slice(0,80); if(e.auth){ lsDel(K_GC); gcTok=null; } return false; } }
 const K_SITE_LAST='cards_site_last_v1';
 /* 대기 피드백 실시간(10-08 동하 「시트에 열린 피드백 있는데 앱에 안 떠」) — site-feedback.json은 루틴·QC가 돌 때만 새로라 그 뒤 들어온 건 안 보였다.
    피드백 시트 「앱_대기」 탭(「대기」와 같은 조건 · 타임스탬프·과목 두 칸만 · 원문 없음)을 웹에 게시(CSV) — 이 탭만 공개 · 다른 탭은 401 · 구글이 몇 분 간격으로 새로 */
@@ -10240,21 +10240,21 @@ async function siteOpen(){
   finally{ SITE.busy=false; siteRender(); direct.then(ok=>{ if(ok) siteRender(); }); } }
 async function siteRefresh(){ if(SITE.ref) return;
   if(!cfg||!cfg.token){ SITE.msg='이 기기에 GitHub 토큰이 없어요(설정 › 동기화)'; siteRender(); return; }
-  SITE.ref=true; SITE.msg='받는 중…'; siteRender();
+  SITE.ref=true; SITE.msg='받는 중…'; siteRender(); gcNo=0; SITE.dErr='';   // 손으로 누른 새로고침은 10분 쉬기를 무시하고 다시 해 본다
   if(await siteDirect()){ SITE.msg=''; SITE.ref=false; siteRender(); return; }   // 바로 받기(위) — 안 되면 아래 기존 길
-  SITE.msg='GitHub에 받기 요청 중…'; siteRender();
+  SITE.msg=`바로 받기 안 됨(${SITE.dErr||'열쇠 없음'}) — GitHub에 받기 요청 중…`; siteRender();   // 10-09 폰에서 이유 없이 넘어가 원인을 못 짚었다
   const t0=Date.now()-10000, base=`https://api.github.com/repos/${cfg.owner}/${cfg.repo}/actions/workflows/${SITE_WF}`;
   try{
     const r=await fetch(base+'/dispatches',{method:'POST',headers:{...ghHeaders(),'Content-Type':'application/json'},body:JSON.stringify({ref:'main'})});
     if(r.status===403||r.status===404){ SITE.msg='이 기기 토큰에 Actions 권한이 없어요 — GitHub 토큰 설정에서 「Actions: Read and write」를 켜 주세요'; return; }
     if(!r.ok){ SITE.msg=`요청이 안 됐어요(${r.status})`; return; }
-    SITE.msg='받는 중… 보통 30초 안팎'; siteRender();
+    SITE.msg=`바로 받기 안 됨(${SITE.dErr||'열쇠 없음'}) — 받는 중… 보통 30초 안팎`; siteRender();
     for(let i=0;i<30;i++){ await new Promise(z=>setTimeout(z,4000));
       const q=await fetch(base+'/runs?event=workflow_dispatch&per_page=3',{headers:ghHeaders(),cache:'no-store'}).then(x=>x.ok?x.json():null).catch(()=>null);
       const run=q&&(q.workflow_runs||[]).find(x=>Date.parse(x.created_at)>=t0);
       if(!run||run.status!=='completed') continue;
       if(run.conclusion!=='success'){ SITE.msg='GitHub 쪽 받기가 실패했어요 — 잠시 뒤 다시 눌러 보세요'; return; }
-      const st=await siteStatsFresh(); if(st) SITE.st=st; SITE.chk=Date.parse(run.updated_at)||Date.now(); SITE.at=Date.now(); SITE.msg=''; return; }
+      const st=await siteStatsFresh(); if(st) SITE.st=st; SITE.chk=Date.parse(run.updated_at)||Date.now(); SITE.at=Date.now(); SITE.msg=`바로 받기 안 됨(${SITE.dErr||'열쇠 없음'}) · GitHub로 받음`; return; }
     SITE.msg='GitHub가 아직 처리 중이에요 — 잠시 뒤 다시 열어 보세요';
   } catch(e){ SITE.msg='연결이 안 됐어요'; }
   finally{ SITE.ref=false; siteRender(); } }

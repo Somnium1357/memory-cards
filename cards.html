@@ -1621,6 +1621,10 @@ button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inher
 .st-bars i{flex:1 1 0;min-width:0;border-radius:3px 3px 0 0;background:var(--c-acc);opacity:.55;}
 .st-bars i.t{opacity:1;}
 .st-bars i.z{height:1px!important;background:var(--c-sep);opacity:1;border-radius:0;}
+.st-bars i.s{display:flex;flex-direction:column-reverse;background:none;overflow:hidden;opacity:.8;}
+.st-bars i.s.t{opacity:1;}   /* 폰·패드·PC로 쌓은 막대(10-09) */
+.st-bars i.s b{display:block;min-height:0;}
+.st-leg{justify-content:center;}
 .st-bars i.f{opacity:.45;}   /* 아직 안 온 날(14칸 창이 차기 전) */
 .st-rank{display:flex;align-items:center;gap:10px;min-height:40px;}
 .st-rank+.st-rank{box-shadow:inset 0 .5px 0 var(--c-sep);}
@@ -10215,16 +10219,30 @@ async function siteDirect0(onPart){ const tok=await gcToken().catch(()=>null); i
       days:(total.stats||[]).map(x=>({day:x.day, n:x.daily||0, hourly:x.hourly||[]})),
       pages7:(hits.hits||[]).filter(h=>!h.event).slice(0,30).map(h=>({path:h.path, title:h.title||'', n:h.count||0, days:(h.stats||[]).map(x=>x.daily||0)})),
       events:(evs.hits||[]).filter(h=>h.event&&(h.count||0)>0).map(h=>({path:h.path, n:h.count}))};
-    const prev=SITE.st||{}; for(const pg of ['toprefs','systems','browsers','sizes']) out[pg]=prev[pg]||[];   // 2차가 올 때까지는 직전 값(빈 칸으로 깜빡이지 않게)
+    const prev=SITE.st||{}; for(const pg of ['toprefs','systems','browsers','sizes']) out[pg]=prev[pg]||[]; if(prev.szDays) out.szDays=prev.szDays;   // 2차가 올 때까지는 직전 값(빈 칸으로 깜빡이지 않게)
     SITE.st=out; SITE.chk=Date.now(); SITE.at=Date.now(); SITE.direct=true; SITE.dRun=false; if(onPart) onPart();   // 1차가 오면 「방금 확인」(2차 목록은 이어서)
     await Promise.all(['toprefs','systems','browsers','sizes'].map(async pg=>{
       try{ const r=await gcGet(tok,'stats/'+pg,{start:s7,end,limit:12});
         out[pg]=(r.stats||[]).map(x=>{ let nm=x.name||x.id||''; if(pg==='toprefs'){ if(nm.indexOf('imgostudy.github.io')===0) return null; nm=nm||'(직접)'; } return (x.count||0)>0?{name:nm||'알 수 없음', n:x.count}:null; }).filter(Boolean); }
       catch(e){ if(e.auth) throw e; } }));
+    if(onPart) onPart();
+    await siteSzDays(tok, out);   // 3차 = 날마다 화면 크기(막대를 폰·패드·PC로 쌓는다)
     lsSet(K_SITE_LAST, JSON.stringify(out));   // 다음에 열 때 먼저 보여 줄 값(이 기기만)
     return true; }
   catch(e){ SITE.dErr=e.auth?'GoatCounter 열쇠 거부':String(e&&e.message||e).slice(0,80); if(e.auth){ lsDel(K_GC); gcTok=null; } return false; } }
 const K_SITE_LAST='cards_site_last_v1';
+/* 날마다 폰·패드·PC(10-09 동하 「막대를 플랫폼별로 · 폰 비중이 줄면 좋은 신호」) — GoatCounter `stats/sizes`는 기간 합만 주고 **UTC 날짜 단위**다
+   (start=end=<날>T00:00Z = 그 UTC 하루 · 끝 시각은 날짜로 올림 · 10-09 실측). 막대(`stats/total` days)는 사이트 시간대(KST)라 9시간 어긋난다
+   → 막대 높이는 그대로 두고 그 날짜 UTC 하루의 **비율**로만 나눈다. 지난날은 안 바뀌니 기기에 두고 어제·오늘(UTC)·빈 날만 다시 받는다(4개씩 · 429). */
+const K_SITE_SZ='cards_site_sz_v1';
+async function siteSzDays(tok, out){ let c={}; try{ c=JSON.parse(lsGet(K_SITE_SZ)||'{}')||{}; }catch(e){}
+  const days=(out.days||[]).map(d=>d.day), f0=(out.days||[]).findIndex(d=>d.n>0), want=(f0<0?[]:days.slice(f0)).slice(-14);
+  const fresh=new Date(Date.now()-864e5).toISOString().slice(0,10), need=want.filter(d=>!c[d]||d>=fresh);
+  for(let i=0;i<need.length;i+=4) await Promise.all(need.slice(i,i+4).map(async d=>{
+    try{ const r=await gcGet(tok,'stats/sizes',{start:d+'T00:00:00Z', end:d+'T00:00:00Z'}), x={p:0,t:0,d:0};
+      (r.stats||[]).forEach(s=>{ const k=s.id==='phone'?'p':s.id==='tablet'?'t':/^desktop/.test(s.id)?'d':''; if(k) x[k]+=s.count||0; }); c[d]=x; }
+    catch(e){ if(e.auth) throw e; } }));
+  const keep={}; want.forEach(d=>{ if(c[d]) keep[d]=c[d]; }); lsSet(K_SITE_SZ, JSON.stringify(keep)); out.szDays=keep; }
 /* 대기 피드백 실시간(10-08 동하 「시트에 열린 피드백 있는데 앱에 안 떠」) — site-feedback.json은 루틴·QC가 돌 때만 새로라 그 뒤 들어온 건 안 보였다.
    피드백 시트 「앱_대기」 탭(「대기」와 같은 조건 · 타임스탬프·과목 두 칸만 · 원문 없음)을 웹에 게시(CSV) — 이 탭만 공개 · 다른 탭은 401 · 구글이 몇 분 간격으로 새로 */
 const SITE_PEND_CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vTgYCftZOObbxcZS6GW8t19CDikJvKT9IRlrCDyX3yTvwHOultBYoE9sZ9HmKJ-qF9Sw5QaHpL8ZWx4/pub?gid=21&single=true&output=csv';
@@ -10299,9 +10317,14 @@ function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.c
     L.push(`<div class="st-tiles">${[[today.n,'오늘'],[yest.n,'어제'],[sum(7),'7일'],[st.total30??sum(30),fresh?'누적':'30일']].map(([v,l])=>`<div class="st-tile"><b>${(v||0).toLocaleString()}</b><span>${l}</span></div>`).join('')}</div>`);
     const mx=Math.max(1,...dd.map(d=>d.n||0));
     const lastReal=dd.reduce((k,d,i)=>d.fut?k:i,0);
-    const bars=dd.map((d,i)=>`<i class="${d.n?'':'z'}${i===lastReal?' t':''}${d.fut?' f':''}" style="height:${d.n?Math.max(3,Math.round(d.n/mx*96)):1}px" title="${esc(d.day)} · ${d.n}"></i>`).join('');
+    const sz=st.szDays||{}, SZ=[['t','패드','var(--c-acc)'],['p','폰','var(--c-orange)'],['d','PC','var(--c-indigo)']];   // 아래부터 패드 → 폰 → PC
+    const szPc=x=>{ const T=(x.p||0)+(x.t||0)+(x.d||0); return T?SZ.map(([k,l])=>`${l} ${Math.round((x[k]||0)/T*100)}%`).join(' '):''; };
+    const bars=dd.map((d,i)=>{ const x=d.n&&sz[d.day], T=x?(x.p||0)+(x.t||0)+(x.d||0):0;
+      return `<i class="${d.n?'':'z'}${i===lastReal?' t':''}${d.fut?' f':''}${T?' s':''}" style="height:${d.n?Math.max(3,Math.round(d.n/mx*96)):1}px" title="${esc(d.day)} · ${d.n}${T?' · '+szPc(x):''}">${T?SZ.map(([k,,c])=>`<b style="flex:${x[k]||0} 0 0;background:${c}"></b>`).join(''):''}</i>`; }).join('');
+    const sz7=Object.keys(sz).sort().slice(-7).reduce((a,k)=>(a.p+=sz[k].p||0,a.t+=sz[k].t||0,a.d+=sz[k].d||0,a),{p:0,t:0,d:0}), sz7T=sz7.p+sz7.t+sz7.d;
+    const leg=sz7T?`<div class="legend st-leg">${SZ.map(([k,l,c])=>`<span><i style="background:${c}"></i>${l} ${Math.round(sz7[k]/sz7T*100)}%</span>`).join('')}</div>`:'';
     const ax=dd.length?[...new Set([0, Math.floor((dd.length-1)/2), dd.length-1])].map(i=>dd[i]).map(d=>`<span>${Number(d.day.slice(5,7))}/${Number(d.day.slice(8))}</span>`).join(''):'';
-    L.push(`<div class="sc-sec"><div class="h-sec2"><h2>${real.length>=W14?'최근 14일':'연 날부터'}</h2><span class="sc-g">하루 방문</span></div><div class="sc-card"><div class="st-bars">${bars}</div><div class="sc-ax">${ax}</div></div></div>`);
+    L.push(`<div class="sc-sec"><div class="h-sec2"><h2>${real.length>=W14?'최근 14일':'연 날부터'}</h2><span class="sc-g">하루 방문</span></div><div class="sc-card"><div class="st-bars">${bars}</div><div class="sc-ax">${ax}</div>${leg}</div></div>`);
     const hr=(today.hourly||[]).length===24?today.hourly:Array(24).fill(0), hmx=Math.max(1,...hr);
     L.push(`<div class="sc-sec"><div class="h-sec2"><h2>오늘 시간대</h2><span class="sc-g">시간별</span></div><div class="sc-card"><div class="st-bars" style="height:64px">${hr.map((n,h)=>`<i class="${n?'':'z'}" style="height:${n?Math.max(3,Math.round(n/hmx*64)):1}px" title="${h}시 · ${n}"></i>`).join('')}</div><div class="sc-ax"><span>0</span><span>6</span><span>12</span><span>18</span><span>24</span></div></div></div>`);
     const pages=(st.pages7||[]).filter(x=>x.n>0);

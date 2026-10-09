@@ -65,6 +65,19 @@ jobs:
                   out[page] = rows
               except Exception as e:
                   out[page] = []; print(page, "실패:", e)
+          # 날마다 폰·패드·PC(10-09) — stats/sizes는 UTC 날짜 단위(start=end=<날>T00:00Z = 그 하루) · 앱은 막대를 이 비율로 나눈다
+          f0 = next((i for i, d in enumerate(out["days"]) if d["n"] > 0), None)
+          out["szDays"] = {}
+          for day in ([] if f0 is None else [d["day"] for d in out["days"][f0:]][-14:]):
+              try:
+                  r = get("stats/sizes", start=day + "T00:00:00Z", end=day + "T00:00:00Z")
+                  x = {"p": 0, "t": 0, "d": 0}
+                  for v in r.get("stats", []):
+                      k = {"phone": "p", "tablet": "t"}.get(v.get("id"), "d" if str(v.get("id", "")).startswith("desktop") else "")
+                      if k: x[k] += v.get("count", 0)
+                  out["szDays"][day] = x
+              except Exception as e:
+                  print("szDays", day, "실패:", e)
           json.dump(out, open("site-stats.json", "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
           print("total30", out["total30"], "pages", len(out["pages7"]))
           PY

@@ -5875,6 +5875,7 @@ function pushLog(entry){             // 새 채점 = 이번 주 파일에 append
   markDirty('log', wk);
   try{ scDeckAdd(entry); }catch(e){}   // 스터디 「세션 속도」 — 이 기기에만 쌓는다
   try{ scRtTick(entry); }catch(e){}    // 스터디 실시간(10-06) — 방 친구에게 「한 장」을 바로
+  try{ scCards100(); }catch(e){}       // 100장마다 축포(10-09 · 애드온 0.1.9)
 }
 function dropLogEntry(e){            // undo — 그 항목 하나만 지목해 제거
   /* 길이로 잘라내면 안 된다. 채점과 되돌리기 사이에 원격 병합이 끼면 rebuildLog()가
@@ -10634,6 +10635,12 @@ function scCelebrate(){ if(!SC.group || !SC.auth) return; const now=Date.now(), 
   const a=scLeaderData().slots[prev]; if(!a || !a.length) return;   // scLeaderData가 칸마다 많은 순으로 정렬해 둔다
   const top=a[0].n, mine=a.find(x=>x.uid===SC.auth.user_id); if(!mine || mine.n!==top || top<=0) return;
   scCelDone.add(k); scConfetti(); toast(`10분 ${a.filter(x=>x.n===top).length>1?'공동 1등':'1등'}이에요 · ${top.toLocaleString()}장`); }
+/* 100장마다 축포(10-09 · 애드온 0.1.9 _check_and_celebrate_cards) — 방의 오늘 푼 장수(scToday = 스터디에 올라가는 수)가 100 단위를 새로 넘을 때 한 번.
+   켤 때·날이 바뀔 때 이미 넘긴 단위는 축하하지 않는다(그때는 기준만 잡음 · 30초 박자에서도 잡는다) · 되돌리기로 줄면 기준도 내린다 · 방해 금지·축포 끔이면 안 한다(10분 1등과 같은 스위치 — 애드온 celebrate_confetti) */
+let scMile=null;
+function scCards100(){ if(!SC.group) return; const t=scToday(), m=Math.floor(t.n/100)*100;
+  if(!scMile || scMile.day!==t.day || m<scMile.m){ scMile={day:t.day, m}; return; }
+  if(m>=100 && m>scMile.m){ scMile.m=m; if(SC.dnd || SC.confetti===false) return; scConfetti(); toast(`오늘 카드 ${m.toLocaleString()}장 달성`); } }
 function scConfetti(){ try{ if(matchMedia('(prefers-reduced-motion: reduce)').matches) return; }catch(e){}
   let cv=$('scConf'); if(!cv){ cv=document.createElement('canvas'); cv.id='scConf'; cv.style.cssText='position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9999'; document.body.appendChild(cv); }
   const dpr=Math.min(2, window.devicePixelRatio||1), W=innerWidth, H=innerHeight; cv.width=W*dpr; cv.height=H*dpr; const g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0);
@@ -10803,7 +10810,7 @@ function scRenderSet(){ const b=$('scBox'); if(!b) return;
     <details class="sc-more sc-fold" id="scMoreBox"${scMoreOpen?' open':''}><summary><span>세부 설정</span>${SC_CHEV}</summary>
     <div class="tgl-row" id="scShareRow"><span>푸는 세션 이름 보여 주기</span><div class="tgl${SC.shareDeck!==false?' on':''}" id="scShare" role="switch" aria-checked="${SC.shareDeck!==false}"></div></div>
     <div class="tgl-row" id="scBadgeRow"><span>풀이 화면 배지</span><div class="tgl${SC.badge!==false?' on':''}" role="switch" aria-checked="${SC.badge!==false}"></div></div>
-    <div class="tgl-row" id="scConfRow"><span>10분 1등 축포</span><div class="tgl${SC.confetti!==false?' on':''}" role="switch" aria-checked="${SC.confetti!==false}"></div></div></details>` : '')
+    <div class="tgl-row" id="scConfRow"><span>10분 1등·100장 축포</span><div class="tgl${SC.confetti!==false?' on':''}" role="switch" aria-checked="${SC.confetti!==false}"></div></div></details>` : '')
     + acct + rec
     + `<div class="sc-msg" id="scMsg">${SC.err?esc(SC.err):''}</div>`
     + (g ? `<button class="act-btn" id="scOpenStudy" style="margin-top:8px"><span>스터디 화면 열기</span><small>${esc(g.name||'')} · 코드 ${esc(g.invite_code||'—')}</small></button>`
@@ -10823,7 +10830,7 @@ function scRenderSet(){ const b=$('scBox'); if(!b) return;
   const rd=$('scRecDone'); if(rd) rd.onclick=()=>{ scRec=null; b.dataset.m=''; scRenderSet(); };
   $('scOpenStudy').onclick=()=>{ $('ovlSettings').classList.remove('show'); go('scrStudy'); }; }
 /* 30초마다 올리고 받기(애드온과 같은 주기) · 앱을 내리면 「접속 중」으로 한 번 · 풀이 화면에서 손대면 「공부 중」 */
-setInterval(()=>{ if(SC.group && document.visibilityState==='visible'){ scSync(); scRtOpen(); scRtPresence(); scPokeFetch(); scCelebrate(); } else if(SC.group) scRenderHome(); if(!SC.group) scRtClose(); }, 30000);   // 실시간 연결·상태도 같은 박자(10-06)
+setInterval(()=>{ if(SC.group && document.visibilityState==='visible'){ scSync(); scRtOpen(); scRtPresence(); scPokeFetch(); scCelebrate(); scCards100(); } else if(SC.group) scRenderHome(); if(!SC.group) scRtClose(); }, 30000);   // 실시간 연결·상태도 같은 박자(10-06)
 ['pointerdown','keydown'].forEach(ev=>document.addEventListener(ev, ()=>{ scInputAt=Date.now(); }, true));
 document.addEventListener('visibilitychange', ()=>{ if(!SC.group) return;
   if(document.visibilityState==='hidden'){ scSync({keepalive:true, status:'stopped'}); try{ scRtPresence('stopped'); }catch(e){} scRtClose(); } else { scSync(); scRtOpen(); } });

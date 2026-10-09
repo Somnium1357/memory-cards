@@ -10203,7 +10203,10 @@ async function gcToken(){ if(gcTok) return gcTok; const c=lsGet(K_GC); if(c){ gc
   if(!r||!r.ok){ gcNo=Date.now()+10*60000; SITE.dErr=r?`GitHub 변수 ${r.status}`:'GitHub 변수 연결 실패'; return null; }   // 변수 없음·토큰 권한 없음 — 10분 뒤 다시(손 새로고침은 바로)
   const j=await r.json().catch(()=>null); if(!j||!j.value){ SITE.dErr='GitHub 변수 비어 있음'; return null; } gcTok=String(j.value).trim(); lsSet(K_GC, gcTok); return gcTok; }
 async function gcGet(tok, path, q){ const u=new URL(GC_API+path); for(const k in q) u.searchParams.set(k, q[k]);
-  for(let i=0;i<3;i++){ const r=await fetch(u,{headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},cache:'no-store'}).catch(e=>{ const x=new Error('GoatCounter 연결 실패 · '+(e&&e.message||e)); x.net=1; throw x; });
+  /* 🔴 GoatCounter 제한 = 1초 4번이고 **브라우저 사전 요청(OPTIONS)도 센다**(요청 1개 = 2번 · 10-09 실측). 사전 요청이 429면 브라우저는 연결 실패로 던진다
+     → 연결 실패도 한 번 쉬고 다시(막힌 기기는 두 번째도 실패 → 기존 길로) */
+  for(let i=0;i<3;i++){ const r=await fetch(u,{headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},cache:'no-store'}).catch(e=>{ const x=new Error('GoatCounter 연결 실패 · '+(e&&e.message||e)); x.net=1; return x; });
+    if(r instanceof Error){ if(i>=1) throw r; await new Promise(z=>setTimeout(z,1500)); continue; }
     if(r.status===429){ await new Promise(z=>setTimeout(z,(+r.headers.get('Retry-After')||2)*1000)); continue; }
     if(r.status===401||r.status===403){ const e=new Error('gc auth'); e.auth=1; throw e; }
     if(!r.ok) throw new Error('GoatCounter '+r.status); return r.json(); }
@@ -10226,7 +10229,7 @@ async function siteDirect0(onPart){ const tok=await gcToken().catch(()=>null); i
       try{ const r=await gcGet(tok,'stats/'+pg,{start:s7,end,limit:12});
         out[pg]=(r.stats||[]).map(x=>{ let nm=x.name||x.id||''; if(pg==='toprefs'){ if(nm.indexOf('imgostudy.github.io')===0) return null; nm=nm||'(직접)'; } return (x.count||0)>0?{name:nm||'알 수 없음', n:x.count}:null; }).filter(Boolean); }
       catch(e){ if(e.auth) throw e; } }));
-    if(onPart) onPart();
+    if(onPart) onPart(); await new Promise(z=>setTimeout(z,1100));   // 2차 4개(+사전 요청) 창이 지난 뒤
     await siteSzDays(tok, out);   // 3차 = 날마다 화면 크기(막대를 폰·패드·PC로 쌓는다)
     lsSet(K_SITE_LAST, JSON.stringify(out));   // 다음에 열 때 먼저 보여 줄 값(이 기기만)
     return true; }
@@ -10240,7 +10243,7 @@ async function siteSzDays(tok, out){ let c={}; try{ c=JSON.parse(lsGet(K_SITE_SZ
   c={...(out.szDays||{}), ...c};   // 받기 실패한 날은 GitHub 파일·직전 값으로 둔다(10-09 패드 첫 열기 = 2차 4개 직후 4개 → 429로 어제·오늘이 빈 막대)
   const days=(out.days||[]).map(d=>d.day), f0=(out.days||[]).findIndex(d=>d.n>0), want=(f0<0?[]:days.slice(f0)).slice(-14);
   const today=new Date().toISOString().slice(0,10), need=want.filter(d=>!(c[d]&&c[d].f));   // f = UTC 하루가 끝난 뒤 받은 값(굳음) — 파일 값·오늘 값은 다시 받는다
-  for(let i=0;i<need.length;i+=2) await Promise.all(need.slice(i,i+2).map(async d=>{   // 2개씩(2차 바로 뒤라 4개면 429)
+  for(let i=0;i<need.length;i++) await Promise.all(need.slice(i,i+1).map(async d=>{ if(i) await new Promise(z=>setTimeout(z,600));   // 하나씩 0.6초 간격(사전 요청까지 2번 = 초당 4번 안) · 첫 열기만 여럿 · 평소 1~2개
     try{ const r=await gcGet(tok,'stats/sizes',{start:d+'T00:00:00Z', end:d+'T00:00:00Z'}), x={p:0,t:0,d:0}; if(d<today) x.f=1;
       (r.stats||[]).forEach(s=>{ const k=s.id==='phone'?'p':s.id==='tablet'?'t':/^desktop/.test(s.id)?'d':''; if(k) x[k]+=s.count||0; }); c[d]=x; }
     catch(e){ if(e.auth) throw e; } }));

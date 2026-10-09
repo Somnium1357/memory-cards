@@ -41,6 +41,7 @@ jobs:
           s30, s7 = iso(now - dt.timedelta(days=30)), iso(now - dt.timedelta(days=7))
           end = iso(now)
           total = get("stats/total", start=s30, end=end)
+          if not total.get("stats"): print("stats/total 비어 있음 — 이번엔 쓰지 않음(10-09 일시 404로 누적 0이 구워졌다)"); raise SystemExit(0)
           hits = get("stats/hits", start=s7, end=end, limit=100, group="day")   # 100 = 이벤트가 페이지 칸을 밀어내지 않게(10-08)
           evs = get("stats/hits", start=s30, end=end, limit=100)               # 이벤트(10-08) — pdf/· quiz/· search/· search-none/ · 30일 합
           out = {

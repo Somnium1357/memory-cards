@@ -10240,14 +10240,16 @@ const K_SITE_LAST='cards_site_last_v1';
    → 막대 높이는 그대로 두고 그 날짜 UTC 하루의 **비율**로만 나눈다. 지난날은 안 바뀌니 기기에 두고 어제·오늘(UTC)·빈 날만 다시 받는다(4개씩 · 429). */
 const K_SITE_SZ='cards_site_sz_v1';
 async function siteSzDays(tok, out){ let c={}; try{ c=JSON.parse(lsGet(K_SITE_SZ)||'{}')||{}; }catch(e){}
-  c={...(out.szDays||{}), ...c};   // 받기 실패한 날은 GitHub 파일·직전 값으로 둔다(10-09 패드 첫 열기 = 2차 4개 직후 4개 → 429로 어제·오늘이 빈 막대)
+  c={...(SITE.fileSz||{}), ...(out.szDays||{}), ...c};   // 받기 실패한 날은 GitHub 파일·직전 값으로 둔다(10-09 패드 첫 열기 = 2차 4개 직후 4개 → 429로 어제·오늘이 빈 막대)
+  let fails=0, ferr='';
   const days=(out.days||[]).map(d=>d.day), f0=(out.days||[]).findIndex(d=>d.n>0), want=(f0<0?[]:days.slice(f0)).slice(-14);
   const today=new Date().toISOString().slice(0,10), need=want.filter(d=>!(c[d]&&c[d].f));   // f = UTC 하루가 끝난 뒤 받은 값(굳음) — 파일 값·오늘 값은 다시 받는다
   for(let i=0;i<need.length;i++) await Promise.all(need.slice(i,i+1).map(async d=>{ if(i) await new Promise(z=>setTimeout(z,600));   // 하나씩 0.6초 간격(사전 요청까지 2번 = 초당 4번 안) · 첫 열기만 여럿 · 평소 1~2개
     try{ const r=await gcGet(tok,'stats/sizes',{start:d+'T00:00:00Z', end:d+'T00:00:00Z'}), x={p:0,t:0,d:0}; if(d<today) x.f=1;
       (r.stats||[]).forEach(s=>{ const k=s.id==='phone'?'p':s.id==='tablet'?'t':/^desktop/.test(s.id)?'d':''; if(k) x[k]+=s.count||0; }); c[d]=x; }
-    catch(e){ if(e.auth) throw e; } }));
-  const keep={}; want.forEach(d=>{ if(c[d]) keep[d]=c[d]; }); lsSet(K_SITE_SZ, JSON.stringify(keep)); out.szDays=keep; }
+    catch(e){ if(e.auth) throw e; fails++; ferr=String(e&&e.message||e).slice(0,40); } }));
+  SITE.szErr=fails?`기기별 ${fails}일 못 받음(${ferr})`:'';   // 10-09 패드에서 막대가 다시 안 쌓였는데 원인을 못 봤다 — 실패하면 이유를 머리 줄에
+  const keep={}; (want.length?want:Object.keys(c).sort().slice(-14)).forEach(d=>{ if(c[d]) keep[d]=c[d]; }); lsSet(K_SITE_SZ, JSON.stringify(keep)); out.szDays=keep; }   // 막대 날이 비어도(받기 실패) 저장값을 지우지 않는다
 /* 대기 피드백 실시간(10-08 동하 「시트에 열린 피드백 있는데 앱에 안 떠」) — site-feedback.json은 루틴·QC가 돌 때만 새로라 그 뒤 들어온 건 안 보였다.
    피드백 시트 「앱_대기」 탭(「대기」와 같은 조건 · 타임스탬프·과목 두 칸만 · 원문 없음)을 웹에 게시(CSV) — 이 탭만 공개 · 다른 탭은 401 · 구글이 몇 분 간격으로 새로 */
 const SITE_PEND_CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vTgYCftZOObbxcZS6GW8t19CDikJvKT9IRlrCDyX3yTvwHOultBYoE9sZ9HmKJ-qF9Sw5QaHpL8ZWx4/pub?gid=21&single=true&output=csv';
@@ -10260,7 +10262,8 @@ async function siteOpen(){
   siteRender(); if(SITE.busy || Date.now()-SITE.at<60000) return; SITE.busy=true;
   const direct=(!SITE.ref && Date.now()-(SITE.dAt||0)>60000)?(SITE.dAt=Date.now(), siteDirect(siteRender)):Promise.resolve(false); siteRender();
   try{ const [st, fb, chk, pend]=await Promise.all([rawGet('site-stats.json', dataBr()), rawGet('site-feedback.json', dataBr()), siteLastRun(), sitePend()]);
-    if(!SITE.direct && st && (Date.parse(st.at)||0)>=(Date.parse(SITE.st&&SITE.st.at)||0)) SITE.st=st;   // 바로 받은 값이 이미 있으면 덮지 않는다
+    if(st&&st.szDays&&Object.keys(st.szDays).length) SITE.fileSz=st.szDays;
+    if(!SITE.direct && st && (st.days||[]).length && (Date.parse(st.at)||0)>=(Date.parse(SITE.st&&SITE.st.at)||0)) SITE.st=st;   // 바로 받은 값이 이미 있으면 덮지 않는다 · 날이 빈 파일(GoatCounter 일시 404로 구운 것)은 안 쓴다
     SITE.fb=fb; SITE.chk=Math.max(SITE.chk||0, chk||0); SITE.pend=pend; SITE.at=Date.now(); }
   finally{ SITE.busy=false; siteRender(); direct.then(ok=>{ if(!ok && SITE.dErr && !SITE.ref) SITE.msg=`바로 받기 안 됨(${SITE.dErr})`; siteRender(); }); } }   // 10-09 「다시 열면 GitHub본」 — 열 때 실패도 이유를 띄운다
 async function siteRefresh(){ if(SITE.ref) return;
@@ -10312,7 +10315,7 @@ function siteRank(list, nameOf){ const mx=Math.max(1,...list.map(x=>x.n)); retur
 function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.contains('on')) return;
   const st=SITE.st, fb=SITE.fb, L=[];
   const chk=Math.max(Date.parse(st&&st.at||'')||0, SITE.chk||0);
-  L.push(`<div class="st-sub"><a href="https://imgostudy.github.io/review-notes/" target="_blank" rel="noopener">imgostudy.github.io/review-notes</a>${SITE.dRun?' · 방문 통계 받는 중…':chk?` · 방문 통계 ${siteAgo(new Date(chk).toISOString())} 확인${st&&st.src!=='gc'?'(GitHub 파일)':''}`:''} · <button class="st-rf" id="siteRf"${SITE.ref?' disabled':''}>새로고침</button>${SITE.msg?`<div class="st-msg">${esc(SITE.msg)}</div>`:''}</div>`);
+  L.push(`<div class="st-sub"><a href="https://imgostudy.github.io/review-notes/" target="_blank" rel="noopener">imgostudy.github.io/review-notes</a>${SITE.dRun?' · 방문 통계 받는 중…':chk?` · 방문 통계 ${siteAgo(new Date(chk).toISOString())} 확인${st&&st.src!=='gc'?'(GitHub 파일)':''}`:''} · <button class="st-rf" id="siteRf"${SITE.ref?' disabled':''}>새로고침</button>${(SITE.msg||SITE.szErr)?`<div class="st-msg">${esc(SITE.msg||SITE.szErr)}</div>`:''}</div>`);
   if(!st) L.push(`<div class="sc-sec"><div class="sc-card"><div class="sc-line">${SITE.busy?'불러오는 중…':'방문 통계가 아직 없어요 — GitHub가 15분마다 받아 와요(저장소 Secrets에 GoatCounter 열쇠가 있어야 시작돼요)'}</div></div></div>`);
   else {
     const days=st.days||[], today=days[days.length-1]||{n:0, hourly:[]}, yest=days[days.length-2]||{n:0};

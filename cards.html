@@ -1635,6 +1635,16 @@ button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inher
 .st-rank .br{flex:1;height:6px;border-radius:3px;background:var(--c-fill);overflow:hidden;}
 .st-rank .br i{display:block;height:100%;border-radius:3px;background:var(--c-acc);}
 .st-rank .n{flex:0 0 auto;min-width:36px;text-align:right;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--c-label);}
+/* 쪽지시험 범위 = 과목별 접기(10-09) */
+.st-qg>summary{list-style:none;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.st-qg>summary::-webkit-details-marker{display:none;}
+.st-q .cv{flex:0 0 10px;width:10px;line-height:20px;text-align:center;color:var(--c-chev);font-size:17px;font-weight:600;transition:transform .2s;}
+.st-qg[open]>summary .cv{transform:rotate(90deg);}
+.st-q+.st-q{box-shadow:inset 0 .5px 0 var(--c-sep);}
+.st-qsub{box-shadow:inset 0 .5px 0 var(--c-sep);padding-left:14px;}
+.st-qsub .st-rank{padding-right:20px;}
+.st-qsub .st-rank .nm{flex-basis:50%;color:var(--c-sec);}
+.st-qsub .st-rank .br i{opacity:.55;}
 .st-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 16px;}
 #siteBody .btn-ghost{display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border-radius:18px;background:var(--c-fill);color:var(--c-label);font-size:15px;font-weight:600;text-decoration:none;}
 .st-fbn{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;}
@@ -10214,6 +10224,12 @@ async function gcGet(tok, path, q){ const u=new URL(GC_API+path); for(const k in
     if(r.status===401||r.status===403){ const e=new Error('gc auth'); e.auth=1; throw e; }
     if(!r.ok) throw new Error('GoatCounter '+r.status); return r.json(); }
   throw new Error('gc 429'); }
+/* 🔴 stats/hits 는 한 번에 **100줄까지만**(limit 200·500도 100 · `more`) — 30일 페이지 + 이벤트가 208줄이라 1회 칸 이벤트가 잘려
+   검색·쪽지시험 수가 받을 때마다 늘었다 줄었다 했다(10-09 동하 · 검색 실제 14 → 보이는 2). `exclude_paths`(쉼표 · path_id)로 다음 쪽을 받는다 · 쪽 사이 0.4초(1초 4번) */
+async function gcHitsAll(tok, q){ let all=[]; const ex=[];
+  for(let i=0;i<8;i++){ const d=await gcGet(tok,'stats/hits', ex.length?{...q, exclude_paths:ex.join(',')}:q), h=d.hits||[];
+    all=all.concat(h); for(const x of h) ex.push(x.path_id); if(!d.more||!h.length) break; await new Promise(z=>setTimeout(z,400)); }
+  return {hits:all}; }
 let siteDirP=null;   // 도는 중이면 같은 약속을 돌려준다(열기 + 새로고침이 겹치면 동시 8개 → 429 · 10-09 패드 빈 막대)
 function siteDirect(onPart){ if(siteDirP) return siteDirP; SITE.dRun=true; return siteDirP=siteDirect0(onPart).finally(()=>{ SITE.dRun=false; siteDirP=null; }); }   // 받는 동안 머리 줄 「받는 중…」(10-09 동하 「몇 초 옛 값」)
 async function siteDirect0(onPart){ const tok=await gcToken().catch(()=>null); if(!tok) return false;
@@ -10221,7 +10237,7 @@ async function siteDirect0(onPart){ const tok=await gcToken().catch(()=>null); i
      → 1차 = 타일·막대·이용(3개 동시 · ~3.5초) 받자마자 그림(onPart) → 2차 = 경로·기기·브라우저·화면(4개 동시 · ~1.3초) */
   try{ const now=new Date(); now.setUTCMinutes(0,0,0); now.setUTCHours(now.getUTCHours()+1);
     const iso=d=>d.toISOString().slice(0,13)+':00:00Z', end=iso(now), s30=iso(new Date(now-30*864e5)), s7=iso(new Date(now-7*864e5));
-    const [total, hits, evs]=await Promise.all([gcGet(tok,'stats/total',{start:s30,end}), gcGet(tok,'stats/hits',{start:s7,end,limit:100,group:'day'}), gcGet(tok,'stats/hits',{start:s30,end,limit:100})]);
+    const [total, hits, evs]=await Promise.all([gcGet(tok,'stats/total',{start:s30,end}), gcGet(tok,'stats/hits',{start:s7,end,limit:100,group:'day'}), gcHitsAll(tok,{start:s30,end,limit:100})]);
     const out={src:'gc', at:new Date().toISOString(), site:'https://imgostudy.github.io/review-notes/', total30:total.total||0,
       days:(total.stats||[]).map(x=>({day:x.day, n:x.daily||0, hourly:x.hourly||[]})),
       pages7:(hits.hits||[]).filter(h=>!h.event).slice(0,30).map(h=>({path:h.path, title:h.title||'', n:h.count||0, days:(h.stats||[]).map(x=>x.daily||0)})),
@@ -10314,6 +10330,7 @@ function siteRef(nm){ if(SITE_KO[nm]) return SITE_KO[nm];
   return host||s; }
 function siteRefs(list){ const m=new Map(); (list||[]).forEach(x=>{ const k=siteRef(x.name); m.set(k,(m.get(k)||0)+(x.n||0)); });
   return [...m].map(([name,n])=>({name,n})).sort((a,b)=>b.n-a.n); }
+function siteQT(el){ const s=SITE.qOpen||(SITE.qOpen=new Set()); s[el.open?'add':'delete'](el.dataset.g); }
 function siteRank(list, nameOf){ const mx=Math.max(1,...list.map(x=>x.n)); return list.map(x=>`<div class="st-rank"><span class="nm">${esc(nameOf?nameOf(x):(SITE_KO[x.name]||x.name))}</span><span class="br"><i style="width:${(x.n/mx*100).toFixed(1)}%"></i></span><span class="n">${x.n.toLocaleString()}</span></div>`).join(''); }
 function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.contains('on')) return;
   const st=SITE.st, fb=SITE.fb, L=[];
@@ -10347,7 +10364,14 @@ function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.c
       const tiles=a=>`<div class="st-fbn">${a.map(([v,l])=>`<div class="st-tile"><b>${(v||0).toLocaleString()}</b><span>${l}</span></div>`).join('')}</div>`;
       const rank=(a,k)=>a.length?`<div class="sc-card" style="margin-top:10px">${siteRank(a.sort((x,y)=>y.n-x.n).slice(0,k), x=>x.name)}</div>`:'';
       const pdfName=n=>{ const m=n.match(/^\d+\.(.+)$/); return m?m[1]+' 합본':n; };
-      L.push(`<div class="sc-sec"><div class="h-sec2"><h2>쪽지시험</h2><span class="sc-g">30일</span></div>${tiles([[tot(qs),'시작'],[qd,'끝까지']])}${rank(qs,6)}</div>`);
+      /* 범위 이름 = 「전체」 · 「과목 전체」 · 「과목 › 대주제( 외 n)」 · 「과목 · 과목」 → 과목별로 접는다(10-09 동하 「과목별로 접어야」) · 연 칸은 다시 그려도 유지 */
+      const qGrp=n=>n==='전체'?['전 과목','전체']:n.includes(' › ')?[n.split(' › ')[0], n.split(' › ').slice(1).join(' › ')]:/ 전체$/.test(n)?[n.replace(/ 전체$/,''),'전체']:n.includes(' · ')?['여러 과목',n]:[n,'전체'];
+      const QG={}; for(const x of qs){ const [g,s]=qGrp(x.name); (QG[g]||(QG[g]={g,n:0,a:[]})).n+=x.n; QG[g].a.push({name:s,n:x.n}); }
+      const qgs=Object.values(QG).sort((a,b)=>b.n-a.n), qmx=Math.max(1,...qgs.map(x=>x.n)), qOpen=SITE.qOpen||(SITE.qOpen=new Set());
+      const qList=qgs.length?`<div class="sc-card" style="margin-top:10px">${qgs.map(G=>{ const head=(nm,cv)=>`<span class="nm">${esc(nm)}</span><span class="br"><i style="width:${(G.n/qmx*100).toFixed(1)}%"></i></span><span class="n">${G.n.toLocaleString()}</span><span class="cv">${cv}</span>`;
+        if(G.a.length===1) return `<div class="st-q st-rank">${head(G.a[0].name==='전체'||G.g==='여러 과목'?(G.g==='여러 과목'?G.a[0].name:G.g):G.g+' › '+G.a[0].name,'')}</div>`;   /* 한 줄뿐이면 접지 않는다 */
+        return `<details class="st-q st-qg" data-g="${esc(G.g)}"${qOpen.has(G.g)?' open':''} ontoggle="siteQT(this)"><summary class="st-rank">${head(G.g,'›')}</summary><div class="st-qsub">${siteRank(G.a.sort((x,y)=>y.n-x.n), x=>x.name)}</div></details>`; }).join('')}</div>`:'';
+      L.push(`<div class="sc-sec"><div class="h-sec2"><h2>쪽지시험</h2><span class="sc-g">30일</span></div>${tiles([[tot(qs),'시작'],[qd,'끝까지']])}${qList}</div>`);
       L.push(`<div class="sc-sec"><div class="h-sec2"><h2>검색</h2><span class="sc-g">30일</span></div>${tiles([[tot(sh)+tot(sn),'검색'],[tot(sn),'결과 없음']])}${rank(sh,8)}${sn.length?`<div class="h-sec2" style="margin-top:14px"><h2 style="font-size:15px">결과가 없던 말</h2></div>`+rank(sn,8):''}</div>`);
       L.push(`<div class="sc-sec"><div class="h-sec2"><h2>PDF 받기</h2><span class="sc-g">30일</span></div>${tiles([[tot(pf),'받기'],[pf.length,'파일 종류']])}${rank(pf.map(x=>({name:pdfName(x.name), n:x.n})),8)}</div>`); }
     const two=[['toprefs','들어온 경로'],['systems','기기'],['browsers','브라우저'],['sizes','화면']].filter(([k])=>(st[k]||[]).length);

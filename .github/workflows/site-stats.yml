@@ -43,7 +43,16 @@ jobs:
           total = get("stats/total", start=s30, end=end)
           if not total.get("stats"): print("stats/total 비어 있음 — 이번엔 쓰지 않음(10-09 일시 404로 누적 0이 구워졌다)"); raise SystemExit(0)
           hits = get("stats/hits", start=s7, end=end, limit=100, group="day")   # 100 = 이벤트가 페이지 칸을 밀어내지 않게(10-08)
-          evs = get("stats/hits", start=s30, end=end, limit=100)               # 이벤트(10-08) — pdf/· quiz/· search/· search-none/ · 30일 합
+          # 이벤트(10-08) — pdf/· quiz/· search/· search-none/ · 30일 합
+          # 한 번에 100줄까지만 온다(more) — 잘린 채 쓰면 1회 칸 이벤트가 들쭉날쭉(10-09) → exclude_paths(쉼표)로 끝까지
+          evs, ex = {"hits": []}, []
+          for _ in range(8):
+              q = {"start": s30, "end": end, "limit": 100}
+              if ex: q["exclude_paths"] = ",".join(map(str, ex))
+              d = get("stats/hits", **q); h = d.get("hits") or []
+              evs["hits"] += h; ex += [x["path_id"] for x in h]
+              if not d.get("more") or not h: break
+              time.sleep(0.4)
           out = {
               "at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
               "site": "https://imgostudy.github.io/review-notes/",

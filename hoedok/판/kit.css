@@ -975,3 +975,5 @@ tr:has(>td>.ms)>td{vertical-align:middle;height:2.4em;}
 /* 10-10 사파리·패드 전수(WebKit 아이폰·아이패드 세로·가로 + 크롬): 격자 표(.cgrid)가 패드 세로(≤950)에서 칸 밖으로 넘쳐 칸 전체가 옆으로 밀리던 것
    (음악 소금 운지표 17열 · 칸 770 < 표 883 · 두 엔진 공통) → 표지(.cg-tight) 단 표만 몸 칸 최소 폭·머리 여백을 줄인다(폰 330 · 패드 세로 619 = 둘 다 들어감) */
 @media (max-width:950px){ :root.v2 .blk table.cgrid.cg-tight td:not(.h){min-width:2.3em;} :root.v2 .blk table.cgrid.cg-tight th{padding:6px .3em;} }
+/* 10-10 동하(사회 속성 학습 모형 폰): 설명이 짧은 세로 단계 목록(.pside · kit.js)은 폰(≤500)에서도 단계 | 설명 두 칸 — 설명을 단계 아래로 내리면 단계와 설명이 번갈아 서서 구분이 안 됐다 */
+@media (max-width:500px){ .vchain.pside{grid-template-columns:minmax(0,max-content) minmax(0,1fr) !important;} .vchain.pside>.ann{grid-column:2 !important;padding-left:0 !important;} }

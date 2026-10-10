@@ -196,6 +196,11 @@
       if(steps && steps<=3) c.classList.add('nw');
     });
   })();
+  /* 10-10 동하 「모바일에서 단계별 특징이 좌우로 안 오고 줄바꿈」(사회 속성 학습 모형): 설명이 모두 짧은(16자 이하) 세로 단계 목록은 폰에서도 단계 | 설명 두 칸(.pside · kit.css) */
+  document.querySelectorAll('main.wrap .vchain').forEach(function(v){
+    var an=[].filter.call(v.children, function(x){ return x.classList.contains('ann') && x.textContent.trim(); });
+    if(an.length && an.every(function(x){ return x.textContent.replace(/\s+/g,' ').trim().length<=16; })) v.classList.add('pside');
+  });
   document.querySelectorAll('main.wrap .vchain:not(.conv)').forEach(function(v){
     if(v.classList.contains('keepv')) return;   /* 10-10 동하 판 훑기(사회 원형·상황·뱅크스): 표지 단 사슬은 설명 없어도 세로 그대로 */
     if(![].some.call(v.querySelectorAll('.ann'), function(x){ return x.textContent.trim(); })) v.classList.add('hz');

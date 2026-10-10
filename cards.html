@@ -2838,6 +2838,7 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
       <div class="desc" style="margin:6px 2px 0">자동 충전 = 범위 전체에서 매일 다시 채움 · 직접 추가 = 세션 화면에서 넣고 잔량은 이월</div></div>
     <div class="field"><label>유형 (비우면 전체)</label><div class="mini-chips" id="nsTyps"></div></div>
     <div class="field"><label>과목 (비우면 전체)</label><div class="mini-chips" id="nsSubj"></div></div>
+    <div class="field" id="nsTagField"><label>태그 (비우면 전체)</label><div class="mini-chips" id="nsTagChips"></div></div>
     <div class="tgl-row"><span>방향 분산 (역방향은 도입 다음 날부터)</span><div class="tgl" id="nsBury"></div></div>
     <div class="tgl-row"><span>복습 소진 후 신규 이어가기</span><div class="tgl" id="nsNewAfter"></div></div>
   </details>
@@ -9692,6 +9693,7 @@ function sessDesc(sx){
   } else parts.push('매일 자동');
   if((sx.scope.subj||[]).length)parts.push(sx.scope.subj.map(x=>x.split('.')[1]).join('·'));
   if((sx.scope.typ||[]).length)parts.push(sx.scope.typ.join('·'));
+  if((sx.scope.tags||[]).length)parts.push(sx.scope.tags.join('·'));   /* 태그 범위(10-10 · 구멍) */
   parts.push(stArr(sx.how.status).map(k=>({due:'복습',new:'신규',all:'전체',weak:'약점'}[k]||k)).join('+'));
   /* 사용자 말로(동하 09-05 비평): 「due · 셔플 · 방향 분산 · 신규 이어가기」는 내부 용어였다.
      셔플(기본값)·방향 분산(항상)·신규 이어가기는 세션 화면 설정에서 보이므로 여기서는 뺀다. 문서순·상한만 남긴다 */
@@ -12227,6 +12229,11 @@ function openSessEditor(sx, seed){
   else $('nsTplDesc').textContent='';
   chipSet($('nsSubj'), SUBJECTS, nsState.scope.subj);
   chipSet($('nsTyps'), ALLTYPS, nsState.scope.typ);
+  /* 태그(10-10 · QC 「구멍」 315장 · 동하 「구멍 신규를 우선으로 넣는 세션」) — 단원 태그(tags[0]·[1])는 빼고 그 뒤 태그 + 사용자 태그만 · 고르면 범위 = 그 태그가 붙은 카드(scopeMatch sc.tags) */
+  nsState.scope.tags=nsState.scope.tags||[];
+  const extTags=new Set(); DATA.forEach(c=>(c.tags||[]).slice(2).forEach(x=>extTags.add(x))); Object.keys(state.cards||{}).forEach(id=>userTags(id).forEach(x=>extTags.add(x))); nsState.scope.tags.forEach(x=>extTags.add(x));
+  $('nsTagField').style.display=extTags.size?'':'none';
+  chipSet($('nsTagChips'), [...extTags].sort(), nsState.scope.tags);
   syncSessEditor();
   $('ovlSess').classList.add('show');
 }

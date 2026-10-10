@@ -47,7 +47,7 @@ jobs:
           # 한 번에 100줄까지만 온다(more) — 잘린 채 쓰면 1회 칸 이벤트가 들쭉날쭉(10-09) → exclude_paths(쉼표)로 끝까지
           evs, ex = {"hits": []}, []
           for _ in range(8):
-              q = {"start": s30, "end": end, "limit": 100}
+              q = {"start": s30, "end": end, "limit": 100, "group": "day"}   # 날짜별(10-10 · 방문 기기·사건 날별)
               if ex: q["exclude_paths"] = ",".join(map(str, ex))
               d = get("stats/hits", **q); h = d.get("hits") or []
               evs["hits"] += h; ex += [x["path_id"] for x in h]
@@ -62,6 +62,20 @@ jobs:
                           "days": [x.get("daily", 0) for x in (h.get("stats") or [])]} for h in hits.get("hits", []) if not h.get("event")][:30],
               "events": [{"path": h.get("path"), "n": h.get("count", 0)} for h in evs.get("hits", []) if h.get("event") and h.get("count", 0) > 0],
           }
+          # 방문 기기(10-10) — 사이트가 기기마다 하루 한 번 visit/day · 처음 온 기기 visit/new · evday = 날별 사건 합(stats/total 은 사건까지 센다) — 앱 siteVisit 과 같은 꼴
+          vd, ed, nd, vn = {}, {}, {}, None
+          for h in evs.get("hits", []):
+              if not h.get("event"): continue
+              for s in h.get("stats") or []:
+                  if s.get("day"): ed[s["day"]] = ed.get(s["day"], 0) + (s.get("daily") or 0)
+              if h.get("path") == "visit/day":
+                  for s in h.get("stats") or []:
+                      if s.get("day") and s.get("daily"): vd[s["day"]] = s["daily"]
+              if h.get("path") == "visit/new":
+                  vn = h.get("count", 0)
+                  for s in h.get("stats") or []:
+                      if s.get("day") and s.get("daily"): nd[s["day"]] = s["daily"]
+          out.update({"vday": vd, "vnew": vn, "vnewday": nd, "evday": ed})
           for page in ("toprefs", "systems", "browsers", "sizes"):
               try:
                   r = get("stats/" + page, start=s7, end=end, limit=12)

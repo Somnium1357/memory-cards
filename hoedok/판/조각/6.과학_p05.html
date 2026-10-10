@@ -56,12 +56,13 @@
   </div>
 </div>
 <div class="ind" style="margin-top:10px">
-<div class="line">
-  <div class="col"><span class="mid">평형 상태</span></div>
-  <div class="col"><span class="up">자극</span><span class="mid mk">→</span></div>
-  <div class="col"><span class="mid">불평형 상태</span><span class="down">= 인지적 갈등</span></div>
-  <div class="col"><span class="up">동화</span><span class="mid mk">→</span><span class="down">조절</span></div>
-  <div class="col"><span class="mid">평형 상태</span></div>
+<!-- 10-10 판 훑기 6: 흐름 화살표·라벨(자극·동화/조절)이 화면에서 빠져 세 줄 목록으로 보이던 것 → 세로 사슬(↓ 보임) -->
+<div class="vchain keepv arws">
+  <div class="stp"><span class="term">평형 상태</span></div><div class="ann">자극</div>
+  <div class="arw">↓</div>
+  <div class="stp"><span class="term">불평형 상태</span></div><div class="ann">= 인지적 갈등 <span class="mk">→</span> 동화·조절</div>
+  <div class="arw">↓</div>
+  <div class="stp"><span class="term">평형 상태</span></div>
 </div>
 </div>
 </div>
@@ -129,8 +130,8 @@
    <svg class="a1" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="10" y1="0" x2="1" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
    <svg class="a2" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="1" y1="0" x2="10" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
   </div><div class="stack">
-    <div><span class="term">확인</span> <span class="mk">≒</span> <span class="desc">예시적 실험</span></div>
-    <div><span class="term">탐색</span> <span class="mk">≒</span> <span class="desc">탐구적 실험</span></div>
+    <div><span class="term">확인</span> : <span class="desc">예시적 실험</span></div>
+    <div><span class="term">탐색</span> : <span class="desc">탐구적 실험</span></div>
   </div></div>
   <div class="fork"><div class="mkf">
    <svg class="a1" viewBox="0 0 10 100" preserveAspectRatio="none" fill="none"><line x1="10" y1="0" x2="1" y2="100" stroke="currentColor" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>
@@ -146,8 +147,12 @@
     <div><span class="term">기능 개발</span> : <span class="desc">실험 활동 기능</span></div>
     <div><span class="term">과정 개발</span> : <span class="desc">문제 해결 기능</span></div>
   </div></div>
-  <div class="stack"><div><span class="term">수행 평가 — <span class="key">실험 보고서</span></span> : <span class="desc">탐구 문제·방법·결과 등 전반을 보고서로 (보고서 양식·평가 준거 사전 안내)</span></div><div><span class="term">수행 평가 — <span class="key">실험 실기</span></span> : <span class="desc">기구 사용·실험 수행·실습 태도·지식 적용·문제 해결 포괄</span></div><span class="quiet" style="display:none">(구멍 10-07)</span></div>
 </div>
+</div>
+<!-- 10-10 판 훑기 8: 수행 평가 두 줄이 「형태」 세 칸의 넷째 칸으로 끼어 첫 칸 밑에 몰리던 것 → 형태 다음 형제 항목으로 뗌 -->
+<div class="row" style="margin-top:10px"><span class="num">4)</span><span class="term">수행 평가</span></div>
+<div class="ind">
+  <div class="stack"><div><span class="term"><span class="key">실험 보고서</span></span> : <span class="desc">탐구 문제·방법·결과 등 전반을 보고서로 <span class="quiet">(보고서 양식·평가 준거 사전 안내)</span></span></div><div><span class="term"><span class="key">실험 실기</span></span> : <span class="desc">기구 사용·실험 수행·실습 태도·지식 적용·문제 해결 포괄</span></div><span class="quiet" style="display:none">(구멍 10-07)</span></div>
 </div>
 </div>
 
@@ -280,16 +285,17 @@
           <div><span class="term">전기에 의한 사고</span></div>
           <div class="kids">
             <div><span class="term">합선</span> : <span class="desc">도선끼리 접촉</span></div>
-            <div><span class="term">누전</span></div>
-            <div><span class="term">감전</span></div>
+            <!-- 10-10 판 훑기 10: 이름만 있던 사고·장치에 교재 정의 한 구절(이론서 p136~138) -->
+            <div><span class="term">누전</span> : <span class="desc">피복 손상 <span class="mk">→</span> 주변 금속·물체로 비정상적 전류</span></div>
+            <div><span class="term">감전</span> : <span class="desc">몸으로 전기가 흐름</span></div>
           </div>
         </div>
         <div class="branch">
           <div><span class="term">전기 안전을 위한 장치</span></div>
           <div class="kids">
-            <div><span class="term">퓨즈</span></div>
+            <div><span class="term">퓨즈</span> : <span class="desc">열에 쉽게 녹는 금속 <span class="mk">→</span> 센 전류면 먼저 끊어져 차단</span></div>
             <div><span class="term">접지</span> : <span class="desc">누전 X</span></div>
-            <div><span class="term">과전류 차단 장치</span></div>
+            <div><span class="term">과전류 차단 장치</span> : <span class="desc">센 전류면 자동으로 스위치 열어 차단</span></div>
           </div>
         </div>
       </div>
@@ -307,7 +313,8 @@
 <div class="ind2">
 <div class="stack">
   <div class="desc">물체 ≠ 물질 구별하여 지도</div>
-  <div class="desc">강도나 경도 구분 <span class="quiet">(경도가 재는 대상)</span></div>
+  <!-- 10-10 판 훑기 12: 뜻이 안 서던 「(경도가 재는 대상)」 → 교재 구분(각론 물질 p4) -->
+  <div class="desc">강도 ≠ 경도 구분 <span class="quiet">(강도 = 외부 힘에 견디는 정도 · 경도 = 무르거나 단단한 정도)</span></div>
   <div class="desc">고유한 속성 여부 유의 <span class="quiet">(온도, 질량, 무게… → X)</span></div>
 </div>
 </div>

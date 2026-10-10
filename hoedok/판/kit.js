@@ -215,6 +215,14 @@
         var leaves=[].every.call(k.children, function(c){ return !c.querySelector('.branch, .bracket, .kids, .mk, .sub') && c.querySelectorAll('.term, .desc').length<=1 && c.textContent.trim().length<=24; });
         if(leaves && k.children.length<=4 && k.textContent.replace(/\s+/g,' ').trim().length<=70) b.classList.add('cline');   /* 끝가지 넷·70자 이하만 한 줄 */
       });
+      /* 10-10 공개 제보(체육 학습과제 「개별 대상」): 형제 가지 중 하나라도 안 접히면 그 형제들도 접지 않는다 — 글자 수 한두 자 차이로
+         「전체 대상」은 펼치고 「개별 대상」만 한 줄로 접혀 하위 관계가 안 보이던 것(같은 급 = 같은 모양) */
+      tr.querySelectorAll('.bracket, .kids').forEach(function(k){
+        var sib=[].filter.call(k.children, function(c){ return c.classList.contains('branch') && kidsOf(c); });
+        if(sib.length>1 && sib.some(function(c){ return !c.classList.contains('cline'); })) sib.forEach(function(c){ c.classList.remove('cline'); });
+      });
+      (function(k){ var sib=[].filter.call(tr.children, function(c){ return c.classList.contains('branch') && kidsOf(c); });
+        if(sib.length>1 && sib.some(function(c){ return !c.classList.contains('cline'); })) sib.forEach(function(c){ c.classList.remove('cline'); }); })();
       [].forEach.call(tr.children, function(c){ if(c.classList.contains('branch')) c.classList.add('ccell'); });
     });
   }

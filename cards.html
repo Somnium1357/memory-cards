@@ -1621,6 +1621,18 @@ button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inher
 .st-tile b{font-size:28px;line-height:34px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--c-label);}
 .st-tile b small{font-size:17px;font-weight:600;color:var(--c-sec);}   /* 오늘 방문 / 신규(10-10) */
 .st-tile span{font-size:13px;line-height:18px;color:var(--c-sec);}
+.st-pvrow{margin-top:-12px;}   /* 열람 줄(10-11) */
+.st-seg{flex:0 0 auto;margin-right:12px;}
+.st-seg button{padding:5px 12px;font-size:13px;}
+.st-rank.st-qh{padding:8px 0;}
+.st-rank.st-qh .nm{flex:1 1 auto;white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:20px;}
+.st-rank.st-qh .br{flex:0 0 16%;}
+.st-qhc{display:flex;align-items:flex-start;gap:10px;padding:10px 20px 10px 0;}
+.st-qhc+.st-qhc{box-shadow:inset 0 .5px 0 var(--c-sep);}
+.st-qhc p{flex:1;min-width:0;margin:0;font-size:14px;line-height:20px;color:var(--c-label);}
+.st-qhc p small{display:block;margin-top:2px;font-size:13px;line-height:18px;color:var(--c-sec);}
+.st-qhc .n{flex:0 0 auto;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--c-label);}
+.st-rank.st-qh .n{min-width:44px;}
 .st-bars{display:flex;align-items:flex-end;gap:2px;height:96px;margin-top:6px;}
 .st-bars i{flex:1 1 0;min-width:0;border-radius:3px 3px 0 0;background:var(--c-acc);opacity:.55;}
 .st-bars i.t{opacity:1;}
@@ -10300,7 +10312,8 @@ async function siteOpen(){
   if(!SITE.st){ try{ const c=JSON.parse(lsGet(K_SITE_LAST)||'null'); if(c&&c.days){ c.src='gc'; SITE.st=c; SITE.chk=Date.parse(c.at)||0; } }catch(e){} }
   siteRender(); if(SITE.busy || Date.now()-SITE.at<60000) return; SITE.busy=true;
   const direct=(!SITE.ref && Date.now()-(SITE.dAt||0)>60000)?(SITE.dAt=Date.now(), siteDirect(siteRender)):Promise.resolve(false); siteRender();
-  try{ const [st, fb, chk, pend]=await Promise.all([rawGet('site-stats.json', dataBr()), rawGet('site-feedback.json', dataBr()), siteLastRun(), sitePend()]);
+  try{ const [st, fb, chk, pend, qs]=await Promise.all([rawGet('site-stats.json', dataBr()), rawGet('site-feedback.json', dataBr()), siteLastRun(), sitePend(), siteQs()]);
+    if(qs) SITE.qs=qs;
     if(st&&st.szDays&&Object.keys(st.szDays).length) SITE.fileSz=st.szDays;
     if(!SITE.direct && st && (st.days||[]).length && (Date.parse(st.at)||0)>=(Date.parse(SITE.st&&SITE.st.at)||0)) SITE.st=st;   // 바로 받은 값이 이미 있으면 덮지 않는다 · 날이 빈 파일(GoatCounter 일시 404로 구운 것)은 안 쓴다
     SITE.fb=fb; SITE.chk=Math.max(SITE.chk||0, chk||0); SITE.pend=pend; SITE.at=Date.now(); }
@@ -10350,6 +10363,7 @@ function siteRef(nm){ if(SITE_KO[nm]) return SITE_KO[nm];
   return host||s; }
 function siteRefs(list){ const m=new Map(); (list||[]).forEach(x=>{ const k=siteRef(x.name); m.set(k,(m.get(k)||0)+(x.n||0)); });
   return [...m].map(([name,n])=>({name,n})).sort((a,b)=>b.n-a.n); }
+function siteBarM(m){ SITE.barM=m; siteRender(); }
 function siteQT(el){ const s=SITE.qOpen||(SITE.qOpen=new Set()); s[el.open?'add':'delete'](el.dataset.g); }
 function siteRank(list, nameOf){ const mx=Math.max(1,...list.map(x=>x.n)); return list.map(x=>`<div class="st-rank"><span class="nm">${esc(nameOf?nameOf(x):(SITE_KO[x.name]||x.name))}</span><span class="br"><i style="width:${(x.n/mx*100).toFixed(1)}%"></i></span><span class="n">${x.n.toLocaleString()}</span></div>`).join(''); }
 function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.contains('on')) return;
@@ -10360,22 +10374,25 @@ function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.c
   else {
     const tdK=new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);   // 밤 11시대엔 받는 끝(지금+1시간)이 다음 날로 넘어가 아직 안 온 「내일」 칸이 끝에 붙는다(10-09 폰 「오늘 0 · 어제 739」) — 기기 날짜까지만
     const VD=st.vday||{}, ED=st.evday||{}, v0=Object.keys(VD).sort()[0]||null;   /* 방문 기기(10-10) — 집계 첫날(v0)부터는 날별 방문 기기 · 그 전 날은 열람 − 사건(pv · 연하게 · 막대 비율 따로 — 10-10 동하 「누적이 다 날아가서」) */
-    const days=(st.days||[]).filter(d=>!d.day||d.day<=tdK).map(d=>(v0&&d.day>=v0)?{...d, n:VD[d.day]||0}:{...d, n:Math.max(0,(d.n||0)-(ED[d.day]||0)), pv:!!v0}), today=days[days.length-1]||{n:0, hourly:[]}, yest=days[days.length-2]||{n:0};
+    const days=(st.days||[]).filter(d=>!d.day||d.day<=tdK).map(d=>{ const pvN=Math.max(0,(d.n||0)-(ED[d.day]||0)); return (v0&&d.day>=v0)?{...d, n:VD[d.day]||0, pvN}:{...d, n:pvN, pv:!!v0, pvN}; }), today=days[days.length-1]||{n:0, hourly:[]}, yest=days[days.length-2]||{n:0};
     const f0=days.findIndex(d=>d.n>0), fresh=f0>0, W14=14;   // 14칸 미끄럼 창(10-08 동하 「배포 첫날이 맨 왼쪽 · 슬라이딩 윈도우처럼」)
-    const real=fresh?days.slice(f0):days, dd=real.length>=W14?real.slice(-W14):[...real, ...Array.from({length:W14-real.length},(_,i)=>{ const t=new Date(real[real.length-1].day+'T00:00:00Z'); t.setUTCDate(t.getUTCDate()+i+1); return {day:t.toISOString().slice(0,10), n:0, fut:true}; })];   // 14일이 차기 전 = 연 날이 맨 왼쪽 · 오른쪽은 올 날(빈칸) · 차면 한 칸씩 밀림   // 사이트를 연 날(첫 방문)부터 — 30일이 다 차기 전엔 앞이 빈 막대였다(10-08)
-    const sum=k=>days.slice(-k).reduce((a,d)=>a+(d.n||0),0), sumV=k=>days.slice(-k).filter(d=>!d.pv).reduce((a,d)=>a+(d.n||0),0);
+    const real=fresh?days.slice(f0):days; let dd=real.length>=W14?real.slice(-W14):[...real, ...Array.from({length:W14-real.length},(_,i)=>{ const t=new Date(real[real.length-1].day+'T00:00:00Z'); t.setUTCDate(t.getUTCDate()+i+1); return {day:t.toISOString().slice(0,10), n:0, fut:true}; })];   // 14일이 차기 전 = 연 날이 맨 왼쪽 · 오른쪽은 올 날(빈칸) · 차면 한 칸씩 밀림   // 사이트를 연 날(첫 방문)부터 — 30일이 다 차기 전엔 앞이 빈 막대였다(10-08)
+    const sum=k=>days.slice(-k).reduce((a,d)=>a+(d.n||0),0), sumV=k=>days.slice(-k).filter(d=>!d.pv).reduce((a,d)=>a+(d.n||0),0), sumP=k=>days.slice(-k).reduce((a,d)=>a+(d.pvN||0),0);
     const pvAll=Math.max(0,(st.total30??sum(30))-Object.values(ED).reduce((a,x)=>a+x,0));   /* 누적 열람(사건 뺌) */
-    L.push(`<div class="st-tiles">${(v0?[[today.n,'오늘 방문 / 신규',(st.vnewday||{})[today.day]||0],[yest.pv?null:yest.n,'어제'],[sumV(7),'7일'],[pvAll,fresh?'누적 열람 / 기기':'30일 열람 / 기기',st.vnew||0]]:[[today.n,'오늘'],[yest.n,'어제'],[sum(7),'7일'],[Math.max(0,(st.total30??sum(30))-Object.values(ED).reduce((a,x)=>a+x,0)),fresh?'누적':'30일']]).map(([v,l,x])=>`<div class="st-tile"><b>${v==null?'—':(v||0).toLocaleString()}${x!=null?`<small> / ${x.toLocaleString()}</small>`:''}</b><span>${l}</span></div>`).join('')}</div>`);
+    L.push(`<div class="st-tiles">${(v0?[[today.n,'오늘 방문 / 신규',(st.vnewday||{})[today.day]||0],[yest.pv?null:yest.n,'어제 방문'],[sumV(7),'7일 방문'],[st.vnew||0,fresh?'누적 기기':'30일 기기']]:[[today.n,'오늘'],[yest.n,'어제'],[sum(7),'7일'],[Math.max(0,(st.total30??sum(30))-Object.values(ED).reduce((a,x)=>a+x,0)),fresh?'누적':'30일']]).map(([v,l,x])=>`<div class="st-tile"><b>${v==null?'—':(v||0).toLocaleString()}${x!=null?`<small> / ${x.toLocaleString()}</small>`:''}</b><span>${l}</span></div>`).join('')}</div>`);
+    if(v0) L.push(`<div class="st-tiles st-pvrow">${[[today.pvN,'오늘 열람'],[yest.pvN,'어제 열람'],[sumP(7),'7일 열람'],[pvAll,fresh?'누적 열람':'30일 열람']].map(([v,l])=>`<div class="st-tile"><b>${(v||0).toLocaleString()}</b><span>${l}</span></div>`).join('')}</div>`);   /* 열람 = 페이지 연 횟수(사건 뺌 · 10-11) */
+    const barP=!!v0&&SITE.barM!=='v';   /* 기본 = 열람(방문은 위 타일 숫자가 더 뜻있다 · 10-11 동하) */ if(barP) dd=dd.map(d=>({...d, n:d.fut?0:(d.pvN||0), pv:false}));   /* 막대 [방문|열람] 전환(10-11) */
+    const bySz=barP||!v0;   /* 기기(패드·폰·PC) 쌓기 = 열람 보기만 — 화면 크기는 열람마다 잡혀 방문 기기와 짝이 안 맞는다(10-11 동하) */
     const mx=Math.max(1,...dd.filter(d=>!d.pv).map(d=>d.n||0)), mxP=Math.max(1,...dd.filter(d=>d.pv).map(d=>d.n||0));   /* 방문 기기·열람은 단위가 달라 막대 비율을 따로 */
     const lastReal=dd.reduce((k,d,i)=>d.fut?k:i,0);
     const sz=st.szDays||{}, SZ=[['t','패드','var(--c-acc)'],['p','폰','var(--c-orange)'],['d','PC','var(--c-indigo)']];   // 아래부터 패드 → 폰 → PC
     const szPc=x=>{ const T=(x.p||0)+(x.t||0)+(x.d||0); return T?SZ.map(([k,l])=>`${l} ${Math.round((x[k]||0)/T*100)}%`).join(' '):''; };
-    const bars=dd.map((d,i)=>{ const x=d.n&&sz[d.day], T=x?(x.p||0)+(x.t||0)+(x.d||0):0;
-      return `<i class="${d.n?'':'z'}${i===lastReal?' t':''}${d.fut?' f':''}${T?' s':''}${d.pv?' pv':''}" style="height:${d.n?Math.max(3,Math.round(d.n/(d.pv?mxP:mx)*96)):1}px" title="${esc(d.day)} · ${d.pv?'열람 ':''}${d.n}${T?' · '+szPc(x):''}">${T?SZ.map(([k,,c])=>`<b style="flex:${x[k]||0} 0 0;background:${c}"></b>`).join(''):''}</i>`; }).join('');
+    const bars=dd.map((d,i)=>{ const x=d.n&&bySz&&sz[d.day], T=x?(x.p||0)+(x.t||0)+(x.d||0):0;
+      return `<i class="${d.n?'':'z'}${i===lastReal?' t':''}${d.fut?' f':''}${T?' s':''}${d.pv?' pv':''}" style="height:${d.n?Math.max(3,Math.round(d.n/(d.pv?mxP:mx)*96)):1}px" title="${esc(d.day)} · ${barP||d.pv?'열람':'방문'} ${d.n}${T?' · '+szPc(x):''}">${T?SZ.map(([k,,c])=>`<b style="flex:${x[k]||0} 0 0;background:${c}"></b>`).join(''):''}</i>`; }).join('');
     const sz7=Object.keys(sz).sort().slice(-7).reduce((a,k)=>(a.p+=sz[k].p||0,a.t+=sz[k].t||0,a.d+=sz[k].d||0,a),{p:0,t:0,d:0}), sz7T=sz7.p+sz7.t+sz7.d;
-    const leg=sz7T?`<div class="legend st-leg">${SZ.map(([k,l,c])=>`<span><i style="background:${c}"></i>${l} ${Math.round(sz7[k]/sz7T*100)}%</span>`).join('')}</div>`:'';
+    const leg=sz7T&&bySz?`<div class="legend st-leg">${SZ.map(([k,l,c])=>`<span><i style="background:${c}"></i>${l} ${Math.round(sz7[k]/sz7T*100)}%</span>`).join('')}</div>`:'';
     const ax=dd.length?[...new Set([0, Math.floor((dd.length-1)/2), dd.length-1])].map(i=>dd[i]).map(d=>`<span>${Number(d.day.slice(5,7))}/${Number(d.day.slice(8))}</span>`).join(''):'';
-    L.push(`<div class="sc-sec"><div class="h-sec2"><h2>${real.length>=W14?'최근 14일':'연 날부터'}</h2><span class="sc-g">하루 방문</span></div><div class="sc-card"><div class="st-bars">${bars}</div><div class="sc-ax">${ax}</div>${leg}</div></div>`);
+    L.push(`<div class="sc-sec"><div class="h-sec2"><h2>${real.length>=W14?'최근 14일':'연 날부터'}</h2>${v0?`<span class="seg st-seg"><button onclick="siteBarM('v')"${barP?'':' class="on"'}>방문</button><button onclick="siteBarM('p')"${barP?' class="on"':''}>열람</button></span>`:'<span class="sc-g">하루 방문</span>'}</div><div class="sc-card"><div class="st-bars">${bars}</div><div class="sc-ax">${ax}</div>${leg}</div></div>`);
     const hr=(today.hourly||[]).length===24?today.hourly:Array(24).fill(0), hmx=Math.max(1,...hr);
     L.push(`<div class="sc-sec"><div class="h-sec2"><h2>오늘 시간대</h2><span class="sc-g">시간별</span></div><div class="sc-card"><div class="st-bars" style="height:64px">${hr.map((n,h)=>`<i class="${n?'':'z'}" style="height:${n?Math.max(3,Math.round(n/hmx*64)):1}px" title="${h}시 · ${n}"></i>`).join('')}</div><div class="sc-ax"><span>0</span><span>6</span><span>12</span><span>18</span><span>24</span></div></div></div>`);
     const pages=(st.pages7||[]).filter(x=>x.n>0);
@@ -10383,7 +10400,7 @@ function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.c
     /* 이용(10-08) — 사이트가 남기는 이벤트 30일 합: quiz/start/<범위> · quiz/done · search/<말> · search-none/<말> · pdf/<파일> */
     if(Array.isArray(st.events)){ const ev=st.events, pre=k=>ev.filter(x=>String(x.path||'').indexOf(k)===0).map(x=>({name:String(x.path).slice(k.length), n:x.n||0})), tot=a=>a.reduce((s,x)=>s+x.n,0);
       const qs=pre('quiz/start/'), qd=tot(ev.filter(x=>x.path==='quiz/done').map(x=>({n:x.n||0}))), sh=pre('search/'), sn=pre('search-none/'), pf=pre('pdf/');
-      const tiles=a=>`<div class="st-fbn">${a.map(([v,l])=>`<div class="st-tile"><b>${(v||0).toLocaleString()}</b><span>${l}</span></div>`).join('')}</div>`;
+      const tiles=a=>`<div class="st-fbn">${a.map(([v,l,pc])=>`<div class="st-tile"><b>${pc!=null?pc+'<small>%</small>':(v||0).toLocaleString()}</b><span>${l}</span></div>`).join('')}</div>`;
       const rank=(a,k)=>a.length?`<div class="sc-card" style="margin-top:10px">${siteRank(a.sort((x,y)=>y.n-x.n).slice(0,k), x=>x.name)}</div>`:'';
       const pdfName=n=>{ const m=n.match(/^\d+\.(.+)$/); return m?m[1]+' 합본':n; };
       /* 범위 이름 = 「전체」 · 「과목 전체」 · 「과목 › 대주제( 외 n)」 · 「과목 · 과목」 → 과목별로 접는다(10-09 동하 「과목별로 접어야」) · 연 칸은 다시 그려도 유지 */
@@ -10393,7 +10410,14 @@ function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.c
       const qList=qgs.length?`<div class="sc-card" style="margin-top:10px">${qgs.map(G=>{ const head=(nm,cv)=>`<span class="nm">${esc(nm)}</span><span class="br"><i style="width:${(G.n/qmx*100).toFixed(1)}%"></i></span><span class="n">${G.n.toLocaleString()}</span><span class="cv">${cv}</span>`;
         if(G.a.length===1) return `<div class="st-q st-rank">${head(G.a[0].name==='전체'||G.g==='여러 과목'?(G.g==='여러 과목'?G.a[0].name:G.g):G.g+' › '+G.a[0].name,'')}</div>`;   /* 한 줄뿐이면 접지 않는다 */
         return `<details class="st-q st-qg" data-g="${esc(G.g)}"${qOpen.has(G.g)?' open':''} ontoggle="siteQT(this)"><summary class="st-rank">${head(G.g,'›')}</summary><div class="st-qsub">${siteRank(G.a.sort((x,y)=>y.n-x.n), x=>x.name)}</div></details>`; }).join('')}</div>`:'';
-      L.push(`<div class="sc-sec"><div class="h-sec2"><h2>쪽지시험</h2><span class="sc-g">30일</span></div>${tiles([[tot(qs),'시작'],[qd,'끝까지']])}${qList}</div>`);
+      const QS=SITE.qs||{}, qa=Object.entries(QS).filter(([id,x])=>x&&x.n>0&&BYID[id]).map(([id,x])=>({id, n:x.n, k:Math.min(x.k||0,x.n)})), qN=qa.reduce((a,x)=>a+x.n,0), qK=qa.reduce((a,x)=>a+x.k,0);
+      const QHG={}; for(const x of qa){ const c=BYID[x.id], key=c.node||x.id, g=QHG[key]||(QHG[key]={key, n:0, k:0, a:[], c}); g.n+=x.n; g.k+=x.k; g.a.push(x); }
+      const qHard=Object.values(QHG).filter(g=>g.n>=3).sort((a,b)=>a.k/a.n-b.k/b.n||b.n-a.n).slice(0,8);
+      const qTitle=g=>{ const seg=String(g.c.node||'').split('/').filter(Boolean); return String(g.c.subj||'').replace(/^\d+\./,'')+' · '+(seg.length>1?seg[seg.length-1]:'—'); };
+      const qFront=c=>{ const m=String(c.front||'').match(/^〔([^〕]*)〕\s*(.*)$/s); return (m?m[2]:c.front||'').trim(); };
+      const qBar=(k,n)=>`<span class="br"><i style="width:${(k/n*100).toFixed(1)}%;background:${k/n<.5?'var(--c-red)':'var(--c-acc)'}"></i></span><span class="n">${k}/${n}</span>`;
+      const qHardH=qHard.length?`<div class="h-sec2" style="margin-top:14px"><h2 style="font-size:15px">많이 틀린 문제</h2></div><div class="sc-card">${qHard.map(g=>`<details class="st-q st-qg" data-g="${esc(g.key)}"${qOpen.has(g.key)?' open':''} ontoggle="siteQT(this)"><summary class="st-rank st-qh"><span class="nm">${esc(qTitle(g))}</span>${qBar(g.k,g.n)}<span class="cv">›</span></summary><div class="st-qsub">${g.a.sort((a,b)=>a.k/a.n-b.k/b.n).map(x=>`<div class="st-qhc"><p>${esc(qFront(BYID[x.id]))}<small>${esc(String(BYID[x.id].back||'').replace(/\s+/g,' ').slice(0,120))}</small></p><span class="n">${x.k}/${x.n}</span></div>`).join('')}</div></details>`).join('')}</div>`:'';
+      L.push(`<div class="sc-sec"><div class="h-sec2"><h2>쪽지시험</h2><span class="sc-g">30일</span></div>${tiles([[tot(qs),'시작'],[qd,'끝까지']].concat(qN?[[qN,'푼 문제'],[null,'정답률',Math.round(qK/qN*100)]]:[]))}${qList}${qHardH}</div>`);
       L.push(`<div class="sc-sec"><div class="h-sec2"><h2>검색</h2><span class="sc-g">30일</span></div>${tiles([[tot(sh)+tot(sn),'검색'],[tot(sn),'결과 없음']])}${rank(sh,8)}${sn.length?`<div class="h-sec2" style="margin-top:14px"><h2 style="font-size:15px">결과가 없던 말</h2></div>`+rank(sn,8):''}</div>`);
       L.push(`<div class="sc-sec"><div class="h-sec2"><h2>PDF 받기</h2><span class="sc-g">30일</span></div>${tiles([[tot(pf),'받기'],[pf.length,'파일 종류']])}${rank(pf.map(x=>({name:pdfName(x.name), n:x.n})),8)}</div>`); }
     const two=[['toprefs','들어온 경로'],['systems','기기'],['browsers','브라우저'],['sizes','화면']].filter(([k])=>(st[k]||[]).length);
@@ -10432,6 +10456,8 @@ function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.c
    PC 수신기(listen.py asks_out)가 data 브랜치 fb-asks.json 에 올린 「보충 요청」(요지·제안·근거 인용 · 원문 없음) → 홈 「추가 요청 N건」 줄 → 시트 [보류][추가]
    답 = Firebase ans/<id> 에 1(추가)·0(보류) — 폰 알림 버튼과 같은 칸 · 이미 답한 것(ans 에 있음)은 안 보인다 · PC가 답을 받아 처리하는 쪽은 §5.0 -4 ④
    rawGet 을 쓰지 않는다 — 실패가 rawNetFail(부팅 「못 받았다」)로 번지면 안 된다(없어도 그만인 파일) */
+const FB_QS='https://rn-feedback-signal-default-rtdb.asia-southeast1.firebasedatabase.app/qs.json';
+async function siteQs(){ try{ const r=await fetch(FB_QS,{cache:'no-store'}); if(!r.ok) return null; return (await r.json())||{}; }catch(e){ return null; } }
 const FB_ANS='https://rn-feedback-signal-default-rtdb.asia-southeast1.firebasedatabase.app/ans';
 /* 메모(10-09 동하 「모델한테 말해야 할 일이 있는데」 · 예: 「~는 범위 — 5개 전부」) — 메모는 모델에게 가는 지시라 아무나 쓰는 Firebase 칸에 싣지 않는다:
    이 기기 GitHub 열쇠로 data 브랜치 fb-notes.json {id: {note, mode: add|redo, at}} 에 쓰고 → 추가 = ans 1(수신기가 메모를 같이 읽음) · 다시 제안 = 신호 칸(sig)만 깨운다 */

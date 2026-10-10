@@ -197,6 +197,7 @@
     });
   })();
   document.querySelectorAll('main.wrap .vchain:not(.conv)').forEach(function(v){
+    if(v.classList.contains('keepv')) return;   /* 10-10 동하 판 훑기(사회 원형·상황·뱅크스): 표지 단 사슬은 설명 없어도 세로 그대로 */
     if(![].some.call(v.querySelectorAll('.ann'), function(x){ return x.textContent.trim(); })) v.classList.add('hz');
   });
   /* 나무 압축(09-30 동하 「가로 트리 전부 이상함」 → 샘플 → 「수학은 괜찮은데 국어는 나열하면 안 될 것(시점)이 나열로」) — 기본 켬(PAN_CTREE=false 로 끔)

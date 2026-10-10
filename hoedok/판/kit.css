@@ -944,3 +944,17 @@ tr:has(>td>.ms)>td{vertical-align:middle;height:2.4em;}
   main .converge>.link{flex:0 1 auto !important;min-width:min-content !important;max-width:6.5em !important;}
   main .converge>.stack,main .converge>.bracket{flex:1 1 auto;min-width:7.5em;}
 }
+
+/* 10-10 동하 판 훑기(사회 체크분) — 표지를 단 자리만 바뀐다(다른 과목·자리 무변 · 12과목 사본 실측):
+   .vchain.keepv = 설명 없어도 세로(kit.js) · .vchain.arws = 세로 사슬에 ↓ 보이기(가치 학습 계보)
+   .pnw = 넓은 화면에서 한 줄(칸 폭 · 현장 학습 · 극화 학습 · Jigsaw Ⅱ 부연) · .row.shr = 첫 설명이 줄어 「→」가 줄머리로 안 떨어지게(독도)
+   .pfold = 폰(≤560)에서 괄호 묶음(converge)·두 칸(cols)을 한 칸으로 접기 */
+:root.v2 .vchain.arws>.arw{display:block;}
+:root.v2 .row.shr>.desc:first-child{flex:0 1 auto;min-width:0;}
+@media (min-width:561px){ .pnw{white-space:nowrap;} }
+@media (max-width:560px){
+  main .converge.pfold{flex-direction:column;align-items:flex-start !important;gap:4px;}
+  main .converge.pfold svg,main .converge.pfold .bracew{display:none;}   /* 괄호 그림은 kit 이 span.bracew 로 감싼다 */
+  main .converge.pfold>.link,main .converge.pfold>.stack,main .converge.pfold>.bracket,main .converge.pfold>:last-child{max-width:none !important;min-width:0 !important;flex:none !important;}
+  :root.v2 .cols.pfold,:root.v2 .cols.fit.pfold{grid-template-columns:minmax(0,1fr) !important;row-gap:.7em;}
+}

@@ -967,3 +967,7 @@ tr:has(>td>.ms)>td{vertical-align:middle;height:2.4em;}
 @media (max-width:560px){ .ponly{display:block;margin:.2em 0 .3em;} }
 :root.v2 .row.shr>.desc.desc:not(:first-child){flex:1 1 6em !important;min-width:0;}
 :root.v2 main.wrap h3.sggrade.sggrade:not(:first-child){margin-top:1.6em;}
+
+/* 10-10 사파리(WebKit): 괄호 가지(fork) 목록이 내용보다 정확히 12px 좁게 잡혀 「정성」이 정/성으로 쪼개지던 것(동하 아이폰 · WebKit 재현 32/68곳 → 2/68 · 크롬 12과목 3폭 무변)
+   — WebKit 은 가지의 내용 폭을 셀 때 괄호 칸(.mkf · 그림만 든 빈 칸)을 flex-basis(12px)가 아니라 내용 폭 0 으로 친다 → 칸 폭을 명시 */
+.fork>.mkf{width:12px;}

@@ -374,6 +374,8 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--ac);outline-offset:
 .tgrp>summary .gh{color:inherit;text-decoration:none;}
 .tgrp>summary .gh:hover{color:var(--acc);}
 .tgrp.one{font-weight:600;padding:6px 0;}
+.tgrp.one .gh{color:var(--label);text-decoration:none;}   /* 10-11 하위 절 없는 대주제 줄이 기본 링크(파랑·방문 보라·밑줄)로 나오던 것 — summary 줄과 같게 */
+.tgrp.one .gh:hover{color:var(--acc);}
 .tnav a{display:block;padding:5px 0;color:var(--sec);text-decoration:none;border:0;font-size:15px;line-height:20px;}
 .tgrp .tnav{padding-left:12px;}
 .tnav a:hover,.tnav a:focus{color:var(--label);}

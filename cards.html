@@ -1712,6 +1712,14 @@ button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inher
 #railSc .rs-lead{padding:0 12px 10px;}
 #railSc .rs-lead .rs-strip{margin-left:0;width:100%;}
 #railSc .rs-l0{font-size:11px;line-height:14px;font-weight:600;color:var(--c-sec);margin-bottom:4px;}
+#railSc .rs-now{margin-top:8px;}   /* 지금 10분 칸 순위표(10-10 · 동하 「작은 순위표」) — 채점·실시간마다 다시 그림 */
+#railSc .rs-now .hd{font-size:11px;line-height:14px;color:var(--c-sec);margin-bottom:2px;font-variant-numeric:tabular-nums;}
+#railSc .rs-now .rk{display:flex;align-items:center;gap:8px;height:22px;font-size:13px;color:var(--c-label);}
+#railSc .rs-now .rk .no{flex:0 0 14px;text-align:right;color:var(--c-sec);font-variant-numeric:tabular-nums;}
+#railSc .rs-now .rk i{width:6px;height:6px;border-radius:3px;flex:0 0 auto;}
+#railSc .rs-now .rk .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#railSc .rs-now .rk b{font-weight:600;font-variant-numeric:tabular-nums;}
+#railSc .rs-now .none{font-size:13px;line-height:22px;color:var(--c-sec);}
 #railSc .rs-err{padding:8px 12px;font-size:13px;line-height:18px;color:var(--c-sec);}
 .sc-foot{font-size:13px;line-height:18px;color:var(--c-sec);padding:0 20px;}
 .sc-code{font-size:17px;font-weight:600;letter-spacing:.08em;font-variant-numeric:tabular-nums;}
@@ -10497,14 +10505,14 @@ function scRenderDock(){ const box=$('railSc'); if(!box) return; const has=!!SC.
     const L=[];
     L.push(`<div class="rs-top"><span class="rs-dot" style="background:${live?'var(--c-green)':st==='offline'?'var(--c-sep)':'var(--c-acc)'}"></span><span class="rs-nm">${m.mine?`${esc(SC.nick||'나')}<small>나</small>`:esc(m.display_name||'친구')}</span><span class="rs-st${live?' live':''}">${SC_ST[st]}${(m.mine?SC.dnd:m.dnd)?' · 방해 금지':''}${isFinite(last)?` · ${scAgo(last)}`:''}</span></div>`);
     L.push(`<div class="rs-g">${v(n==null?'—':`${n.toLocaleString()}<small>장</small>`,'오늘',!n)}${v(n==null?'—':`${hr.toLocaleString()}<small>장</small>`,'최근 1시간',!hr)}${v(sec==null?'—':scClock(sec),'공부 시간',!sec)}${v(rate,'분당 장수',rate==='—')}</div>`);
-    const pc=scColor(m.user_id);   // 목표 막대·띠 = 그 사람 색
-    if(cg&&n!=null) L.push(`<div class="rs-gl"><div class="rs-bar"><i style="width:${Math.min(100,n/cg*100).toFixed(1)}%;background:${pc}"></i></div><em>${n.toLocaleString()} / ${cg.toLocaleString()}장</em></div>`);
-    if(tg&&sec!=null) L.push(`<div class="rs-gl"><div class="rs-bar"><i style="width:${Math.min(100,sec/(tg*60)*100).toFixed(1)}%;background:${pc}"></i></div><em>${scClock(sec)} / ${scClock(tg*60)}</em></div>`);
+    const pc=scColor(m.user_id);   // 띠 = 그 사람 색 · 목표 막대(카드·시간)는 패널에서 뺐다(10-10 동하 · 스터디 화면엔 그대로)
     if(deck) L.push(`<div class="rs-l">지금 <b>${esc(deck)}</b></div>`);
     if(m.mine||fresh) L.push(scLiteStrip(bs, pc));
     return `<div class="rs-p"${m.mine?'':` data-uid="${esc(m.user_id)}"`}>${L.join('')}</div>`; }).join('');
   const tot=rows.reduce((a,m)=>a+(m.mine?t.n:(fresh?(m.answer_count||0):0)),0);
-  box.innerHTML=`<div class="rs-h"><span class="rs-room">${esc(SC.group.name||'스터디')}</span><span class="rs-n">${nStudy}명 접속 중</span></div>${(()=>{ const L=scLeaderData(); return Object.keys(L.slots).length?`<div class="rs-lead"><div class="rs-l0">10분 1등</div>${scLeadStrip(L,'rs-strip')}</div>`:''; })()}${html}`
+  box.innerHTML=`<div class="rs-h"><span class="rs-room">${esc(SC.group.name||'스터디')}</span><span class="rs-n">${nStudy}명 접속 중</span></div>${(()=>{ const L=scLeaderData(); if(!Object.keys(L.slots).length) return ''; const a=L.slots[nowSl]||[];   /* 지금 칸 등수 = 1·1·3(같은 수 같은 등수 · scLeadSec 과 같게) */
+    const now=`<div class="rs-now"><div class="hd">지금 ${scSlotHM(nowSl)}–${scSlotHM((nowSl+1)%SC_SLOTS)}</div>${a.length?a.map(x=>`<div class="rk"><span class="no">${a.findIndex(y=>y.n===x.n)+1}</span><i style="background:${scColor(x.uid)}"></i><span class="nm">${esc(x.uid===me?(SC.nick||'나'):x.name)}</span><b>${x.n.toLocaleString()}</b></div>`).join(''):'<div class="none">아직 없음</div>'}</div>`;
+    return `<div class="rs-lead"><div class="rs-l0">10분 1등</div>${scLeadStrip(L,'rs-strip')}${now}</div>`; })()}${html}`
     +`<div class="rs-foot">방 오늘 ${tot.toLocaleString()}장${SC.err?' · 친구 기록을 못 받았어요':SC.membersAt?` · ${scHM(SC.membersAt)}에 받음`:''}</div>`; }
 $('btnStudy').onclick=()=>{ lsSet(K_SC_DOCK, scDockOn()?'0':'1'); scRenderDock(); };
 /* 레일 찌르기 = 친구 칸 두 번 톡(10-07 동하 — 칸에 버튼·글자·알약·한 줄 모음을 얹는 안 다 기각 · 한 번 톡은 잘못 누른다).

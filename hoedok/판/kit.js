@@ -1017,8 +1017,10 @@
       var kids = box.children;
       if(!kids.length) return;
       var fb = f.getBoundingClientRect();
-      var a = kids[0].getBoundingClientRect();
-      var b = kids[kids.length-1].getBoundingClientRect();
+      /* 10-10 동하 「꺽쇠 이상」(체육 피드백): 끝 항목이 하위 묶음을 달고 있으면 팔이 그 덩어리 가운데(하위 항목 쪽)를 겨눴다 → 항목의 첫 줄을 겨눈다 */
+      var head = function(el){ return (el.querySelector(':scope > .bracket, :scope > .kids, :scope > .fork, :scope > .stack, :scope > .ind') && el.firstElementChild) ? el.firstElementChild : el; };
+      var a = head(kids[0]).getBoundingClientRect();
+      var b = head(kids[kids.length-1]).getBoundingClientRect();
       var top = (a.top + a.height/2) - fb.top;
       var bot = fb.bottom - (b.top + b.height/2);
       mk.style.setProperty('--t', top.toFixed(1) + 'px');

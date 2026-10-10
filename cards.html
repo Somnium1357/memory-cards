@@ -9479,7 +9479,7 @@ function gEnd(x,y){
        커지는데 90 고정이면 크게 민 스와이프일수록 더 잘 떨어졌다. 세로 오작동은 안 는다:
        gMove 잠금(|dx|>|dy|)을 통과한 제스처만 여기까지 온다. */
   if(Math.abs(dy)>Math.max(90,ax)){ swReset(); toast('너무 비스듬해요 — 옆으로 곧게 밀어요'); return; }
-  if(!swipeOn){ swReset(); toast('스와이프 채점이 꺼져 있어요 — 홈 설정에서 켜요'); return; }
+  if(!swipeOn){ swReset(); return; }   /* 꺼 둔 사람에게 알리지 않는다(10-10 동하 「꺼져 있다는 알람 없애 줘」) */
   if(!revealed){ swReset(); toast('정답부터 확인해요 — 카드를 탭'); return; }
   /* 열거 카드에서 X를 하나라도 찍었으면 「알맞음」 쪽을 막는다. 🔴 알맞음은 이제 dx<0(왼쪽)이다 —
      방향 반전 때 이 조건을 같이 안 뒤집으면 정반대를 막게 된다. */

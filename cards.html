@@ -1691,7 +1691,11 @@ button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inher
 .st-hr .hc.on i{background:var(--c-label);}
 .st-hr.sel .hc:not(.on) i:not(.z){opacity:.45;}
 .st-hkey{display:flex;gap:14px;margin-top:8px;font-size:12px;color:var(--c-ter);}.st-hkey span{display:flex;align-items:center;gap:5px;}
-.st-hkey i{width:12px;height:0;border-top:2px solid var(--c-label);opacity:.28;}   /* 아직 안 온 날(14칸 창이 차기 전) */
+.st-hkey i{width:12px;height:0;border-top:2px solid var(--c-label);opacity:.28;}.st-hkey b{width:8px;height:8px;border-radius:4px;}
+.st-pick{cursor:pointer;touch-action:pan-y;}   /* 14일 막대 누르면 그날 */
+.st-day{touch-action:pan-y;}
+.st-day.st-in-r{animation:stInR .22s ease-out;}.st-day.st-in-l{animation:stInL .22s ease-out;}
+@keyframes stInR{from{opacity:.3;transform:translateX(28px);}to{opacity:1;transform:none;}}@keyframes stInL{from{opacity:.3;transform:translateX(-28px);}to{opacity:1;transform:none;}}   /* 아직 안 온 날(14칸 창이 차기 전) */
 .st-rank{display:flex;align-items:center;gap:10px;min-height:40px;}
 .st-rank+.st-rank{box-shadow:inset 0 .5px 0 var(--c-sep);}
 .st-rank .nm{flex:0 0 38%;min-width:0;font-size:15px;line-height:20px;color:var(--c-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -10320,7 +10324,7 @@ async function siteDirect0(onPart){ const tok=await gcToken().catch(()=>null); i
       days:(total.stats||[]).map(x=>({day:x.day, n:x.daily||0, hourly:x.hourly||[]})),
       pages7:(hits.hits||[]).filter(h=>!h.event).slice(0,30).map(h=>({path:h.path, title:h.title||'', n:h.count||0, days:(h.stats||[]).map(x=>x.daily||0)})),
       events:(evs.hits||[]).filter(h=>h.event&&(h.count||0)>0).map(h=>({path:h.path, n:h.count}))};
-    siteVisit(out, evs.hits||[]);
+    siteVisit(out, evs.hits||[]); siteDayLists(out, evs.hits||[]);
     const prev=SITE.st||{}; for(const pg of ['toprefs','systems','browsers','sizes']) out[pg]=prev[pg]||[]; if(prev.szDays) out.szDays=prev.szDays;   // 2차가 올 때까지는 직전 값(빈 칸으로 깜빡이지 않게)
     SITE.st=out; SITE.chk=Date.now(); SITE.at=Date.now(); SITE.direct=true; SITE.dRun=false; if(onPart) onPart();   // 1차가 오면 「방금 확인」(2차 목록은 이어서)
     await Promise.all(['toprefs','systems','browsers','sizes'].map(async pg=>{
@@ -10340,6 +10344,12 @@ function siteVisit(out, hs){ const vd={}, ed={}, nd={}, vg={}; let vn=null;
     if(h.path==='visit/new'){ vn=h.count||0; for(const s of (h.stats||[])) if(s.day&&s.daily) nd[s.day]=s.daily; }
     const gm=/^visit\/gap\/([1-8])$/.exec(h.path||''); if(gm) for(const s of (h.stats||[])) if(s.day&&s.daily) (vg[s.day]||(vg[s.day]={}))[gm[1]]=s.daily; }
   out.vday=vd; out.vnew=vn; out.vnewday=nd; out.evday=ed; out.vgap=vg; }
+/* 날마다 페이지·사건(10-11 동하 「스크린타임 일 동작처럼」) — 30일 hits(group=day)에서 날별로 떼어 둔다 · 워크플로 site-stats.yml 도 같은 꼴
+   pday = {날: [[경로, 열람]…](많은 순 15)} · evd = {날: {사건 경로: 수}}(visit/* 뺌 — 방문 집계용) */
+function siteDayLists(out, hs){ const pd={}, ed={};
+  for(const h of hs){ const p=h.path||''; for(const s of (h.stats||[])){ if(!s.day||!s.daily) continue;
+    if(h.event){ if(p.indexOf('visit/')!==0) (ed[s.day]||(ed[s.day]={}))[p]=s.daily; } else (pd[s.day]||(pd[s.day]=[])).push([p, s.daily]); } }
+  for(const k in pd) pd[k]=pd[k].sort((a,b)=>b[1]-a[1]).slice(0,15); out.pday=pd; out.evd=ed; }
 /* WAU(10-11 동하) = 끝날 t 까지 7일 안 서로 다른 기기 — 구간 안 방문 중 「지난 방문이 구간 밖」인 것만 센다(gap > 그 날 − 구간 첫날 · 8 = 8일 이상·기록 없음).
    gap 사건은 10-11 부터라 그 전 날은 구간에서 빠진다 → 구간 첫날이 기록 첫날보다 앞이면 part(덜 센 값) */
 function siteWau(vg, t){ const D=k=>Date.parse(k+'T00:00:00Z')/864e5, T=D(t), f0=Object.keys(vg).sort()[0]; if(!f0) return null;
@@ -10400,6 +10410,7 @@ async function siteRefresh(){ if(SITE.ref) return;
   finally{ SITE.ref=false; siteRender(); } }
 function sitePageName(p){ p=decodeURIComponent(String(p||'')).replace(/^\/review-notes/,''); if(p===''||p==='/'||/\/index\.html$/.test(p)) return '첫 화면';
   if(/report\.html$/.test(p)) return '피드백 페이지'; if(/quiz\.html$/.test(p)) return '쪽지시험'; if(/status\.html$/.test(p)) return '처리 현황';
+  if(/changes\.html$/.test(p)) return '업데이트 소식'; if(/curric\.html$/.test(p)) return '내용 체계표'; if(/sync\.html$/.test(p)) return '기기 연동'; if(/intro\.html$/.test(p)) return '소개';
   const m=p.match(/\d+\.(.+?)\.html$/); return m?m[1]:p; }
 const SITE_KO={'Phones':'휴대폰','Tablets':'태블릿','Computer monitors':'컴퓨터','Larger monitors':'큰 모니터','(unknown)':'알 수 없음','Unknown':'알 수 없음',
   '(직접)':'직접 · 메신저 링크',phone:'휴대폰',largephone:'큰 휴대폰',tablet:'태블릿',desktop:'컴퓨터',desktophd:'큰 모니터',unknown:'알 수 없음'};   // GoatCounter 화면 크기 = 이름 없이 종류 코드로 온다
@@ -10426,28 +10437,37 @@ function siteRefs(list){ const m=new Map(); (list||[]).forEach(x=>{ const k=site
 function siteBarM(m){ SITE.barM=m; siteRender(); }
 /* 시간대 = 스크린타임 「일」 꼴(10-11 동하 「아이패드 스크린타임처럼」 · 「주」는 뺐다 — 위 14일 막대와 겹친다 · 길게 쌓이면 다시 생각)
    ‹ › = 연 날부터 오늘까지 하루씩 · 큰 숫자 = 그날 열람(위 「오늘 열람」 타일과 같은 값) · 화살표 = 평균 대비(오늘은 지금 시각까지끼리) ·
-   칸마다 옅은 눈금 = 그 시각 평균(오늘 뺀 날들) · 막대를 누르면 그 시각 숫자. GoatCounter 시간별(hourly)은 사건까지 세서 그날 열람/합 비율로 줄여 그린다 */
+   평균 눈금은 뺐다(동하 「회색선 왜」) · 막대를 누르면 그 시각 숫자 · 14일 막대 누르기·묶음 밀기로 날 고르기(siteBarPick·siteSw). GoatCounter 시간별(hourly)은 사건까지 세서 그날 열람/합 비율로 줄여 그린다 */
+function siteDayLab(day, tdK){ const wk='일월화수목금토'[new Date(day+'T00:00:00Z').getUTCDay()], yK=new Date(Date.parse(tdK+'T00:00:00Z')-864e5).toISOString().slice(0,10);
+  return day===tdK?'오늘':day===yK?'어제':`${Number(day.slice(5,7))}월 ${Number(day.slice(8))}일 (${wk})`; }
 function siteHours(real, tdK){ const D=real.filter(d=>(d.hourly||[]).length===24); if(!D.length) return ''; SITE.hDays=D.map(d=>d.day);
   const sc=d=>{ const t=d.hourly.reduce((a,x)=>a+x,0), r=t?(d.pvN??t)/t:0; return d.hourly.map(x=>x*r); };
   let i=SITE.hD?D.findIndex(d=>d.day===SITE.hD):-1; if(i<0) i=D.length-1; const d=D[i], isT=d.day===tdK, hv=sc(d), now=new Date().getHours();
   const past=D.filter(x=>x.day!==tdK).map(sc), avgH=Array.from({length:24},(_,h)=>past.length?past.reduce((a,x)=>a+x[h],0)/past.length:null);
   const cut=isT?now+1:24, tot=Math.round(hv.slice(0,cut).reduce((a,x)=>a+x,0)), base=past.filter((x,k)=>D.filter(y=>y.day!==tdK)[k].day!==d.day).map(x=>x.slice(0,cut).reduce((a,y)=>a+y,0));
   const avg=base.length?base.reduce((a,x)=>a+x,0)/base.length:null, pc=avg?Math.round((tot-avg)/avg*100):null;
-  const mx=Math.max(1,...hv,...avgH.map(x=>x||0)), H=84, wk='일월화수목금토'[new Date(d.day+'T00:00:00Z').getUTCDay()];
-  const yK=new Date(Date.parse(tdK+'T00:00:00Z')-864e5).toISOString().slice(0,10), lab=isT?'오늘':d.day===yK?'어제':`${Number(d.day.slice(5,7))}/${Number(d.day.slice(8))} (${wk})`;
-  SITE.hV={day:d.day, hv, avgH, isT, now, date:`${Number(d.day.slice(5,7))}월 ${Number(d.day.slice(8))}일 (${wk})`, pc};
+  const mx=Math.max(1,...hv), H=84, wk='일월화수목금토'[new Date(d.day+'T00:00:00Z').getUTCDay()];
+  const lab=siteDayLab(d.day, tdK), x=((SITE.st&&SITE.st.szDays)||{})[d.day], xT=x?(x.p||0)+(x.t||0)+(x.d||0):0;
+  SITE.hV={day:d.day, hv, avgH, isT, now, date:[/^(오늘|어제)$/.test(lab)?`${Number(d.day.slice(5,7))}월 ${Number(d.day.slice(8))}일 (${wk})`:'', d.pv?'':`방문 기기 ${(d.n||0).toLocaleString()}`].filter(Boolean).join(' · '), pc};
   const cols=hv.map((n,h)=>{ const f=isT&&h>now, v=Math.round(n), a=avgH[h];
-    return `<span class="hc" data-h="${h}"><i class="${f?'f':v?'':'z'}" style="height:${f?0:v?Math.max(3,Math.round(n/mx*H)):1}px"></i>${a?`<em style="bottom:${Math.round(a/mx*H)}px"></em>`:''}</span>`; }).join('');
-  return `<div class="sc-sec"><div class="h-sec2"><h2>시간대</h2><span class="st-hnav"><button aria-label="전날" onclick="siteHrDay(-1)"${i?'':' disabled'}>‹</button><span>${lab}</span><button aria-label="다음 날" onclick="siteHrDay(1)"${i<D.length-1?'':' disabled'}>›</button></span></div>`
+    return `<span class="hc" data-h="${h}"><i class="${f?'f':v?'':'z'}" style="height:${f?0:v?Math.max(3,Math.round(n/mx*H)):1}px"></i></span>`; }).join('');
+  return `<div class="sc-sec"><div class="h-sec2"><h2>${lab}</h2><span class="st-hnav"><button aria-label="전날" onclick="siteHrDay(-1)"${i?'':' disabled'}>‹</button><button aria-label="다음 날" onclick="siteHrDay(1)"${i<D.length-1?'':' disabled'}>›</button></span></div>`
     +`<div class="sc-card"><div class="mk-big" id="stHBig"><b>${tot.toLocaleString()}</b><small>열람</small>${pc?`<i class="${pc>0?'up':'dn'}">${pc>0?'▲':'▼'} ${Math.abs(pc)}%</i>`:''}</div><div class="mk-meta" id="stHMeta">${SITE.hV.date}</div>`
     +`<div class="st-hr" id="stHr" onpointerdown="siteHrPick(event)">${cols}</div><div class="sc-ax"><span>0</span><span>6</span><span>12</span><span>18</span><span>24</span></div>`
-    +(past.length?'<div class="st-hkey"><span><i></i>평균</span></div>':'')+'</div></div>'; }
+    +(xT?'<div class="st-hkey">'+(xT?[['t','패드','var(--c-acc)'],['p','폰','var(--c-orange)'],['d','PC','var(--c-indigo)']].map(([k,l,c])=>`<span><b style="background:${c}"></b>${l} ${Math.round((x[k]||0)/xT*100)}%</span>`).join(''):'')+'</div>':'')+'</div></div>'; }
 function siteHrDay(k){ const D=SITE.hDays||[]; const cur=SITE.hD&&D.includes(SITE.hD)?SITE.hD:D[D.length-1]; const j=D.indexOf(cur)+k;
-  if(j<0||j>=D.length) return; SITE.hD=j===D.length-1?null:D[j]; siteRender(); }   // 마지막 날 = null(다음 날 넘어가면 오늘을 따라간다)
+  if(j<0||j>=D.length) return; SITE.hD=j===D.length-1?null:D[j]; siteRender();
+  const el=$('stDay'); if(el&&SITE.swDir){ el.classList.add(SITE.swDir>0?'st-in-r':'st-in-l'); } SITE.swDir=0; }
+/* 그날 묶음 밀기(10-11 동하 「일 통계 스와이프하면 날짜 바뀌고」) — 오른쪽으로 밀면 전날 · 왼쪽 = 다음 날(스크린타임과 같은 방향) */
+function siteSw(ev){ if(ev.type==='pointerdown'){ SITE.sw={x:ev.clientX, y:ev.clientY}; return; } const s=SITE.sw; SITE.sw=null; if(!s||ev.type!=='pointerup') return;
+  const dx=ev.clientX-s.x, dy=ev.clientY-s.y; if(Math.abs(dx)<50||Math.abs(dx)<Math.abs(dy)*1.5) return; SITE.swDir=dx>0?-1:1; siteHrDay(dx>0?-1:1); }
+/* 14일 막대를 누르면 그날(스크린타임 「주」 막대 누르기) — 막대가 낮아도 잡히게 칸 폭으로 고른다 · 오늘 = null(날이 넘어가면 오늘을 따라감) */
+function siteBarPick(ev){ const w=ev.currentTarget, r=w.getBoundingClientRect(), L=SITE.ddDays||[], k=Math.floor((ev.clientX-r.left)/r.width*L.length), d=L[k];
+  if(!d) return; const nd=d===SITE.tdK?null:d; if(nd===SITE.hD) return; SITE.hD=nd; siteRender(); }   // 마지막 날 = null(다음 날 넘어가면 오늘을 따라간다)
 function siteHrPick(ev){ const c=ev.target.closest&&ev.target.closest('.hc'), V=SITE.hV, w=$('stHr'); if(!c||!V||!w) return; const h=+c.dataset.h;
   if(c.classList.contains('on')){ c.classList.remove('on'); w.classList.remove('sel'); $('stHMeta').textContent=V.date; return; }   // 같은 칸 다시 = 풀기
   w.querySelectorAll('.hc.on').forEach(x=>x.classList.remove('on')); c.classList.add('on'); w.classList.add('sel');
-  $('stHMeta').textContent=`${V.date} · ${h}시 ${V.isT&&h>V.now?'—':Math.round(V.hv[h])}`+(V.avgH[h]!=null?` · 평균 ${Math.round(V.avgH[h])}`:''); }
+  $('stHMeta').textContent=`${V.date?V.date+' · ':''}${h}시 ${V.isT&&h>V.now?'—':Math.round(V.hv[h])}`; }
 function siteQT(el){ const s=SITE.qOpen||(SITE.qOpen=new Set()); s[el.open?'add':'delete'](el.dataset.g); }
 function siteRank(list, nameOf){ const mx=Math.max(1,...list.map(x=>x.n)); return list.map(x=>`<div class="st-rank"><span class="nm">${esc(nameOf?nameOf(x):(SITE_KO[x.name]||x.name))}</span><span class="br"><i style="width:${(x.n/mx*100).toFixed(1)}%"></i></span><span class="n">${x.n.toLocaleString()}</span></div>`).join(''); }
 function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.contains('on')) return;
@@ -10468,20 +10488,23 @@ function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.c
     const barP=!!v0&&SITE.barM!=='v';   /* 기본 = 열람(방문은 위 타일 숫자가 더 뜻있다 · 10-11 동하) */ if(barP) dd=dd.map(d=>({...d, n:d.fut?0:(d.pvN||0), pv:false}));   /* 막대 [방문|열람] 전환(10-11) */
     const bySz=barP||!v0;   /* 기기(패드·폰·PC) 쌓기 = 열람 보기만 — 화면 크기는 열람마다 잡혀 방문 기기와 짝이 안 맞는다(10-11 동하) */
     const mx=Math.max(1,...dd.filter(d=>!d.pv).map(d=>d.n||0)), mxP=Math.max(1,...dd.filter(d=>d.pv).map(d=>d.n||0));   /* 방문 기기·열람은 단위가 달라 막대 비율을 따로 */
-    const lastReal=dd.reduce((k,d,i)=>d.fut?k:i,0);
+    const selDay=(SITE.hD&&real.some(d=>d.day===SITE.hD))?SITE.hD:(real.length?real[real.length-1].day:tdK), dayLab=siteDayLab(selDay, tdK);   /* 고른 날(10-11) — 아래 「그날」 묶음 전부가 이 날 */
+    SITE.tdK=tdK; SITE.ddDays=dd.map(d=>d.fut?null:d.day);
     const sz=st.szDays||{}, SZ=[['t','패드','var(--c-acc)'],['p','폰','var(--c-orange)'],['d','PC','var(--c-indigo)']];   // 아래부터 패드 → 폰 → PC
     const szPc=x=>{ const T=(x.p||0)+(x.t||0)+(x.d||0); return T?SZ.map(([k,l])=>`${l} ${Math.round((x[k]||0)/T*100)}%`).join(' '):''; };
     const bars=dd.map((d,i)=>{ const x=d.n&&bySz&&sz[d.day], T=x?(x.p||0)+(x.t||0)+(x.d||0):0;
-      return `<i class="${d.n?'':'z'}${i===lastReal?' t':''}${d.fut?' f':''}${T?' s':''}${d.pv?' pv':''}" style="height:${d.n?Math.max(3,Math.round(d.n/(d.pv?mxP:mx)*96)):1}px" title="${esc(d.day)} · ${barP||d.pv?'열람':'방문'} ${d.n}${T?' · '+szPc(x):''}">${T?SZ.map(([k,,c])=>`<b style="flex:${x[k]||0} 0 0;background:${c}"></b>`).join(''):''}</i>`; }).join('');
+      return `<i class="${d.n?'':'z'}${d.day===selDay?' t':''}${d.fut?' f':''}${T?' s':''}${d.pv?' pv':''}" style="height:${d.n?Math.max(3,Math.round(d.n/(d.pv?mxP:mx)*96)):1}px" title="${esc(d.day)} · ${barP||d.pv?'열람':'방문'} ${d.n}${T?' · '+szPc(x):''}">${T?SZ.map(([k,,c])=>`<b style="flex:${x[k]||0} 0 0;background:${c}"></b>`).join(''):''}</i>`; }).join('');
     const sz7=Object.keys(sz).sort().slice(-7).reduce((a,k)=>(a.p+=sz[k].p||0,a.t+=sz[k].t||0,a.d+=sz[k].d||0,a),{p:0,t:0,d:0}), sz7T=sz7.p+sz7.t+sz7.d;
     const leg=sz7T&&bySz?`<div class="legend st-leg">${SZ.map(([k,l,c])=>`<span><i style="background:${c}"></i>${l} ${Math.round(sz7[k]/sz7T*100)}%</span>`).join('')}</div>`:'';
     const ax=dd.length?[...new Set([0, Math.floor((dd.length-1)/2), dd.length-1])].map(i=>dd[i]).map(d=>`<span>${Number(d.day.slice(5,7))}/${Number(d.day.slice(8))}</span>`).join(''):'';
-    L.push(`<div class="sc-sec"><div class="h-sec2"><h2>${real.length>=W14?'최근 14일':'연 날부터'}</h2>${v0?`<span class="seg st-seg"><button onclick="siteBarM('v')"${barP?'':' class="on"'}>방문</button><button onclick="siteBarM('p')"${barP?' class="on"':''}>열람</button></span>`:'<span class="sc-g">하루 방문</span>'}</div><div class="sc-card"><div class="st-bars">${bars}</div><div class="sc-ax">${ax}</div>${leg}</div></div>`);
+    L.push(`<div class="sc-sec"><div class="h-sec2"><h2>${real.length>=W14?'최근 14일':'연 날부터'}</h2>${v0?`<span class="seg st-seg"><button onclick="siteBarM('v')"${barP?'':' class="on"'}>방문</button><button onclick="siteBarM('p')"${barP?' class="on"':''}>열람</button></span>`:'<span class="sc-g">하루 방문</span>'}</div><div class="sc-card"><div class="st-bars st-pick" onpointerdown="siteBarPick(event)">${bars}</div><div class="sc-ax">${ax}</div>${leg}</div></div>`);
+    L.push('<div id="stDay" class="st-day" onpointerdown="siteSw(event)" onpointerup="siteSw(event)" onpointercancel="siteSw(event)">'); let accH='';   /* 그날 묶음 시작 */
     L.push(siteHours(real, tdK));
-    const pages=(st.pages7||[]).filter(x=>x.n>0);
-    if(pages.length) L.push(`<div class="sc-sec"><div class="h-sec2"><h2>많이 읽힌 페이지</h2><span class="sc-g">7일</span></div><div class="sc-card">${siteRank(pages.slice(0,13), x=>sitePageName(x.path))}</div></div>`);
+    const pD=st.pday?(st.pday[selDay]||[]).map(([path,n])=>({path,n})):null, pages=(pD||st.pages7||[]).filter(x=>x.n>0);   /* 옛 파일(pday 없음)이면 7일 */
+    if(pages.length||pD) L.push(`<div class="sc-sec"><div class="h-sec2"><h2>많이 읽힌 페이지</h2><span class="sc-g">${pD?dayLab:'7일'}</span></div><div class="sc-card">${pages.length?siteRank(pages.slice(0,13), x=>sitePageName(x.path)):'<div class="sc-line">—</div>'}</div></div>`);
     /* 이용(10-08) — 사이트가 남기는 이벤트 30일 합: quiz/start/<범위> · quiz/done · search/<말> · search-none/<말> · pdf/<파일> */
-    if(Array.isArray(st.events)){ const ev=st.events, pre=k=>ev.filter(x=>String(x.path||'').indexOf(k)===0).map(x=>({name:String(x.path).slice(k.length), n:x.n||0})), tot=a=>a.reduce((s,x)=>s+x.n,0);
+    const evDay=st.evd?Object.entries(st.evd[selDay]||{}).map(([path,n])=>({path,n})):null;
+    if(evDay||Array.isArray(st.events)){ const ev=evDay||st.events, evLab=evDay?dayLab:'30일', pre=k=>ev.filter(x=>String(x.path||'').indexOf(k)===0).map(x=>({name:String(x.path).slice(k.length), n:x.n||0})), tot=a=>a.reduce((s,x)=>s+x.n,0);
       const qs=pre('quiz/start/'), qd=tot(ev.filter(x=>x.path==='quiz/done').map(x=>({n:x.n||0}))), sh=pre('search/'), sn=pre('search-none/'), pf=pre('pdf/');
       const tiles=a=>`<div class="st-fbn">${a.map(([v,l,pc])=>`<div class="st-tile"><b>${pc!=null?pc+'<small>%</small>':(v||0).toLocaleString()}</b><span>${l}</span></div>`).join('')}</div>`;
       const rank=(a,k)=>a.length?`<div class="sc-card" style="margin-top:10px">${siteRank(a.sort((x,y)=>y.n-x.n).slice(0,k), x=>x.name)}</div>`:'';
@@ -10500,9 +10523,11 @@ function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.c
       const qFront=c=>{ const m=String(c.front||'').match(/^〔([^〕]*)〕\s*(.*)$/s); return (m?m[2]:c.front||'').trim(); };
       const qBar=(k,n)=>`<span class="br"><i style="width:${(k/n*100).toFixed(1)}%;background:${k/n<.5?'var(--c-red)':'var(--c-acc)'}"></i></span><span class="n">${k}/${n}</span>`;
       const qHardH=qHard.length?`<div class="h-sec2" style="margin-top:14px"><h2 style="font-size:15px">많이 틀린 문제</h2></div><div class="sc-card">${qHard.map(g=>`<details class="st-q st-qg" data-g="${esc(g.key)}"${qOpen.has(g.key)?' open':''} ontoggle="siteQT(this)"><summary class="st-rank st-qh"><span class="nm">${esc(qTitle(g))}</span>${qBar(g.k,g.n)}<span class="cv">›</span></summary><div class="st-qsub">${g.a.sort((a,b)=>a.k/a.n-b.k/b.n).map(x=>`<div class="st-qhc"><p>${esc(qFront(BYID[x.id]))}<small>${esc(String(BYID[x.id].back||'').replace(/\s+/g,' ').slice(0,120))}</small></p><span class="n">${x.k}/${x.n}</span></div>`).join('')}</div></details>`).join('')}</div>`:'';
-      L.push(`<div class="sc-sec"><div class="h-sec2"><h2>쪽지시험</h2><span class="sc-g">30일</span></div>${tiles([[tot(qs),'시작'],[qd,'끝까지']].concat(qN?[[qN,'푼 문제'],[null,'정답률',Math.round(qK/qN*100)]]:[]))}${qList}${qHardH}</div>`);
-      L.push(`<div class="sc-sec"><div class="h-sec2"><h2>검색</h2><span class="sc-g">30일</span></div>${tiles([[tot(sh)+tot(sn),'검색'],[tot(sn),'결과 없음']])}${rank(sh,8)}${sn.length?`<div class="h-sec2" style="margin-top:14px"><h2 style="font-size:15px">결과가 없던 말</h2></div>`+rank(sn,8):''}</div>`);
-      L.push(`<div class="sc-sec"><div class="h-sec2"><h2>PDF 받기</h2><span class="sc-g">30일</span></div>${tiles([[tot(pf),'받기'],[pf.length,'파일 종류']])}${rank(pf.map(x=>({name:pdfName(x.name), n:x.n})),8)}</div>`); }
+      L.push(`<div class="sc-sec"><div class="h-sec2"><h2>쪽지시험</h2><span class="sc-g">${evLab}</span></div>${tiles([[tot(qs),'시작'],[qd,'끝까지']])}${qList}</div>`);
+      if(qN) accH=`<div class="sc-sec"><div class="h-sec2"><h2>쪽지시험 정답률</h2><span class="sc-g">누적</span></div>${tiles([[qN,'푼 문제'],[null,'정답률',Math.round(qK/qN*100)]])}${qHardH}</div>`;   /* 정답률(qs)은 날짜가 없다 → 그날 묶음 밖 */
+      L.push(`<div class="sc-sec"><div class="h-sec2"><h2>검색</h2><span class="sc-g">${evLab}</span></div>${tiles([[tot(sh)+tot(sn),'검색'],[tot(sn),'결과 없음']])}${rank(sh,8)}${sn.length?`<div class="h-sec2" style="margin-top:14px"><h2 style="font-size:15px">결과가 없던 말</h2></div>`+rank(sn,8):''}</div>`);
+      L.push(`<div class="sc-sec"><div class="h-sec2"><h2>PDF 받기</h2><span class="sc-g">${evLab}</span></div>${tiles([[tot(pf),'받기'],[pf.length,'파일 종류']])}${rank(pf.map(x=>({name:pdfName(x.name), n:x.n})),8)}</div>`); }
+    L.push('</div>'); if(accH) L.push(accH);   /* 그날 묶음 끝 */
     const two=[['toprefs','들어온 경로'],['systems','기기'],['browsers','브라우저'],['sizes','화면']].filter(([k])=>(st[k]||[]).length);
     if(two.length) L.push(`<div class="st-two">${two.map(([k,t])=>`<div class="sc-sec"><div class="h-sec2"><h2>${t}</h2><span class="sc-g">7일</span></div><div class="sc-card">${(k==='toprefs'?siteRank(siteRefs(st[k]).slice(0,6), x=>x.name):siteRank(st[k].slice(0,6)))}</div></div>`).join('')}</div>`);
   }

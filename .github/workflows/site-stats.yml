@@ -85,7 +85,18 @@ jobs:
               if gm:
                   for s in h.get("stats") or []:
                       if s.get("day") and s.get("daily"): vg.setdefault(s["day"], {})[gm.group(1)] = s["daily"]
-          out.update({"vday": vd, "vnew": vn, "vnewday": nd, "evday": ed, "vgap": vg})   # vgap = 지난 방문으로부터 날 수별 기기(10-11 · 앱 WAU·재방문)
+          out.update({"vday": vd, "vnew": vn, "vnewday": nd, "evday": ed, "vgap": vg})
+          # 날마다 페이지·사건(10-11 · 앱 「그날」 묶음) — pday = {날: [[경로, 열람]…] 많은 순 15} · evd = {날: {사건: 수}}(visit/* 뺌) · 앱 siteDayLists 와 같은 꼴
+          pd, edd = {}, {}
+          for h in evs.get("hits", []):
+              p = h.get("path") or ""
+              for s in h.get("stats") or []:
+                  if not s.get("day") or not s.get("daily"): continue
+                  if h.get("event"):
+                      if not p.startswith("visit/"): edd.setdefault(s["day"], {})[p] = s["daily"]
+                  else: pd.setdefault(s["day"], []).append([p, s["daily"]])
+          out["pday"] = {k: sorted(v, key=lambda x: -x[1])[:15] for k, v in pd.items()}
+          out["evd"] = edd   # vgap = 지난 방문으로부터 날 수별 기기(10-11 · 앱 WAU·재방문)
           for page in ("toprefs", "systems", "browsers", "sizes"):
               try:
                   r = get("stats/" + page, start=s7, end=end, limit=12)

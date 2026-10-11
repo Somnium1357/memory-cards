@@ -34,7 +34,8 @@ h1{font-size:34px;line-height:41px;font-weight:700;letter-spacing:-.025em;margin
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chips button{font:inherit;font-size:13px;font-weight:500;border:0;background:var(--fill);color:var(--label);padding:7px 13px;border-radius:999px;cursor:pointer;min-height:34px}
 .chips button.on{background:var(--accTint);color:var(--acc);font-weight:600}
-.chips button[hidden]{display:none}
+.chips button[hidden],.chips[hidden]{display:none}
+.chips{flex:1 0 100%}
 /* 영역 — 제목은 카드 바깥, 표는 카드 안 */
 h2{font-size:22px;line-height:28px;font-weight:700;margin:28px 0 8px 4px}
 h2 small{font-size:13px;font-weight:400;color:var(--sec);margin-left:6px}
@@ -70,21 +71,12 @@ div.it.c{width:fit-content;max-width:100%;padding:1px 4px;margin-left:-4px}   /*
 <h1>내용 체계표</h1>
 
 <div class="bar">
-  <div class="seg"><button data-sub="music" class="on">음악</button><button data-sub="art">미술</button><button data-sub="pe">체육</button></div>
-  <div class="chips">
-    <button data-mode="show" class="on">전부 보기</button>
-    <button data-mode="g56">5~6 가리기</button>
-    <button data-mode="g34">3~4 가리기</button>
-    <button data-mode="proc">과정·기능 가리기</button>
-    <button data-mode="ex" hidden>예시 가리기</button>
-    <button data-mode="tl" hidden>교수·평가 가리기</button>
-    <button data-mode="all">전부 가리기</button>
-  </div>
+  <div class="seg" id="ctSubs"></div>
+  <div class="chips" id="ctG"></div>
+  <div class="chips" id="ctC"></div>
 </div>
 
-<section id="bookmusic"></section>
-<section id="bookart" hidden></section>
-<section id="bookpe" hidden></section>
+<div id="ctBooks"></div>
 </div>
 
 <script>
@@ -174,6 +166,13 @@ const PE_TL = {
     ["(2) 평가 방법", [["(가)","평가 내용 선정",[]],["(나)","성취기준 및 성취수준 선정",[]],["(다)","평가 방법 및 도구의 선정",[]],["(라)","평가 결과의 활용",[]]]]
   ]
 };
+/* 🔴 과목 추가 = 아래 EXTRA 에 한 덩어리(10-11 · 공개 사이트도 같은 데이터를 굽는다).
+   꼴 = { "과목 이름": { id:"영문", areas: { "영역": { "범주": [[3~4 항목…], [5~6 항목…]] } } } } — 범주 이름이 곧 「가리기」 칩이 된다.
+   출처는 2022 개정 교육과정 원문(별책) 내용 체계표 · 칸 안 항목은 책 순서 그대로. */
+const EXTRA = {
+};
+/* 칩 이름 — 데이터 범주(data-cat)를 화면 말로 · 없으면 범주 이름 그대로 */
+const CAT_LABEL = { '세부': '세부 영역', '교평': '교수·평가' };
 const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const it = (x, g, cat) => `<div class="it c" data-g="${g}" data-cat="${cat}">${esc(x)}</div>`;
 
@@ -224,45 +223,47 @@ function peTL(){
   return h + '</div>';
 }
 function buildBook(){
-  let m = '';
-  for (const [area, cats] of Object.entries(MUSIC))
-    m += bookTable(area, Object.entries(cats).map(([cat, rows]) => [cat, rows.map(r => r[0]), rows.map(r => r[1])]));
-  document.getElementById('bookmusic').innerHTML = m;
-  let a = '';
-  for (const [area, d] of Object.entries(ART))
-    a += bookTable(area, [["지식·이해", d.rows.map(r => r[0]), d.rows.map(r => r[2])], ["과정·기능", d.rows.map(r => r[1]), d.rows.map(r => r[3])], ["가치·태도", d.val.map(r => r[0]), d.val.map(r => r[1])]]);
-  document.getElementById('bookart').innerHTML = a;
-  document.getElementById('bookpe').innerHTML = peVal() + peEx('34') + peEx('56') + peTL();
+  const music = Object.entries(MUSIC).map(([area, cats]) => bookTable(area, Object.entries(cats).map(([cat, rows]) => [cat, rows.map(r => r[0]), rows.map(r => r[1])]))).join('');
+  const art = Object.entries(ART).map(([area, d]) => bookTable(area, [["지식·이해", d.rows.map(r => r[0]), d.rows.map(r => r[2])], ["과정·기능", d.rows.map(r => r[1]), d.rows.map(r => r[3])], ["가치·태도", d.val.map(r => r[0]), d.val.map(r => r[1])]])).join('');
+  const subs = [['music', '음악', music], ['art', '미술', art], ['pe', '체육', peVal() + peEx('34') + peEx('56') + peTL()]];
+  for (const [name, d] of Object.entries(EXTRA))
+    subs.push([d.id, name, Object.entries(d.areas).map(([area, cats]) => bookTable(area, Object.entries(cats).map(([cat, [a, b]]) => [cat, a || [], b || []]))).join('')]);
+  document.getElementById('ctSubs').innerHTML = subs.map(([id, name]) => `<button data-sub="${id}">${esc(name)}</button>`).join('');
+  document.getElementById('ctBooks').innerHTML = subs.map(([id, , h]) => `<section id="book${id}" hidden>${h}</section>`).join('');
+  window.CT_SUBS = subs.map(x => x[0]);
 }
 buildBook();
 
-let sub = 'music', mode = 'show';
-function setMode(m){ mode = m; document.querySelectorAll('[data-mode]').forEach(x => x.classList.toggle('on', x.dataset.mode === m)); apply(); }
-function showSec(){
-  for (const id of ['bookmusic','bookart','bookpe']) document.getElementById(id).hidden = true;
-  document.getElementById('book' + sub).hidden = false;
-  /* 체육엔 과정·기능이 없고 예시가 있다 — 단추를 바꿔 끼운다 */
-  document.querySelector('[data-mode="proc"]').hidden = (sub === 'pe');
-  document.querySelector('[data-mode="ex"]').hidden = (sub !== 'pe');
-  document.querySelector('[data-mode="tl"]').hidden = (sub !== 'pe');
-  if ((sub === 'pe' && mode === 'proc') || (sub !== 'pe' && (mode === 'ex' || mode === 'tl'))) setMode('show');
+/* 가리기(10-11) = 학년 줄 [안 가림 · 전체 · 3~4 · 5~6] × 범주 줄 [전체 · 그 과목 범주…] — 둘 다 맞는 칸만 가린다 · 칸을 누르면 그 칸만 열기/닫기 */
+let sub = CT_SUBS[0], gr = 'off', ca = 'all';
+const cats = () => [...new Set([...document.querySelectorAll(`#book${sub} .c`)].map(e => e.dataset.cat))];
+function paint(){
+  document.getElementById('ctG').innerHTML = [['off','안 가림'],['all','전체'],['34','3~4'],['56','5~6']].map(([k, l]) => `<button data-gr="${k}"${k === gr ? ' class="on"' : ''}>${l}</button>`).join('');
+  const c = document.getElementById('ctC'); c.hidden = gr === 'off';
+  c.innerHTML = [['all','전체'], ...cats().map(k => [k, CAT_LABEL[k] || k])].map(([k, l]) => `<button data-ca="${esc(k)}"${k === ca ? ' class="on"' : ''}>${esc(l)}</button>`).join('');
 }
 function apply(){
   document.querySelectorAll('.c').forEach(el => {
-    const g = el.dataset.g, cat = el.dataset.cat;
-    const hide = mode === 'all' || (mode === 'g56' && g === '56') || (mode === 'g34' && g === '34')
-      || (mode === 'proc' && cat === '과정·기능') || (mode === 'ex' && cat === '예시') || (mode === 'tl' && g === 'tl');
+    const hide = gr !== 'off' && (gr === 'all' || el.dataset.g === gr) && (ca === 'all' || el.dataset.cat === ca);
     el.classList.toggle('h', hide);
   });
+}
+function showSec(){
+  for (const id of CT_SUBS) document.getElementById('book' + id).hidden = id !== sub;
+  document.querySelectorAll('[data-sub]').forEach(x => x.classList.toggle('on', x.dataset.sub === sub));
+  if (ca !== 'all' && !cats().includes(ca)) ca = 'all';
+  paint(); apply();
 }
 document.addEventListener('click', e => {
   const c = e.target.closest('.c'); if (c){ c.classList.toggle('h'); return; }
   const b = e.target.closest('.bar button'); if (!b) return;
-  if (b.dataset.sub){ sub = b.dataset.sub; document.querySelectorAll('[data-sub]').forEach(x => x.classList.toggle('on', x === b)); showSec(); }
-  if (b.dataset.mode) setMode(b.dataset.mode);
+  if (b.dataset.sub){ sub = b.dataset.sub; showSec(); }
+  if (b.dataset.gr){ gr = b.dataset.gr; paint(); apply(); }
+  if (b.dataset.ca){ ca = b.dataset.ca; paint(); apply(); }
 });
 /* 주소 끝 #music · #art · #pe 로 과목을 골라 연다 */
-{ const h = location.hash.slice(1); const b = document.querySelector(`[data-sub="${h}"]`); if (b) b.click(); }
+function fromHash(){ const h = location.hash.slice(1); if (CT_SUBS.includes(h)) sub = h; showSec(); }
+addEventListener('hashchange', fromHash); fromHash();
 /* 앱이 다른 곳에서 테마를 바꾸면 따라 바뀐다 */
 window.addEventListener('storage', e => { if (!e.key || /^cards_(theme|light)_v1$/.test(e.key)) {
   try{ let t = localStorage.getItem('cards_theme_v1'), l = localStorage.getItem('cards_light_v1'); t = t==='b'?'dark':t==='c'?'paper':t;

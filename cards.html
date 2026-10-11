@@ -1622,8 +1622,8 @@ button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inher
 .st-tile b small{font-size:17px;font-weight:600;color:var(--c-sec);}   /* 오늘 방문 / 신규(10-10) */
 .st-tile span{font-size:13px;line-height:18px;color:var(--c-sec);}
 .st-pvrow{margin-top:-12px;}   /* 열람 줄(10-11) */
-.st-seg{flex:0 0 auto;margin-right:12px;}
-.st-seg button{padding:5px 12px;font-size:13px;}
+.st-seg{flex:0 0 auto;margin-right:12px;padding:2px;}   /* 머리 줄(32px) 안에 — 넘치면 아래 카드에 붙는다(10-11 동하) */
+.seg.st-seg button{min-height:28px;padding:0 12px;font-size:14px;}   /* 디자인 기본 .seg button 36px 을 이긴다 */
 .st-rank.st-qh{padding:8px 0;}
 .st-rank.st-qh .nm{flex:1 1 auto;white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:20px;}
 .st-rank.st-qh .br{flex:0 0 16%;}

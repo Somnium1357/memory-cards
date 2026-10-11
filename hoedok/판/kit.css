@@ -464,6 +464,7 @@ ol.steps .an .bracket{margin-top:1px;}
   ol.steps{grid-template-columns:minmax(0,1fr);}
   .vs3{grid-template-columns:minmax(0,1fr);}
   .vs3 .mk{text-align:left;}
+  .vs3>.mk{justify-self:start;transform:rotate(90deg);}   /* 10-11 동하 「대응이 위아래인데」 — 쌓이면 ↔ 를 ↕ 로(칸 사이 화살표만 · 도덕 가치 분석 1곳) */
 }
 h3 .cat{font-size:13px;line-height:18px;font-weight:400;color:var(--sec);}
 h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:14px 0 6px var(--step);}

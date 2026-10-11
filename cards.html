@@ -10266,12 +10266,12 @@ async function siteStatsFresh(){   // raw 주소는 5분 캐시 — 새로고침
    기기 GitHub 토큰(Variables: 읽기)으로 꺼내 GoatCounter API를 직접 부른다(CORS 허용 확인 · 1~2초). 워크플로 site-stats.yml과 같은 모양으로 SITE.st를 만든다.
    🔴 AdGuard가 imgostudy.goatcounter.com을 막으면 fetch가 터진다 → 조용히 기존 길(Actions 실행 → site-stats.json)로. 열쇠는 기기 localStorage에만(코드·공개 저장소 X) · 401이면 버리고 다시 꺼낸다. */
 const GC_API='https://imgostudy.goatcounter.com/api/v0/', GC_VAR='GOATCOUNTER_READ', K_GC='cards_gc_read_v1';
-let gcTok=null, gcNo=0;
-async function gcToken(){ if(gcTok) return gcTok; const c=lsGet(K_GC); if(c){ gcTok=c; return c; }
+let gcTok=null, gcNo=0, gcOld=false;   // gcOld = 기기에 저장해 둔 열쇠를 쓰는 중(실패하면 새로 받아 한 번 더)
+async function gcToken(){ if(gcTok) return gcTok; const c=lsGet(K_GC); if(c){ gcTok=c; gcOld=true; return c; }
   if(!cfg||!cfg.token||Date.now()<gcNo) return null;
   const r=await fetch(`https://api.github.com/repos/${cfg.owner}/${cfg.repo}/actions/variables/${GC_VAR}`,{headers:ghHeaders(),cache:'no-store'}).catch(()=>null);
   if(!r||!r.ok){ gcNo=Date.now()+10*60000; SITE.dErr=r?`GitHub 변수 ${r.status}`:'GitHub 변수 연결 실패'; return null; }   // 변수 없음·토큰 권한 없음 — 10분 뒤 다시(손 새로고침은 바로)
-  const j=await r.json().catch(()=>null); if(!j||!j.value){ SITE.dErr='GitHub 변수 비어 있음'; return null; } gcTok=String(j.value).trim(); lsSet(K_GC, gcTok); return gcTok; }
+  const j=await r.json().catch(()=>null); if(!j||!j.value){ SITE.dErr='GitHub 변수 비어 있음'; return null; } gcTok=String(j.value).trim(); gcOld=false; lsSet(K_GC, gcTok); return gcTok; }
 async function gcGet(tok, path, q){ const u=new URL(GC_API+path); for(const k in q) u.searchParams.set(k, q[k]);
   /* 🔴 GoatCounter 제한 = 1초 4번이고 **브라우저 사전 요청(OPTIONS)도 센다**(요청 1개 = 2번 · 10-09 실측). 사전 요청이 429면 브라우저는 연결 실패로 던진다
      → 연결 실패도 한 번 쉬고 다시(막힌 기기는 두 번째도 실패 → 기존 길로) */
@@ -10279,7 +10279,9 @@ async function gcGet(tok, path, q){ const u=new URL(GC_API+path); for(const k in
     if(r instanceof Error){ if(i>=1) throw r; await new Promise(z=>setTimeout(z,1500)); continue; }
     if(r.status===429){ await new Promise(z=>setTimeout(z,(+r.headers.get('Retry-After')||2)*1000)); continue; }
     if(r.status===401||r.status===403){ const e=new Error('gc auth'); e.auth=1; throw e; }
-    if(!r.ok) throw new Error('GoatCounter '+r.status); return r.json(); }
+    /* 10-11 패드 「바로 받기 안 됨(GoatCounter 404)」이 계속 — 같은 호출이 PC·WebKit 에선 200 · 패드도 서버까지는 닿음 → 기기에 저장된 열쇠 의심.
+       404 도 열쇠를 버리고 새로 받아 한 번 더(siteDirect) · 어느 호출인지 이유에 붙인다 */
+    if(!r.ok){ const e=new Error('GoatCounter '+r.status+' · '+path); if(r.status===404) e.auth=1; throw e; } return r.json(); }
   throw new Error('gc 429'); }
 /* 🔴 stats/hits 는 한 번에 **100줄까지만**(limit 200·500도 100 · `more`) — 30일 페이지 + 이벤트가 208줄이라 1회 칸 이벤트가 잘려
    검색·쪽지시험 수가 받을 때마다 늘었다 줄었다 했다(10-09 동하 · 검색 실제 14 → 보이는 2). `exclude_paths`(쉼표 · path_id)로 다음 쪽을 받는다 · 쪽 사이 0.4초(1초 4번) */
@@ -10291,7 +10293,7 @@ async function gcHitsAll(tok, q){ let all=[]; const ex=[];
     const h=d.hits||[]; all=all.concat(h); for(const x of h) ex.push(x.path_id); if(!d.more||!h.length) break; await new Promise(z=>setTimeout(z,400)); }
   return {hits:all}; }
 let siteDirP=null;   // 도는 중이면 같은 약속을 돌려준다(열기 + 새로고침이 겹치면 동시 8개 → 429 · 10-09 패드 빈 막대)
-function siteDirect(onPart){ if(siteDirP) return siteDirP; SITE.dRun=true; return siteDirP=siteDirect0(onPart).finally(()=>{ SITE.dRun=false; siteDirP=null; }); }   // 받는 동안 머리 줄 「받는 중…」(10-09 동하 「몇 초 옛 값」)
+function siteDirect(onPart){ if(siteDirP) return siteDirP; SITE.dRun=true; return siteDirP=siteDirect0(onPart).then(ok=>ok||!SITE.dAgain?ok:(SITE.dAgain=false, SITE.dErr='', siteDirect0(onPart))).finally(()=>{ SITE.dRun=false; siteDirP=null; }); }   // 받는 동안 머리 줄 「받는 중…」(10-09 동하 「몇 초 옛 값」)
 async function siteDirect0(onPart){ const tok=await gcToken().catch(()=>null); if(!tok) return false;
   /* 10-09 동하 「옛 정보가 뜨다가 10초 뒤 갱신」 — 7번을 차례로 부르면 ~13초(일별 둘이 3.5초씩). GoatCounter는 한꺼번에 6개면 429 · 4개까진 받는다(실측)
      → 1차 = 타일·막대·이용(3개 동시 · ~3.5초) 받자마자 그림(onPart) → 2차 = 경로·기기·브라우저·화면(4개 동시 · ~1.3초) */
@@ -10313,7 +10315,7 @@ async function siteDirect0(onPart){ const tok=await gcToken().catch(()=>null); i
     await siteSzDays(tok, out);   // 3차 = 날마다 화면 크기(막대를 폰·패드·PC로 쌓는다)
     lsSet(K_SITE_LAST, JSON.stringify(out));   // 다음에 열 때 먼저 보여 줄 값(이 기기만)
     return true; }
-  catch(e){ SITE.dErr=e.auth?'GoatCounter 열쇠 거부':String(e&&e.message||e).slice(0,80); if(e.auth){ lsDel(K_GC); gcTok=null; } return false; } }
+  catch(e){ SITE.dErr=e.auth&&!/ · /.test(e.message)?'GoatCounter 열쇠 거부':String(e&&e.message||e).slice(0,80); if(e.auth){ SITE.dAgain=gcOld; lsDel(K_GC); gcTok=null; gcOld=false; } return false; } }
 /* 방문 기기(10-10 동하 「방문자 수로 셀 우회로」) — 공개 사이트가 기기마다 하루 한 번 `visit/day`, 처음 온 기기는 `visit/new` 사건을 보낸다(기기에 날짜 하나만 · 번호 없음)
    → vday = 날짜별 방문 기기 · vnew = 처음 온 기기(30일) · evday = 날짜별 사건 합(GoatCounter `stats/total` 은 사건까지 센다 → 열람 = 합 − 사건). 워크플로 site-stats.yml 도 같은 필드 */
 function siteVisit(out, hs){ const vd={}, ed={}, nd={}, vg={}; let vn=null;

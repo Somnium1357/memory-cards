@@ -979,3 +979,4 @@ tr:has(>td>.ms)>td{vertical-align:middle;height:2.4em;}
 @media (max-width:950px){ :root.v2 .blk table.cgrid.cg-tight td:not(.h){min-width:2.3em;} :root.v2 .blk table.cgrid.cg-tight th{padding:6px .3em;} }
 /* 10-10 동하(사회 속성 학습 모형 폰): 설명이 짧은 세로 단계 목록(.pside · kit.js)은 폰(≤500)에서도 단계 | 설명 두 칸 — 설명을 단계 아래로 내리면 단계와 설명이 번갈아 서서 구분이 안 됐다 */
 @media (max-width:500px){ .vchain.pside{grid-template-columns:minmax(0,max-content) minmax(0,1fr) !important;} .vchain.pside>.ann{grid-column:2 !important;padding-left:0 !important;} }
+.hng *{text-indent:0;}   /* 10-11 내어쓰기 줄(kit.js hang) 안의 덩어리(회색 괄호 등)는 음수 들여쓰기를 물려받지 않는다 — 안 막으면 앞 글자 위에 겹친다 */

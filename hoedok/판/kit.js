@@ -1295,3 +1295,26 @@ document.querySelectorAll('.mkf svg,.mkd svg,.converge>svg,.fork svg,.fig svg').
   window.addEventListener('load',fitTicks);
   var t; window.addEventListener('resize',function(){clearTimeout(t);t=setTimeout(fitTicks,150);});
 })();
+
+/* 10-11 동하 「줄 넘어가는 거 윗줄이랑 같은 데서 시작하게」 — 「용어 : 설명」 줄 내어쓰기.
+   두 줄 이상이고 「용어 :」 폭이 줄 폭의 45% 이하일 때만 넘어가는 줄을 설명 시작점에 맞춘다(긴 용어 · 좁은 칸은 그대로).
+   12과목 × 393·810·1080 실측: 걸리는 줄 ≈480/390/275 · 그 때문에 한 줄 늘어나는 줄 21~37(크롬·사파리). 번호 줄(.row)은 대상 아님. */
+(function(){
+  function rows(){ return Array.prototype.filter.call(document.querySelectorAll('main div'), function(d){
+    var f=d.firstElementChild, l=d.lastElementChild;
+    return !d.classList.contains('row') && f && f.classList.contains('term') && l && l.classList.contains('desc'); }); }
+  function hang(){
+    var rs=rows();
+    rs.forEach(function(d){ d.style.paddingLeft=''; d.style.textIndent=''; d.classList.remove('hng'); });
+    rs.forEach(function(d){
+      var dr=d.lastElementChild.getClientRects(); if(!dr.length) return;
+      var rr=d.getBoundingClientRect(); if(rr.height < dr[0].height*1.6) return;   // 한 줄짜리
+      var base=parseFloat(getComputedStyle(d).paddingLeft)||0, pre=dr[0].left-(rr.left+base);
+      if(pre<=0 || pre>(rr.width-base)*0.45) return;
+      d.style.paddingLeft=(base+pre)+'px'; d.style.textIndent=(-pre)+'px'; d.classList.add('hng');
+    });
+  }
+  window.addEventListener('load',function(){ setTimeout(hang,50); });
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ setTimeout(hang,80); });
+  var t; window.addEventListener('resize',function(){ clearTimeout(t); t=setTimeout(hang,250); });
+})();

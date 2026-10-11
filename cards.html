@@ -10283,6 +10283,13 @@ async function gcGet(tok, path, q){ const u=new URL(GC_API+path); for(const k in
   throw new Error('gc 429'); }
 /* 🔴 stats/hits 는 한 번에 **100줄까지만**(limit 200·500도 100 · `more`) — 30일 페이지 + 이벤트가 208줄이라 1회 칸 이벤트가 잘려
    검색·쪽지시험 수가 받을 때마다 늘었다 줄었다 했다(10-09 동하 · 검색 실제 14 → 보이는 2). `exclude_paths`(쉼표 · path_id)로 다음 쪽을 받는다 · 쪽 사이 0.4초(1초 4번) */
+/* 🔴 사건만 받기(10-11) — exclude_paths 로 넘기면 주소에 받은 번호가 계속 붙어 8쪽째 8.5KB → 서버가 끊었다(「GoatCounter 연결 실패 · Load failed」 · 경로 700+ = 노트 링크 ?n= · 검색어).
+   → paths(200개씩 · after)로 사건 경로 번호만 추려 include_paths 80개씩 받는다 · 주소 길이가 경로 수와 무관 */
+async function gcEventHits(tok, q){ const ids=[]; let after=0;
+  for(let i=0;i<30;i++){ const d=await gcGet(tok,'paths', after?{limit:200, after}:{limit:200}), ps=d.paths||[];
+    for(const p of ps) if(p.event) ids.push(p.id); if(!d.more||!ps.length) break; after=ps[ps.length-1].id; await new Promise(z=>setTimeout(z,300)); }
+  let all=[]; for(let i=0;i<ids.length;i+=80){ const d=await gcGet(tok,'stats/hits',{...q, include_paths:ids.slice(i,i+80).join(',')}); all=all.concat(d.hits||[]); if(i+80<ids.length) await new Promise(z=>setTimeout(z,300)); }
+  return {hits:all}; }
 async function gcHitsAll(tok, q){ let all=[]; const ex=[];
   for(let i=0;i<8;i++){ const d=await gcGet(tok,'stats/hits', ex.length?{...q, exclude_paths:ex.join(',')}:q), h=d.hits||[];
     all=all.concat(h); for(const x of h) ex.push(x.path_id); if(!d.more||!h.length) break; await new Promise(z=>setTimeout(z,400)); }
@@ -10294,7 +10301,7 @@ async function siteDirect0(onPart){ const tok=await gcToken().catch(()=>null); i
      → 1차 = 타일·막대·이용(3개 동시 · ~3.5초) 받자마자 그림(onPart) → 2차 = 경로·기기·브라우저·화면(4개 동시 · ~1.3초) */
   try{ const now=new Date(); now.setUTCMinutes(0,0,0); now.setUTCHours(now.getUTCHours()+1);
     const iso=d=>d.toISOString().slice(0,13)+':00:00Z', end=iso(now), s30=iso(new Date(now-30*864e5)), s7=iso(new Date(now-7*864e5));
-    const [total, hits, evs]=await Promise.all([gcGet(tok,'stats/total',{start:s30,end}), gcGet(tok,'stats/hits',{start:s7,end,limit:100,group:'day'}), gcHitsAll(tok,{start:s30,end,limit:100,group:'day'})]);
+    const [total, hits, evs]=await Promise.all([gcGet(tok,'stats/total',{start:s30,end}), gcGet(tok,'stats/hits',{start:s7,end,limit:100,group:'day'}), gcEventHits(tok,{start:s30,end,limit:100,group:'day'})]);
     const out={src:'gc', at:new Date().toISOString(), site:'https://imgostudy.github.io/review-notes/', total30:total.total||0,
       days:(total.stats||[]).map(x=>({day:x.day, n:x.daily||0, hourly:x.hourly||[]})),
       pages7:(hits.hits||[]).filter(h=>!h.event).slice(0,30).map(h=>({path:h.path, title:h.title||'', n:h.count||0, days:(h.stats||[]).map(x=>x.daily||0)})),

@@ -45,14 +45,17 @@ jobs:
           hits = get("stats/hits", start=s7, end=end, limit=100, group="day")   # 100 = 이벤트가 페이지 칸을 밀어내지 않게(10-08)
           # 이벤트(10-08) — pdf/· quiz/· search/· search-none/ · 30일 합
           # 한 번에 100줄까지만 온다(more) — 잘린 채 쓰면 1회 칸 이벤트가 들쭉날쭉(10-09) → exclude_paths(쉼표)로 끝까지
-          evs, ex = {"hits": []}, []
-          for _ in range(8):
-              q = {"start": s30, "end": end, "limit": 100, "group": "day"}   # 날짜별(10-10 · 방문 기기·사건 날별)
-              if ex: q["exclude_paths"] = ",".join(map(str, ex))
-              d = get("stats/hits", **q); h = d.get("hits") or []
-              evs["hits"] += h; ex += [x["path_id"] for x in h]
-              if not d.get("more") or not h: break
-              time.sleep(0.4)
+          # 10-11: exclude_paths 로 넘기면 주소가 계속 길어진다(경로 700+) → paths 로 사건 번호만 추려 include_paths 80개씩(앱 gcEventHits 와 같은 꼴)
+          ids, after = [], 0
+          for _ in range(30):
+              d = get("paths", limit=200, **({"after": after} if after else {})); ps = d.get("paths") or []
+              ids += [p["id"] for p in ps if p.get("event")]
+              if not d.get("more") or not ps: break
+              after = ps[-1]["id"]; time.sleep(0.3)
+          evs = {"hits": []}
+          for i in range(0, len(ids), 80):
+              d = get("stats/hits", start=s30, end=end, limit=100, group="day", include_paths=",".join(map(str, ids[i:i+80])))   # 날짜별(10-10 · 방문 기기·사건 날별)
+              evs["hits"] += d.get("hits") or []; time.sleep(0.3)
           out = {
               "at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
               "site": "https://imgostudy.github.io/review-notes/",

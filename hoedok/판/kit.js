@@ -658,6 +658,7 @@
       /* 넓어진 칸 = 갈래를 단에 담음 */
       /* 단으로 안 나누는 칸: 짧은 칸(한 줄기로 화면 1/3 미만 — 6사08-03 미디어) · 세로 단계 사슬(↓)이 든 칸(가치 학습 계보 — 단계는 단을 넘기지 않는다) */
       var noSplit=function(c){
+        if(c.querySelector('.nocol')) return true;   /* 10-11 동하(아이패드 11 가로) 체육 「교수·학습의 방향」: 줄글이라 단으로 안 나눔 — 표지 단 자리(.nocol)만 */
         if((c._bh||0) < Math.min(innerHeight,820)/3) return true;
         if(c.querySelector('.grp.ingrp')) return false;   /* 안 갈래 칸 = 안을 통째로 단에 담는다(사슬은 안 속에서 안 끊긴다 — balance 가 사슬 든 갈래는 안 내려감) */
         return hasChain(c);

@@ -1678,10 +1678,14 @@ button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inher
 .st-leg{justify-content:center;}
 .st-bars i.f{opacity:.45;}
 /* 시간대 = 스크린타임 「일」 꼴(10-11 동하) — 날 넘기기 · 칸마다 30일 평균 눈금 · 누르면 그 시각 */
-.st-hnav{display:flex;align-items:center;gap:2px;padding-right:4px;}
-.st-hnav button{border:0;background:none;width:32px;height:32px;border-radius:16px;color:var(--c-acc);font-size:22px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-.st-hnav button:disabled{color:var(--c-sep);cursor:default;}
-.st-hnav span{font-size:15px;font-weight:600;color:var(--c-sec);min-width:64px;text-align:center;font-variant-numeric:tabular-nums;}
+.st-hnav{display:none;}   /* 폰·패드 = 묶음 밀기 · 막대 누르기(스크린타임 iOS) */
+@media (hover:hover) and (pointer:fine){   /* 컴퓨터 = Mac 스크린타임 「‹ 오늘 ›」(10-11 동하 「컴퓨터 쪽 작동을 따로」) · ← → 키 */
+  .st-hnav{display:flex;align-items:center;gap:4px;padding-right:4px;}
+  .st-hnav button{border:0;background:var(--c-fill);height:28px;min-width:30px;padding:0 8px;border-radius:7px;color:var(--c-label);font:inherit;font-size:13px;font-weight:600;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .st-hnav button.ar{font-size:17px;padding:0 6px;}
+  .st-hnav button:hover:not(:disabled){filter:brightness(.95);}
+  .st-hnav button:disabled{color:var(--c-ter);cursor:default;}
+}
 .st-hr{display:flex;align-items:flex-end;gap:2px;height:84px;margin-top:10px;cursor:pointer;touch-action:pan-y;}
 .st-hr .hc{flex:1 1 0;min-width:0;height:100%;position:relative;display:flex;align-items:flex-end;}
 .st-hr .hc i{width:100%;border-radius:3px 3px 0 0;background:var(--c-acc);}
@@ -10451,13 +10455,18 @@ function siteHours(real, tdK){ const D=real.filter(d=>(d.hourly||[]).length===24
   SITE.hV={day:d.day, hv, avgH, isT, now, date:[/^(오늘|어제)$/.test(lab)?`${Number(d.day.slice(5,7))}월 ${Number(d.day.slice(8))}일 (${wk})`:'', d.pv?'':`방문 기기 ${(d.n||0).toLocaleString()}`].filter(Boolean).join(' · '), pc};
   const cols=hv.map((n,h)=>{ const f=isT&&h>now, v=Math.round(n), a=avgH[h];
     return `<span class="hc" data-h="${h}"><i class="${f?'f':v?'':'z'}" style="height:${f?0:v?Math.max(3,Math.round(n/mx*H)):1}px"></i></span>`; }).join('');
-  return `<div class="sc-sec"><div class="h-sec2"><h2>${lab}</h2><span class="st-hnav"><button aria-label="전날" onclick="siteHrDay(-1)"${i?'':' disabled'}>‹</button><button aria-label="다음 날" onclick="siteHrDay(1)"${i<D.length-1?'':' disabled'}>›</button></span></div>`
+  return `<div class="sc-sec"><div class="h-sec2"><h2>${lab}</h2><span class="st-hnav"><button class="ar" aria-label="전날" title="전날 (←)" onclick="siteHrDay(-1)"${i?'':' disabled'}>‹</button><button onclick="siteHrToday()"${isT?' disabled':''}>오늘</button><button class="ar" aria-label="다음 날" title="다음 날 (→)" onclick="siteHrDay(1)"${i<D.length-1?'':' disabled'}>›</button></span></div>`
     +`<div class="sc-card"><div class="mk-big" id="stHBig"><b>${tot.toLocaleString()}</b><small>열람</small>${pc?`<i class="${pc>0?'up':'dn'}">${pc>0?'▲':'▼'} ${Math.abs(pc)}%</i>`:''}</div><div class="mk-meta" id="stHMeta">${SITE.hV.date}</div>`
     +`<div class="st-hr" id="stHr" onpointerdown="siteHrPick(event)">${cols}</div><div class="sc-ax"><span>0</span><span>6</span><span>12</span><span>18</span><span>24</span></div>`
     +(xT?'<div class="st-hkey">'+(xT?[['t','패드','var(--c-acc)'],['p','폰','var(--c-orange)'],['d','PC','var(--c-indigo)']].map(([k,l,c])=>`<span><b style="background:${c}"></b>${l} ${Math.round((x[k]||0)/xT*100)}%</span>`).join(''):'')+'</div>':'')+'</div></div>'; }
 function siteHrDay(k){ const D=SITE.hDays||[]; const cur=SITE.hD&&D.includes(SITE.hD)?SITE.hD:D[D.length-1]; const j=D.indexOf(cur)+k;
   if(j<0||j>=D.length) return; SITE.hD=j===D.length-1?null:D[j]; siteRender();
   const el=$('stDay'); if(el&&SITE.swDir){ el.classList.add(SITE.swDir>0?'st-in-r':'st-in-l'); } SITE.swDir=0; }
+function siteHrToday(){ if(SITE.hD==null) return; SITE.hD=null; siteRender(); }
+/* 컴퓨터 ← → = 하루씩(공개 사이트 화면에서만 · 입력 칸·조합키 제외) — 전역 키 처리(화살표 = 스크롤)보다 먼저 잡는다 */
+document.addEventListener('keydown', e=>{ const sc=$('scrSite'); if(!sc||!sc.classList.contains('on')||e.metaKey||e.ctrlKey||e.altKey||e.shiftKey) return;
+  if(e.target&&/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return; if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight') return;
+  e.preventDefault(); e.stopImmediatePropagation(); SITE.swDir=e.key==='ArrowLeft'?-1:1; siteHrDay(SITE.swDir); }, true);
 /* 그날 묶음 밀기(10-11 동하 「일 통계 스와이프하면 날짜 바뀌고」) — 오른쪽으로 밀면 전날 · 왼쪽 = 다음 날(스크린타임과 같은 방향) */
 function siteSw(ev){ if(ev.type==='pointerdown'){ SITE.sw={x:ev.clientX, y:ev.clientY}; return; } const s=SITE.sw; SITE.sw=null; if(!s||ev.type!=='pointerup') return;
   const dx=ev.clientX-s.x, dy=ev.clientY-s.y; if(Math.abs(dx)<50||Math.abs(dx)<Math.abs(dy)*1.5) return; SITE.swDir=dx>0?-1:1; siteHrDay(dx>0?-1:1); }

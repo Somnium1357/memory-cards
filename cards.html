@@ -1619,7 +1619,8 @@ button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inher
 .st-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;}
 .st-tile{background:var(--c-card);border-radius:var(--r-group);box-shadow:var(--sh-card);padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0;}
 .st-tile b{font-size:28px;line-height:34px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--c-label);}
-.st-tile b small{font-size:17px;font-weight:600;color:var(--c-sec);}   /* 오늘 방문 / 신규(10-10) */
+.st-tile b small{font-size:17px;font-weight:600;color:var(--c-sec);}
+.st-tile.st-part b{opacity:.45;}   /* WAU 기록이 7일 안 찬 동안 = 덜 센 값(10-11) */   /* 오늘 방문 / 신규(10-10) */
 .st-tile span{font-size:13px;line-height:18px;color:var(--c-sec);}
 .st-pvrow{margin-top:-12px;}   /* 열람 줄(10-11) */
 .st-seg{flex:0 0 auto;margin-right:12px;padding:2px;}   /* 머리 줄(32px) 안에 — 넘치면 아래 카드에 붙는다(10-11 동하) */
@@ -10280,11 +10281,17 @@ async function siteDirect0(onPart){ const tok=await gcToken().catch(()=>null); i
   catch(e){ SITE.dErr=e.auth?'GoatCounter 열쇠 거부':String(e&&e.message||e).slice(0,80); if(e.auth){ lsDel(K_GC); gcTok=null; } return false; } }
 /* 방문 기기(10-10 동하 「방문자 수로 셀 우회로」) — 공개 사이트가 기기마다 하루 한 번 `visit/day`, 처음 온 기기는 `visit/new` 사건을 보낸다(기기에 날짜 하나만 · 번호 없음)
    → vday = 날짜별 방문 기기 · vnew = 처음 온 기기(30일) · evday = 날짜별 사건 합(GoatCounter `stats/total` 은 사건까지 센다 → 열람 = 합 − 사건). 워크플로 site-stats.yml 도 같은 필드 */
-function siteVisit(out, hs){ const vd={}, ed={}, nd={}; let vn=null;
+function siteVisit(out, hs){ const vd={}, ed={}, nd={}, vg={}; let vn=null;
   for(const h of hs){ if(!h.event) continue; for(const s of (h.stats||[])) if(s.day) ed[s.day]=(ed[s.day]||0)+(s.daily||0);
     if(h.path==='visit/day') for(const s of (h.stats||[])) if(s.day&&s.daily) vd[s.day]=s.daily;
-    if(h.path==='visit/new'){ vn=h.count||0; for(const s of (h.stats||[])) if(s.day&&s.daily) nd[s.day]=s.daily; } }
-  out.vday=vd; out.vnew=vn; out.vnewday=nd; out.evday=ed; }
+    if(h.path==='visit/new'){ vn=h.count||0; for(const s of (h.stats||[])) if(s.day&&s.daily) nd[s.day]=s.daily; }
+    const gm=/^visit\/gap\/([1-8])$/.exec(h.path||''); if(gm) for(const s of (h.stats||[])) if(s.day&&s.daily) (vg[s.day]||(vg[s.day]={}))[gm[1]]=s.daily; }
+  out.vday=vd; out.vnew=vn; out.vnewday=nd; out.evday=ed; out.vgap=vg; }
+/* WAU(10-11 동하) = 끝날 t 까지 7일 안 서로 다른 기기 — 구간 안 방문 중 「지난 방문이 구간 밖」인 것만 센다(gap > 그 날 − 구간 첫날 · 8 = 8일 이상·기록 없음).
+   gap 사건은 10-11 부터라 그 전 날은 구간에서 빠진다 → 구간 첫날이 기록 첫날보다 앞이면 part(덜 센 값) */
+function siteWau(vg, t){ const D=k=>Date.parse(k+'T00:00:00Z')/864e5, T=D(t), f0=Object.keys(vg).sort()[0]; if(!f0) return null;
+  let n=0; for(const [k,g] of Object.entries(vg)){ const o=D(k)-(T-6); if(o<0||o>6) continue; for(const [gp,c] of Object.entries(g)) if(+gp>o) n+=c; }
+  return {n, part:D(f0)>T-6}; }
 const K_SITE_LAST='cards_site_last_v1';
 /* 날마다 폰·패드·PC(10-09 동하 「막대를 플랫폼별로 · 폰 비중이 줄면 좋은 신호」) — GoatCounter `stats/sizes`는 기간 합만 주고 **UTC 날짜 단위**다
    (start=end=<날>T00:00Z = 그 UTC 하루 · 끝 시각은 날짜로 올림 · 10-09 실측). 막대(`stats/total` days)는 사이트 시간대(KST)라 9시간 어긋난다
@@ -10379,7 +10386,7 @@ function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.c
     const real=fresh?days.slice(f0):days; let dd=real.length>=W14?real.slice(-W14):[...real, ...Array.from({length:W14-real.length},(_,i)=>{ const t=new Date(real[real.length-1].day+'T00:00:00Z'); t.setUTCDate(t.getUTCDate()+i+1); return {day:t.toISOString().slice(0,10), n:0, fut:true}; })];   // 14일이 차기 전 = 연 날이 맨 왼쪽 · 오른쪽은 올 날(빈칸) · 차면 한 칸씩 밀림   // 사이트를 연 날(첫 방문)부터 — 30일이 다 차기 전엔 앞이 빈 막대였다(10-08)
     const sum=k=>days.slice(-k).reduce((a,d)=>a+(d.n||0),0), sumV=k=>days.slice(-k).filter(d=>!d.pv).reduce((a,d)=>a+(d.n||0),0), sumP=k=>days.slice(-k).reduce((a,d)=>a+(d.pvN||0),0);
     const pvAll=Math.max(0,(st.total30??sum(30))-Object.values(ED).reduce((a,x)=>a+x,0));   /* 누적 열람(사건 뺌) */
-    L.push(`<div class="st-tiles">${(v0?[[today.n,'오늘 방문 / 신규',(st.vnewday||{})[today.day]||0],[yest.pv?null:yest.n,'어제 방문'],[sumV(7),'7일 방문'],[st.vnew||0,fresh?'누적 기기':'30일 기기']]:[[today.n,'오늘'],[yest.n,'어제'],[sum(7),'7일'],[Math.max(0,(st.total30??sum(30))-Object.values(ED).reduce((a,x)=>a+x,0)),fresh?'누적':'30일']]).map(([v,l,x])=>`<div class="st-tile"><b>${v==null?'—':(v||0).toLocaleString()}${x!=null?`<small> / ${x.toLocaleString()}</small>`:''}</b><span>${l}</span></div>`).join('')}</div>`);
+    L.push(`<div class="st-tiles">${(v0?[[today.n,'오늘 방문 / 신규',(st.vnewday||{})[today.day]||0],[yest.pv?null:yest.n,Object.keys(st.vgap||{}).length?'DAU 어제 / 오늘 다시':'DAU 어제',Object.keys(st.vgap||{}).length?(((st.vgap||{})[today.day]||{})[1]||0):null],(w=>w?[w.n,'WAU 7일',null,w.part]:[null,'WAU 7일'])(siteWau(st.vgap||{}, today.day||tdK)),[st.vnew||0,fresh?'누적 기기':'30일 기기']]:[[today.n,'오늘'],[yest.n,'어제'],[sum(7),'7일'],[Math.max(0,(st.total30??sum(30))-Object.values(ED).reduce((a,x)=>a+x,0)),fresh?'누적':'30일']]).map(([v,l,x,part])=>`<div class="st-tile${part?' st-part':''}"><b>${v==null?'—':(v||0).toLocaleString()}${x!=null?`<small> / ${x.toLocaleString()}</small>`:''}</b><span>${l}</span></div>`).join('')}</div>`);
     if(v0) L.push(`<div class="st-tiles st-pvrow">${[[today.pvN,'오늘 열람'],[yest.pvN,'어제 열람'],[sumP(7),'7일 열람'],[pvAll,fresh?'누적 열람':'30일 열람']].map(([v,l])=>`<div class="st-tile"><b>${(v||0).toLocaleString()}</b><span>${l}</span></div>`).join('')}</div>`);   /* 열람 = 페이지 연 횟수(사건 뺌 · 10-11) */
     const barP=!!v0&&SITE.barM!=='v';   /* 기본 = 열람(방문은 위 타일 숫자가 더 뜻있다 · 10-11 동하) */ if(barP) dd=dd.map(d=>({...d, n:d.fut?0:(d.pvN||0), pv:false}));   /* 막대 [방문|열람] 전환(10-11) */
     const bySz=barP||!v0;   /* 기기(패드·폰·PC) 쌓기 = 열람 보기만 — 화면 크기는 열람마다 잡혀 방문 기기와 짝이 안 맞는다(10-11 동하) */

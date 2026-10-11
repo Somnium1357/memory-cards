@@ -54,6 +54,8 @@ td.k2{font-weight:600;padding-left:0}
 .nil{color:var(--ter)}
 .nm{color:var(--sec);font-size:13px;font-variant-numeric:tabular-nums;margin-right:6px}   /* 번호((가)·①)는 늘 보이고 문구만 가린다 */
 .it>.c{padding:1px 2px}
+.it+.it{margin-top:4px}   /* 가린 네모끼리 붙지 않게(10-11 동하 「네모가 커서 겹친다」) */
+div.it.c{width:fit-content;max-width:100%;padding:1px 4px;margin-left:-4px}   /* 네모 = 글자 길이만큼 */
 @media (max-width:640px){
   h1{font-size:28px;line-height:34px}
   .card{padding:4px 14px 8px;border-radius:18px}

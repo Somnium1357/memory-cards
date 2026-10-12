@@ -240,21 +240,7 @@
     var st=sv.previousElementSibling; if(st && st.classList.contains('stack')) [].forEach.call(st.children, function(k){ if(k.textContent.trim().length<=14) k.classList.add('nw'); });   /* 괄호 앞 짧은 이름은 접지 않는다(「대칭이동(뒤집기)」) */
     var w=document.createElement('span'); w.className='bracew'; sv.parentNode.insertBefore(w, sv); w.appendChild(sv);   /* 키 없는 틀 — 줄 높이만 따라간다(괄호 그림의 고유 비율이 줄을 늘리지 않게) */
   });
-  /* 10-11 동하(국어 「기능」 묶음이 머리줄까지 덮음 · 공개 제보 10-11 4:51) — 괄호 첫 항목(data-b="s") 위에 머리줄이 있으면
-     괄호를 그 첫 항목부터 끝 항목(data-b="e")까지만 늘인다 · 머리줄 없는 묶음(대부분)은 위 「줄 높이만큼」 그대로 */
-  function braceFrom(){
-    document.querySelectorAll('main.wrap .converge > .bracew').forEach(function(w){
-      w.style.marginTop=''; w.style.height=''; w.style.alignSelf='';
-      var left=w.previousElementSibling; if(!left) return;
-      var ms=left.querySelector('[data-b="s"],[data-b="se"]'), me=left.querySelector('[data-b="e"],[data-b="se"]'); if(!ms||!me) return;
-      var lb=left.getBoundingClientRect(), a=ms.getBoundingClientRect(), b=me.getBoundingClientRect();
-      if(a.top-lb.top<4) return;
-      var cb=w.parentElement.getBoundingClientRect();
-      w.style.alignSelf='flex-start'; w.style.marginTop=(a.top-cb.top).toFixed(1)+'px'; w.style.height=(b.bottom-a.top).toFixed(1)+'px';
-    });
-  }
-  braceFrom(); window.addEventListener('load', braceFrom); if(document.fonts&&document.fonts.ready) document.fonts.ready.then(braceFrom);
-  var _bf; window.addEventListener('resize', function(){ clearTimeout(_bf); _bf=setTimeout(braceFrom,200); });
+  /* 10-12 braceFrom(괄호를 첫 항목부터로 재서 옮기기) 걷음 — 목차 이동 뒤 resize 에서 국어 「국어의 계열」 괄호에 margin-top 7692px 를 박아 본문이 7,600px 밀렸다(아이패드 1210 · 목차 이동·튕김·빈칸). 재고 옮기는 JS 금지 · 머리줄 덮임은 마크업/CSS 로 */
   /* 이름만 있고 내용 없는 항목(미술 조형 요소 「면」·「색」)은 그 묶음 끝 한 줄에 모은다 — 빈 칸 모음과 같은 뜻(동하 09-30 「모으고」) */
   document.querySelectorAll('main.wrap .cols').forEach(function(cl){
     var bare=[].filter.call(cl.querySelectorAll(':scope > .stack > .row'), function(r){

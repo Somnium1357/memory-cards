@@ -44,6 +44,15 @@ PAPER_SOURCES = [   # (소스명, 과목별 문항 수) — 과목 안 순서 = 
     ("강사중등", {"1.국어": 49, "3.영어": 41, "6.과학": 15}),   # 10-12 과학 15 더함(동하 「과학 중등기출(강사 거)이 없어」 · 교재_clean 과학 자료 · 과학 중등기출 참고문제.pdf 8쪽 · 답안 1~15) · 합 105 ·   # 강사 중등기출 선별집(발주 09-22 · 국어 01.~49. · 영어 = 답안지 01~41 정본 · 문제지 등장 순과 첫 5문항 대조 일치) · 합 90
 ]
 PAPER_SRC = PAPER_SOURCES[0][0]
+# 강사가 나눠 둔 파트(10-12 동하 「영어랑 국어 중등기출은 강사가 파트 나눠 뒀으니 반영」) — (소스, 과목) → [(파트 이름, 첫 번호, 끝 번호)] · 없으면 10문항씩
+#   출처 = 문제지 쪽 위 띠 제목(국어 = GoodNotes 중등기출\국어 중등 기출 문제.pdf 3·9·17쪽 · 영어 = 3.영어\중등기출.pdf) · 문항 키(과목/강사중등/NN)는 그대로
+#   🔴 단위 id = 과목/강사중등-<파트 순번> — 국어 01(01~04)이 옛 「01~10번」 단위 id 를 이어받는다(10-11 그 단위 done = 01~04 전부 푼 것과 맞다 · 옛 02~05 는 기록 없음)
+PAPER_PARTS = {
+    ("강사중등", "1.국어"): [("중등 기출을 보는 이유", 1, 4), ("독서", 5, 20), ("작문", 21, 36), ("화법", 37, 49)],
+    ("강사중등", "3.영어"): [("언어 습득 이론", 1, 6), ("교수법", 7, 11), ("학습자 변인", 12, 14), ("기능별 언어 지도 · 공통", 15, 16),
+                            ("receptive skills", 17, 21), ("productive skills", 22, 27), ("발음 지도", 28, 28), ("어휘 지도", 29, 30),
+                            ("문법 지도", 31, 36), ("학습자 중심 교육", 37, 41)],
+}
 # 🔴 문항 키 이관(alias) — 인덱스 정정으로 안정 id(과목/p면/번호)가 바뀐 문항의 **옛 키 → 새 키**. 로그(cards-yeonmun.json)는 고치지 않는다 —
 #    파생이 읽을 때 바꾼다(앱 ymAliasK · yeonmun_derive.derive(alias=)) · 소문항 키(…/15.1.2)는 대문항 부분만 바꾸고 꼬리는 그대로.
 #    검증(빌드마다): 옛 키는 카탈로그에 없어야 하고 새 키는 있어야 한다 — 어기면 빌드 실패.
@@ -200,13 +209,18 @@ def main():
                 continue
             st = paper_stats.setdefault(src, {"items": 0, "units": 0, "per_subject": {}})
             st["per_subject"][subj] = n
-            for k in range(0, n, CHUNK):
-                nos = list(range(k + 1, min(k + CHUNK, n) + 1))
+            parts = PAPER_PARTS.get((src, subj))
+            if parts:
+                assert parts[0][1] == 1 and parts[-1][2] == n and all(parts[i][2] + 1 == parts[i + 1][1] for i in range(len(parts) - 1)), ("파트 번호 구멍", src, subj)
+                chunks = [(nm, list(range(a, b + 1))) for nm, a, b in parts]
+            else:
+                chunks = [(src, list(range(k + 1, min(k + CHUNK, n) + 1))) for k in range(0, n, CHUNK)]
+            for ci, (pname, nos) in enumerate(chunks):
                 seq_by_subj[subj] += 1
-                uid = subj + "/" + src + "-" + ("%02d" % (k // CHUNK + 1))
+                uid = subj + "/" + src + "-" + ("%02d" % (ci + 1))
                 rng = "%02d" % nos[0] + ("~%02d" % nos[-1] if len(nos) > 1 else "")
                 ids = [subj + "/" + src + "/" + ("%02d" % no) for no in nos]
-                paper_units.append({"id": uid, "subj": subj, "seq": seq_by_subj[subj], "name": src + " " + rng + "번", "label": src + " " + rng + "번",
+                paper_units.append({"id": uid, "subj": subj, "seq": seq_by_subj[subj], "name": pname + " " + rng + "번", "label": pname + " " + rng + "번",
                                     "star": False, "pages": "", "kind": "paper", "src": src, "range": rng, "nodes": [], "items": ids})
                 st["units"] += 1
                 for no, iid in zip(nos, ids):

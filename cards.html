@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="카드">
 <link rel="apple-touch-icon" href="icon-180.png">
+<!-- 카드 문면 영문 = Atkinson Hyperlegible Next(10-12 동하 「대문자 I 랑 소문자 l 구분이 안 돼」 · 라틴 범위만 내려온다 → 한글은 원래 글꼴 · 못 받으면 원래 글꼴) -->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@200..800&display=swap" rel="stylesheet">
 <meta name="theme-color" content="#13151A">
 <title>카드</title>
 <script>/* 테마 — 첫 페인트 전에 적는다(깜빡임 방지). 옛 값 b → dark · c → paper (09-24) */
@@ -2301,6 +2304,8 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
 .fw-fc tr.sum td{border-top:.5px solid var(--c-sep);padding-top:5px;}
 .fw-msg{font-size:13px;line-height:18px;color:var(--c-sec);margin:6px 0;}
 .fw-btns{display:flex;gap:8px;flex-wrap:wrap;}
+/* 카드 문면 영문·숫자 = I·l·1·0 이 갈리는 글꼴(10-12 동하) — 앞면·정답·표만 · 한글은 라틴 범위 밖이라 원래 글꼴 */
+#card #cFront,#card #cAnsBody,#card #cTable{font-family:"Atkinson Hyperlegible Next",var(--font);}
 </style>
 </head>
 <body>

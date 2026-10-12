@@ -9994,8 +9994,16 @@ async function scReq(method, path, o){ o=o||{};
 function scStore(r){ const u=r.user||{}, old=SC.auth||{};
   SC.auth={access_token:r.access_token, refresh_token:r.refresh_token||old.refresh_token||'', expires_at:r.expires_at||Math.floor(Date.now()/1000)+(r.expires_in||3600), user_id:u.id||old.user_id};
   scSave(); }
+/* 🔴 로그인 연장은 한 번만(10-12 동하 아이패드 「Invalid Refresh Token: Already Used」로 찌르기 안 됨) — 앱이 쉬다 돌아오면 패널 갱신·덱 재전송·실시간·찌르기가
+   같은 순간 각자 연장해 같은 연장 열쇠가 두 번 갔다 → 서버가 재사용으로 보고 로그인을 끊는다. 진행 중 연장은 같은 약속을 기다리고 ·
+   연장 전에 기기 저장값을 다시 읽어 다른 창이 이미 바꾼 열쇠가 있으면 그걸 쓴다 */
+let scRefP=null;
 async function scToken(){ const a=SC.auth; if(!a||!a.access_token){ const e=new Error('계정이 없어요'); e.status=401; throw e; }
-  if(a.refresh_token && Date.now()/1000>=(a.expires_at||0)-60) scStore(await scReq('POST','/auth/v1/token',{query:{grant_type:'refresh_token'}, body:{refresh_token:a.refresh_token}}));
+  if(a.refresh_token && Date.now()/1000>=(a.expires_at||0)-60){
+    if(!scRefP) scRefP=(async()=>{
+      try{ const b=(JSON.parse(lsGet(K_SC)||'{}')||{}).auth; if(b && b.refresh_token && b.refresh_token!==SC.auth.refresh_token && (b.expires_at||0)>(SC.auth.expires_at||0)){ SC.auth=b; if(Date.now()/1000<(b.expires_at||0)-60) return; } }catch(e){}
+      scStore(await scReq('POST','/auth/v1/token',{query:{grant_type:'refresh_token'}, body:{refresh_token:SC.auth.refresh_token}})); })().finally(()=>{ scRefP=null; });
+    await scRefP; }
   return SC.auth.access_token; }
 async function scAuthed(fn){   // 만료로 401이면 한 번 갱신하고 다시(애드온 _run_authenticated_action)
   try{ return await fn(await scToken()); }
@@ -10831,7 +10839,7 @@ function scBtn(id, f, msgId){ const btn=$(id); if(!btn) return; msgId=msgId||'sc
   try{ const ok=await f(); $('scBox').dataset.m=''; $('studyBody').dataset.m=''; scRender(); if(ok) toast(ok); }catch(e){ const m2=$(msgId); if(m2) m2.textContent=scErrKo(e); btn.disabled=false; } }; }
 /* 서버 오류는 영어로 온다 — 아는 것만 우리말로 */
 function scErrKo(e){ const m=(e&&e.message)||String(e);
-  const T=[[/Username is unavailable/i,'이미 쓰는 아이디예요'], [/Invalid username or password/i,'아이디나 비밀번호가 틀렸어요'], [/Username must be/i,'아이디는 영문 소문자·숫자·_로 4~24자예요'],
+  const T=[[/Refresh Token/i,'로그인이 끊겼어요 — 설정 › 스터디에서 로그아웃 뒤 아이디로 다시 로그인해 주세요'], [/Username is unavailable/i,'이미 쓰는 아이디예요'], [/Invalid username or password/i,'아이디나 비밀번호가 틀렸어요'], [/Username must be/i,'아이디는 영문 소문자·숫자·_로 4~24자예요'],
     [/Password must be/i,'비밀번호는 10자 이상(72바이트 이하)이에요'], [/Current password is incorrect/i,'지금 비밀번호가 틀렸어요'], [/already linked|BIND_REQUIRES_GUEST/i,'이 계정엔 이미 아이디가 있어요'], [/recovery/i,'복구 코드가 맞지 않아요'],
     [/invalid group name/i,'방 이름은 1~50자예요'], [/invalid room time zone/i,'시간대를 다시 골라 주세요'], [/only the group owner|only room owner/i,'방장만 할 수 있어요'], [/new owner must be a member/i,'방에 있는 사람에게만 넘길 수 있어요'], [/poke too soon/i,'같은 사람은 1분에 한 번 찌를 수 있어요'], [/too many pokes/i,'찌르기는 한 시간에 30번까지예요'], [/target is not in this group/i,'그 사람은 이제 방에 없어요'], [/cannot poke yourself/i,'자기는 못 찔러요'], [/profiles_display_name_format_check/i,'이름은 영문·숫자 2~16자예요'], [/cannot kick themselves/i,'방장은 자기를 내보낼 수 없어요'], [/day boundary is immutable/i,'방 하루 경계(새벽 4시)는 못 바꿔요'], [/temporarily unavailable|rate|too many/i,'잠시 뒤에 다시 해 주세요']];
   for(const [r,k] of T) if(r.test(m)) return k; return m; }

@@ -10122,7 +10122,7 @@ async function scSync(o){ o=o||{};
 /* 계정을 바꿔도 이 기기 것은 남긴다 — 설치 ID · 목표 · 세션 이름 공유 · 세션별 속도 기록 */
 const scKeep=()=>({goalMin:SC.goalMin, goalCards:SC.goalCards, dev:SC.dev, shareDeck:SC.shareDeck, dnd:SC.dnd, confetti:SC.confetti, badge:SC.badge, dk:SC.dk, lastDeck:SC.lastDeck, lastDeckDay:SC.lastDeckDay});
 async function scGroups(tok){   // 애드온 list_groups — 내가 든 방들(가입 순)
-  const r=await scReq('GET','/rest/v1/group_members',{token:tok, query:{select:'group_id,joined_at,study_groups(id,name,invite_code,owner_id,created_at,time_zone,day_start_hour)', user_id:'eq.'+SC.auth.user_id, order:'joined_at.asc'}})||[];
+  const r=await scReq('GET','/rest/v1/group_members',{token:tok, query:{select:'group_id,joined_at,study_groups(id,name,invite_code,owner_id,created_at,time_zone,day_start_hour,is_public)', user_id:'eq.'+SC.auth.user_id, order:'joined_at.asc'}})||[];
   return r.map(x=>Object.assign({}, x.study_groups||{}, {id:(x.study_groups&&x.study_groups.id)||x.group_id})); }
 async function scJoin(code){
   code=String(code||'').replace(/\s+/g,'').toUpperCase();
@@ -10130,7 +10130,7 @@ async function scJoin(code){
   if(!SC.auth){ scStore(await scReq('POST','/auth/v1/signup',{body:{data:{}}})); SC.kind='guest'; scSave(); }   // 애드온 sign_in_anonymously
   const [gid, list]=await scAuthed(async tok=>{
     let g; try{ g=await scReq('POST','/rest/v1/rpc/join_study_group_safe',{token:tok, body:{code}}); }
-    catch(e){ if(/full/i.test(e.message||'')) throw new Error('방이 가득 찼어요 — 한 방은 방장 포함 8명까지예요'); throw e; }
+    catch(e){ if(/full/i.test(e.message||'')) throw new Error('방이 가득 찼어요 — 한 방은 방장 포함 10명까지예요'); throw e; }
     g=Array.isArray(g)?g[0]:g;
     if(!g || !g.ok || !g.group_id) throw new Error(g&&g.error==='TOO_MANY_ATTEMPTS' ? '초대 코드를 너무 여러 번 넣었어요 — 10분 뒤에 다시 해 주세요' : '초대 코드를 확인해 주세요');
     return [g.group_id, await scGroups(tok)]; });
@@ -10802,6 +10802,7 @@ function scRenderStudy(){ const b=$('studyBody'); if(!b || !$('scrStudy').classL
       <div class="set-row"><span>초대 코드</span><span class="sc-code-r"><b class="sc-code">${esc(SC.group.invite_code||'—')}</b><button class="btn-ghost" id="scCopyCode">복사</button><button class="btn-ghost" id="scCopyMsg">안내 복사</button></span></div>
       <div class="set-row"><span>내 이름</span><span class="desc">${esc(SC.nick||'—')}</span></div>
       ${owner?`<div class="set-row"><span>방 시간대</span><span class="sc-code-r"><select id="scRTz" aria-label="방 시간대">${scTzOpts(scTZ())}</select><button class="btn-ghost" id="scRTzGo">바꾸기</button></span></div>`:''}
+      ${owner?`<div class="tgl-row" id="scRPubRow"><span>공개 방</span><div class="tgl${SC.group.is_public?' on':''}" role="switch" aria-checked="${!!SC.group.is_public}" aria-label="공개 방"></div></div>`:''}
       ${scSelfCheck()}
       ${scStatusRows()}
       ${mod}
@@ -10809,7 +10810,7 @@ function scRenderStudy(){ const b=$('studyBody'); if(!b || !$('scrStudy').classL
       <div class="sc-msg" id="scMsgS"></div>
       ${owner?`<button class="act-btn" id="scRotate" style="margin-top:8px"><span>초대 코드 바꾸기</span><small>지금 코드로는 더 못 들어와요</small></button>`:''}
       <button class="act-btn" id="scLeaveRoom" style="margin-top:8px"><span>방 나가기</span><small>이 방에 올린 내 기록도 지워져요</small></button>
-    </div><div class="sc-foot">방 하루는 ${esc(scTzName(scTZ()))} 시간 새벽 ${scDSH()}시에 넘어가요 · 방장 포함 8명까지 · 친구에겐 장수·시간·상태만 가요(카드 내용은 안 가요)</div></div>`;
+    </div><div class="sc-foot">방 하루는 ${esc(scTzName(scTZ()))} 시간 새벽 ${scDSH()}시에 넘어가요 · 방장 포함 10명까지 · 친구에겐 장수·시간·상태만 가요(카드 내용은 안 가요)</div></div>`;
   b.querySelectorAll('button.sc-row').forEach(r=>r.onclick=()=>{ const u=r.dataset.uid; scOpen=scOpen===u?null:u; scSel=null; scRenderStudy();
     if(scOpen && Date.now()-(SC.membersAt||0)>30000) scSync({force:true}); });   // 펼칠 때 30초 넘었으면 새로
   scGoalWire(b);
@@ -10847,6 +10848,10 @@ function scRenderStudy(){ const b=$('studyBody'); if(!b || !$('scrStudy').classL
   scBtn('scCleanup', async()=>{ if(!confirm('14일 넘게 기록이 없는 사람을 방에서 정리할까요? 그 사람 기록도 지워져요(방장은 그대로).')) return; const n=await scCleanup(); await scSync({force:true}); return n?`${n}명을 정리했어요`:'정리할 사람이 없어요'; }, 'scMsgS');
   scBtn('scRTzGo', async()=>{ const tz=$('scRTz').value; if(tz===scTZ()) return '이미 그 시간대예요';
     if(!confirm(`방 시간대를 ${scTzName(tz)}(으)로 바꿀까요? 방 하루가 그 시간대 새벽 ${scDSH()}시에 넘어가요.`)) return; await scSetTz(tz); return '방 시간대를 바꿨어요'; }, 'scMsgS');
+  /* 공개 방 전환(10-14 · 애드온 0.1.8 update_room_public) — 방장만 · 누르는 동안 막고 실패하면 그대로 둔다 */
+  const pr=$('scRPubRow'); if(pr){ const t=pr.querySelector('.tgl'); t.onclick=async()=>{ if(t.dataset.busy) return; t.dataset.busy='1'; const v=!SC.group.is_public;
+    try{ await scSetPublic(v); toast(v?'공개 방으로 바꿨어요 — 「공개 방」 목록에 보여요':'비공개 방으로 바꿨어요 — 초대 코드로만 들어와요'); $('studyBody').dataset.m=''; scRenderStudy(); }
+    catch(e){ delete t.dataset.busy; const m2=$('scMsgS'); if(m2) m2.textContent=scPokeGone(e)?'아직 친구 서버에 없는 기능이에요':scErrKo(e); } }; }
   const pf=$('scPubFold'); if(pf){ pf.ontoggle=()=>{ scPubOpen=pf.open; if(pf.open) scLoadPublic().then(scPubPaint).catch(e=>{ const m2=$('scMsgS'); if(m2) m2.textContent=scErrKo(e); }); }; scPubWire('scMsgS'); } }
 function scBtn(id, f, msgId){ const btn=$(id); if(!btn) return; msgId=msgId||'scMsg'; btn.onclick=async()=>{ const msg=$(msgId); btn.disabled=true; if(msg) msg.textContent='잠깐만요…';
   try{ const ok=await f(); $('scBox').dataset.m=''; $('studyBody').dataset.m=''; scRender(); if(ok) toast(ok); }catch(e){ const m2=$(msgId); if(m2) m2.textContent=scErrKo(e); btn.disabled=false; } }; }
@@ -10854,7 +10859,7 @@ function scBtn(id, f, msgId){ const btn=$(id); if(!btn) return; msgId=msgId||'sc
 function scErrKo(e){ const m=(e&&e.message)||String(e);
   const T=[[/Refresh Token/i,'로그인이 끊겼어요 — 설정 › 스터디에서 로그아웃 뒤 아이디로 다시 로그인해 주세요'], [/Username is unavailable/i,'이미 쓰는 아이디예요'], [/Invalid username or password/i,'아이디나 비밀번호가 틀렸어요'], [/Username must be/i,'아이디는 영문 소문자·숫자·_로 4~24자예요'],
     [/Password must be/i,'비밀번호는 10자 이상(72바이트 이하)이에요'], [/Current password is incorrect/i,'지금 비밀번호가 틀렸어요'], [/already linked|BIND_REQUIRES_GUEST/i,'이 계정엔 이미 아이디가 있어요'], [/recovery/i,'복구 코드가 맞지 않아요'],
-    [/invalid group name/i,'방 이름은 1~50자예요'], [/invalid room time zone/i,'시간대를 다시 골라 주세요'], [/only the group owner|only room owner/i,'방장만 할 수 있어요'], [/new owner must be a member/i,'방에 있는 사람에게만 넘길 수 있어요'], [/poke too soon/i,'같은 사람은 1분에 한 번 찌를 수 있어요'], [/too many pokes/i,'찌르기는 한 시간에 30번까지예요'], [/target is not in this group/i,'그 사람은 이제 방에 없어요'], [/cannot poke yourself/i,'자기는 못 찔러요'], [/profiles_display_name_format_check/i,'이름은 영문·숫자 2~16자예요'], [/cannot kick themselves/i,'방장은 자기를 내보낼 수 없어요'], [/day boundary is immutable/i,'방 하루 경계(새벽 4시)는 못 바꿔요'], [/temporarily unavailable|rate|too many/i,'잠시 뒤에 다시 해 주세요']];
+    [/invalid group name/i,'방 이름은 1~50자예요'], [/invalid room time zone/i,'시간대를 다시 골라 주세요'], [/only the group owner|only room owner/i,'방장만 할 수 있어요'], [/new owner must be a member/i,'방에 있는 사람에게만 넘길 수 있어요'], [/poke too soon/i,'같은 사람은 1분에 한 번 찌를 수 있어요'], [/too many pokes/i,'찌르기는 한 시간에 60번까지예요'], [/target is not in this group/i,'그 사람은 이제 방에 없어요'], [/cannot poke yourself/i,'자기는 못 찔러요'], [/profiles_display_name_format_check/i,'이름은 영문·숫자 2~16자예요'], [/cannot kick themselves/i,'방장은 자기를 내보낼 수 없어요'], [/day boundary is immutable/i,'방 하루 경계(새벽 4시)는 못 바꿔요'], [/temporarily unavailable|rate|too many/i,'잠시 뒤에 다시 해 주세요']];
   for(const [r,k] of T) if(r.test(m)) return k; return m; }
 const scRow=(inner,top)=>`<div style="display:flex;gap:8px;align-items:center;margin-top:${top==null?8:top}px">${inner}</div>`;
 const scIn=(id,type,ph,ac)=>`<input id="${id}" type="${type}" ${type==='password'?`autocomplete="${ac||'current-password'}"`:'autocomplete="off" autocapitalize="none" spellcheck="false"'} placeholder="${ph}" style="flex:1 1 150px;min-width:0">`;
@@ -10870,7 +10875,7 @@ async function scCreate(name, tz, isPublic){ name=String(name||'').trim(); if(!n
   await scEnsureAuth();
   const g=await scAuthed(async tok=>{ let r=await scReq('POST','/rest/v1/rpc/create_study_group',{token:tok, body:{group_name:name, room_timezone:tz||'Asia/Seoul', room_is_public:!!isPublic}});   /* 🔴 인자 셋 다(10-06) — 친구 서버에 3인자판이 추가돼 2인자 호출은 「후보를 못 고름」(PGRST203)으로 실패했다 */ r=Array.isArray(r)?r[0]:r;
     if(!r||!(r.id||r.group_id)) throw new Error('방을 만들지 못했어요'); return r; });
-  SC.group={id:g.id||g.group_id, name, invite_code:g.invite_code, owner_id:SC.auth.user_id, time_zone:g.time_zone||tz||'Asia/Seoul', day_start_hour:4};
+  SC.group={id:g.id||g.group_id, name, invite_code:g.invite_code, owner_id:SC.auth.user_id, time_zone:g.time_zone||tz||'Asia/Seoul', day_start_hour:4, is_public:!!isPublic};
   delete SC.err; delete SC.members; SC.membersAt=0; scSave(); await scSync({manual:true}); return SC.group.invite_code; }
 async function scLeaveRoom(){ const g=SC.group;
   try{ await scAuthed(tok=>scReq('POST','/rest/v1/rpc/leave_study_group',{token:tok, body:{target_group:g.id}})); }
@@ -10912,7 +10917,7 @@ function scConfetti(){ try{ if(matchMedia('(prefers-reduced-motion: reduce)').ma
     for(const q of P){ q.vy+=.38; q.vx*=.985; q.vy*=.985; q.x+=q.vx; q.y+=q.vy; q.r+=q.vr; g.save(); g.translate(q.x,q.y); g.rotate(q.r); g.fillStyle=q.c; g.fillRect(-q.s/2,-q.s*.3,q.s,q.s*.6); g.restore(); }
     scConfetti.raf=requestAnimationFrame(step); };
   scConfetti.raf=requestAnimationFrame(step); }
-/* 찌르기(10-07 · 애드온 PR #7 머지 · 20261006_member_pokes) — 같은 사람 1분에 한 번 · 한 시간 30번(서버가 막는다).
+/* 찌르기(10-07 · 애드온 PR #7 머지 · 20261006_member_pokes) — 같은 사람 1분에 한 번 · 한 시간 60번(서버가 막는다 · 10-14 20261008_poke_hourly_limit_sixty).
    받기 = fetch_my_pokes(안 본 것만 · 서버가 본 것으로 표시 — 한 계정 여러 기기면 먼저 받은 기기에만 뜬다).
    서버에 없으면(404 · PGRST202) 버튼을 숨기고 30분 뒤 다시 본다. */
 let scPokeOff=0, scPokeCool={}, scPokeBusy=false;
@@ -10997,9 +11002,10 @@ function scRtOn(m){ const ev=m.event, p=m.payload||{};
   if(ev==='presence_diff'){ const j=p.joins||{}; for(const k in j){ const x=((j[k]||{}).metas||[])[0]; if(x) scRtState(k, x); } return; } }
 /* 방 관리(10-06 · 애드온 bc81ba9 · 20261006_room_management) — 방장만 · 서버가 권한을 다시 본다 */
 async function scTransfer(uid){ const g=SC.group; await scAuthed(tok=>scReq('POST','/rest/v1/rpc/transfer_room_ownership',{token:tok, body:{target_group:g.id, new_owner_id:uid}})); g.owner_id=uid; scSave(); }
+async function scSetPublic(v){ const g=SC.group; await scAuthed(tok=>scReq('POST','/rest/v1/rpc/update_room_public',{token:tok, body:{target_group:g.id, new_is_public:!!v}})); g.is_public=!!v; scSave(); }   // 10-14 애드온 update_room_public
 async function scSetTz(tz){ const g=SC.group; await scAuthed(tok=>scReq('POST','/rest/v1/rpc/update_room_timezone',{token:tok, body:{target_group:g.id, new_timezone:tz}})); g.time_zone=tz; scSave(); }
 async function scCleanup(){ const g=SC.group; const n=await scAuthed(tok=>scReq('POST','/rest/v1/rpc/cleanup_inactive_members',{token:tok, body:{target_group:g.id, days_inactive:14}})); SC.membersAt=0; return Number(n)||0; }
-/* 공개 방(10-06 · 20261006_public_rooms) — 서버가 8명 미만 · 내 시간대 먼저 · 지금 공부 중 많은 순 · 차단된 방 빼고 30개.
+/* 공개 방(10-06 · 20261006_public_rooms) — 서버가 10명 미만(10-14 · 20261007_group_member_limit_ten) · 내 시간대 먼저 · 지금 공부 중 많은 순 · 차단된 방 빼고 30개.
    한 사람 한 방(애드온 규칙) — 다른 방에 참여하면 지금 방을 나간 뒤 들어간다(지금 방에 올린 내 기록은 지워진다). */
 let scPub=null, scPubAt=0, scPubBusy=false, scPubOpen=false;
 function scHereTz(){ try{ return Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Seoul'; }catch(e){ return 'Asia/Seoul'; } }
@@ -11031,14 +11037,14 @@ function scJoinForm(b, msgId){
     + `<details class="sc-more sc-fold"><summary><span>방 만들기</span>${SC_CHEV}</summary>`
     + scRow(scIn('scGName','text','방 이름')) + scRow(`<select id="scGTz" style="flex:1 1 150px;min-width:0" aria-label="방 시간대">${scTzOpts()}</select><button class="btn-ghost" id="scMake" style="flex:0 0 auto">만들기</button>`)
     + `<label class="sc-chk"><input type="checkbox" id="scGPub"> 공개 방으로</label>`
-    + `<div class="sc-msg" style="margin-top:6px">방 하루는 그 시간대 새벽 4시에 넘어가요 · 시간대는 나중에 방장이 바꿀 수 있어요 · 방장 포함 8명까지 · 공개 방은 누구나 목록에서 찾아 들어와요</div></details>`
+    + `<div class="sc-msg" style="margin-top:6px">방 하루는 그 시간대 새벽 4시에 넘어가요 · 시간대는 나중에 방장이 바꿀 수 있어요 · 방장 포함 10명까지 · 공개 방은 누구나 목록에서 찾아 들어와요</div></details>`
     + `<details class="sc-more sc-fold"><summary><span>아이디로 로그인</span>${SC_CHEV}</summary><div class="sc-msg" style="margin-top:0">다른 기기에서 만든 아이디 — 같은 사람으로 떠요</div>`
     + scRow(scIn('scUId','text','아이디')) + scRow(scIn('scUPw','password','비밀번호')+`<button class="btn-ghost" id="scULogin" style="flex:0 0 auto">로그인</button>`)
     + `<details class="sc-more" style="margin-top:4px"><summary>비밀번호를 잊었다면 — 복구 코드로 바꾸기</summary>`
     + scRow(scIn('scRCode','text','복구 코드')) + scRow(scIn('scRPw','password','새 비밀번호 (10자 이상)','new-password')+`<button class="btn-ghost" id="scRecover" style="flex:0 0 auto">바꾸기</button>`) + `</details></details>`
     + `<div class="sc-msg" id="${msgId}">${SC.err?esc(SC.err):''}</div></div>`
     + `<div class="sc-foot">친구의 안키 애드온 「스터디 현황」과 같은 방이에요 · 친구에겐 장수·시간·상태만 가요(카드 내용은 안 가요)</div></div>`
-    + `<div class="sc-sec"><div class="h-sec2"><h2>공개 방</h2><span class="sc-g">8명 미만</span></div><div class="sc-card">${SC.auth?scPubBlock(msgId):`<button class="btn-ghost" id="scPubLoad">공개 방 보기</button>`}</div></div>`;
+    + `<div class="sc-sec"><div class="h-sec2"><h2>공개 방</h2><span class="sc-g">10명 미만</span></div><div class="sc-card">${SC.auth?scPubBlock(msgId):`<button class="btn-ghost" id="scPubLoad">공개 방 보기</button>`}</div></div>`;
   if(SC.auth){ scPubWire(msgId); scLoadPublic().then(scPubPaint).catch(e=>{ const m2=$(msgId); if(m2) m2.textContent=scErrKo(e); }); }
   const pl=$('scPubLoad'); if(pl) pl.onclick=async()=>{ const m2=$(msgId); try{ if(m2) m2.textContent='잠깐만요…'; await scEnsureAuth(); await scLoadPublic(true); b.dataset.m=''; scJoinForm(b, msgId); }catch(e){ if(m2) m2.textContent=scErrKo(e); } };
   scBtn('scJoin', async()=>{ await scJoin($('scCode').value); return '스터디 방에 들어갔어요'; }, msgId);

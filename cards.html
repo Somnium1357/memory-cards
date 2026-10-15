@@ -1856,7 +1856,9 @@ details.sc-fold+details.sc-fold{box-shadow:inset 0 .5px 0 var(--c-sep);margin-to
   -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 16px);mask-image:linear-gradient(to bottom,transparent 0,#000 16px);}   /* 내리면 제목 밑에서 칼같이 잘리던 것 → 윗여백 16에서 흐려지며 사라진다(동하 09-26 「헤더랑 간격이 붙었다」) · 평소엔 그 16이 빈 여백이라 무변 */
 .sub-head{padding-bottom:8px;}   /* 제목과 본문 사이 8 더(동하 09-26 「좀만 간격 벌려줘」) — 제목 윗선은 안 움직인다 */
 .sub-inner{max-width:none;}
-@media (hover:hover) and (pointer:fine) and (min-width:1300px){ .sub-inner{max-width:var(--read-max);margin:0 auto;} }
+@media (hover:hover) and (pointer:fine) and (min-width:1300px){ .sub-inner{max-width:var(--read-max);margin:0 auto;}
+  .sub-head{max-width:calc(var(--read-max) + 2 * var(--sp-m));margin:0 auto;width:100%;box-sizing:border-box;}
+  #scrStats .sub-head, #scrList .sub-head, #scrRead .sub-head{max-width:calc(900px + 2 * var(--sp-m));} }   /* 그 셋은 본문 900(위 1000px 규칙) — 제목도 같은 칸 */   /* 제목 줄도 본문과 같은 가운데 칸(10-15 동하 데스크탑 「헤더가 이상하게 붙음」 — 본문만 가운데, 제목은 왼쪽 끝이었다) */
 /* 그룹 카드 — inset grouped(반경 22 · card 면 · 옅은 그림자) */
 .stat,.bar-list,.card-box,details.ss-score,.rd-list{background:var(--c-card);border-radius:var(--r-group);box-shadow:var(--sh-card);}
 .lh-tile{border-radius:var(--r-tile);background:var(--c-tile);box-shadow:var(--sh-card);}

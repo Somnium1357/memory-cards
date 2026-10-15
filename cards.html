@@ -5087,6 +5087,7 @@ const K_REST='cards_rest_v1', K_CFG='cards_cfg_v1', K_DIRTY='cards_dirty_v1', K_
       K_UOPEN='cards_units_open_v1', K_DLOGS='cards_dirty_logs_v1', K_HOEDOK='cards_hoedok_v1',
       K_FBSENT='cards_fb_sent_v1',        // 보냈지만 응답을 못 받은 피드백 PUT {msg, base} — fbSentConfirm
       K_FBSYNC='cards_fb_sync_v1',        // 마지막 성공 push 시각 — fb·marks 공용 기준선 (reapFb·reapMarks, 둘 다 같은 pushAll에서 올라간다)
+      K_FBSEEN='cards_fb_seen_v1',        // 원격 피드백 파일에서 본 엔트리 {id: u} — reapFb(10-16 다른 기기 플래그 되살림)
       K_WKSYNC='cards_week_sync_v1';      // 지난 주 로그를 마지막으로 다시 받은 주차 — loadWeeks의 「주가 바뀌면 한 번 재수신」 기준선
 const OLD_CFG='review_cfg_v1';            // 관리앱(같은 오리진)의 토큰 재사용
 const DAY_CUT=4;                          // 하루 경계 = 새벽 4시
@@ -6252,16 +6253,29 @@ async function fbSentConfirm(){
     lsDel(K_FBSENT);
   }catch(e){}
 }
+/* 🔴 **다른 기기가 단 피드백도 「원격에서 본 것」이다** (2026-10-16 · 루틴 통지 10-15) — 기준선(K_FBSYNC)은 「이 기기가 마지막으로 올린 시각」이라,
+   다른 기기가 그 뒤에 단 플래그를 받아 들고 있으면 u가 기준선보다 새로워 「내가 새로 단 것」으로 지켰다 →
+   루틴이 소진한 뒤 이 기기가 다음 플래그를 올리며 통째로 되살렸다(10-14 20:2x 패드 플래그 21건 → 23:44 루틴 소진 → 10-15 09:13 다른 기기 push로 부활 `5f801189`).
+   고침 = 원격 파일에서 본 엔트리의 u를 기기에 적어 두고(K_FBSEEN) · 원격에서 사라졌는데 그때 본 u 그대로면 소진된 것으로 걷는다.
+   본 뒤에 이 기기에서 고친 것(u가 더 새로움)은 여전히 지킨다. 목록 = 지금 원격 엔트리 + 아직 로컬에 남은 옛 본 것(걷히면 빠진다). */
+function fbSeen(){ try{ return JSON.parse(lsGet(K_FBSEEN)||'{}')||{}; }catch(e){ return {}; } }
 function reapFb(remoteFb){           // 원격에서 사라진 소진분을 로컬에서도 걷어낸다
-  const base=fbBase(); if(!base||!remoteFb) return 0;
+  if(!remoteFb) return 0;
+  const base=fbBase(), seen=fbSeen();
   const rc=remoteFb.cards||{}; let n=0;
   for(const id in state.cards){
     const s=state.cards[id]; if(!s) continue;
     if(!(s.flag!=null || (s.ann&&s.ann.length))) continue;   // 피드백이 없는 카드는 볼 것 없다
     if(rc[id]) continue;                                     // 원격에 살아 있다
-    if(fuOf(s) > base) continue;                             // 마지막 push 뒤에 새로 단 것 — 지킨다(피드백 시각 · L0-2)
+    const fu=fuOf(s);
+    if(!((base && fu<=base) || (seen[id] && fu<=seen[id]))) continue;   // 마지막 push 뒤에 새로 달았고 원격에서 본 적도 없다 — 지킨다(피드백 시각 · L0-2)
     s.flag=null; s.ann=[]; s.ft=[]; n++;
   }
+  const ns={};
+  for(const id in rc) ns[id]=rc[id].u||'';
+  for(const id in seen){ if(ns[id]!==undefined) continue; const s=state.cards[id];
+    if(s && (s.flag!=null || (s.ann&&s.ann.length))) ns[id]=seen[id]; }   // 이 기기가 고쳐 아직 들고 있는 것 — 다음 소진 판단에 쓴다
+  lsSet(K_FBSEEN, JSON.stringify(ns));
   if(n) console.log('소진된 피드백 정리', n, '건');
   return n;
 }

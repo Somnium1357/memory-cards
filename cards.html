@@ -6713,7 +6713,8 @@ let APP_HASH=null;
 function _hstr(t){ let h=5381; for(let i=0;i<t.length;i++) h=((h*33)^t.charCodeAt(i))>>>0; return t.length+':'+h.toString(16); }
 async function fetchAppHash(){
   try{ const r=await fetch(location.href.split('#')[0].split('?')[0], {cache:'no-store'}); if(!r.ok) return null;
-    return _hstr(await r.text()); }catch(e){ return null; }
+    const t=await r.text(); const i=t.indexOf('<title>');   /* 10-16 PC 크롬 띠가 배포 없이 계속 떴다 — AdGuard(HTTPS 필터)가 받은 HTML 머리(<title> 앞)에 스크립트 둘(~500자)을 끼워 넣는다 → <title>부터만 잰다 */
+    return _hstr(i>=0?t.slice(i):t); }catch(e){ return null; }
 }
 async function checkNewVersion(){
   const h=await fetchAppHash(); if(!h) return;

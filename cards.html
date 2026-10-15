@@ -5173,6 +5173,8 @@ function renderHintBox(c){
    없었고, 단위 화면에서 맨 끝으로 밀렸다(09-01 프론트 감사 F1). 큐·투입은 무영향이었다.
    순서가 곧 화면 순서다 — 번호순으로 둔다(11은 9와 13 사이). */
 const SUBJECTS=['1.국어','2.수학','3.영어','4.사회','5.도덕','6.과학','7.체육','8.음악','9.미술','10.실과','11.통합교과','13.총창'];
+/* 판만 있고 카드 과목은 아닌 회독본(10-15 · 14.기출지문 = 기출 서답형 지문 · 카드 108장은 각 과목 spec · 태그 「기출지문」) — 회독본 「과목 ▾」 목록에만 · SUBJECTS 에 넣으면 세션 과목 칩·가중치·통계에 0장 과목이 생긴다 */
+const PAN_SUBJECTS=[...SUBJECTS, '14.기출지문'];
 let INTAKE_PLAN=[], PLAN_RANK=new Map(), PLAN_DATE=new Map();   // cards-plan.json에서 로드 (루틴 소유)
 
 
@@ -14327,7 +14329,7 @@ $('hdPopScrim').onclick=hdPopClose;
 function hdSubjPop(){
   if($('hdPop').classList.contains('on') && !$('hdPop').classList.contains('toc')){ hdPopClose(); return; }
   const cur=hdCurFile();
-  const rows=SUBJECTS.map(sj=>{ const f=sj+'.html', on=f===cur; return `<button class="hp-r${on?' cur':''}" data-f="${esc(f)}">${esc(sj.split('.')[1]||sj)}${on?'<span class="ck">✓</span>':''}</button>`; }).join('');
+  const rows=PAN_SUBJECTS.map(sj=>{ const f=sj+'.html', on=f===cur; return `<button class="hp-r${on?' cur':''}" data-f="${esc(f)}">${esc(sj.split('.')[1]||sj)}${on?'<span class="ck">✓</span>':''}</button>`; }).join('');
   const p=hdPopOpen('<div class="hp-h">과목</div>'+rows, false); $('hdSubj').classList.add('on');
   p.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>hdGoSubj(b.dataset.f));
 }

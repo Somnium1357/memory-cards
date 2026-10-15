@@ -222,19 +222,7 @@ function peTL(){
   }
   return h + '</div>';
 }
-function buildBook(){
-  const music = Object.entries(MUSIC).map(([area, cats]) => bookTable(area, Object.entries(cats).map(([cat, rows]) => [cat, rows.map(r => r[0]), rows.map(r => r[1])]))).join('');
-  const art = Object.entries(ART).map(([area, d]) => bookTable(area, [["지식·이해", d.rows.map(r => r[0]), d.rows.map(r => r[2])], ["과정·기능", d.rows.map(r => r[1]), d.rows.map(r => r[3])], ["가치·태도", d.val.map(r => r[0]), d.val.map(r => r[1])]])).join('');
-  const subs = [['music', '음악', music], ['art', '미술', art], ['pe', '체육', peVal() + peEx('34') + peEx('56') + peTL()]];
-  for (const [name, d] of Object.entries(EXTRA))
-    subs.push([d.id, name, Object.entries(d.areas).map(([area, cats]) => bookTable(area, Object.entries(cats).map(([cat, [a, b]]) => [cat, a || [], b || []]))).join('')]);
-  document.getElementById('ctSubs').innerHTML = subs.map(([id, name]) => `<button data-sub="${id}">${esc(name)}</button>`).join('');
-  document.getElementById('ctBooks').innerHTML = subs.map(([id, , h]) => `<section id="book${id}" hidden>${h}</section>`).join('');
-  window.CT_SUBS = subs.map(x => x[0]);
-}
-buildBook();
-/* 통합교과 성취기준(10-14 · 동하 「번호 같은 것끼리 묶어서 내체표 쪽으로」 · 메타 발주) — 영역 4 × 번호 01~04 × 바른·슬기로운·즐거운 생활 · 문장 = 교육과정 원문(회독본 통합 대조)
-   🔴 일부러 buildBook 구간 **밖**에 둔다 — 공개 사이트 curric.html 은 「const MUSIC … buildBook();」 구간만 굽는다. 사이트에도 올릴 땐 이 덩어리를 구간 안으로 옮기고 사본 검증. */
+/* 통합교과 성취기준(10-14 앱 · 10-15 공개 사이트도 · 동하 「번호 같은 것끼리 묶어서 내체표 쪽으로」 · 메타 발주) — 영역 4 × 번호 01~04 × 바른·슬기로운·즐거운 생활 · 문장 = 교육과정 원문(회독본 통합 대조) */
 const INTEG = {
   "(1) 우리는 누구로 살아갈까": [
     ["학교 생활 습관과 학습 습관을 형성하여 안전하고 건강하게 생활한다.", "학교 안팎의 모습과 생활을 탐색하며 안전한 학교생활을 한다.", "즐겁게 놀이하며, 건강하고 안전하게 생활한다."],
@@ -257,15 +245,23 @@ const INTEG = {
     ["여럿이 하는 활동에 관심을 갖고 자발적으로 협력한다.", "경험한 것 중에서 관심 있는 주제를 정하고 조사한다.", "생각이나 느낌을 살려 전시나 공연 활동을 한다."],
     ["지금까지의 생활 습관과 학습 습관을 되돌아본다.", "배운 것과 배울 것을 연결하며 앞으로의 배움을 상상한다.", "기억에 남는 경험을 떠올리며 의미를 부여한다."]]
 };
-(function addInteg(){
+function integBook(){   /* 통합교과 성취기준 — 영역마다 표 · 줄 = 번호 01~04 · 칸 = 바른·슬기로운·즐거운 생활 · 번호는 보이고 문장만 가림 */
   const COLS = ['바른 생활', '슬기로운 생활', '즐거운 생활'], AB = ['바', '슬', '즐'];
-  const h = Object.entries(INTEG).map(([area, rows], ai) => `<h2>${esc(area)}</h2><div class="card"><table><tr><th style="width:52px">번호</th>${COLS.map(c => `<th>${c}</th>`).join('')}</tr>`
+  return Object.entries(INTEG).map(([area, rows], ai) => `<h2>${esc(area)}</h2><div class="card"><table><tr><th style="width:52px">번호</th>${COLS.map(c => `<th>${c}</th>`).join('')}</tr>`
     + rows.map((r, ri) => `<tr><td class="k">0${ri + 1}</td>${r.map((x, ci) => `<td><div class="it"><span class="nm">${AB[ci]}0${ai + 1}-0${ri + 1}</span><span class="c" data-g="12" data-cat="${COLS[ci]}">${esc(x)}</span></div></td>`).join('')}</tr>`).join('')
     + '</table></div>').join('');
-  document.getElementById('ctSubs').insertAdjacentHTML('beforeend', '<button data-sub="integ">통합교과</button>');
-  document.getElementById('ctBooks').insertAdjacentHTML('beforeend', `<section id="bookinteg" hidden>${h}</section>`);
-  CT_SUBS.push('integ');
-})();
+}
+function buildBook(){
+  const music = Object.entries(MUSIC).map(([area, cats]) => bookTable(area, Object.entries(cats).map(([cat, rows]) => [cat, rows.map(r => r[0]), rows.map(r => r[1])]))).join('');
+  const art = Object.entries(ART).map(([area, d]) => bookTable(area, [["지식·이해", d.rows.map(r => r[0]), d.rows.map(r => r[2])], ["과정·기능", d.rows.map(r => r[1]), d.rows.map(r => r[3])], ["가치·태도", d.val.map(r => r[0]), d.val.map(r => r[1])]])).join('');
+  const subs = [['music', '음악', music], ['art', '미술', art], ['pe', '체육', peVal() + peEx('34') + peEx('56') + peTL()], ['integ', '통합교과', integBook()]];
+  for (const [name, d] of Object.entries(EXTRA))
+    subs.push([d.id, name, Object.entries(d.areas).map(([area, cats]) => bookTable(area, Object.entries(cats).map(([cat, [a, b]]) => [cat, a || [], b || []]))).join('')]);
+  document.getElementById('ctSubs').innerHTML = subs.map(([id, name]) => `<button data-sub="${id}">${esc(name)}</button>`).join('');
+  document.getElementById('ctBooks').innerHTML = subs.map(([id, , h]) => `<section id="book${id}" hidden>${h}</section>`).join('');
+  window.CT_SUBS = subs.map(x => x[0]);
+}
+buildBook();
 
 /* 가리기(10-11) = 학년 줄 [안 가림 · 전체 · 3~4 · 5~6] × 범주 줄 [전체 · 그 과목 범주…] — 둘 다 맞는 칸만 가린다 · 칸을 누르면 그 칸만 열기/닫기 */
 let sub = CT_SUBS[0], gr = 'off', ca = 'all';

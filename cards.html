@@ -6994,6 +6994,7 @@ function hoedokURI(k, deep){   // deep=true면 3층 제목부터 찾는다 (지�
   const rawTop=(rowUnit(k).split('|')[1]||'').split('#')[0];
   const mid=isMidRow(k)?rowMid(k):'';
   const cand=[];
+  if(mid&&rawTop) cand.push(anch(rawTop)+'_-_'+anch(mid)+'_노트');   // ⓪ 같은 합성 h2 가 둘이면 조립기가 노트 쪽에 _노트 를 붙인다(국어 문학 - 교육과정 = 성취기준 영역 · 노트 절) — 카드는 노트에서 왔으니 먼저(10-16 QC 인계 · 64장)
   if(mid&&rawTop) cand.push(anch(rawTop)+'_-_'+anch(mid));   // ① 합성 — 겹쳐도 안전
   if(deep&&isSubRow(k)&&rowSub(k)) cand.push(anch(rowSub(k)));
   if(mid) cand.push(anch(mid));                              // ② 바로 이름

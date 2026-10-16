@@ -13632,14 +13632,13 @@ function mkXlab(R,H){ const n=R.length, o=window.MK_OFF||0, every=Math.max(1,Mat
 function mockSection(){ const R0=(MOCK&&MOCK.rounds)||[]; if(!R0.length) return ''; const half=R0.some(r=>r.full===false), Rf=MKF&&half?R0.filter(r=>r.full!==false):R0, many=Rf.length>10;
   const R=many&&MKV!=='all'?Rf.slice(-10):Rf; if(!R.length) return ''; window.MK_R=R; window.MK_OFF=Rf.length-R.length;
   const rng=(many?`<span class="seg mk-seg"><button data-mkv="10"${MKV!=='all'?' class="on"':''}>10회</button><button data-mkv="all"${MKV==='all'?' class="on"':''}>전체</button></span>`:'')+(half?`<button class="chip${MKF?' on':''}" data-mkf="1">본모의</button>`:''); { const sb=$('statsBody'); MK_W=Math.max(280, Math.min(900, ((sb&&sb.clientWidth)||372)-32)); MK_H=Math.round(Math.max(110, Math.min(230, MK_W*.26, innerHeight-533-90)));   /* 10-12 동하 「높이 맞춰서 · 그래프가 눌린 느낌」 — 화면 높이에 맞춘다: 카드 위 136 + 그래프 뺀 카드 385 + 아래 12 = 533 · 남는 높이는 점수 꺾은선에(「눌린 건 꺾은선」) · 오답 막대는 90 상한 · 아이패드 프로 11 앱 1210×834 → 점수 211 · 폭 좁으면 폭 기준 */ } const n=R.length, step=n<2?60:(MK_W-MK_L-MK_R)/(n-1);
-  /* 오답 갈래 — 가는 막대 · 위 둥글게 · 칸 사이 틈 */
+  /* 오답 갈래 — 가는 막대 · 칸 사이 틈 · 맨 위도 각지게(10-16 동하 「맨 위 라운드 처리 빼 줘」) */
   const KS=[['모름','var(--c-indigo)'],['핀트','var(--c-orange)'],['실수','var(--c-pink)'],['버림','var(--c-ter)']];
   const KH=Math.min(90, Math.round(MK_H*.72)), KT=8,   /* 10-12 동하 「오답 쪽 그래프를 위아래로 · 이게 중요」 — 53→91(아이패드) · 카드는 화면 맨 밑(아래 흐림 구간)까지 써도 된다 */ KB=KT+KH, KHt=KB+20, km=Math.max(1,...R.map(r=>KS.reduce((a,[k])=>a+((r.kinds||{})[k]||0),0))), kmx=Math.ceil(km/10)*10, bw=Math.min(MK_W>500?16:10, step*.42), rr=bw/2;
   let k=[0,kmx/2,kmx].map(v=>`<line x1="${MK_L}" x2="${MK_W-MK_R+12}" y1="${KB-v/kmx*KH}" y2="${KB-v/kmx*KH}" class="mk-grid"/><text x="${MK_W-MK_R+16}" y="${KB-v/kmx*KH+3}" class="mk-ax">${v}</text>`).join('');
   R.forEach((r,i)=>{ const kd=r.kinds||{}, seg=KS.map(([nm,c])=>[kd[nm]||0,c]).filter(z=>z[0]>0); let y=KB; const x=mkX(i,n)-bw/2;
-    k+=`<g class="mk-bar" data-i="${i}">`+seg.map(([v,c],si)=>{ const hh=v/kmx*KH; y-=hh; const top=si===seg.length-1, ht=Math.max(.8, hh-(si?1.5:0)), q=Math.min(rr,ht);
-      return top?`<path d="M${x.toFixed(1)},${(y+ht).toFixed(1)}V${(y+q).toFixed(1)}A${rr},${q} 0 0 1 ${(x+bw).toFixed(1)},${(y+q).toFixed(1)}V${(y+ht).toFixed(1)}Z" fill="${c}"/>`
-        :`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${ht.toFixed(1)}" fill="${c}"/>`; }).join('')+'</g>'; });
+    k+=`<g class="mk-bar" data-i="${i}">`+seg.map(([v,c],si)=>{ const hh=v/kmx*KH; y-=hh; const ht=Math.max(.8, hh-(si?1.5:0));
+      return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${ht.toFixed(1)}" fill="${c}"/>`; }).join('')+'</g>'; });
   k+=mkXlab(R,KHt)+`<line class="mk-x" x1="0" x2="0" y1="${KT}" y2="${KB}"/>`;
   const hit=hh=>`<rect class="mk-hit" x="0" y="0" width="${MK_W}" height="${hh}" fill="transparent"/>`;
   return '<div class="card-box mk-box">'

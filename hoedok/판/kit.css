@@ -591,6 +591,7 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .vchain.conv .stp .mid{font-weight:600;white-space:normal;}
 :root.v2 .vchain{grid-template-columns:minmax(0,max-content) minmax(0,1fr);}   /* 단계 이름도 좁으면 접힌다 — 좁은 칸에서 넘쳐 칸이 넓어지던 것(가치 탐구) */
 :root.v2 .vchain>.stp{min-width:0;max-width:11em;}
+@media (max-width:500px){ :root.v2 .vchain:not(.hz){grid-template-columns:minmax(0,1fr);} }   /* 10-18 동하 「폰에서 이상해」(과학 학습 모형): 위 두 칸 규칙이 폰 한 칸 규칙(≤500px)을 덮어 설명(.ann)이 단계 이름 폭 칸에 갇히고 오른쪽 칸이 비던 것 */
 :root.v2 .vchain.conv .ann .up,:root.v2 .vchain.conv .ann .down{display:inline;font-size:1em;color:inherit;}
 :root.v2 .vchain.conv .ann>*+*::before{content:' · ';}
 /* 가로 나무 = 바깥 가지 작은 칸(샘플 cells) */

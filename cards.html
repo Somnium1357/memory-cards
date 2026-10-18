@@ -1721,6 +1721,8 @@ button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inher
 .st-qsub .st-rank{padding-right:20px;}
 .st-qsub .st-rank .nm{flex-basis:50%;color:var(--c-sec);}
 .st-qsub .st-rank .br i{opacity:.55;}
+/* 많이 틀린 문제 과목 묶음(10-18) — 안쪽 노드 줄은 바깥 줄과 같은 글자색·막대(묶음 안 회색 규칙을 되돌림) */
+.st-qhs .st-rank.st-qh .nm{flex:1 1 auto;color:var(--c-label);}.st-qhs .st-rank.st-qh .br i{opacity:1;}
 .st-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 16px;}
 #siteBody .btn-ghost{display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border-radius:18px;background:var(--c-fill);color:var(--c-label);font-size:15px;font-weight:600;text-decoration:none;}
 .st-fbn{display:flex;flex-wrap:wrap;gap:10px;}
@@ -10571,11 +10573,16 @@ function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.c
         return `<details class="st-q st-qg" data-g="${esc(G.g)}"${qOpen.has(G.g)?' open':''} ontoggle="siteQT(this)"><summary class="st-rank">${head(G.g,'›')}</summary><div class="st-qsub">${siteRank(G.a.sort((x,y)=>y.n-x.n), x=>x.name)}</div></details>`; }).join('')}</div>`:'';
       const QS=SITE.qs||{}, qa=Object.entries(QS).filter(([id,x])=>x&&x.n>0&&BYID[id]).map(([id,x])=>({id, n:x.n, k:Math.min(x.k||0,x.n)})), qN=qa.reduce((a,x)=>a+x.n,0), qK=qa.reduce((a,x)=>a+x.k,0);
       const QHG={}; for(const x of qa){ const c=BYID[x.id], key=c.node||x.id, g=QHG[key]||(QHG[key]={key, n:0, k:0, a:[], c}); g.n+=x.n; g.k+=x.k; g.a.push(x); }
-      const qHard=Object.values(QHG).filter(g=>g.n>=3).sort((a,b)=>a.k/a.n-b.k/b.n||b.n-a.n).slice(0,8);
-      const qTitle=g=>{ const seg=String(g.c.node||'').split('/').filter(Boolean); return String(g.c.subj||'').replace(/^\d+\./,'')+' · '+(seg.length>1?seg[seg.length-1]:'—'); };
+      /* 많이 틀린 문제 = 과목별(10-18 동하 「과목별로 묶어서 좀 많이」) — 과목 = 틀린 수 많은 순 · 막대 = 그 과목 전체 정답률 · 과목 안 = 노드(푼 수 5+ · 다 맞힌 것 빼고)를
+         (맞힘+1)/(푼 수+2) 낮은 순 20개 — 0/3 같은 적은 표본이 위를 덮지 않게(10-18 실측 n≥3 이면 0~1/3 이 과목마다 수십) */
+      const qSubj=c=>String(c.subj||'').replace(/^\d+\./,'')||'기타', QHS={};
+      for(const x of qa){ const s=qSubj(BYID[x.id]), S=QHS[s]||(QHS[s]={s, n:0, k:0, a:[]}); S.n+=x.n; S.k+=x.k; }
+      for(const g of Object.values(QHG)) if(g.n>=5 && g.k<g.n) QHS[qSubj(g.c)].a.push(g);
+      const qHard=Object.values(QHS).filter(S=>S.a.length).sort((a,b)=>(b.n-b.k)-(a.n-a.k)).map(S=>(S.a=S.a.sort((a,b)=>(a.k+1)/(a.n+2)-(b.k+1)/(b.n+2)||b.n-a.n).slice(0,20), S));
       const qFront=c=>{ const m=String(c.front||'').match(/^〔([^〕]*)〕\s*(.*)$/s); return (m?m[2]:c.front||'').trim(); };
       const qBar=(k,n)=>`<span class="br"><i style="width:${(k/n*100).toFixed(1)}%;background:${k/n<.5?'var(--c-red)':'var(--c-acc)'}"></i></span><span class="n">${k}/${n}</span>`;
-      const qHardH=qHard.length?`<div class="h-sec2" style="margin-top:14px"><h2 style="font-size:15px">많이 틀린 문제</h2></div><div class="sc-card">${qHard.map(g=>`<details class="st-q st-qg" data-g="${esc(g.key)}"${qOpen.has(g.key)?' open':''} ontoggle="siteQT(this)"><summary class="st-rank st-qh"><span class="nm">${esc(qTitle(g))}</span>${qBar(g.k,g.n)}<span class="cv">›</span></summary><div class="st-qsub">${g.a.sort((a,b)=>a.k/a.n-b.k/b.n).map(x=>`<div class="st-qhc"><p>${esc(qFront(BYID[x.id]))}<small>${esc(String(BYID[x.id].back||'').replace(/\s+/g,' ').slice(0,120))}</small></p><span class="n">${x.k}/${x.n}</span></div>`).join('')}</div></details>`).join('')}</div>`:'';
+      const qNodeNm=g=>{ const seg=String(g.c.node||'').split('/').filter(Boolean); return seg.length>1?seg[seg.length-1]:'—'; };
+      const qHardH=qHard.length?`<div class="h-sec2" style="margin-top:14px"><h2 style="font-size:15px">많이 틀린 문제</h2></div><div class="sc-card">${qHard.map(S=>`<details class="st-q st-qg" data-g="qh:${esc(S.s)}"${qOpen.has('qh:'+S.s)?' open':''} ontoggle="siteQT(this)"><summary class="st-rank"><span class="nm">${esc(S.s)}</span>${qBar(S.k,S.n).replace(/<span class="n">[^<]*<\/span>/,`<span class="n">${Math.round(S.k/S.n*100)}%</span>`)}<span class="cv">›</span></summary><div class="st-qsub st-qhs">${S.a.map(g=>`<details class="st-q st-qg" data-g="${esc(g.key)}"${qOpen.has(g.key)?' open':''} ontoggle="siteQT(this)"><summary class="st-rank st-qh"><span class="nm">${esc(qNodeNm(g))}</span>${qBar(g.k,g.n)}<span class="cv">›</span></summary><div class="st-qsub">${g.a.sort((a,b)=>a.k/a.n-b.k/b.n).map(x=>`<div class="st-qhc"><p>${esc(qFront(BYID[x.id]))}<small>${esc(String(BYID[x.id].back||'').replace(/\s+/g,' ').slice(0,120))}</small></p><span class="n">${x.k}/${x.n}</span></div>`).join('')}</div></details>`).join('')}</div></details>`).join('')}</div>`:'';
       L.push(`<div class="sc-sec"><div class="h-sec2"><h2>쪽지시험</h2><span class="sc-g">${evLab}</span></div>${tiles([[tot(qs),'시작'],[qd,'끝까지']])}${qList}</div>`);
       if(qN) accH=`<div class="sc-sec"><div class="h-sec2"><h2>쪽지시험 정답률</h2><span class="sc-g">누적</span></div>${tiles([[qN,'푼 문제'],[null,'정답률',Math.round(qK/qN*100)]])}${qHardH}</div>`;   /* 정답률(qs)은 날짜가 없다 → 그날 묶음 밖 */
       L.push(`<div class="sc-sec"><div class="h-sec2"><h2>검색</h2><span class="sc-g">${evLab}</span></div>${tiles([[tot(sh)+tot(sn),'검색'],[tot(sn),'결과 없음']])}${rank(sh,8)}${sn.length?`<div class="h-sec2" style="margin-top:14px"><h2 style="font-size:15px">결과가 없던 말</h2></div>`+rank(sn,8):''}</div>`);

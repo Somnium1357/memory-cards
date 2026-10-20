@@ -1722,7 +1722,9 @@ button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inher
 .st-qsub .st-rank .nm{flex-basis:50%;color:var(--c-sec);}
 .st-qsub .st-rank .br i{opacity:.55;}
 /* 많이 틀린 문제 과목 묶음(10-18) — 안쪽 노드 줄은 바깥 줄과 같은 글자색·막대(묶음 안 회색 규칙을 되돌림) */
-.st-qhs .st-rank.st-qh .nm{flex:1 1 auto;color:var(--c-label);}.st-qhs .st-rank.st-qh .br i{opacity:1;}
+.st-qhs .st-rank.st-qh .nm{flex:1 1 auto;color:var(--c-label);}
+/* 쪽지시험 과목별(10-20) — 채점 수 막대 + 정답률 칸 */
+.st-qsb .n{min-width:52px;}.st-qsb .p{flex:0 0 40px;text-align:right;font-size:13px;color:var(--c-sec);font-variant-numeric:tabular-nums;}.st-qhs .st-rank.st-qh .br i{opacity:1;}
 .st-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 16px;}
 #siteBody .btn-ghost{display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border-radius:18px;background:var(--c-fill);color:var(--c-label);font-size:15px;font-weight:600;text-decoration:none;}
 .st-fbn{display:flex;flex-wrap:wrap;gap:10px;}
@@ -10581,10 +10583,13 @@ function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.c
       const qHard=Object.values(QHS).filter(S=>S.a.length).sort((a,b)=>(b.n-b.k)-(a.n-a.k)).map(S=>(S.a=S.a.sort((a,b)=>(a.k+1)/(a.n+2)-(b.k+1)/(b.n+2)||b.n-a.n).slice(0,20), S));
       const qFront=c=>{ const m=String(c.front||'').match(/^〔([^〕]*)〕\s*(.*)$/s); return (m?m[2]:c.front||'').trim(); };
       const qBar=(k,n)=>`<span class="br"><i style="width:${(k/n*100).toFixed(1)}%;background:${k/n<.5?'var(--c-red)':'var(--c-acc)'}"></i></span><span class="n">${k}/${n}</span>`;
+      /* 과목별 푼 수(10-20 동하 「무슨 과목 얼마나 푸는지 볼 수가 없네」) = qs 누적 채점을 과목으로 · 막대 = 채점 수 · 오른쪽 = 정답률 · qs 는 날짜가 없어 누적만 */
+      const qsb=Object.values(QHS).filter(S=>S.n).sort((a,b)=>b.n-a.n), qsbMax=Math.max(1,...qsb.map(S=>S.n));
+      const qSubjH=qsb.length?`<div class="h-sec2" style="margin-top:14px"><h2 style="font-size:15px">과목별</h2></div><div class="sc-card">${qsb.map(S=>`<div class="st-rank st-qsb"><span class="nm">${esc(S.s)}</span><span class="br"><i style="width:${(S.n/qsbMax*100).toFixed(1)}%"></i></span><span class="n">${S.n.toLocaleString()}</span><span class="p">${Math.round(S.k/S.n*100)}%</span></div>`).join('')}</div>`:'';
       const qNodeNm=g=>{ const seg=String(g.c.node||'').split('/').filter(Boolean); return seg.length>1?seg[seg.length-1]:'—'; };
       const qHardH=qHard.length?`<div class="h-sec2" style="margin-top:14px"><h2 style="font-size:15px">많이 틀린 문제</h2></div><div class="sc-card">${qHard.map(S=>`<details class="st-q st-qg" data-g="qh:${esc(S.s)}"${qOpen.has('qh:'+S.s)?' open':''} ontoggle="siteQT(this)"><summary class="st-rank"><span class="nm">${esc(S.s)}</span>${qBar(S.k,S.n).replace(/<span class="n">[^<]*<\/span>/,`<span class="n">${Math.round(S.k/S.n*100)}%</span>`)}<span class="cv">›</span></summary><div class="st-qsub st-qhs">${S.a.map(g=>`<details class="st-q st-qg" data-g="${esc(g.key)}"${qOpen.has(g.key)?' open':''} ontoggle="siteQT(this)"><summary class="st-rank st-qh"><span class="nm">${esc(qNodeNm(g))}</span>${qBar(g.k,g.n)}<span class="cv">›</span></summary><div class="st-qsub">${g.a.sort((a,b)=>a.k/a.n-b.k/b.n).map(x=>`<div class="st-qhc"><p>${esc(qFront(BYID[x.id]))}<small>${esc(String(BYID[x.id].back||'').replace(/\s+/g,' ').slice(0,120))}</small></p><span class="n">${x.k}/${x.n}</span></div>`).join('')}</div></details>`).join('')}</div></details>`).join('')}</div>`:'';
       L.push(`<div class="sc-sec"><div class="h-sec2"><h2>쪽지시험</h2><span class="sc-g">${evLab}</span></div>${tiles([[tot(qs),'시작'],[qd,'끝까지']])}${qList}</div>`);
-      if(qN) accH=`<div class="sc-sec"><div class="h-sec2"><h2>쪽지시험 정답률</h2><span class="sc-g">누적</span></div>${tiles([[qN,'푼 문제'],[null,'정답률',Math.round(qK/qN*100)]])}${qHardH}</div>`;   /* 정답률(qs)은 날짜가 없다 → 그날 묶음 밖 */
+      if(qN) accH=`<div class="sc-sec"><div class="h-sec2"><h2>쪽지시험 정답률</h2><span class="sc-g">누적</span></div>${tiles([[qN,'푼 문제'],[null,'정답률',Math.round(qK/qN*100)]])}${qSubjH}${qHardH}</div>`;   /* 정답률(qs)은 날짜가 없다 → 그날 묶음 밖 */
       L.push(`<div class="sc-sec"><div class="h-sec2"><h2>검색</h2><span class="sc-g">${evLab}</span></div>${tiles([[tot(sh)+tot(sn),'검색'],[tot(sn),'결과 없음']])}${rank(sh,8)}${sn.length?`<div class="h-sec2" style="margin-top:14px"><h2 style="font-size:15px">결과가 없던 말</h2></div>`+rank(sn,8):''}</div>`);
       L.push(`<div class="sc-sec"><div class="h-sec2"><h2>PDF 받기</h2><span class="sc-g">${evLab}</span></div>${tiles([[tot(pf),'받기'],[pf.length,'파일 종류']])}${rank(pf.map(x=>({name:pdfName(x.name), n:x.n})),8)}</div>`);
       /* 모의고사 기록 페이지(10-17 · 사이트 mock.html) — 기록 추가마다 사건 mock/add · 페이지 열람은 「많이 읽힌 페이지」에 저절로 */

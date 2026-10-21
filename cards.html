@@ -1752,7 +1752,7 @@ button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inher
 @media (min-width:1120px) and (orientation:landscape){ #btnStudy.on{display:flex;} body.sc-rail{--insp-w:340px;}
   #rail.sc-on>:not(#railSc){display:none!important;} #rail.sc-on #railSc{display:flex;flex:1 1 auto;} }
 #btnStudy.pin{color:var(--c-acc);}
-#railSc{display:none;flex-direction:column;min-height:0;}
+#railSc{display:none;flex-direction:column;min-height:0;transform:translateZ(0);}   /* 제 층 = 켜질 때 새로 그린다(10-21 아이패드 유리 레일 안에서 안 그려지던 것) */
 #railSc{overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:manipulation;}   /* manipulation = 두 번 톡 확대를 끈다(찌르기 · 10-07) */
 #railSc .rs-p[data-uid]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
 @keyframes rsPk{from{background:color-mix(in srgb, var(--pk) 24%, transparent);}to{background:transparent;}}
@@ -10680,7 +10680,8 @@ function askSheet(){ const L=askOpenList(), sh=$('askSheet');
     ASK.ans[id]=v; toast(v?'추가할게요':'보류했어요'); askRender(); }); }
 /* 풀이 중 스터디 = 레일 전환(10-05) — 사람 줄(점 · 이름 · 상태·시간 · 장수/목표) · 내 줄은 채점마다(syncRail) · 친구는 동기화(30초)마다 다시 그린다 · 기본 = 피드백 */
 const K_SC_DOCK='cards_sc_dock_v1';
-function scDockOn(){ return lsGet(K_SC_DOCK)==='1'; }
+let scDock=lsGet(K_SC_DOCK)==='1';   // 켜짐은 메모리가 정본 · 저장소는 다음 부팅용(10-21 — 저장이 막혀도 단추는 듣는다)
+function scDockOn(){ return scDock; }
 /* 실시간 중심(동하 10-05 「좌우 넓히고 처음 보여 줬던 느낌으로 정보량 · 일 단위보단 실시간 중심」) — 사람마다 펼친 카드:
    10-05 「글자가 잡스럽고 톤이 안 맞음 · 정보량은 그대로」 → 늘어놓은 글을 숫자 칸 넷(오늘 · 최근 1시간 · 공부 시간 · 분당 장수)으로 · 목표 막대 · 지금 세션 · 시간대 띠(지금 칸 표시) */
 /* 지금 시각 선(10-05 친구 요청) — 방 하루 안 위치(10분 칸 + 칸 안 분) */
@@ -10721,7 +10722,9 @@ function scRenderDock(){ const box=$('railSc'); if(!box) return; const has=!!SC.
     const now=`<div class="rs-now"><div class="hd">지금 ${scSlotHM(nowSl)}–${scSlotHM((nowSl+1)%SC_SLOTS)}</div>${a.length?a.map(x=>`<div class="rk"><span class="no">${a.findIndex(y=>y.n===x.n)+1}</span><i style="background:${scColor(x.uid)}"></i><span class="nm">${esc(x.uid===me?(SC.nick||'나'):x.name)}</span><b>${x.n.toLocaleString()}</b></div>`).join(''):'<div class="none">아직 없음</div>'}</div>`;
     return `<div class="rs-lead"><div class="rs-l0">10분 1등</div>${scLeadStrip(L,'rs-strip')}${now}</div>`; })()}${html}`
     +`<div class="rs-foot">방 오늘 ${tot.toLocaleString()}장${SC.err?' · 친구 기록을 못 받았어요':SC.membersAt?` · ${scHM(SC.membersAt)}에 받음`:''}</div>`; }
-$('btnStudy').onclick=()=>{ lsSet(K_SC_DOCK, scDockOn()?'0':'1'); scRenderDock(); };
+/* 10-21 동하 「끄고 다시 누르면 먹통 · 카드 하나 풀면 그제서야 튀어나옴」 — 헤드리스 WebKit에선 상태가 매번 맞게 바뀐다(study_dock_test\dock.py) = 아이패드 그리기 문제로 본다.
+   채점이 고쳐 주던 길(syncRail = 레일 통째 다시 그리기)을 단추에서도 탄다 */
+$('btnStudy').onclick=()=>{ scDock=!scDock; lsSet(K_SC_DOCK, scDock?'1':'0'); syncRail(); };
 /* 레일 찌르기 = 친구 칸 두 번 톡(10-07 동하 — 칸에 버튼·글자·알약·한 줄 모음을 얹는 안 다 기각 · 한 번 톡은 잘못 누른다).
    레일은 30초·실시간마다 다시 그려진다 → 상자에 위임 · 같은 칸 350ms·20px 안 · 스크롤은 pointercancel이라 안 잡힌다 */
 let scDbl=null; const scPokeFly=new Set();

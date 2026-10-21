@@ -678,6 +678,7 @@ h4.lab{font-size:13px;line-height:18px;font-weight:600;color:var(--sec);margin:1
 :root.v2 .ctree .fork>.mkf{display:none;}
 :root.v2 .ctree .bsub>.converge>.stack>*::before,:root.v2 .ctree .bsub>.converge>.stack>*::after{display:none;}   /* 괄호 앞 줄머리 선도 지운다 — 괄호가 이미 묶음을 보여 준다(합동변환 09-30) */
 :root.v2 .ctree>*{padding-left:0 !important;}
+:root.v2 .ctree>.hng{text-indent:0 !important;}   /* 10-21 내어쓰기(kit.js hang)의 padding 은 위 !important 에 막히고 음수 들여쓰기만 남아 줄머리가 칸 밖으로 나갔다(체육 「전력 달리기」 · PDF 제보) */
 :root.v2 .ctree .kids>*,:root.v2 .ctree .bracket>*{padding-left:1em;}
 :root.v2 .ctree .branch>.kids,:root.v2 .ctree .branch>.bracket{margin-left:0;}
 :root.v2 .ctree>.ccell+.ccell{margin-top:.9em;}

@@ -5404,13 +5404,21 @@ function restWalk(k, step, off){          // k에서 step 방향으로 「휴식
       「왜 밀린 게 안 나오지」가 된다. */
 const BK_MAX=3;                          // 최대 분산 일수 (restOff가 1~3이라 그 해시를 그대로 쓴다)
 let _bkPlan=null;
+/* 🔴 계획은 **그날 첫 채점 전 due**로 센다(동하 10-23 「오늘 복습 장수가 갑자기 바뀜」) — `_bkPlan`은 화면 메모리라 다시 열거나 다른 기기에서 열면
+   다시 셌고, 그때는 오늘 푼 만큼 밀린 수가 줄어 n이 3→2가 됐다(10-23 18:10 · 밀린 654→596 · 숨겨 둔 몫 144장이 도로 오늘로).
+   그날 첫 채점이 덮어쓰기 직전 due를 `_preDue`에 적어 두고(rate·replayLog 두 문) 오늘 채점한 카드는 그 값으로 센다 — 로그가 정본이라 어느 기기에서 언제 열어도 아침 값과 같다. */
+const _preDue=new Map();                 // id → [그날, 첫 채점 전 due(ISO) | null=신규]
+function dayStartDueKey(id, s, T){
+  if(s.d===T){ const p=_preDue.get(id); if(p && p[0]===T) return p[1] ? dayKey(new Date(p[1])) : null; }
+  return s.fsrs ? dayKey(new Date(s.fsrs.due)) : null;
+}
 function dkDiff(a,b){ return Math.round((Date.parse(a+'T12:00:00')-Date.parse(b+'T12:00:00'))/86400000); }
 function dailyNorm(){                    // 「평소 하루 몇 장인가」 — 밀린 건 빼고 앞으로 4주로 잰다(순환 방지)
   const T=todayKey(); let n=0, work=0;
   for(let i=1;i<=28;i++) if(!isRestDay(dkAdd(T,i))) work++;
   for(const c of DATA){ const s=state.cards[c.id]; if(!s||!s.fsrs||s.retired) continue;
-    const k=dayKey(new Date(s.fsrs.due));
-    if(k>T && k<=dkAdd(T,28)) n++; }
+    const k=dayStartDueKey(c.id, s, T);
+    if(k && k>T && k<=dkAdd(T,28)) n++; }
   return work ? Math.max(20, Math.round(n/work)) : 100;
 }
 function backlogPlan(){                  // {over, n} — 하루 한 번만 센다
@@ -5418,7 +5426,7 @@ function backlogPlan(){                  // {over, n} — 하루 한 번만 센�
   if(_bkPlan && _bkPlan.at===T) return _bkPlan;
   let over=0;
   for(const c of DATA){ const s=state.cards[c.id]; if(!s||!s.fsrs||s.retired) continue;
-    if(dayKey(new Date(s.fsrs.due)) < T) over++; }
+    const k=dayStartDueKey(c.id, s, T); if(k && k < T) over++; }
   const norm=dailyNorm();
   const n = over > norm*1.5 ? Math.min(BK_MAX, Math.ceil(over/Math.max(norm,1))) : 1;
   _bkPlan={at:T, over, n, norm}; return _bkPlan;
@@ -5902,6 +5910,7 @@ function applyLogEntry(sx, e){        // rate()와 같은 규칙으로 한 건 �
   if(e[3] && e[3].re) return;
   const ts=logTs(e), num=e[2], day=dayKey(new Date(ts));
   if(sx.d!==day){
+    _preDue.set(e[0], [day, sx.fsrs?sx.fsrs.due:null]);   // 밀린 것 나눠 갚기 계획 = 아침 값(10-23)
     const fc = sx.fsrs?fsrsRevive(sx.fsrs):FSRS.createEmptyCard(new Date(ts));
     const r=engFor(e[0], ts).next(fc, new Date(ts), RATING[num]);   // 갈래별 · 그 채점 시각의 목표율(10-07 비소급)
     const nc=r.card;
@@ -5915,7 +5924,7 @@ function replayLog(){
      (실측: 채점 2만 건 0.4초. 시험날까지 쌓일 전체 분량이 그 정도다.)
      base가 있으면 그 시각의 상태에서 시작하고 그 뒤 로그만 얹는다 —
      「처음부터 다시」·「일정 조정」은 채점이 아니라 사람이 한 조작이라 로그에 없다. */
-  const byCard={};
+  const byCard={}; _preDue.clear();
   for(const e of state.log){ if(BYID[e[0]]) (byCard[e[0]]=byCard[e[0]]||[]).push(e); }
   for(const id in state.cards){       // 채점 이력이 사라진 카드도 파생분은 비워준다
     const sx=state.cards[id];
@@ -9139,6 +9148,7 @@ function rate(num){
   undoPush(undoSnap);
   if(firstToday && !reN && curSess){ pgBump(curSess, 1); undoSnap.pg=curSess.id; }   // 진행 막대(09-24) — 되돌리면 doUndo가 -1
   if(firstToday && !reN){                  // 그날 첫 채점만 FSRS 반영 (재출은 절대 아니다)
+    _preDue.set(c.id, [tk, s.fsrs?s.fsrs.due:null]);   // 밀린 것 나눠 갚기 계획 = 아침 값(10-23 · applyLogEntry와 같은 문)
     const fc = s.fsrs?fsrsRevive(s.fsrs):FSRS.createEmptyCard(now);
     const r=engFor(c.id, +now).next(fc, now, RATING[num]);   // 갈래별 목표율 — replayLog와 같은 문(채점 시각)
     const nc=r.card;

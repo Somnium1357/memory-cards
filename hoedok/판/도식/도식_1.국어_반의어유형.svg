@@ -6,7 +6,7 @@
     <rect x="1" y="124" width="230" height="44" rx="6"/>
     <rect x="258" y="52" width="80" height="44" rx="6" stroke-width="2"/>
     <rect x="258" y="124" width="80" height="44" rx="6" stroke-width="2"/>
-    <rect x="56" y="194" width="120" height="42" rx="6" stroke-width="2"/>
+    <rect x="46" y="194" width="140" height="42" rx="6" stroke-width="2"/>
   </g>
   <g stroke="currentColor" stroke-width="1.2" fill="none" marker-end="url(#ar-bany)">
     <line x1="116" y1="32" x2="116" y2="49"/>
@@ -18,17 +18,17 @@
   <g class="tx" fill="currentColor" font-size="13" text-anchor="middle">
     <text x="116" y="22">반의어 쌍 A / B</text>
     <text x="116" y="71">중간 속성 O, 정도 부사 가능?</text>
-    <text x="116" y="143">'X가 A이면 Y가 B이다' 성립?</text>
+    <text x="116" y="143">둘 다 부정하면 모순?</text>
     <text x="298" y="71" font-weight="700">등급</text>
-    <text x="298" y="143" font-weight="700">관계</text>
-    <text x="116" y="214" font-weight="700">상보</text>
+    <text x="298" y="143" font-weight="700">상보</text>
+    <text x="116" y="214" font-weight="700">관계</text>
   </g>
   <g class="tx" fill="currentColor" font-size="11" text-anchor="middle" opacity=".7">
     <text x="116" y="88">둘 다 부정 가능</text>
-    <text x="116" y="160">관계·방향 대립</text>
+    <text x="116" y="160">중간 속성 X, 정도 부사 불가</text>
     <text x="298" y="88">높다/낮다</text>
-    <text x="298" y="160">부모/자식</text>
-    <text x="116" y="229">살다/죽다, 참/거짓</text>
+    <text x="298" y="160">살다/죽다</text>
+    <text x="116" y="229">부모/자식, 가다/오다</text>
     <text x="243" y="68">O</text>
     <text x="243" y="140">O</text>
     <text x="124" y="113" text-anchor="start">X</text>

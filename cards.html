@@ -927,6 +927,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .mk-svg{display:block;width:100%;height:auto;overflow:visible;touch-action:pan-y;user-select:none;-webkit-user-select:none;}
 .mk-grid{stroke:var(--c-sep);stroke-width:.8;}
 .mk-ax{font-size:8.5px;fill:var(--c-ter);font-variant-numeric:tabular-nums;}
+.mk-avg{stroke-width:1;stroke-dasharray:4 3;opacity:.75;} .mk-avl{font-size:8.5px;font-weight:600;font-variant-numeric:tabular-nums;paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round;}   /* 평균 점선(10-25 동하 「10회·전체 각각」 = 보이는 회차만으로) */
 .mk-ay{font-size:10px;font-weight:600;fill:var(--c-sec);}   /* 점수 세로축(10-12 동하 「중요한 정보인데 흐림」) */
 
 
@@ -13655,10 +13656,14 @@ function mockScore(R){ const n=R.length, H=MK_H, T=10, B=20, base=H-B;
   const Y=v=>T+(1-(v-lo)/(hi-lo||1))*(base-T), stp=ab?5:10, ticks=[]; for(let v=lo; v<=hi; v+=stp) ticks.push(v);
   let g='<defs>'+S.map(([,c],k)=>`<linearGradient id="mkG${k}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c}" stop-opacity="${S.length>1?.16:.28}"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></linearGradient>`).join('')+'</defs>';
   g+=ticks.map(v=>`<line x1="${MK_L}" x2="${MK_W-MK_R+12}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" class="mk-grid"/><text x="${MK_W-MK_R+16}" y="${(Y(v)+3.5).toFixed(1)}" class="mk-ax mk-ay">${v}</text>`).join('');
+  const L=[];   /* 평균 글자 = 곡선 위에 얹는다(아래 return 앞) */
+  S.forEach(([nm,c,f],k)=>{ const v=R.map(f).filter(x=>x!=null); if(v.length<2) return; const av=v.reduce((a,b)=>a+b,0)/v.length, y=Y(av).toFixed(1);   /* 평균 = 지금 보이는 회차(10회·전체·본모의) · 선 아래에 깐다 · 글자는 첫 칸 뒤(첫 점과 안 겹치게) · A·B는 옆으로 비켜 */
+    g+=`<line x1="${MK_L}" x2="${MK_W-MK_R+12}" y1="${y}" y2="${y}" class="mk-avg" style="stroke:${c}"/>`;
+    L.push(`<text x="${(MK_L+18+k*58).toFixed(1)}" y="${(+y-4).toFixed(1)}" class="mk-avl" style="fill:${c}">${S.length>1?nm+' ':''}평균 ${Math.round(av*10)/10}</text>`); });
   S.forEach(([nm,c,f],k)=>{ const ps=R.map((r,i)=>{ const v=f(r); return v==null?null:[mkX(i,n),Y(v),i]; }).filter(Boolean); if(!ps.length) return; const d=mkCurve(ps);
     if(d) g+=`<path d="${d}L${ps[ps.length-1][0].toFixed(1)},${base}L${ps[0][0].toFixed(1)},${base}Z" fill="url(#mkG${k})"/><path d="${d}" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
     g+=ps.map(([x,y,i])=>`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" class="mk-pt" data-i="${i}" style="fill:${c}"/>`).join(''); });
-  return g+mkXlab(R,H)+`<line class="mk-x" x1="0" x2="0" y1="${T}" y2="${base}"/>`; }
+  return g+L.join('')+mkXlab(R,H)+`<line class="mk-x" x1="0" x2="0" y1="${T}" y2="${base}"/>`; }
 function mkXlab(R,H){ const n=R.length, o=window.MK_OFF||0, every=Math.max(1,Math.ceil(n/15));   /* 가로축 = 회차마다 그 날짜(10-12 동하 「날짜가 듬성듬성 붙으면 시간 축으로 오해 · 매 회차별 날짜」 · 점 = 회차 · 많으면 솎음) */
   return R.map((r,i)=>(i%every===0||i===n-1)?`<text x="${mkX(i,n).toFixed(1)}" y="${H-5}" text-anchor="middle" class="mk-ax">${Number(r.date.slice(5,7))}/${Number(r.date.slice(8,10))}</text>`:'').join(''); }
 function mockSection(){ const R0=(MOCK&&MOCK.rounds)||[]; if(!R0.length) return ''; const half=R0.some(r=>r.full===false), Rf=MKF&&half?R0.filter(r=>r.full!==false):R0, many=Rf.length>10;

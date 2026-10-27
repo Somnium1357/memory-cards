@@ -207,12 +207,13 @@ const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'
 const it = (x, g, cat) => `<div class="it c" data-g="${g}" data-cat="${cat}">${esc(x)}</div>`;
 
 /* 책 그대로: 영역마다 표 하나 · 행 = 범주 · 열 = 3~4 / 5~6 · 칸 안 항목은 책 순서
-   줄 이름이 범주가 아닐 때(과학 소영역)는 그 이름도 가림 칸(data-g=any · 10-27 동하 「과학 내체 범주명도 가려줘」) */
+   줄 이름이 범주가 아닐 때(과학 소영역)는 그 이름도 가림 칸(data-g=any · 10-27 동하 「과학 내체 범주명도 가려줘」)
+   · 범주 칩 「범주」로 따로 가린다(같은 날 「범주는 따로 가릴 수 있게」) */
 function bookTable(area, cats){
   let h = `<h2>${esc(area)}</h2><div class="card"><table><tr><th style="width:88px">범주</th><th>3~4학년군</th><th>5~6학년군</th></tr>`;
   for (const [cat, list34, list56, dc] of cats){
     const li = (xs, g) => xs.filter(x => x != null).map(x => it(x, g, dc || cat)).join('');
-    h += `<tr><td class="k">${dc ? it(cat, 'any', dc) : cat}</td><td>${li(list34,'34')}</td><td>${li(list56,'56')}</td></tr>`;
+    h += `<tr><td class="k">${dc ? it(cat, 'any', '범주') : cat}</td><td>${li(list34,'34')}</td><td>${li(list56,'56')}</td></tr>`;
   }
   return h + '</table></div>';
 }

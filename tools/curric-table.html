@@ -237,18 +237,10 @@ const SCI_UNITS = {
          ["(15) 전기의 이용", ["전기 회로","전지의 직렬연결","전자석","전기 안전"]],
          ["(16) 과학과 나의 진로", ["진로와 과학의 관련성","진로 계획"]]]
 };
-/* 범주(소영역)는 아래 원문 표에서 찾아 붙인다(10-28 동하 「범주명을 볼 수가 없잖아」) · 한 단원에 소영역이 여럿이면 줄을 나눈다 · 범주 칸은 칩 「범주」로 가림 */
+/* 단원 한 줄 = 단원 | 요소 · 범주 칸 없음(10-28 동하 「내체표 원래 꼴은 범주에 붙어 있어서」 — 범주는 아래 원문 표에서 · 단원 표에 범주를 붙이면 한 단원이 범주마다 쪼개진다) */
 function sciUnits(){
-  const catOf = {};
-  for (const cats of Object.values(EXTRA["과학"].areas))
-    for (const [cat, [a, b]] of Object.entries(cats)){ a.forEach(x => catOf['34|' + x] = cat); b.forEach(x => catOf['56|' + x] = cat); }
-  return Object.entries(SCI_UNITS).map(([g, rows]) => `<h2>단원별 지식·이해 <small>${g === '34' ? '3~4학년군' : '5~6학년군'}</small></h2><div class="card"><table><tr><th style="width:30%">단원</th><th style="width:26%">범주</th><th>지식·이해 내용 요소</th></tr>`
-    + rows.map(([u, xs]) => {
-        const grp = new Map();
-        for (const x of xs){ const c = catOf[g + '|' + x] || '—'; if (!grp.has(c)) grp.set(c, []); grp.get(c).push(x); }
-        return [...grp].map(([c, ys], i) => '<tr>' + (i === 0 ? `<td class="k" rowspan="${grp.size}">${esc(u)}</td>` : '')
-          + `<td>${it(c, g, '범주')}</td><td>${ys.map(x => it(x, g, '지식·이해')).join('')}</td></tr>`).join('');
-      }).join('')
+  return Object.entries(SCI_UNITS).map(([g, rows]) => `<h2>단원별 지식·이해 <small>${g === '34' ? '3~4학년군' : '5~6학년군'}</small></h2><div class="card"><table><tr><th style="width:34%">단원</th><th>지식·이해 내용 요소</th></tr>`
+    + rows.map(([u, xs]) => `<tr><td class="k">${esc(u)}</td><td>${xs.map(x => it(x, g, '지식·이해')).join('')}</td></tr>`).join('')
     + '</table></div>').join('');
 }
 /* 칩 이름 — 데이터 범주(data-cat)를 화면 말로 · 없으면 범주 이름 그대로 */

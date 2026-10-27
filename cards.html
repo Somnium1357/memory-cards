@@ -920,7 +920,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .mk-seg{flex:0 0 auto;}.mk-seg button{padding:4px 12px;font-size:13px;}
 .seg.mk-seg button{min-height:28px;}
 .mk-ab{display:inline-flex;align-items:baseline;gap:3px;margin-right:18px;}.mk-ab em{align-self:center;width:12px;height:3px;border-radius:2px;margin-right:3px;}.mk-ab .l{font-size:13px;font-weight:700;color:var(--c-sec);margin-right:2px;}
-.mk-big i{font-style:normal;font-size:13px;font-weight:700;margin-left:6px;}.mk-big i.up{color:var(--c-green);}.mk-big i.dn{color:var(--c-red);}
+.mk-big i{font-style:normal;font-size:13px;font-weight:700;margin-left:6px;}.mk-big i.up{color:var(--c-green);}.mk-big i.dn{color:var(--c-red);}.mk-big i.eq{color:var(--faint);}
 .mk-meta{font-size:13px;line-height:18px;color:var(--c-sec);margin-top:1px;}
 .mk-rng{display:flex;align-items:center;gap:8px;margin-bottom:12px;}.mk-rng .mk-rseg{flex:1 1 auto;display:flex;}.mk-rng .mk-rseg button{flex:1 1 0;}   /* 범위(10-11) — 10회 넘을 때만 */
 .mk-wrap{position:relative;margin-top:6px;}   /* 커서 = 기본 화살표(10-12 동하 「십자로 바뀜」) */
@@ -13692,7 +13692,7 @@ function mockLayers(R){ const n=R.length, LY={}; R.forEach((r,i)=>{ for(const [k
     return `<div class="mk-lr"><span class="n">${esc(k)}</span><span class="bar"><i style="width:${p}%"></i>${rp!=null?`<b style="left:${rp}%"></b>`:''}</span><span class="m">${p}%</span></div>`; }).join('')+'</div>'; }
 /* 고른 회차(기본 = 최근) → 머리 숫자·세로선·점 */
 function mkSel(i){ const R=window.MK_R||[]; if(!R.length || !$('mkBig')) return; const n=R.length; if(i==null||i<0||i>=n) i=n-1; MKI=i; const r=R[i], pv=i>0?R[i-1]:null, live=i===n-1;
-  const a=r.A, b=r.B, t=[(a?a[0]:0)+(b?b[0]:0),(a?a[1]:0)+(b?b[1]:0)], dl=(v,w)=>{ if(v==null||w==null) return ''; const d=v-w; return d?`<i class="${d>0?'up':'dn'}">${d>0?'▲':'▼'} ${Math.abs(d)}</i>`:''; };
+  const a=r.A, b=r.B, t=[(a?a[0]:0)+(b?b[0]:0),(a?a[1]:0)+(b?b[1]:0)], dl=(v,w)=>{ if(v==null||w==null) return ''; const d=v-w; return d?`<i class="${d>0?'up':'dn'}">${d>0?'▲':'▼'} ${Math.abs(d)}</i>`:'<i class="eq">–</i>'; };   /* 10-27 동하 「변화 없으면 - 표시」 */
   const dt=Number(r.date.slice(5,7))+'월 '+Number(r.date.slice(8,10))+'일', nm=r.src.replace(/^(\d+)_/,'$1학년도 ').replace(/_/g,' ')+' '+r.rnd;   /* 10-12 동하 「소스에 학년도도」 — 27_임고원포 → 27학년도 임고원포 */
   if(MKM==='ab') $('mkBig').innerHTML=[['A','var(--c-orange)',a,pv&&pv.A],['B','var(--c-teal)',b,pv&&pv.B]].map(([x,c,v,w])=>`<span class="mk-ab"><em style="background:${c}"></em><span class="l">${x}</span><b>${v?v[0]:'—'}</b><small>/${v?v[1]:'—'}</small>${dl(v&&v[0],w&&w[0])}</span>`).join('');
   else $('mkBig').innerHTML=`<b>${t[0]}</b><small>/${t[1]}</small>${dl(t[0], pv?(pv.A?pv.A[0]:0)+(pv.B?pv.B[0]:0):null)}`;

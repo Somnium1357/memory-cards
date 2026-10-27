@@ -206,12 +206,13 @@ const CAT_LABEL = { '세부': '세부 영역', '교평': '교수·평가' };
 const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const it = (x, g, cat) => `<div class="it c" data-g="${g}" data-cat="${cat}">${esc(x)}</div>`;
 
-/* 책 그대로: 영역마다 표 하나 · 행 = 범주 · 열 = 3~4 / 5~6 · 칸 안 항목은 책 순서 */
+/* 책 그대로: 영역마다 표 하나 · 행 = 범주 · 열 = 3~4 / 5~6 · 칸 안 항목은 책 순서
+   줄 이름이 범주가 아닐 때(과학 소영역)는 그 이름도 가림 칸(data-g=any · 10-27 동하 「과학 내체 범주명도 가려줘」) */
 function bookTable(area, cats){
   let h = `<h2>${esc(area)}</h2><div class="card"><table><tr><th style="width:88px">범주</th><th>3~4학년군</th><th>5~6학년군</th></tr>`;
   for (const [cat, list34, list56, dc] of cats){
     const li = (xs, g) => xs.filter(x => x != null).map(x => it(x, g, dc || cat)).join('');
-    h += `<tr><td class="k">${cat}</td><td>${li(list34,'34')}</td><td>${li(list56,'56')}</td></tr>`;
+    h += `<tr><td class="k">${dc ? it(cat, 'any', dc) : cat}</td><td>${li(list34,'34')}</td><td>${li(list56,'56')}</td></tr>`;
   }
   return h + '</table></div>';
 }
@@ -303,7 +304,7 @@ function paint(){
 }
 function apply(){
   document.querySelectorAll('.c').forEach(el => {
-    const hide = gr !== 'off' && (gr === 'all' || el.dataset.g === gr) && (ca === 'all' || el.dataset.cat === ca);
+    const hide = gr !== 'off' && (gr === 'all' || el.dataset.g === gr || el.dataset.g === 'any') && (ca === 'all' || el.dataset.cat === ca);
     el.classList.toggle('h', hide);
   });
 }

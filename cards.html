@@ -5206,7 +5206,7 @@ const XRET_DEF=0.95;                      // 시험날 목표 기억률 (동하 
    tags[0] 「2022 개정 …」은 전부 이 안에 든다. 총창·통합교과는 노드에 교육과정이 있는 절만(총창 278/361 · 통합 146/146).
    시험날 목표율 클램프는 갈래별 due 위에 그대로. 모형(단계) 카드는 대상 아님(간격 문제 아님 · 메타). */
 const CRET_DEF=0.95;
-let fsrsCfg={ret:RET_DEF, retAt:0, w:null, wAt:'', xret:XRET_DEF, xretAt:0, cret:CRET_DEF, cretAt:0, focus:null, focusAt:0};
+let fsrsCfg={ret:RET_DEF, retAt:0, w:null, wAt:'', wSrc:'',   /* wAt = 적용한 시각 · wSrc = 묶음을 만든 시각(11-11 C4-03 — fwSrcNow 주석) */ xret:XRET_DEF, xretAt:0, cret:CRET_DEF, cretAt:0, focus:null, focusAt:0};
 let engine=null, engineC=null;
 /* 🔴 **집중 암기** (동하 결정 09-17 · 메타 목요일 묶음 ② 「집중 암기 슬라이더 만들어서 태그 지정해 줄 수 있도록」).
    09-14~16엔 앱이 교육과정 갈래를 스스로 판정했다(노드 「교육과정」 ∨ tags[0] 「2022 개정」 → cret 0.95). 이제 **어느 카드를 그 목표율로 돌릴지는 동하가 고른다** —
@@ -5261,7 +5261,15 @@ function engOf(ret){ let e=_engs.get(ret); if(!e){ const p={
     request_retention: ret,
     enable_fuzz: true,    // 버스트 투입 시 due 뭉침 방지 (동하 승인 2026-08-19)
     enable_short_term: false,   // 당일 재학습 단계를 쓰지 않는다 (당일 재출 없음 — 2026-08-21)
-  }; if(Array.isArray(fsrsCfg.w)&&fsrsCfg.w.length) p.w=fsrsCfg.w; e=FSRS.fsrs(FSRS.generatorParameters(p)); _engs.set(ret, e); } return e; }
+  }; if(fwValid(fsrsCfg.w)) p.w=fsrsCfg.w; e=FSRS.fsrs(FSRS.generatorParameters(p)); _engs.set(ret, e); } return e; }
+/* 🔴 맞춤값 꼴 검사 — **길이 21 ∧ 전 원소 유한수** (독립 감사 11-11 C4-04). ts-fsrs는 깨진 배열을 예외 없이 받는다:
+   길이가 안 맞으면 말없이 표준값, NaN·null은 하한(0.001…)으로 눌러 써서 화면은 「맞춤값 적용」인데 일정은 엉뚱했다(오늘 풀 것 1,167 → 8,344).
+   엔진에 넣는 자리(engOf·시뮬) · 적용(applyFw) · 후보(fwCand) · 파일(loadFsrsParams)이 전부 이 술어를 지난다. 깨진 값이 동기로 들어와도 엔진은 표준값이다. */
+function fwValid(w){ return Array.isArray(w) && w.length===21 && w.every(x=>typeof x==='number' && isFinite(x)); }
+/* 맞춤값의 두 시각(C4-03) — `wAt` = **적용한 시각**(병합 열쇠 · 더 나중에 정한 쪽이 이긴다) · `wSrc` = 그 묶음을 **만든 시각**(계산·파일 `at` · 「새것인가」 판정).
+   예전엔 wAt 하나에 묶음 시각을 넣어, 더 낡은 파일을 적용하면 wAt이 뒤로 가서 다른 기기 사본과 만나 조용히 되돌아갔다. wSrc가 없는 옛 값은 wAt이 곧 묶음 시각이다. */
+function fwSrcNow(){ return fwValid(fsrsCfg.w) ? (fsrsCfg.wSrc||fsrsCfg.wAt||'') : ''; }
+function fwNewer(a, b){ const x=Date.parse(a||''), y=Date.parse(b||''); return isFinite(x) && (!isFinite(y) || x>y); }   // a가 b보다 새것인가(b가 없으면 참)
 /* t = 채점 시각(ms). 🔴 rate·replayLog는 반드시 t를 넘긴다 — 빼면 「지금 목표율」로 뽑혀 소급이 되살아난다 */
 function engFor(id, t){ const cur=isCurric(BYID[id]); if(t===undefined) return cur?engineC:engine;
   return engOf(cur ? retOn(fsrsCfg.cretHist, t, curricRet()) : retOn(fsrsCfg.retHist, t, fsrsCfg.ret)); }
@@ -5284,7 +5292,7 @@ async function loadFsrsParams(){
     const r=await fetch(FSRSP_PATH+'?t='+Date.now(), {cache:'no-store'});
     if(!r.ok) return;                       // 아직 루틴이 안 만들었다 = 정상
     const j=await r.json();
-    if(j && Array.isArray(j.w) && j.w.length && j.at) FSRSP=j;
+    if(j && fwValid(j.w) && j.at) FSRSP=j;   // 깨진 파일(길이·유한수)은 없는 것으로 친다(C4-04)
   }catch(e){ /* 없거나 깨졌으면 표준값 그대로 */ }
 }
 const EXAM_END = new Date(EXAM_DAY+'T12:00:00+09:00');
@@ -5901,7 +5909,7 @@ function sessFile(){ return {v:1, sessions:[...sessions, ...sessTomb], hoedok:st
   cret:fsrsCfg.cret, cretAt:fsrsCfg.cretAt||0, cretHist:fsrsCfg.cretHist||[],      // 집중 암기 목표율(09-14 교육과정 → 09-17 집중 암기) — 같은 규칙
   focus:fsrsCfg.focus||null, focusAt:fsrsCfg.focusAt||0,   // 집중 암기 대상 {units,mids} — 더 새것이 이긴다 · null = 기본(2022 개정 교육과정)
   xret:fsrsCfg.xret, xretAt:fsrsCfg.xretAt||0,      // 시험날 목표율 — ret과 같은 「더 새것이 이긴다」 규칙
-  fw:fsrsCfg.w||null, fwAt:fsrsCfg.wAt||'',
+  fw:fsrsCfg.w||null, fwAt:fsrsCfg.wAt||'', fwSrc:fsrsCfg.wSrc||'',   // fwAt = 적용한 시각(병합 열쇠) · fwSrc = 묶음을 만든 시각(C4-03)
   rest:{dow:rest.dow, days:rest.days, skip:rest.skip||[]}, restAt:rest.at||0,
   ivShow:{v:ivShow.v}, ivShowAt:ivShow.at||0,
   reshow:{v:reshow.v}, reshowAt:reshow.at||0}; }   // 「다시」 당일 재출 — 기기 간 동기(09-12)
@@ -6366,9 +6374,9 @@ function mergeSessInto(remote){
   /* 시험날 목표율도 같은 규칙 — 바뀌면 **due가 움직이므로** 재계산 플래그를 세운다(F1-5와 같은 자리) */
   if(remote && remote.xret!==undefined && (remote.xretAt||0) > (fsrsCfg.xretAt||0)){
     fsrsCfg.xret=remote.xret; fsrsCfg.xretAt=remote.xretAt; mergedSched=true; }
-  /* 개인 맞춤 파라미터도 같은 규칙 — `wAt`(파라미터 묶음 시각)이 더 새것이 이긴다 */
+  /* 개인 맞춤 파라미터도 같은 규칙 — `wAt`(적용한 시각 · 11-11 전 값은 묶음 시각)이 더 새것이 이긴다 */
   if(remote && remote.fwAt!==undefined && (remote.fwAt||'') > (fsrsCfg.wAt||'')){
-    fsrsCfg.w=remote.fw||null; fsrsCfg.wAt=remote.fwAt||''; buildEngine(); mergedSched=true; }
+    fsrsCfg.w=remote.fw||null; fsrsCfg.wAt=remote.fwAt||''; fsrsCfg.wSrc=remote.fwSrc||''; buildEngine(); mergedSched=true; }
   /* 휴식일도 「더 새것이 이긴다」 — cap과 같은 규칙. 🔴 목록을 합집합으로 합치면 **지운 날이 되살아난다.** */
   if(remote && remote.rest && (remote.restAt||0) > (rest.at||0)){
     rest.dow=remote.rest.dow; rest.days=remote.rest.days||[]; rest.skip=remote.rest.skip||[]; rest.at=remote.restAt; restReset();
@@ -7375,7 +7383,7 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
       if(retHistMerge(fsrsCfg.retHist, sf.retHist) | retHistMerge(fsrsCfg.cretHist, sf.cretHist)) buildEngine();   // 목표율 이력(10-07)
       if(sf.focusAt!==undefined && (sf.focusAt||0) > (fsrsCfg.focusAt||0)){ fsrsCfg.focus=sf.focus||null; fsrsCfg.focusAt=sf.focusAt; _focusSel=null; }
       if(sf.xret!==undefined && (sf.xretAt||0) > (fsrsCfg.xretAt||0)){ fsrsCfg.xret=sf.xret; fsrsCfg.xretAt=sf.xretAt; }
-      if(sf.fwAt!==undefined && (sf.fwAt||'') > (fsrsCfg.wAt||'')){ fsrsCfg.w=sf.fw||null; fsrsCfg.wAt=sf.fwAt||''; buildEngine(); }
+      if(sf.fwAt!==undefined && (sf.fwAt||'') > (fsrsCfg.wAt||'')){ fsrsCfg.w=sf.fw||null; fsrsCfg.wAt=sf.fwAt||''; fsrsCfg.wSrc=sf.fwSrc||''; buildEngine(); }
       if(sf.rest && (sf.restAt||0) > (rest.at||0)){ rest.dow=sf.rest.dow; rest.days=sf.rest.days||[]; rest.skip=sf.rest.skip||[]; rest.at=sf.restAt; restReset(); }
       if(sf.ivShow && (sf.ivShowAt||0) > (ivShow.at||0)){ ivShow.v=!!sf.ivShow.v; ivShow.at=sf.ivShowAt; lsSet(K_IVSHOW, JSON.stringify(ivShow)); applyIv(); }
       if(sf.reshow && (sf.reshowAt||0) > (reshow.at||0)) setReshow(sf.reshow.v, sf.reshowAt, true);
@@ -12052,7 +12060,7 @@ $('focusPick').onclick=()=>{ const f=focusSel();   // 설정은 열어 둔 채 �
 const K_FW_CAND='cards_fw_cand_v1';
 let _fsrsMod=null, _fwBusy=false, _fwMsg='';
 async function fsrsMod(){ if(!_fsrsMod){ const m=await import('./vendor/fsrs-browser/fsrs_browser.js'); await m.default(); _fsrsMod=m; } return _fsrsMod; }
-function fwCand(){ try{ const c=JSON.parse(lsGet(K_FW_CAND)||'null'); return c&&Array.isArray(c.w)&&c.w.length===21?c:null; }catch(e){ return null; } }
+function fwCand(){ try{ const c=JSON.parse(lsGet(K_FW_CAND)||'null'); return c&&fwValid(c.w)?c:null; }catch(e){ return null; } }   // 유한수까지 본다(C4-04 — JSON을 거친 NaN은 null이 된다)
 function fwItems(){           // → {items:[{r:[..], d:[..], last}], n(첫 채점 수), maxDay}
   const by=new Map();
   for(const e of state.log){ if(e[3]&&e[3].re) continue; const g=e[2]; if(!(g>=1&&g<=4)) continue;
@@ -12089,7 +12097,7 @@ async function fwCompute(){
     const M=await fsrsMod(), {items, n, maxDay}=fwItems(), cut=maxDay-6;
     const tr=items.filter(x=>x.last<cut), ho=items.filter(x=>x.last>=cut);
     if(tr.length<500||ho.length<100){ _fwMsg='기록이 아직 적어서 비교할 수 없어요'; return; }
-    const cur=(fsrsCfg.w&&fsrsCfg.w.length===21)?fsrsCfg.w:Array.from(M.DEFAULT_PARAMETERS());
+    const cur=fwValid(fsrsCfg.w)?fsrsCfg.w:Array.from(M.DEFAULT_PARAMETERS());
     const wTr=fwFit(M, tr), llOld=fwLogLoss(M, cur, ho), llNew=fwLogLoss(M, wTr, ho);
     if(!(llNew<llOld)){ lsDel(K_FW_CAND); _fwMsg=`지금 값이 더 잘 맞아요 — 최근 7일 예측 오차 ${llOld.toFixed(4)} ≤ 새 값 ${llNew.toFixed(4)} · 바꿀 것 없음`; return; }
     const w=fwFit(M, items);
@@ -12101,10 +12109,13 @@ async function fwCompute(){
 function renderFwUI(){
   const box=$('fwBox'), fld=$('fwField'); if(!box||!fld) return;
   fld.style.display='';
-  const applied=!!(fsrsCfg.w&&fsrsCfg.wAt);
+  const applied=!!(fwValid(fsrsCfg.w)&&fsrsCfg.wAt);                                     // 깨진 값은 엔진이 표준값으로 돈다 — 화면도 「표준값」(C4-04)
   const md=s=>{ const d=new Date(s); return isNaN(d)?String(s||'').slice(5,10):(d.getMonth()+1)+'/'+d.getDate(); };
-  let cand=fwCand(); if(cand && cand.at===(fsrsCfg.wAt||'')) cand=null;                 // 이미 적용한 후보
-  const fileCand=(!cand && FSRSP && FSRSP.at!==(fsrsCfg.wAt||'')) ? FSRSP : null;       // 루틴·QC가 만든 cards-fsrs.json(이 기기 계산 후보가 없을 때만)
+  const src=fwSrcNow();                                                                  // 지금 적용된 묶음을 만든 시각(표준값이면 '')
+  let cand=fwCand(); if(cand && cand.at===src) cand=null;                               // 이미 적용한 후보
+  /* 🔴 파일 후보는 **지금 적용된 것보다 새것일 때만**(독립 감사 11-11 C4-03). 예전엔 `!==`라 더 낡은 파일(09-18)이
+     「새 맞춤값(파일)」로 상시 떠 있었고(적용값 09-30), 누르면 새 값을 옛 값으로 덮었다. 표준값 상태(src 없음)면 파일은 그대로 권한다. */
+  const fileCand=(!cand && FSRSP && fwNewer(FSRSP.at, src)) ? FSRSP : null;             // 루틴·QC가 만든 cards-fsrs.json(이 기기 계산 후보가 없을 때만)
   let h=`<div class="set-row"><span>지금 ${applied?`맞춤값 · ${md(fsrsCfg.wAt)} 적용`:'표준값'}</span></div>`;
   if(cand){ const pct=Math.round((1-cand.llNew/cand.llOld)*1000)/10;
     h+=`<div class="fw-cand"><div class="fw-ct">새 맞춤값</div>
@@ -12120,7 +12131,7 @@ function renderFwUI(){
   /* 계산 결과 닫기(10-08 동하) — 후보는 버린다(다시 「계산」하면 된다) · 안내 글은 지운다 */
   const dr=$('fwDrop'); if(dr) dr.onclick=()=>{ lsDel(K_FW_CAND); _fwMsg=''; renderFwUI(); };
   const mx=$('fwMsgX'); if(mx) mx.onclick=()=>{ _fwMsg=''; renderFwUI(); };
-  const rs=$('fwReset'); if(rs) rs.onclick=()=>{ lsDel(K_FW_CAND); _fwMsg=''; applyFw(null, new Date().toISOString()); };
+  const rs=$('fwReset'); if(rs) rs.onclick=()=>{ lsDel(K_FW_CAND); _fwMsg=''; applyFw(null, ''); };
 }
 function fwFcTable(c){           // 적용 전 7일 예보 — 날짜가 줄 · 지금/새 값이 칸(폰에서 글자가 세로로 서지 않게 · 10-01 동하)
   if(!c.fcOld||!c.fcNew) return '';
@@ -12129,10 +12140,16 @@ function fwFcTable(c){           // 적용 전 7일 예보 — 날짜가 줄 · 
     + c.fcOld.map((x,i)=>`<tr><td>${i?dd(x.k):'오늘'}</td><td>${x.n.toLocaleString()}</td><td class="nw">${c.fcNew[i].n.toLocaleString()}</td></tr>`).join('')
     + `<tr class="sum"><td>8일 합</td><td>${sum(c.fcOld).toLocaleString()}</td><td class="nw">${sum(c.fcNew).toLocaleString()}</td></tr></table></div>`;
 }
-function applyFw(w, at){
+function applyFw(w, src){        // w = 맞춤값(null = 표준값으로) · src = 그 묶음을 만든 시각(계산 `at` · 파일 `at`)
+  /* 🔴 깨진 값은 적용하지 않는다(독립 감사 11-11 C4-04) — 예전엔 길이·유한수 검사 없이 저장·동기돼, 화면은 「맞춤값 적용」인데 엔진은 표준값·최솟값 묶음이었다 */
+  if(w!=null && !fwValid(w)){ toast('맞춤값이 깨져 있어요(21개 숫자가 아님) — 적용하지 않았어요'); return; }
   const before=dueTodayCount();
-  fsrsCfg.w = (Array.isArray(w)&&w.length)? w.slice() : null;
-  fsrsCfg.wAt = at||new Date().toISOString();
+  fsrsCfg.w = w ? w.slice() : null;
+  /* 🔴 wAt은 **지금**(적용한 시각)이다 — 병합은 「더 나중에 정한 쪽」이 이긴다(C4-03). 묶음 시각은 wSrc로 따로 둔다:
+     예전엔 wAt=묶음 시각이라 더 낡은 묶음(파일 09-18)을 적용하면 wAt이 뒤로 가, 09-30을 든 다른 기기 사본과 만나 조용히 되돌아갔다
+     (「표준값으로」 뒤에 파일 값을 다시 적용해도 같은 이유로 졌다). */
+  fsrsCfg.wAt = new Date().toISOString();
+  fsrsCfg.wSrc = w ? (src||fsrsCfg.wAt) : '';
   buildEngine();
   replayLog();                    // 파라미터가 바뀌면 S·D부터 다시 뽑힌다 — 로그가 정본이라 전량 재생
   restReset();
@@ -13361,7 +13378,7 @@ let SIM_ENGINE=null;
 function simEngine(){                      // 시뮬 전용 엔진 — **fuzz를 끈다**(예측선이 흔들리면 안 된다) · 갈래별 둘
   if(SIM_ENGINE) return SIM_ENGINE;
   const mk=ret=>{ const p={request_retention:ret, enable_fuzz:false, enable_short_term:false};
-    if(Array.isArray(fsrsCfg.w)&&fsrsCfg.w.length) p.w=fsrsCfg.w; return FSRS.fsrs(FSRS.generatorParameters(p)); };
+    if(fwValid(fsrsCfg.w)) p.w=fsrsCfg.w; return FSRS.fsrs(FSRS.generatorParameters(p)); };
   const a=mk(fsrsCfg.ret), b=mk(curricRet());
   SIM_ENGINE={ for:id=>(isCurric(BYID[id])?b:a), get_retrievability:(f,d,z)=>a.get_retrievability(f,d,z) };   // R 계산은 ret과 무관
   return SIM_ENGINE;

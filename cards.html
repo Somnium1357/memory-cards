@@ -7704,9 +7704,23 @@ function refillSess(sx){ // 전체 범위 세션은 날이 바뀌면 스스로 �
     const nq=new Set(sx.q), from=Math.min(queue.length, qPos+($('scrSolve').classList.contains('on')?1:0));
     const tail=queue.slice(from), kept=tail.filter(c=>c._re||nq.has(c.id)||settledToday(c));
     if(kept.length<tail.length) queue=[...queue.slice(0,from), ...kept];
-    const inQ=new Set(queue.map(c=>c.id));
-    const add=sx.q.filter(id=>!inQ.has(id)).map(id=>BYID[id]).filter(Boolean);
-    if(add.length||kept.length<tail.length){ queue.push(...add); counts(); } }
+    /* 🔴 붙이는 것도 **두 문 + 신규 하루 최대**를 지난다(독립 감사 11-11 C2-01 — 이 분기가 09-05 F4-2 수리로 생기며 문 없이 붙였다).
+       저장 큐에는 keepIds가 「오늘 못 낸 보류분」(격리·newMax 초과)을 남겨 둔다 — 그걸 그대로 붙이면 refreshRemote의 day 리셋 뒤
+       홈·세션 화면이 다시 그려지는 순간 보류분이 전부 화면 큐에 올라왔다(실측: newMax 5인데 신규 20장 · 같은 노드 전방·역방 같은 날). */
+    const n=liveAppend(sx, sx.q);
+    if(n||kept.length<tail.length) counts(); }
+}
+/* 🔴 **풀던 화면 큐 끝에 카드를 붙이는 한 문** (독립 감사 11-11 C2-01). 화면 큐를 통째로 다시 짜는 것은 requeueLive, 끝에 얹는 것은 여기.
+   playSess와 같은 규칙을 화면 잔량 기준으로 건다 — sessCards의 newHeld · 문 ①(gateIn · 씨앗 = 화면 잔량) · 신규 하루 최대(newCap · 화면 잔량의 신규가 몫을 먼저 쓴다).
+   못 붙인 것은 저장 큐에 그대로 남는다(내일로). 지목 세션(pick)은 gateIn이 raw로 통과시킨다. 붙인 장수를 돌려준다. */
+function liveAppend(sx, ids){
+  const inQ=new Set(queue.map(c=>c.id)), rest=queue.slice(qPos).filter(c=>!c._re);
+  const cand=(ids||[]).filter(id=>!inQ.has(id)).map(id=>BYID[id]).filter(c=>c && !newHeld(c, sx.scope));
+  if(!cand.length) return 0;
+  const pass=new Set(gateIn(cand, rest, sx.pick).map(c=>c.id));
+  const add=newCap(sx, [...rest, ...cand.filter(c=>pass.has(c.id))]).filter(c=>!inQ.has(c.id));
+  queue.push(...add);
+  return add.length;
 }
 /* 🔴 **「몇 장」은 실제로 낼 장수다** (동하 2026-09-01: 「카드 장수 보여주는 건 학습량 어림하는
    용도인데, 그건 실제 카드량에 붙는 거니까」). 예전에는 **저장 큐 길이**를 그대로 셌다 —
@@ -7798,7 +7812,7 @@ function addScopeToSess(sx, sel){ // 내용 추가 — sel={units:[],mids:[]}
     scGrow(sx);
     if(sx.scDel) for(const k of [...(sel.units||[]), ...(sel.mids||[])]) delete sx.scDel[k];
   }
-  if(curSess&&curSess.id===sx.id){ for(const id of add){ if(BYID[id])queue.push(BYID[id]); } counts(); }
+  if(curSess&&curSess.id===sx.id){ liveAppend(sx, add); counts(); }   // 화면 큐에 얹는 한 문(C2-01) — 신규 하루 최대를 넘는 몫은 저장 큐에 남아 다음 날 나온다(다시 열면 playSess가 거는 것과 같게)
   sx.day=todayKey(); sx.fillAt=Date.now(); saveSessionsFlush();
   return add.length;
 }
@@ -11382,7 +11396,7 @@ function renderSession(){
     sx.q=refillQ.slice(); sx.day=todayKey(); sx.fillAt=Date.now();
     qGrow(sx); if(sx.qDel) for(const id of refillQ) delete sx.qDel[id];   // 사람이 다시 채웠다 = 축소 취소
     saveSessionsFlush();
-    if(live){ for(const id of refillQ){ if(BYID[id])queue.push(BYID[id]); } counts(); }
+    if(live){ liveAppend(sx, refillQ); counts(); }   // 화면 큐에 얹는 한 문(C2-01)
     toast(`${refillQ.length}장 채웠어요`); renderSession();
   };
   $('ssEx').onclick=()=>openUnitPick({title:'빼 둘 주제 고르기',

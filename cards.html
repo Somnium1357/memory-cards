@@ -5326,9 +5326,18 @@ function daysToR(card, target){        // R이 target에 닿는 날까지의 일
   while(hi-lo>1){ const mid=(lo+hi)>>1; if(R(mid)>=target) lo=mid; else hi=mid; }
   return lo;
 }
+/* 🔴 **시험이 지났다 = 시험일 규칙을 전부 끈다** (독립 감사 11-11 · 뿌리 「시험일 뒤 클램프」 C4-01·02·05·11 = C2-02·06·08 = C7-02 · 동하 결정 대기 뒤 반영).
+   시험일 규칙은 넷이다 — ① clampDue(시험날 목표율로 당김) ② effDueKey의 시험일 상한 ③ 설정 「시험날 기억 목표」 ④ 통계 「시험까지의 궤적」·D-day.
+   전부 **이 술어 하나**를 본다. 시험 뒤에 이 규칙들이 살아 있으면 「지난 시험 주(D-7~D-1)」라는 **과거 날짜**를 만들어 낸다:
+   「n일 뒤로」가 며칠을 넣든 10-31~11-06으로 가고(미루기가 당기기로 뒤집힘) · 목표율 슬라이더가 수천 장을 지난 주로 끌어와 오늘 큐가 1,167 → 7,507 ·
+   밀린 카드 나눠 갚기가 무효 · 통계가 「D--4」.
+   🔴 재계산(replayLog)도 이 술어를 지난다 — 시험 전에 「시험 대비로 앞당겨」 잡혔다가 그 주에 못 푼 카드는 **원래 FSRS 간격**으로 돌아간다
+      (앞당길 이유였던 시험이 끝났다 · 채점·로그는 그대로 · 파생 due만 바뀐다 · 모든 기기가 시험 뒤라 어느 기기가 재계산해도 같다).
+   ⚠ 다음 시험일이 정해지면 `EXAM_DAY` 한 줄만 바꾼다 — 이 술어가 거짓이 되어 네 규칙이 새 날짜 기준으로 저절로 다시 선다. */
+function examOver(){ return Date.now() > EXAM_END.getTime(); }
 function clampDue(due, id, card){
   const d=(due instanceof Date)?due:new Date(due);
-  if(d<=EXAM_END) return d;                                   // ① 시험 전이면 그대로
+  if(d<=EXAM_END || examOver()) return d;                     // ① 시험 전이면 그대로 · 시험이 지났으면 규칙 자체가 없다
   if(card){
     let R=0; try{ R=engine.get_retrievability(card, EXAM_END, false); }catch(e){}
     if(R>=examRet()) return d;                                // ③ 시험날에도 충분히 남는다 → 안 당긴다
@@ -5479,7 +5488,9 @@ function effDueKey(k, id){               // 저장된 due → 화면에 쓰는 �
   /* 시험일 상한 — 휴식일 뒤로 밀기·백로그 슬롯이 **시험 뒤로 넘겨 버린** 경우만 되돌린다.
      🔴 저장된 due 자체가 시험 뒤인 카드는 **그대로 둔다** — 「시험날에도 충분히 남는다」고 판정돼 안 당긴 카드다
      (동하 결정 09-06 · 목표율 클램프). 예전처럼 여기서 다시 당기면 그 판정이 무효가 된다. */
-  if(d>=EXAM_DAY && k<=EXAM_DAY){ d=examClampKey(id); let g=0; while(isRestDay(d) && g++<7) d=dkAdd(d,-1); }   // 🔴 시험 **당일**도 막고(>=) · 창 자리가 휴식일이면 앞날로(리뷰 09-23 R17)
+  /* 🔴 시험이 지나면 이 상한도 없다(examOver · 감사 11-11 C2-08 = C4-11) — 시험 뒤엔 백로그 슬롯이 보낸 자리(오늘·내일·모레)가 전부 `>=EXAM_DAY`라
+     밀린 카드의 실효 due가 지난 시험 주로 되돌려져 「나눠 갚기」가 무효였다(같은 백로그 600장: 시험 전 오늘 500 · 시험 다음 날 오늘 600). */
+  if(!examOver() && d>=EXAM_DAY && k<=EXAM_DAY){ d=examClampKey(id); let g=0; while(isRestDay(d) && g++<7) d=dkAdd(d,-1); }   // 🔴 시험 **당일**도 막고(>=) · 창 자리가 휴식일이면 앞날로(리뷰 09-23 R17)
   _effCache.set(ck, d); return d;
 }
 function weekKeyOf(d){            // ISO 주 (월요일 시작) — 하루 경계 4시를 먼저 적용한 날짜 기준
@@ -5611,7 +5622,7 @@ function setBase(s, fsrs, id){
   touch(s); cacheState(); setDirty(true);
 }
 function forgetCard(c){ setBase(st(c.id), null, c.id); }
-function setDueDays(c,n){ // due를 n일 뒤로 (FSRS 상태가 있는 카드만) — 시험일 클램프 유지
+function setDueDays(c,n){ // due를 n일 뒤로 (FSRS 상태가 있는 카드만) — 시험일 클램프 유지(시험 전에만 · 시험 뒤엔 clampDue가 그대로 돌려준다 = examOver · C4-01)
   const s=st(c.id); if(!s.fsrs) return false;
   let d=clampDue(new Date(Date.now()+n*86400000), c.id);
   setBase(s, {...s.fsrs, due:d.toISOString()}, c.id);
@@ -11912,10 +11923,12 @@ function renderRetUI(){
   const xp=Math.round(examRet()*100);
   const xr=$('xretRange'); if(xr) xr.value=xp;
   const xv=$('xretVal'); if(xv) xv.textContent=xp+'%';
-  const xl=$('xretLoad'); if(xl) xl.textContent='당길 카드 '+examPullCount().toLocaleString()+'장';
+  const xl=$('xretLoad'), over=examOver(); if(xl) xl.textContent=over ? '시험이 지나 쓰지 않아요' : '당길 카드 '+examPullCount().toLocaleString()+'장';
+  if(xr){ xr.disabled=over; xr.style.opacity=over?'.4':''; }   // 시험 뒤엔 규칙이 꺼져 있다(examOver) — 움직여도 바뀔 것이 없다
 }
 /* 지금 규칙으로 「시험 전에 당겨올」 카드 수 — 설정 화면에서만 부른다(전수 스캔) */
 function examPullCount(){
+  if(examOver()) return 0;
   let n=0;
   for(const c of DATA){ const s0=state.cards[c.id];
     if(!s0||!s0.fsrs||s0.retired) continue;
@@ -11927,6 +11940,9 @@ function examPullCount(){
 /* 🔴 시험날 목표율을 바꾸면 **due가 통째로 다시 잡힌다** — 복습 강도와 같은 삼종 세트로 돌린다. */
 function setExamRet(v){
   if(!(v>0&&v<1)){ toast('값이 이상해요'); return; }
+  /* 🔴 시험이 지나면 받지 않는다(examOver · 감사 11-11 C4-02) — 예전엔 시험 뒤에 움직이면 전 로그가 새 R*로 다시 뽑혀
+     지난 시험 주로 수천 장이 당겨졌다(91 → 99%: 오늘 풀 것 1,167 → 7,507 · xretAt이 새것이라 다른 기기에도 번짐). */
+  if(examOver()){ renderRetUI(); toast('시험이 지나 시험날 목표는 쓰지 않아요'); return; }
   if(Math.abs(v-examRet())<1e-9) return;
   const before=dueTodayCount();
   fsrsCfg.xret=v; fsrsCfg.xretAt=Date.now();
@@ -13500,13 +13516,15 @@ function trajChart(hist, pred, zero){
       +'" fill="none" stroke="var(--mute)" stroke-width="1.5" stroke-dasharray="2 4"/>';
   }
   g+='<line x1="'+x(nH-1).toFixed(1)+'" y1="0" x2="'+x(nH-1).toFixed(1)+'" y2="'+(H-PADB)+'" stroke="var(--line)" stroke-width="1"/>';
-  g+='<line x1="'+W+'" y1="0" x2="'+W+'" y2="'+(H-PADB)+'" stroke="var(--again)" stroke-width="1.5"/>';
+  if(pred.length) g+='<line x1="'+W+'" y1="0" x2="'+W+'" y2="'+(H-PADB)+'" stroke="var(--again)" stroke-width="1.5"/>';   // 시험일 선 — 예측 구간이 있을 때만(시험 뒤엔 마지막 기록 날 위에 섰다)
   /* 축 글자는 SVG 밖(HTML) — 늘이기로 글자가 눌렸다(아이폰 0.49배 · UI 리뷰 🟠 · 위 「글자는 SVG 안에 두지 마라」 원칙) */
   const lab=(i,t,anc)=>{ const pc=(Math.min(W-2,Math.max(2,x(i)))/W*100).toFixed(2); const tr=anc==='start'?'0':anc==='end'?'-100%':'-50%';
     return '<span style="position:absolute;bottom:2px;left:'+pc+'%;transform:translateX('+tr+');font-size:10.5px;color:var(--mute);white-space:nowrap">'+t+'</span>'; };
   const k0=all[0].k.slice(5).replace('-','/');
+  /* 예측 구간이 없으면(시험 뒤 · examOver) 「시험」 글자를 안 단다 — 「오늘」과 같은 끝점에 겹쳤다(감사 11-11 C4-05) · 끝 글자는 그 날 날짜 */
+  const kN=all[nH-1].k.slice(5).replace('-','/');
   return '<div style="position:relative"><svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="width:100%;height:'+H+'px;display:block">'+g+'</svg>'
-    +lab(0, k0, 'start')+lab(nH-1,'오늘','middle')+lab(L-1,'시험','end')+'</div>';
+    +lab(0, k0, 'start')+(pred.length ? lab(nH-1,'오늘','middle')+lab(L-1,'시험','end') : (nH>1?lab(nH-1,kN,'end'):''))+'</div>';
 }
 /* 궤적은 무겁다(시뮬 ≈1.4초) — 통계를 열 때마다 다시 돌리지 않는다.
    🔴 렌더 경로에 전수 계산을 넣으면 화면이 죽는다(09-06 F2-1 회귀에서 배운 것). */
@@ -13773,12 +13791,19 @@ function renderStats(){
   let h='';
 
   /* ═══ A. 시험까지의 궤적 ═══ */
-  const T=trajectory(), M=maturitySplit(), dd=dDay();
+  const T=trajectory(), M=maturitySplit(), dd=dDay(), over=examOver();
   const cap=T?T.inp.cap:dailyThroughput();
+  /* 🔴 시험이 지나면 「지금까지의 궤적」 — 실측만 그린다(examOver · 감사 11-11 C4-05 = C2-06 = C7-02). 예전엔 「D--4 · 이 속도면 시험날 굳음 약 …」에
+     「오늘」·「시험」 글자가 겹치고 「신규를 안 넣으면(0장)」이 떴다(예측 구간이 0일). 예측·시험날 값은 다음 시험일이 정해지면 저절로 돌아온다. */
   if(!T){
-    h+='<div class="card-box"><h3>시험까지의 궤적</h3>'
-      +'<div class="cap">D-'+dd+' · 굳음 <b>'+M.mature.toLocaleString()+'</b> / '+alive.toLocaleString()+'</div>'
-      +'<div class="empty-note" style="padding:24px 0">시험까지 그려 보는 중…</div></div>';
+    h+='<div class="card-box"><h3>'+(over?'지금까지의 궤적':'시험까지의 궤적')+'</h3>'
+      +'<div class="cap">'+(over?'':'D-'+dd+' · ')+'굳음 <b>'+M.mature.toLocaleString()+'</b> / '+alive.toLocaleString()+'</div>'
+      +'<div class="empty-note" style="padding:24px 0">'+(over?'그려 보는 중…':'시험까지 그려 보는 중…')+'</div></div>';
+  } else if(over){
+    h+='<div class="card-box"><h3>지금까지의 궤적</h3>'
+      +'<div class="cap">굳음 <b>'+M.mature.toLocaleString()+'</b> / '+alive.toLocaleString()+(alive?' ('+Math.round(M.mature/alive*100)+'%)':'')+'</div>'
+      +trajChart(T.hist, [], [])
+      +'<div class="cap" style="margin-top:6px">굳음(21일 이상) · 무름 · 안 나옴 순으로 쌓았어요</div></div>';
   } else {
     const end=T.pred.length?T.pred[T.pred.length-1]:{hard:M.mature};
     const pctEnd=alive?Math.round(end.hard/alive*100):0;

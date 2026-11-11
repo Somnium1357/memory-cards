@@ -10762,26 +10762,40 @@ function siteRender(){ const b=$('siteBody'); if(!b || !$('scrSite').classList.c
 
 /* ═══ 공개 피드백 추가 요청(10-09 동하 「보충 요청은 내가 예/아니오」 · fb_auto) ═══
    PC 수신기(listen.py asks_out)가 data 브랜치 fb-asks.json 에 올린 「보충 요청」(요지·제안·근거 인용 · 원문 없음) → 홈 「추가 요청 N건」 줄 → 시트 [보류][추가]
-   답 = Firebase ans/<id> 에 1(추가)·0(보류) — 폰 알림 버튼과 같은 칸 · 이미 답한 것(ans 에 있음)은 안 보인다 · PC가 답을 받아 처리하는 쪽은 §5.0 -4 ④
+   🔴 답 = **이 기기 GitHub 열쇠로** data 브랜치 fb-notes.json 의 그 id 칸에 `ans` 1(추가)·0(보류) + `ans_at` → 신호 칸(sig)을 깨운다(독립 감사 11-11 C3-02 = P1-05 · 동하 「앱은 열쇠 길 + 폰 단추 유지」).
+   예전엔 Firebase `ans/<id>`(누구나 쓰는 칸 · id는 공개 fb-asks.json 에 실림)에 써서 남이 대신 「추가」를 누를 수 있었다 — 그 칸은 이제 쓰지도 읽지도 않는다(수신기가 공개 id 로 온 답을 버린다 · 폰 알림 단추는 요청마다 무작위 주소).
+   이미 답한 것 = fb-notes.json 에 `ans` 가 있는 id(열쇠 있는 기기만 읽는다) + 이번에 누른 것 · 열쇠 없는 기기는 보기만 한다 · 계약 정본 = fb_auto\listen.py `notes_all`·`answers_gh`
    rawGet 을 쓰지 않는다 — 실패가 rawNetFail(부팅 「못 받았다」)로 번지면 안 된다(없어도 그만인 파일) */
 const FB_QS='https://rn-feedback-signal-default-rtdb.asia-southeast1.firebasedatabase.app/qs.json';
 async function siteQs(){ try{ const r=await fetch(FB_QS,{cache:'no-store'}); if(!r.ok) return null; return (await r.json())||{}; }catch(e){ return null; } }
-const FB_ANS='https://rn-feedback-signal-default-rtdb.asia-southeast1.firebasedatabase.app/ans';
-/* 메모(10-09 동하 「모델한테 말해야 할 일이 있는데」 · 예: 「~는 범위 — 5개 전부」) — 메모는 모델에게 가는 지시라 아무나 쓰는 Firebase 칸에 싣지 않는다:
-   이 기기 GitHub 열쇠로 data 브랜치 fb-notes.json {id: {note, mode: add|redo, at}} 에 쓰고 → 추가 = ans 1(수신기가 메모를 같이 읽음) · 다시 제안 = 신호 칸(sig)만 깨운다 */
+/* 메모(10-09 동하 「모델한테 말해야 할 일이 있는데」 · 예: 「~는 범위 — 5개 전부」)도 답도 모델·배포로 가는 지시라 아무나 쓰는 Firebase 칸에 싣지 않는다:
+   fb-notes.json {id: {note?(≤300), mode?: add|redo, at?, ans?: 1|0, ans_at?}} — 그 id 칸의 다른 값은 보존하고 바뀐 칸만 얹는다(한 번의 ghPut).
+   · 추가 = {ans:1, ans_at}(메모가 있으면 {note, mode:'add', at}도 같이) · 보류 = {ans:0, ans_at} · 다시 제안 = {note, mode:'redo', at}(ans 는 지운다)
+   · 쓴 뒤 신호 칸(sig)을 깨운다 — 수신기가 신호마다 fb-notes.json 을 읽는다(`ans_at` 이 마지막 다시 제안 `at` 보다 앞이면 버린다) */
 const FB_NOTES='fb-notes.json', FB_SIG='https://rn-feedback-signal-default-rtdb.asia-southeast1.firebasedatabase.app/sig.json';
-async function askNote(id, note, mode){ let cur=null; try{ cur=await ghGet(FB_NOTES); }catch(e){ return false; }
-  const put=await ghPut(FB_NOTES, ()=>({...(cur||{}), [id]:{note:note.slice(0,300), mode, at:Date.now()}}), r=>{ cur=r; }).then(()=>true).catch(()=>false);
-  if(put && mode==='redo') await fetch(FB_SIG,{method:'PUT',headers:{'Content-Type':'application/json'},body:String(Date.now())}).catch(()=>null);
-  return put; }
-let ASK={items:[], ans:{}, at:0, busy:false};
+function askIdOk(id){ return typeof id==='string' && /^[0-9A-Za-z-]{1,64}$/.test(id); }   // 열쇠로 쓰는 값 — 꼴이 맞는 id 만(`__proto__` 등은 여기서 걸린다)
+async function askPut(id, patch, drop){
+  if(!(cfg&&cfg.token) || !askIdOk(id)) return false;
+  let cur=null; try{ cur=await ghGet(FB_NOTES); }catch(e){ return false; }
+  const build=()=>{ const all=(cur&&typeof cur==='object'&&!Array.isArray(cur))?{...cur}:{}, old=all[id];
+    const e={...((old&&typeof old==='object')?old:{}), ...patch}; for(const k of drop||[]) delete e[k]; all[id]=e; return all; };
+  const ok=await ghPut(FB_NOTES, build, r=>{ cur=r; }).then(()=>true).catch(()=>false);
+  if(ok) await fetch(FB_SIG,{method:'PUT',headers:{'Content-Type':'application/json'},body:String(Date.now())}).catch(()=>null);
+  return ok; }
+/* 이미 답한 id = `ans` 가 0·1 이고, 그 뒤에 다시 제안을 보낸 것이 아닌 것(다시 제안이 더 나중이면 새 제안이 다시 보여야 한다) */
+function askAnswered(notes){ const out=Object.create(null);
+  if(notes&&typeof notes==='object') for(const id of Object.keys(notes)){ const n=notes[id]; if(!n||typeof n!=='object'||(n.ans!==0&&n.ans!==1)) continue;
+    if(n.mode==='redo' && (n.at||0)>(n.ans_at||0)) continue; out[id]=n.ans; }
+  return out; }
+let ASK={items:[], ans:Object.create(null), at:0, busy:false};
 async function askLoad(force){ if(ASK.busy || !cfg || !cfg.owner || (!force && Date.now()-ASK.at<300000)) return; ASK.busy=true;
-  try{ const [d, a]=await Promise.all([
-      fetch(`https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${encodeURIComponent(dataBr()||'data')}/fb-asks.json?t=${Date.now()}`,{cache:'no-store'}).then(r=>r.ok?r.json():(r.status===404?{items:[]}:null)).catch(()=>null),
-      fetch(FB_ANS+'.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null)]);
-    if(d) ASK.items=Array.isArray(d.items)?d.items:[]; if(a&&typeof a==='object') ASK.ans=a; ASK.at=Date.now(); }
+  try{ const d=await fetch(`https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${encodeURIComponent(dataBr()||'data')}/fb-asks.json?t=${Date.now()}`,{cache:'no-store'}).then(r=>r.ok?r.json():(r.status===404?{items:[]}:null)).catch(()=>null);
+    if(d) ASK.items=Array.isArray(d.items)?d.items:[];
+    /* 답한 것은 열쇠 있는 기기만, 열린 요청이 있을 때만 읽는다(평소 0건 — 그땐 호출 없음) · 못 읽으면 지난 값 그대로 */
+    if(ASK.items.length && cfg.token){ const n=await ghGet(FB_NOTES).then(x=>x||{}).catch(()=>null); if(n) ASK.ans=askAnswered(n); }
+    ASK.at=Date.now(); }
   finally{ ASK.busy=false; askRender(); } }
-function askOpenList(){ return ASK.items.filter(x=>x&&x.id&&!(x.id in ASK.ans)); }
+function askOpenList(){ return ASK.items.filter(x=>x&&askIdOk(x.id)&&!(x.id in ASK.ans)); }
 function askRender(){ const box=$('fbAsk'); if(!box) return; const L=askOpenList();
   const subj=[...new Set(L.map(x=>x.subj).filter(Boolean))].join(' · ');
   box.innerHTML=L.length?`<button type="button" class="fa-row" id="fbAskBtn"><span class="fa-t">추가 요청 ${L.length}건</span><span class="fa-s">${esc(subj)}</span>${SC_RCHEV}</button>`:'';
@@ -10801,11 +10815,13 @@ function askSheet(){ const L=askOpenList(), sh=$('askSheet');
   sh.querySelectorAll('.fa-it [data-v]').forEach(b=>b.onclick=async()=>{ const it=b.closest('.fa-it'), id=it.dataset.id, v=+b.dataset.v, note=(it.querySelector('.fa-note').value||'').trim();
     it.querySelectorAll('[data-v],.fa-note').forEach(x=>x.disabled=true);
     const back=()=>{ it.querySelectorAll('[data-v],.fa-note').forEach(x=>x.disabled=false); it.querySelector('[data-v="2"]').disabled=!note; };
-    if(note && v!==0 && !(cfg&&cfg.token)){ toast('메모는 GitHub 연결된 기기에서만 보낼 수 있어요'); back(); return; }
-    if(note && v!==0 && !await askNote(id, note, v===2?'redo':'add')){ toast('메모를 못 보냈어요 — 잠시 뒤 다시 눌러 주세요'); back(); return; }
-    if(v===2){ ASK.ans[id]=2; toast('메모대로 다시 제안받을게요'); askRender(); return; }
-    const r=await fetch(`${FB_ANS}/${encodeURIComponent(id)}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:String(v)}).catch(()=>null);
-    if(!r||!r.ok){ toast('못 보냈어요 — 잠시 뒤 다시 눌러 주세요'); back(); return; }
+    if(!(cfg&&cfg.token)){ toast('GitHub 연결된 기기에서만 답할 수 있어요'); back(); return; }   // 답은 열쇠 길로만 간다(C3-02)
+    const at=Date.now();
+    if(v===2){ if(!note){ back(); return; }
+      if(!await askPut(id, {note:note.slice(0,300), mode:'redo', at}, ['ans','ans_at'])){ toast('못 보냈어요 — 잠시 뒤 다시 눌러 주세요'); back(); return; }
+      ASK.ans[id]=2; toast('메모대로 다시 제안받을게요'); askRender(); return; }
+    const patch={ans:v, ans_at:at}; if(note && v===1) Object.assign(patch, {note:note.slice(0,300), mode:'add', at});   // 보류에는 메모를 안 싣는다(종전과 같음)
+    if(!await askPut(id, patch)){ toast('못 보냈어요 — 잠시 뒤 다시 눌러 주세요'); back(); return; }
     ASK.ans[id]=v; toast(v?'추가할게요':'보류했어요'); askRender(); }); }
 /* 풀이 중 스터디 = 레일 전환(10-05) — 사람 줄(점 · 이름 · 상태·시간 · 장수/목표) · 내 줄은 채점마다(syncRail) · 친구는 동기화(30초)마다 다시 그린다 · 기본 = 피드백 */
 const K_SC_DOCK='cards_sc_dock_v1';

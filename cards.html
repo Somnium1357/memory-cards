@@ -5535,6 +5535,10 @@ let PLAN={intake:[], splits:{}};
    첫 부팅·저장소 비움 직후 창에서만 난다. 로그(F1-6)와 같은 처방: **알리고, 자동 충전을 보류한다.** */
 let planIncomplete=false;
 let dirty=false, pushing=false, ratedSincePush=0, lastPushAt=Date.now();
+/* 🔴 부팅(loadAll)이 끝났다 (독립 감사 11-11 C1-02). 그 전의 메모리는 **빈 값**이다 — 그때 캐시를 쓰거나 push 하면
+   빈 상태가 「못 올린 채점의 유일 사본」(이번 주 로그 캐시·마크·피드백)을 덮고, 올릴 것이 없어 push가 「성공」해 K_DIRTY까지 지운다
+   (로딩 화면 동안 화면이 한 번 가려지면 난다). 서기 전에는 cacheStateNow·push·refreshRemote·가려질 때 저장을 건너뛴다. */
+let booted=false;
 let hintUsed=new Set();   // 이 카드에서 초성 힌트를 연 항목 번호 — showCard가 비운다
 let queue=[], qPos=0, revealed=false, itemMarks=[], curPreset=null, phase='review',
     sessionDone=0, doneCredited=0, undoSnap=null, newServed=0, shownAt=0, pausedMs=0, pauseAt=0, pzTimer=null;
@@ -5775,6 +5779,7 @@ let cacheTimer=null;
 function cacheState(){ if(cacheTimer)return; cacheTimer=setTimeout(()=>{ cacheTimer=null; cacheStateNow(); },200); }
 function cacheFlush(){ if(cacheTimer){ clearTimeout(cacheTimer); cacheTimer=null; } cacheStateNow(); }
 function cacheStateNow(){ // 파일 단위로 나눠 담는다 — 쿼터가 모자라면 데이터 캐시를 먼저 버린다
+  if(!booted) return;       // 🔴 부팅 전 메모리는 빈 값 — 캐시를 덮지 않는다(감사 11-11 C1-02 · loadAll 끝의 cacheState가 첫 쓰기)
   const parts=splitState();
   /* 🔴 해제 툼스톤(전층 감사 F0-2) — 은퇴 해제·미룸 취소·플래그 제거는 **파일**엔 「엔트리 없음」으로 실리지만(설계), **캐시**엔
      `{u}`만 있는 엔트리를 남긴다. push가 한 번도 성공하지 못한 채 다시 부팅하면(오프라인·5xx·토큰 만료) 원격 밑판 위에 캐시를 얹는데,
@@ -5913,7 +5918,7 @@ function applyFiles(marksFile, fbFile){   // 파일 두 벌 → 메모리 state.
   }
   state.cards=cards;
 }
-function sessFile(){ return {v:1, sessions:[...sessions, ...sessTomb], hoedok:state.hoedok||{}, read:state.read||{},
+function sessFile(){ return {v:1, sessions:[...sessions, ...sessTomb], hoedok:state.hoedok||{}, hoedokAt:state.hoedokAt||{}, read:state.read||{},
   fc:state.fc||{},                        // 주간 예측 스냅숏 — 「지난주 예측 vs 실제」의 밑천(메타가 읽는다)
   cap:intake.cap, capAt:intake.capAt||0,
   ret:fsrsCfg.ret, retAt:fsrsCfg.retAt||0, retHist:fsrsCfg.retHist||[],     // 목표율 이력(10-07 비소급) — 병합 = 합집합
@@ -6046,19 +6051,36 @@ function ghUrl(p, ref){return `https://api.github.com/repos/${cfg.owner}/${cfg.r
 /* o = {ref, noSha}. 기본 ref는 그 파일이 사는 브랜치(`refFor`).
    🔴 `noSha`는 **폴백 읽기 전용**이다 — `main` 사본을 읽으면서 `sha[path]`를 덮으면
    다음 `ghPut`이 남의 브랜치 sha로 써서 매번 409가 난다(그 뒤 재시도가 먹긴 하지만 왕복이 두 배). */
+/* 🔴 **sha는 「그 내용을 메모리에 합친 자리」에서만 적는다** (독립 감사 11-11 C1-01).
+   예전엔 응답을 받는 즉시 `sha[path]`를 적었다 — 여러 파일을 한꺼번에 받다가 하나만 실패하면 받은 내용은 버려지고
+   sha만 최신이 되어, 다음 PUT이 409 없이 통과해 **옛 메모리로 원격을 덮었다**(다른 기기 채점·끄기 소실).
+   · `o.hold`(= shaHold())를 주면 sha를 전역에 안 적고 거기 맡긴다 → 부르는 쪽이 내용을 합친 뒤 `shaCommit`.
+   · hold 없이 부르는 자리(충돌 재시도·지난 주 로그·스냅숏·연문)는 받은 내용을 곧바로(await 없이) 합치는 자리다.
+   · 어느 쪽이든 sha는 **본문을 끝까지 읽고 풀어낸 뒤**에 적는다(1MB 넘는 파일의 둘째 요청 실패·깨진 JSON이면 안 적는다).
+   못 받은 파일은 sha가 옛것(또는 없음)이라 다음 PUT이 409/422 → 다시 받아 병합 → 재시도로 간다(덮어쓰기 없음). */
+function shaHold(){ return {was:{}, got:{}}; }
+function shaCommit(h, path){            // 그 사이 내 PUT이 sha를 올렸으면(was와 다름) 건드리지 않는다 — 더 새 값이다
+  if(!h || !Object.prototype.hasOwnProperty.call(h.got, path)) return false;
+  if(sha[path]!==h.was[path]) return false;   // 🔴 거짓 = 받은 내용이 **내 PUT보다 낡았다** — 부르는 쪽은 합치기만 하고 「원격에 없으니 걷는다」(reap)는 하지 마라
+  sha[path]=h.got[path]; return true;
+}
 async function ghGet(path, o){          // {json, sha} · 없으면 null
   const ref = (o && o.ref!==undefined) ? o.ref : refFor(path);
-  const noSha = !!(o && o.noSha);
+  const noSha = !!(o && o.noSha), hold = (o && o.hold) || null;
+  if(hold) hold.was[path]=sha[path];
+  const setSha=v=>{ if(noSha) return; if(hold) hold.got[path]=v; else sha[path]=v; };
   const r=await fetch(ghUrl(path, ref),{headers:ghHeaders(),cache:'no-store'});
-  if(r.status===404){ if(!noSha) sha[path]=null; return null; }
+  if(r.status===404){ setSha(null); return null; }
   if(r.status===401)throw{code:'auth'};
   if(r.status===403)throw{code:'perm'};
   if(!r.ok)throw{code:'http',status:r.status};
-  const j=await r.json(); if(!noSha) sha[path]=j.sha;
+  const j=await r.json();
   let txt;
   if(j.content){ txt=b64ToUtf8(j.content.replace(/\s/g,'')); }
-  else { const r2=await fetch(j.download_url,{cache:'no-store'}); txt=await r2.text(); }
-  return txt.trim()?JSON.parse(txt):null;
+  else { const r2=await fetch(j.download_url,{cache:'no-store'}); if(!r2.ok)throw{code:'http',status:r2.status}; txt=await r2.text(); }
+  const out=txt.trim()?JSON.parse(txt):null;
+  setSha(j.sha);
+  return out;
 }
 async function ghPut(path, buildBody, onConflict){   // 충돌(409·422)이면 원격을 다시 받아 합치고 재시도
   const br=refFor(path);                       // '' = 기본 브랜치. 값이 있으면 그 브랜치에 쓴다
@@ -6363,12 +6385,35 @@ function mergeLogInto(remote, wk){    // 로그: (카드|시각) 합집합
   cur.sort((x,y)=>logTs(x)-logTs(y));
   logWeeks[wk]=cur; rebuildLog();
 }
+/* 🔴 읽음(`state.read`)·회독 읽음(`state.hoedok`) 병합 = **키마다 더 새로 고친 쪽이 이긴다** (독립 감사 11-11 C1-04 ≈ C5-05).
+   다른 설정(cap·ret·rest…)은 `…At` 최신이 이기는데 이 둘만 `{...원격, ...로컬}`(로컬 승)이라, 며칠 켜 둔 기기가
+   다른 기기의 다시 읽음(r:2)·읽음 해제를 못 받고 제 낡은 값을 원격에 되썼다.
+   · read 값에 고친 시각 `u`(ISO)를 싣는다 — `{at, r, u}` · 해제도 `{at:null, r, u}`(값 꼴은 그대로 · 읽는 쪽은 at·r만 본다).
+   · hoedok 값은 날짜 문자열/null 그대로 두고, 고친 시각은 곁의 `state.hoedokAt[k]`(세션 파일 `hoedokAt`)에 싣는다.
+   · 시각 없는 옛 값끼리: read는 둘 다 읽음이면 날짜(같으면 횟수) 큰 쪽 · 그 밖과 hoedok은 종전대로 로컬(어느 쪽이 나중인지 알 길이 없다).
+   · 한쪽만 시각이 있으면 그쪽이 새것이다(시각은 이 판부터 싣는다). */
+function readNewer(r, l){               // 원격 r이 로컬 l을 이기는가
+  const ru=(r&&r.u)||'', lu=(l&&l.u)||'';
+  if(ru||lu) return ru>lu;
+  if(!r||!l) return false;
+  if(r.at&&l.at) return r.at>l.at || (r.at===l.at && (r.r||0)>(l.r||0));
+  return false;
+}
+function mergeRead(remote){
+  const R=(remote&&remote.read)||{}, L=state.read||(state.read={}), own=Object.prototype.hasOwnProperty;
+  for(const k of Object.keys(R)){ if(!own.call(L,k) || readNewer(R[k], L[k])) L[k]=R[k]; }
+}
+function mergeHoedok(remote){
+  const R=(remote&&remote.hoedok)||{}, RA=(remote&&remote.hoedokAt)||{}, own=Object.prototype.hasOwnProperty;
+  const L=state.hoedok||(state.hoedok={}), LA=state.hoedokAt||(state.hoedokAt={});
+  for(const k of Object.keys(R)){ const ru=(own.call(RA,k)&&RA[k])||'', lu=(own.call(LA,k)&&LA[k])||'';
+    if(!own.call(L,k) || ru>lu){ L[k]=R[k]; if(ru) LA[k]=ru; } }
+}
 function mergeSessInto(remote){
   const merged=mergeSessions((remote&&remote.sessions)||[], sessFile().sessions, state.log);
   sessions=merged.filter(x=>!x.del); sessTomb=merged.filter(x=>x.del);
   normalizeSessions();
-  state.hoedok={...((remote&&remote.hoedok)||{}), ...(state.hoedok||{})};
-  state.read={...((remote&&remote.read)||{}), ...(state.read||{})};      // 읽음 표시도 같은 규칙(로컬 승·null 툼스톤)
+  mergeHoedok(remote); mergeRead(remote);   // 키마다 더 새로 고친 쪽(감사 11-11 C1-04) — 예전엔 시각 없는 로컬 승이라 켜 둔 낡은 기기가 새 값을 되감았다
   state.fc={...((remote&&remote.fc)||{}), ...(state.fc||{})};            // 주간 예측 스냅숏 — 주 키가 달라 충돌이 없다
   if(remote && (remote.capAt||0) > (intake.capAt||0)){ intake.cap=remote.cap; intake.capAt=remote.capAt; }
   /* 목표 기억률도 cap과 같은 규칙(더 새것이 이긴다). 🔴 값이 바뀌면 부르는 쪽이 재계산해야 한다
@@ -6547,6 +6592,7 @@ function snapSoon(){                              // 10분에 한 번 이하 —
 }
 let pushFromHidden=false, netFails=0;
 async function push(force){ // 배치 push — 옵티미스틱: 실패해도 로컬은 이미 저장됨
+  if(!booted) return;       // 🔴 부팅 전엔 올릴 것이 없다 — 빈 push의 「성공」이 K_DIRTY·기준선을 건드린다(감사 11-11 C1-02)
   if(!cfg||!cfg.token){
     /* 토큰은 기기별이다. 조용히 리턴하면 저장 배지만 켜진 채로 영원히 남아
        「미저장분 있음」이 왜 뜨는지 알 길이 없다 (동하 아이패드 2026-08-21). */
@@ -6625,8 +6671,9 @@ let hiddenAt=0;
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){
     hiddenAt=Date.now();
-    syncSessQueue(); saveSessionsFlush();
-    cacheFlush(); if(dirty){ pushFromHidden=true; push(); }
+    /* 🔴 부팅이 끝난 뒤에만 저장한다(감사 11-11 C1-02) — 로딩 화면 동안 가려지면 빈 메모리가 캐시를 덮고 K_DIRTY가 지워졌다 */
+    if(booted){ syncSessQueue(); saveSessionsFlush();
+      cacheFlush(); if(dirty){ pushFromHidden=true; push(); } }
     if(typeof YM!=='undefined' && YM.pending && YM.pending.length){ clearTimeout(_ymPushT); ymPush(); }   // 문풀 대기분도(리뷰 09-23 R5)
     return;
   }
@@ -6637,7 +6684,7 @@ document.addEventListener('visibilitychange',()=>{
 });
 let refreshing=false, pendingRefresh=false, refreshFails=0;   // refreshFails = 연속 실패 횟수(X 목록 밖)
 async function refreshRemote(){     // 포그라운드 복귀 시 원격 상태 당겨오기 (새로고침 없이 기기 전환)
-  if(refreshing||!cfg||!cfg.token) return;
+  if(!booted||refreshing||!cfg||!cfg.token) return;   // 부팅 전엔 합칠 밑판이 없다(감사 11-11 C1-02)
   lastRefreshAt=Date.now();
   checkNewVersion();               // 복귀마다 — 풀이 중이어도 띠는 띄운다(다시 열기는 동하가 누른다)
   if($('scrSolve').classList.contains('on') && cur()){ pendingRefresh=true; return; } // 풀이 중엔 미룬다
@@ -6647,7 +6694,10 @@ async function refreshRemote(){     // 포그라운드 복귀 시 원격 상태 
     /* 🔴 진행 파일(마크·피드백·세션·로그)은 카드 데이터를 기다리지 않고 **같이** 받는다(10-06 동하 「폰이 한참 뒤에야 맞는다」) —
        예전엔 카드 데이터 1.3MB를 다 받고 나서야 받기 시작해 홈 장수가 몇~십몇 초 옛 값이었다. 적용 순서(데이터 → 상태)는 그대로. */
     const tw=thisWeek(), pws=[...new Set([refreshWk, weekKeyOf(new Date(Date.now()-86400000))])].filter(w=>w!==tw);   // 주가 바뀐 뒤 첫 새로고침 · 월요일
-    const stP=Promise.all([ghGet(MARKS_PATH), ghGet(FB_PATH), ghGet(SESS_PATH), ghGet(logPath(tw)), ...pws.map(w=>ghGet(logPath(w)))]); stP.catch(()=>{});
+    /* 🔴 파일마다 따로 받고(allSettled) **받은 것은 받은 대로 합친다** · sha는 합치는 자리에서 적는다(감사 11-11 C1-01 — ghGet 머리 주석).
+       예전엔 Promise.all이라 하나만 실패해도 받은 내용을 전부 버렸는데 sha는 이미 최신이었다 → 다음 PUT이 원격을 덮었다. */
+    const H=shaHold(), stPaths=[MARKS_PATH, FB_PATH, SESS_PATH, logPath(tw), ...pws.map(w=>logPath(w))];
+    const stP=Promise.allSettled(stPaths.map(p=>ghGet(p,{hold:H})));
     /* 🔴 카드 본문도 다시 받는다. 예전에는 여기서 **상태 파일만** 당겨서, 앱을 켜 둔 채로는
        밤 루틴이 고친 문면·분류·새 카드가 **영영 안 들어왔다** — `loadData()` 호출처가 부팅 한 곳뿐이었다.
        실측(동하 2026-08-30): 분류 복원 배포(00:06) **10시간 뒤**에도 옛 앞면이 보였다.
@@ -6665,15 +6715,21 @@ async function refreshRemote(){     // 포그라운드 복귀 시 원격 상태 
       queue=queue.map(c=>{ const n=BYID[c.id]; if(!n) return c; if(!c._re) return n;
         const rc=Object.create(n); rc._re=c._re; rc._at=c._at; rc._day=c._day; return rc; });
     }
-    const [sc, fb, sess, wk, ...pwl] = await stP;
+    /* 여기서부터 합치기 끝까지 await가 없다 — sha를 적는 것과 내용을 합치는 것이 한 덩어리다 */
+    const st=await stP, stBad=st.find(x=>x.status==='rejected');
+    const stFresh=st.map((x,i)=>x.status==='fulfilled' && shaCommit(H, stPaths[i]));   // 받은 뒤 내 PUT이 끼지 않았다
+    const [sc, fb, sess, wk, ...pwl] = st.map(x=>x.status==='fulfilled' ? x.value : null);
     let pwNew=false;
     pws.forEach((w,i)=>{ const j=pwl[i]; if(!j||!Array.isArray(j.log)) return;
       const n0=(logWeeks[w]||[]).length; mergeLogInto(j, w); if(logWeeks[w].length!==n0){ pwNew=true; logCacheSet(w, {v:2,week:w,log:logWeeks[w]}); } });
-    refreshWk=tw;
+    if(st.slice(4).every(x=>x.status==='fulfilled')) refreshWk=tw;   // 지난 주 파일을 못 받았으면 다음 복귀 때 다시 받는다
     if(sc||fb||sess||wk||pwNew){
-      if(sc){ mergeMarksInto(sc); reapMarks(sc); }   // 다른 기기의 해제도 그때 걷어낸다
-      if(fb){ mergeFbInto(fb); reapFb(fb); }   // 앱을 켜 둔 채로도 루틴이 소진한다 — 그때도 걷어낸다
-      if(wk) mergeLogInto(wk, thisWeek()); else rebuildLog();
+      /* 🔴 걷어내기(reap)는 **받은 내용이 내 마지막 PUT보다 새것일 때만**(stFresh · 독립 재검 11-11). GET이 떠 있는 동안(카드 데이터를 다시 받는 몇 초)
+         내 push가 끝나면 기준선(K_FBSYNC)은 올라갔는데 손에 든 원격은 PUT 전 것이라, 방금 올린 플래그·끄기를 「원격에 없다 = 소진·해제됨」으로 걷었다
+         (그 뒤 다음 push가 원격에서도 지움). 낡은 내용은 합치기만 한다 — 걷기는 다음 갱신이 한다. */
+      if(sc){ mergeMarksInto(sc); if(stFresh[0]) reapMarks(sc); }   // 다른 기기의 해제도 그때 걷어낸다
+      if(fb){ mergeFbInto(fb); if(stFresh[1]) reapFb(fb); }   // 앱을 켜 둔 채로도 루틴이 소진한다 — 그때도 걷어낸다
+      if(wk) mergeLogInto(wk, tw); else rebuildLog();   // 받은 주(tw)에 합친다 — 기다리는 사이 주가 넘어가도 옛 주 내용이 새 주로 들어가지 않게
       if(sess){ mergeSessInto(sess); sessLoadOK=true; }   // 늦게라도 제대로 받으면 그때부터 올려도 된다
       replayLog();                    // 다른 기기가 올린 로그를 내 스냅샷에 반영
       restReset();                    // due가 움직였다 — 실효 due 캐시·백로그 계획을 버린다
@@ -6686,6 +6742,7 @@ async function refreshRemote(){     // 포그라운드 복귀 시 원격 상태 
       else if(scr==='scrUnits')renderUnits(); else if(scr==='scrStats')renderStats();
       else if(scr==='scrList')refreshList();
     }
+    if(stBad) throw stBad.reason;   // 일부를 못 받았다 — 받은 것은 위에서 합쳤고, 실패 처리(연속 2회부터 띠)는 종전대로
     refreshFails=0;                 // 성공 — 연속 실패 카운터를 내린다
     hideBanner('sync'); if(sessLoadOK) hideBanner('boot');   // 받았으니 그 경고는 풀렸다(L0-3 · 지난 기록 부분 수신 띠는 새로고침 전엔 그대로)
   }catch(e){
@@ -6900,10 +6957,11 @@ function hoedokPending(){ // 회독 대기 = 카드가 진입했는데 아직 �
   return [...entered].filter(k=>!state.hoedok[k]&&TAGMETA[k])
     .sort((a,b)=>planRank(a)-planRank(b)||TAGMETA[a].i0-TAGMETA[b].i0);
 }
+function hoedokStamp(k){ (state.hoedokAt||(state.hoedokAt={}))[k]=new Date().toISOString(); }   // 고친 시각 — 병합이 「더 새것」을 가린다(감사 11-11 C1-04 · mergeHoedok)
 function markHoedok(k){ if(!state.hoedok)state.hoedok={};
-  state.hoedok[k]=todayKey(); cacheState(); markDirty('sess'); }
+  state.hoedok[k]=todayKey(); hoedokStamp(k); cacheState(); markDirty('sess'); }
 function unmarkHoedok(k){ if(!state.hoedok)state.hoedok={};
-  state.hoedok[k]=null; cacheState(); markDirty('sess'); } // null 툼스톤 — 합집합 병합에서도 취소가 이긴다
+  state.hoedok[k]=null; hoedokStamp(k); cacheState(); markDirty('sess'); } // null 툼스톤 + 고친 시각 — 더 새 해제가 다른 기기의 옛 읽음을 이긴다
 function hoedokLabel(k){ const m=TAGMETA[k];
   /* 🔴 없는 키에 무방어였다 (전층 감사 F2-6·F2-5) — 재생성으로 사라진 단위를 고른 채 화면이 다시 그려지면
      여기서 예외가 나 「새 세션 만들기」가 통째로 먹통이 됐다. 못 찾으면 키를 그대로 보여 준다(사라진 자리를 감추지 않는다). */
@@ -7320,16 +7378,27 @@ async function rawGet(path, ref){
     const t=await r.text(); return t.trim()?JSON.parse(t):null;
   }catch(e){ rawNetFail=true; return null; }
 }
-async function loadAll(){         // 스케줄·피드백·세션·이번 주 로그를 병렬로
+/* 🔴 다시 읽는 동안(토큰 「연결」 버튼의 두 번째 loadAll)에도 저장을 막는다(독립 재검 11-11) — 본체가 `logWeeks={}`로 비우고 await하는 틈에
+   push·캐시 쓰기가 끼면 빈 주 로그를 PUT해 원격을 덮거나(sha가 최신이라 200) 이번 주 캐시를 반쪽 상태로 덮었다.
+   읽는 내내 booted=false · 끝나면 본체가 true로 세운다 · 도중에 던지면 다시 읽기 전 값으로 되돌린다(첫 부팅 실패는 false 그대로). */
+async function loadAll(){
+  const was=booted; booted=false;
+  try{ await loadAllBody(); } finally{ if(was) booted=true; }
+}
+async function loadAllBody(){     // 스케줄·피드백·세션·이번 주 로그를 병렬로
   const wk=thisWeek();
   let sc=null, fb=null, sess=null, lg=null, legacy=null, migrated=false, netFail=false;
+  const H=shaHold(), bootPaths=[MARKS_PATH, FB_PATH, SESS_PATH, logPath(wk)];
   if(cfg&&cfg.token){
-    try{
-      [sc, fb, sess, lg] = await Promise.all([
-        ghGet(MARKS_PATH), ghGet(FB_PATH), ghGet(SESS_PATH), ghGet(logPath(wk))]);
-      /* 🔴 옛 스냅샷(`cards-sched.json` 08-21) · 옛 단일 파일(`cards-state.json`) 폴백은 뗐다(전층 감사 F0-4 · 이관은 끝났다).
-         남아 있으면 marks를 「못 받은」 부팅이 08-21 스냅샷을 마크로 읽어 해제된 은퇴 1장을 되살리고 기본 세션을 새로 만들었다. */
-    }catch(e){
+    /* 🔴 파일마다 따로 받는다(allSettled · 독립 감사 11-11 C1-01) — 예전엔 Promise.all이라 하나만 실패해도 넷을 다 버리고 캐시로 갔는데
+       sha는 받은 파일마다 이미 최신이었다 → 캐시 없는 기기가 한 장 끄면 원격 마크 339건이 1건으로 덮였다.
+       받은 파일은 받은 대로 쓰고, 못 받은 파일만 캐시로 간다. sha는 아래 「적용하는 자리」에서 적는다(shaCommit). */
+    const st=await Promise.allSettled(bootPaths.map(p=>ghGet(p,{hold:H})));
+    [sc, fb, sess, lg] = st.map(x=>x.status==='fulfilled' ? x.value : null);
+    /* 🔴 옛 스냅샷(`cards-sched.json` 08-21) · 옛 단일 파일(`cards-state.json`) 폴백은 뗐다(전층 감사 F0-4 · 이관은 끝났다).
+       남아 있으면 marks를 「못 받은」 부팅이 08-21 스냅샷을 마크로 읽어 해제된 은퇴 1장을 되살리고 기본 세션을 새로 만들었다. */
+    const bad=st.find(x=>x.status==='rejected');
+    if(bad){ const e=bad.reason;
       netFail=true;               // 🔴 「못 받았다」와 「없다」를 갈라야 한다 — 아래 sessLoadOK 참고
       showBanner(e&&e.code==='auth'?'토큰이 만료됐어요 — GitHub 연결에서 갱신'
         :e&&e.code==='perm'?'토큰에 이 레포 권한이 없어요 — github.com에서 memory-cards 접근을 추가하세요'
@@ -7342,6 +7411,11 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
   }
   await fbSentConfirm();           // 🔴 앱을 닫으며 보낸 push가 도착했는지 먼저 확인 → 기준선을 올린다(메타 09-29 · 44건 부활)
   const wasDirty=!!lsGet(K_DIRTY);
+  /* 🔴 K_DLOGS(지난 주 미전송 목록)는 **어떤 markDirty보다 먼저** 읽는다(독립 감사 11-11 C1-03). 예전엔 아래 `markDirty('log', wk)`가
+     빈 메모리 집합 + 이번 주로 K_DLOGS를 다시 쓴 **다음 줄에서** 읽어, 저장돼 있던 지난 주 표시가 사라졌다(주 경계에 걸린 채점이 영영 안 올라감).
+     읽은 주는 dirtyLogs에 먼저 넣어 둔다 — 아래에서 하나씩 처리하는 도중 앱이 닫혀도 표시가 남는다. */
+  const pendLogs=(lsGet(K_DLOGS)||'').split('|').filter(Boolean);
+  if(wasDirty) for(const w of pendLogs) if(w!==wk) dirtyLogs.add(w);   // 이번 주는 아래 cLg 줄이 맡는다
   const cSc=cachedFile(K_MARKS)||cachedFile(K_SCHED), cFb=cachedFile(K_FB), cSess=cachedFile(K_SESS), cLg=cachedFile(K_LOGP+wk);
   if(legacy){                     // 옛 단일 파일 → 새 구조로 읽어들인다 (한 번만)
     state.cards=legacy.cards||{};
@@ -7351,8 +7425,8 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
     if(legacy.cap!==undefined){ intake.cap=legacy.cap; intake.capAt=legacy.capAt||0; }
     markDirty('marks'); markDirty('fb'); markDirty('sess'); for(const k in logWeeks) markDirty('log',k);
   } else {
-    applyFiles(sc||cSc, fb||cFb);
-    logWeeks={}; const lw=(lg||cLg); if(lw&&Array.isArray(lw.log)) logWeeks[wk]=lw.log;
+    applyFiles(sc||cSc, fb||cFb);             shaCommit(H, MARKS_PATH); shaCommit(H, FB_PATH);   // 받은 내용을 깐 자리에서 sha를 적는다(C1-01)
+    logWeeks={}; const lw=(lg||cLg); if(lw&&Array.isArray(lw.log)) logWeeks[wk]=lw.log;   shaCommit(H, logPath(wk));
     /* 못 올린 로컬분을 원격 위에 얹는다.
        🔴 얹기만 하고 「올려야 할 것」으로 표시하지 않으면, 지난번에 못 올린 채점이 스스로는
           영영 안 올라간다(다음 채점이 주 로그 전체를 올릴 때 딸려 갈 뿐). 표시까지 한다. */
@@ -7363,11 +7437,14 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
     if(fb) reapFb(fb);                                            // 원격에서 소진된 것은 로컬에서도 뺀다
     if(sc) reapMarks(sc);                                         // 원격에서 해제된 마크도 마찬가지
     if(wasDirty && cLg){ mergeLogInto(cLg, wk);                   markDirty('log', wk); }
-    // K_DLOGS가 정본, 없는 기기(이 기능 이전)는 캐시 전수로 폴백
-    const pend=(lsGet(K_DLOGS)||'').split('|').filter(Boolean);
-    if(wasDirty) for(const owk of (pend.length?pend:await cachedLogWeeks())){
+    /* K_DLOGS가 정본(맨 위에서 읽어 둔 pendLogs), 없는 기기(이 기능 이전)는 캐시 전수로 폴백.
+       ⚠ 폴백 조건은 종전과 같게 둔다 — 이번 주 캐시가 있는 더러운 부팅은 예전에도 폴백을 안 탔다(K_DLOGS에 이번 주가 막 적혀서).
+          여기서 그 조건을 풀면 더러운 부팅마다 전 주차를 다시 올린다(C1-05가 평소로 번진다). */
+    const pend=pendLogs.filter(w=>w!==wk);
+    if(wasDirty) for(const owk of (pend.length ? pend : (pendLogs.length||cLg) ? [] : await cachedLogWeeks())){
       if(owk===wk) continue;
-      const c=await logCacheGet(owk); if(!c||!Array.isArray(c.log)||!c.log.length) continue;
+      const c=await logCacheGet(owk);
+      if(!c||!Array.isArray(c.log)||!c.log.length){ if(dirtyLogs.delete(owk)) saveDirtyLogs(); continue; }   // 올릴 사본이 없다 — 표시만 걷는다
       try{
         const rm=await (cfg&&cfg.token ? ghGet(logPath(owk)) : rawGet(logPath(owk),refFor(logPath(owk))));
         logWeeks[owk]=[]; if(rm) mergeLogInto(rm, owk);
@@ -7382,9 +7459,10 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
        (로컬이 메모리, 원격이 인자). 안 더러운 부팅은 종전대로 원격이 그대로 이긴다. */
     const both = wasDirty && cSess && sess;
     const sf = both ? cSess : (sess||cSess);
+    shaCommit(H, SESS_PATH);          // 원격 세션은 바로 아래에서 깔리거나(sf) 병합된다(both) — C1-01
     if(sf){
       sessions=(sf.sessions||[]).filter(x=>!x.del); sessTomb=(sf.sessions||[]).filter(x=>x.del);
-      state.hoedok=sf.hoedok||{};
+      state.hoedok=sf.hoedok||{}; state.hoedokAt=sf.hoedokAt||{};
       state.read=sf.read||{};
       state.fc=sf.fc||{};
       if(sf.cap!==undefined){ intake.cap=sf.cap; intake.capAt=sf.capAt||0; }
@@ -7460,6 +7538,7 @@ async function loadAll(){         // 스케줄·피드백·세션·이번 주 �
   normalizeSessions();
   if(migrated) markDirty('marks');   // 옛 스냅샷에서 건져 온 마크를 새 파일로 한 번 올린다
   const pruned=pruneOrphans();       // 재생성으로 사라진 카드의 되짚기·마크 정리
+  booted=true;                       // 🔴 여기부터 메모리가 정본이다 — 캐시 쓰기·push·복귀 갱신이 풀린다(감사 11-11 C1-02)
   cacheState();
   if(wasDirty||legacy||migrated||pruned) push(true);
 }
@@ -14005,7 +14084,7 @@ function readCooling(key){ const r=readRec(key); return !!(r && dkDiff(todayKey(
 function readRawR(key){ const r=(state.read||{})[key]; if(!r) return 0; return (r.r!=null)?r.r:(r.at?1:0); }
 function markRead(key){
   if(!state.read) state.read={};
-  state.read[key]={at:todayKey(), r:readRawR(key)+1};
+  state.read[key]={at:todayKey(), r:readRawR(key)+1, u:new Date().toISOString()};   // u = 고친 시각(병합 · 감사 11-11 C1-04)
   cacheState(); markDirty('sess'); renderRead();
   toast(`읽음 — ${READ_COOL}일 쉬어요`);
 }
@@ -14016,9 +14095,10 @@ function unmarkRead(key){
      다시 체크해도 r:1로 내려앉아, 「3번째 등장 = 카드·spec 신호」라는 설계 의도가 무력화됐다.
      이제 r:2 → 해제 → r:1 → 체크 → **r:2**로 제자리다(그냥 보존하면 반대로 토글마다 부풀어 오른다).
      `{at:null, r}`도 키가 있으므로 **툼스톤 구실은 그대로**다(병합 `{...원격, ...로컬}` = 로컬 승) —
-     `readRec`이 `at` 없는 것을 「안 읽음」으로 읽는다. 한 번도 안 읽은 키는 종전대로 `null`. */
+     `readRec`이 `at` 없는 것을 「안 읽음」으로 읽는다.
+     🔴 해제에도 고친 시각 `u`를 싣는다(감사 11-11 C1-04) — 그래서 횟수 0도 `null`이 아니라 `{at:null, r:0, u}`다(시각 없는 해제는 다른 기기의 옛 읽음을 못 이긴다). */
   const n=readRawR(key)-1;
-  state.read[key]= n>0 ? {at:null, r:n} : null;
+  state.read[key]={at:null, r:Math.max(0,n), u:new Date().toISOString()};
   cacheState(); markDirty('sess'); renderRead();
 }
 /* 질문 앞의 〔과목 · 대주제〕 스코프는 항목 제목이 이미 말해 준다 — 맨 앞 것 하나만 뗀다. */
@@ -14777,7 +14857,7 @@ function fixScopeKeys(){
      08-30 분할 이후 **7일 넘게 고아**로 남아 있었다 — 읽었다는 표시가 화면에서 사라진 채로.
      ⚠ 새 키에 이미 값이 있으면 손대지 않는다(사람이 다시 체크한 것일 수 있다). */
   for(const [OLD,NEW] of SCOPE_FIX){
-    for(const st of [state.hoedok, state.read]){
+    for(const st of [state.hoedok, state.read, state.hoedokAt]){   // hoedokAt = 회독 읽음을 고친 시각(값과 같이 옮긴다 · 감사 11-11 C1-04)
       if(!st || !(OLD in st)) continue;
       if(NEW in st) continue;
       st[NEW]=st[OLD]; delete st[OLD]; n++;

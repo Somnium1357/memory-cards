@@ -541,6 +541,8 @@
       s.querySelectorAll(':scope > .pg > .blk').forEach(function(b){ b._half=false; });
       s.querySelectorAll(':scope > .pg > .blk.cell:not(.full)').forEach(function(c){ c.style.gridColumn='span 2'; });
     });
+    /* 11-12 굽기 결정화: 구울 때는 기본 폭으로 되돌린 바로 이 자리에서 보조 맞춤(내어쓰기·브레이스·꺾쇠·눈금)을 한 상태로 맞춘 뒤 잰다(아래 ⑫ bakeFit · 평소엔 null) */
+    if(BAKEFIT) BAKEFIT();
     /* 좁은(기본 폭) 상태에서 높이를 잰다 — 단에 담을 때 단 폭 ≈ 기본 칸 폭 */
     main.querySelectorAll('.grps .grp').forEach(function(g){ g._h=g.getBoundingClientRect().height; });
     /* 나무 — 가지 묶음 높이(_th) · 가지 높이(_h) · 가지의 하위 묶음(_inner) */
@@ -983,11 +985,30 @@
     if(LAYOUT){ var b=bpOf(); if(!b) return false; var sn=LAYOUT[b]; if(sn){ if(!applied || applied!==sn) applySnap(sn); if(eqAlignFn) eqAlignFn(); return true; } }
     relayout(); return true;
   };
-  place();
+  /* 11-12 굽기 결정화(같은 입력인데 빌드마다 절 배치가 바뀜 — 11-11 배포 5과목 8절 · 11-12 재현 3회 중 체육·미술·실과·통합교과):
+     전엔 굽기 전에 배치가 세 번(스크립트 실행 때 = 글꼴 오기 전 · load · 글꼴 준비) 돌고 네 번째 값을 구웠다. 배치는 앞 회차 흔적(「=」 줄 맞춤 padding ·
+     반폭 칸 폭 · lead1)을 다 지우지 않고, 그 사이 타이머로 도는 보조 맞춤(내어쓰기 hang 50·80·250ms · 브레이스 높이 px)이 글꼴 도착 시각에 따라
+     끼거나 빠져서, 마지막 배치가 재는 칸 높이·넘침이 회차마다 달랐다(문턱 2배·2.2배·540px·12px 에 걸친 절이 뒤집힘).
+     → 구울 때는 ① 미리 배치하지 않는다(load + 글꼴 준비 뒤 한 번만 = 앞 회차 흔적 없음) ② 그 한 번 안에서, 기본 폭으로 되돌린 직후 보조 맞춤을
+       한 상태로 맞춘다(bakeFit): 내어쓰기는 지우고(배치 문턱은 내어쓰기가 없던 09-30~10-01 에 잡았다 · 지운 값 = 11-08 배포 배치와 수학 3절 빼고 전부 같음)
+       브레이스·아래 꺾쇠는 0 으로 되돌린 뒤 다시 재고 꺾쇠·눈금도 다시 잰다. 타이머·이벤트 순서에 기대는 것이 없다. 평소 화면(굽기 아님)은 전과 같다. */
+  var BAKEFIT=null;
+  if(!BAKE) place();
   if(BAKE){
     /* 구울 때는 글자를 2% 넓게 — 크롬에 딱 맞게 구운 배치가 사파리(글자 폭 1~3px 다름)에서 넘쳐 가로 스크롤이 생기던 것(09-30 환경 확대법) */
     document.documentElement.classList.add('baking');
-    var dump=function(){ relayout(); var pre=document.getElementById('pan-bake') || document.body.appendChild(Object.assign(document.createElement('pre'), {id:'pan-bake'})); pre.style.display='none'; pre.textContent=JSON.stringify({bp:bpOf(), w:document.documentElement.clientWidth, layout:snapshot()}); };
+    var bakeFit=function(){
+      document.querySelectorAll('main .hng').forEach(function(d){ d.style.paddingLeft=''; d.style.textIndent=''; d.classList.remove('hng'); });
+      document.querySelectorAll('.converge > svg').forEach(function(v){ v.style.height='0px'; v.style.marginTop='0px'; });
+      document.querySelectorAll('.forkdown > .root').forEach(function(r){ r.style.marginLeft=''; });
+      var F=window.PAN_FIT||{}; ['fork','brace','tick'].forEach(function(k){ if(F[k]) F[k](); });
+    };
+    var dump=function(){
+      BAKEFIT=bakeFit; relayout(); BAKEFIT=null;
+      /* 글꼴 상태도 같이 적는다 — 굽는 쪽(bake.py · build_dist.py)이 본문 글꼴이 안 온 굽기(네트워크 끊김 = 대체 글꼴로 잰 배치)를 버리게 */
+      var fz={loaded:0, loading:0, error:0, main:0}, fam=(getComputedStyle(document.body).fontFamily.split(',')[0]||'').replace(/["']/g,'').trim();
+      if(document.fonts) document.fonts.forEach(function(f){ if(fz[f.status]!=null) fz[f.status]++; if(f.status==='loaded' && f.family.replace(/["']/g,'').trim()===fam) fz.main++; });
+      var pre=document.getElementById('pan-bake') || document.body.appendChild(Object.assign(document.createElement('pre'), {id:'pan-bake'})); pre.style.display='none'; pre.textContent=JSON.stringify({bp:bpOf(), w:document.documentElement.clientWidth, fonts:fz, layout:snapshot()}); };
     window.addEventListener('load', function(){ if(document.fonts && document.fonts.ready) document.fonts.ready.then(dump); else dump(); });
   }
   /* 재배치가 끝난 뒤 꺾쇠·눈금(resize 로 재는 스크립트들)을 다시 재게 한다 — 09-30 「묶음표 깨짐」: 재배치(지연)보다 꺾쇠가 먼저 재던 것 */
@@ -997,7 +1018,7 @@
   /* 구운 배치가 있으면 키 = 구간(구간이 바뀔 때만 다시 놓음) */
   var layKey=function(){ if(LAYOUT) return 'bp'+bpOf(); var mw3=document.querySelector('main.wrap'); return String(mw3 ? mw3.clientWidth : 0); };
   var lastKey=layKey();   /* 위 첫 배치의 키 */
-  var t=null, busy=false; function again(force){ var k=layKey(); if(force!==true && k===lastKey) return; lastKey=k; place(); busy=true; window.dispatchEvent(new Event('resize')); busy=false; }
+  var t=null, busy=false; function again(force){ if(BAKE) return;   /* 구울 때는 dump 가 한 번만 배치한다(11-12) */ var k=layKey(); if(force!==true && k===lastKey) return; lastKey=k; place(); busy=true; window.dispatchEvent(new Event('resize')); busy=false; }
   window.addEventListener('load', function(){ again(true); });   /* 로딩 끝·폰트 준비 = 글자 폭이 바뀌니 한 번씩 강제 */
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ again(true); });
   window.addEventListener('resize', function(){ if(busy) return; clearTimeout(t); t=setTimeout(again,120); });
@@ -1041,6 +1062,7 @@
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
   window.addEventListener('load', fit);
   window.addEventListener('resize', fit);
+  (window.PAN_FIT=window.PAN_FIT||{}).fork=fit;   /* 굽기(⑫ bakeFit)가 순서를 정해 직접 부른다(11-12) */
   fit();
 })();
 
@@ -1154,6 +1176,7 @@
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(all);
   window.addEventListener('load', all);
   window.addEventListener('resize', all);
+  (window.PAN_FIT=window.PAN_FIT||{}).brace=all;
   all();
 })();
 
@@ -1294,6 +1317,7 @@ document.querySelectorAll('.mkf svg,.mkd svg,.converge>svg,.fork svg,.fig svg').
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fitTicks);
   else fitTicks();
+  (window.PAN_FIT=window.PAN_FIT||{}).tick=fitTicks;
   window.addEventListener('load',fitTicks);
   var t; window.addEventListener('resize',function(){clearTimeout(t);t=setTimeout(fitTicks,150);});
 })();

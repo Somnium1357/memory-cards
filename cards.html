@@ -12303,8 +12303,11 @@ $('restDow').onclick=(e)=>{ const b=e.target.closest('button'); if(!b)return;
 /* 🔴 오늘이 휴식일로 「바뀌면」 자동 세션 오늘 목록을 비운다 — 「오늘 쉬기」와 같은 뜻(10-08 동하 · 목요일 예외를 지워 다시 휴식일이 됐는데 83장이 남았다).
    예외를 지우면 오늘 몫이 「앞 3일」(이미 지난 날)로 다시 나뉘어 밀린 due로 잡혀서 resync만으론 안 빠진다.
    반대로 휴식일이던 오늘이 공부일이 되면 day를 비워 다시 채우게 한다 · 오늘 휴식 여부가 그대로면 resync만(이어서 채운 목록은 건드리지 않는다). */
+/* 🔴 풀던 자동 세션이면 **화면 큐도** 자른다(독립 감사 11-11 C4-15 · 「큐 비우기」와 같은 꼴) — 저장 큐만 비우면 홈·세션 줄은 화면 큐를 세어
+   그대로이고(770장), 이어 푼 첫 채점의 syncSessQueue가 화면 잔량을 저장 큐에 되써서 「오늘 쉬기」가 없던 일이 됐다. */
+function restClearLive(){ if(curSess && !isFixed(curSess) && sessions.some(x=>x.id===curSess.id)){ queue=queue.slice(0,qPos); counts(); } }
 function restApplied(wasRest){ const T=todayKey(), now=isRestDay(T);
-  if(!wasRest && now){ for(const sx of sessions){ if(!isFixed(sx)){ sx.q=[]; sx.day=T; } } saveSessionsFlush(); return {add:0, del:0}; }
+  if(!wasRest && now){ for(const sx of sessions){ if(!isFixed(sx)){ sx.q=[]; sx.day=T; } } restClearLive(); saveSessionsFlush(); return {add:0, del:0}; }
   if(wasRest && !now){ for(const sx of sessions){ if(!isFixed(sx)) sx.day=''; } saveSessionsFlush(); return {add:0, del:0}; }
   return resyncQueues(); }
 function addRestDay(d){
@@ -12313,7 +12316,7 @@ function addRestDay(d){
   rest.days=[...(rest.days||[]), d]; saveRest();
   /* 오늘을 쉬기로 했으면 자동 충전 세션의 오늘 큐를 비운다 — 그게 「쉰다」의 뜻이다.
      되돌릴 길은 있다: 세션 화면의 「＋ 이어서 채우기」. */
-  if(d===todayKey()){ for(const sx of sessions){ if(!isFixed(sx)){ sx.q=[]; sx.day=todayKey(); } } saveSessionsFlush(); }
+  if(d===todayKey()){ for(const sx of sessions){ if(!isFixed(sx)){ sx.q=[]; sx.day=todayKey(); } } restClearLive(); saveSessionsFlush(); }
   else resyncQueues();                 // 다른 날을 쉬면 그날 몫이 뒤 3일로 — 오늘 큐가 바뀔 수 있다(R16)
   renderRestUI(); renderHome();
   toast(d===todayKey()?'오늘은 쉬어요 — 오늘 몫은 뒤 3일에 나눠 갚아요':`${d} 휴식 — 그 몫은 뒤 3일에 나눠 갚아요`); }
@@ -13183,7 +13186,9 @@ function syncBulk(){
   $('btnPick').classList.toggle('on', picking);
   $('btnPick').textContent = picking?'선택 끝':'선택';
 }
-function pickedCards(){ return listRows.filter(c=>picked.has(c.id)); }
+/* 🔴 고른 것 **전부**가 대상이다(독립 감사 11-11 C4-10) — 전엔 「지금 목록에 보이는 것 ∩ 고른 것」이라, 검색어를 바꿔 가며 고르면
+   막대는 「8장」인데 3장만 처리되고 앞에서 고른 5장은 선택까지 말없이 풀렸다. 막대 숫자(picked.size)와 같은 집합을 쓴다. */
+function pickedCards(){ return [...picked].map(id=>BYID[id]).filter(Boolean); }
 function bulkDo(kind){
   const cs=pickedCards();
   if(kind==='none'){ picked.clear(); renderList(true); syncBulk(); return; }
@@ -13485,9 +13490,13 @@ function knowledgeSum(){
    ▸ 메타 백테스트(09-02→09-06) 굳음 예측 −1.5% · 실제 채점량 주입 시 −0.4%. 규칙 정본 = `skills\card\통계화면_재구성안_2026-09-06.md` A-1. */
 const MATURE_IVL=21;                       // 굳음 문턱(일) — 안키 young/mature 경계
 const SIM_SEEDS=[1,2,3];                   // 고정 시드 — 시드 간 폭이 ±5장이라 셋 평균이면 충분(메타 실측)
-let SIM_ENGINE=null;
+let SIM_ENGINE=null, SIM_KEY='';
 function simEngine(){                      // 시뮬 전용 엔진 — **fuzz를 끈다**(예측선이 흔들리면 안 된다) · 갈래별 둘
-  if(SIM_ENGINE) return SIM_ENGINE;
+  /* 🔴 설정이 바뀌면 새로 만든다(독립 감사 11-11 C4-07) — 한 번 만든 엔진을 끝까지 써서, 복습 강도·맞춤값을 바꾼 뒤 궤적이
+     옛 설정으로 돌고 그 값이 주간 스냅숏 `fc`에 **새** 설정 이름표로 남았다(trajKey는 바뀌어 「다시 계산」은 됐다). */
+  const key=fsrsCfg.ret+'|'+curricRet()+'|'+(fwValid(fsrsCfg.w)?fsrsCfg.w.join(','):'');
+  if(SIM_ENGINE && SIM_KEY===key) return SIM_ENGINE;
+  SIM_KEY=key;
   const mk=ret=>{ const p={request_retention:ret, enable_fuzz:false, enable_short_term:false};
     if(fwValid(fsrsCfg.w)) p.w=fsrsCfg.w; return FSRS.fsrs(FSRS.generatorParameters(p)); };
   const a=mk(fsrsCfg.ret), b=mk(curricRet());
@@ -13524,6 +13533,9 @@ function maturityHistory(){
   const snap=k=>{ let hard=0; for(const id in cards){ const f=cards[id].fsrs; if(f&&(f.scheduled_days||0)>=MATURE_IVL) hard++; }
     out.push({k, hard, soft:seen.size-hard, unseen:Math.max(0, alive-seen.size)}); };
   for(const e of state.log){
+    /* 🔴 시각을 못 읽는 줄은 건너뛴다(독립 감사 11-11 C4-09) — dayKey(Invalid Date) = 'NaN-NaN-NaN'이 어떤 날짜보다 커서
+       아래 「빈 날 채우기」가 끝나지 않았다(탭 멈춤 · try로는 못 끊는다). lastRevMap·hourBuckets는 이미 같은 줄을 거른다. */
+    if(!isFinite(logTs(e))) continue;
     const k=dayKey(logDate(e));
     if(cur!==null && k!==cur){ snap(cur); /* 빈 날은 앞 값을 그대로 잇는다 */
       for(let g=dkAdd(cur,1); g<k; g=dkAdd(g,1)){ const p=out[out.length-1]; out.push({k:g, hard:p.hard, soft:p.soft, unseen:p.unseen}); } }
@@ -13677,7 +13689,9 @@ function forecastCheck(){                             // 「지난주 예측 오
 /* 오늘 한 줄에 쓰는 값 — 새로 굳은 / 거머리 탈출 */
 function todayGains(hist){
   const tk=todayKey(), a=hist[hist.length-1], b=hist[hist.length-2];
-  const newHard=(a&&b)?a.hard-b.hard:0;
+  /* 🔴 끝 칸이 **오늘**일 때만 차를 쓴다(독립 감사 11-11 C4-06) — maturityHistory는 로그가 있는 날까지만 칸을 만든다.
+     오늘 첫 채점 전에는 끝 칸이 마지막으로 푼 날이라, 그날의 「+36」이 「오늘 · 새로 굳은」으로 떴다. */
+  const newHard=(a&&b&&a.k===tk)?a.hard-b.hard:0;
   let escaped=0; const missBefore={}, okToday={};
   for(const e of state.log){ const k=dayKey(logDate(e));
     if(k===tk){ if(e[2]>=3) okToday[e[0]]=true; continue; }
@@ -13794,9 +13808,20 @@ function hmLine(k, by, hard){
    rounds[{key, src, rnd, date, full, A:[득점,만점]|null, B, kinds:{모름,핀트,실수,버림}, layers:{층:[득점,만점]}}] 날짜 오름차순).
    열면 기기 저장값 먼저 → 받으면 다시 그림 · 받기 실패해도 저장값으로 */
 const MOCK_URL='https://rn-feedback-signal-default-rtdb.asia-southeast1.firebasedatabase.app/mock.json', K_MOCK='cards_mock_v1';
-let MOCK=(()=>{ try{ return JSON.parse(lsGet(K_MOCK)||'null'); }catch(e){ return null; } })(), mockAt=0;
+/* 🔴 회차는 꼴을 보고 받는다(독립 감사 11-11 C4-08) — 그리는 쪽이 date·src·[득점,만점]이 다 있다고 믿어서, 한 회차만 깨져도
+   통계 화면 전체가 안 그려지고 그 사본이 기기에 굳었다(받기 전·실패 때도 같은 자리에서 죽음). 깨진 회차만 빼고 나머지는 그린다 ·
+   기기에 이미 굳은 사본도 읽을 때 같은 문을 지난다. */
+function mockClean(d){ if(!d||!Array.isArray(d.rounds)) return null;
+  const pair=v=>v==null || (Array.isArray(v) && v.length===2 && isFinite(v[0]) && isFinite(v[1]) && typeof v[0]==='number' && typeof v[1]==='number');
+  const rounds=d.rounds.filter(r=>r && typeof r==='object' && typeof r.date==='string' && /^\d{4}-\d{2}-\d{2}/.test(r.date)
+    && typeof r.src==='string' && pair(r.A) && pair(r.B)).map(r=>{ const o={...r, rnd:r.rnd==null?'':String(r.rnd), A:r.A||null, B:r.B||null, kinds:{}, layers:{}};
+      if(r.kinds && typeof r.kinds==='object') for(const k of Object.keys(r.kinds)) if(typeof r.kinds[k]==='number' && isFinite(r.kinds[k])) o.kinds[k]=r.kinds[k];
+      if(r.layers && typeof r.layers==='object') for(const k of Object.keys(r.layers)){ const v=r.layers[k]; if(v!=null && pair(v)) o.layers[k]=v; }
+      return o; });
+  return {...d, rounds}; }
+let MOCK=(()=>{ try{ return mockClean(JSON.parse(lsGet(K_MOCK)||'null')); }catch(e){ return null; } })(), mockAt=0;
 function mockLoad(){ if(Date.now()-mockAt<60000) return; mockAt=Date.now();
-  fetch(MOCK_URL,{cache:'no-store'}).then(r=>r.ok?r.json():null).then(d=>{ if(!d||!Array.isArray(d.rounds)) return;
+  fetch(MOCK_URL,{cache:'no-store'}).then(r=>r.ok?r.json():null).then(d0=>{ const d=mockClean(d0); if(!d) return;
     const same=MOCK&&MOCK.at===d.at; MOCK=d; lsSet(K_MOCK, JSON.stringify(d)); if(!same && $('scrStats').classList.contains('on')) renderStats(); }).catch(()=>{}); }
 /* 모의고사 추이(10-11) — 애플 HIG 꼴: 요약 머리(큰 숫자 = 고른 회차 · 기본 최근) · 한 그래프 한 메시지 · 값이 몰린 범위로 축 · 축 숫자 오른쪽 ·
    훑으면 머리 숫자가 바뀜 · 10-11 동하 「투박 · A·B 없음」 → 부드러운 곡선 + 위에서 옅어지는 면 · 점은 고른/최근 회차만 · [합계 | A·B] 전환(A·B = 두 선) */
@@ -13967,7 +13992,7 @@ function renderStats(){
     +sigH+'</div>';
 
   /* ═══ E. 모의고사 추이(10-11 동하 「과목별 진도·유지율보다 모고 추이」 · 메타 인계) ═══ */
-  h+=mockSection();
+  try{ h+=mockSection(); }catch(e){ console.warn('[모의고사] 그리기 실패 — 이 칸만 빼고 갑니다', e); window.MK_R=[]; }   // 이 칸이 던져도 궤적·잔디·예보는 그린다(C4-08)
 
   /* ═══ F. 자세히 — 판단이 안 붙는 수는 전부 접는다 ═══ */
   let adv='';

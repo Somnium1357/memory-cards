@@ -5467,7 +5467,12 @@ function effDueKey(k, id){               // 저장된 due → 화면에 쓰는 �
       /* 🔴 **휴식일 전(T<k)에 당긴 자리를 놓친 카드는 오늘 그대로 둔다**(리뷰 09-25 L1-1). 예전엔 d<T면 무조건 휴식일 뒤로 보내서,
          월요일로 당긴 카드를 월요일에 못 풀면 화·수에는 사라졌다가 일요일에 나왔다(앞당기려던 카드가 FSRS보다 3일 늦게).
          오늘이 원래 due보다 이르므로 여전히 「앞당김」이다. 휴식일 당일·이후(T>=k)와 오늘 채점한 카드(되돌이 가드)는 예전대로 뒤로. */
+      /* 🔴 **오늘 채점한 카드는 「내일 아침의 답」을 오늘도 낸다**(독립 감사 11-11 C2-04). 되돌이 가드가 채점한 날엔 「휴식일 뒤(금·토·일)」라고 답하고
+         다음 날 아침엔 ratedToday가 풀려 윗줄(L1-1)이 「오늘」이라고 답했다 — 같은 카드의 실효 due가 하룻밤에 당겨져, 월·화에 채점해 due가 목요일로 잡힌 카드가
+         그날 「내일」 타일·예보에서 빠졌다가 다음 날 큐에 들어왔다. 실제로 나오는 날은 종전 그대로다(다음 공부일 · 그 전에 휴식일이 오면 휴식일 뒤) — 예상만 그 날에 맞춘다.
+         오늘은 여전히 due가 아니다(되돌이 가드의 뜻 그대로). */
       if(d<T && T<k && !ratedToday && !isRestDay(T)) d=T;
+      else if(ratedToday && d<=T && T<k){ let t=dkAdd(T,1), g=0; while(t<k && isRestDay(t) && g++<14) t=dkAdd(t,1); d = t<k ? t : restWalk(k,1,off); }
       else if(d<T || (d===T && ratedToday)) d=restWalk(k,1,off);
     } else {
       d=restWalk(k,1,off);               // 직접 추가한 날 = 뒤 3일 (과거로 못 보낸다)
@@ -7695,7 +7700,10 @@ function asPreset(sx){   // 큐 조립기·카운터가 쓰는 형태로 변환 
            status:sx.how.status,
            fixed:isFixed(sx)}};   // 빈 범위의 뜻이 세션 종류에 따라 뒤집힌다 — inScope 참고
 }
-function sessCards(sx){ return (sx.q||[]).map(id=>BYID[id]).filter(c=>c && !newHeld(c, sx.scope)); }  // 사라진 카드는 조용히 탈락 · 범위 세션의 장면 신규도 · 일일 복습의 강사 질문 신규도(아래 newHeld — 이미 저장된 큐까지 같은 문)
+/* 🔴 임시 세션(「바로 풀기」·「이 결과 풀기」 = `temp`)은 newHeld를 안 건다(독립 감사 11-11 C2-05) — kqHeld는 「범위 없는 세션 = 일일 복습」을 겨냥했는데
+   임시 세션도 범위가 비어 같은 문에 걸렸다: 안 푼 강사 질문 카드를 「바로 풀기」 하면 화면 큐 0장으로 튕기고 토스트는 「1장 세션」이었다. 사람이 지목해 담은 카드다. */
+function sessHeld(sx, c){ return !sx.temp && newHeld(c, sx.scope); }
+function sessCards(sx){ return (sx.q||[]).map(id=>BYID[id]).filter(c=>c && !sessHeld(sx, c)); }  // 사라진 카드는 조용히 탈락 · 범위 세션의 장면 신규도 · 일일 복습의 강사 질문 신규도(아래 newHeld — 이미 저장된 큐까지 같은 문)
 /* 🔴 진행 중 큐 재조립은 **여기 한 곳**으로(전층 감사 F3-1 · 2026-09-06). 설정·순서·제외·강도 변경 여섯 자리가 각자
    `dropSettled(sessCards(sx))`로 다시 짜서, 문 ①(사슬·짝 키·방향 격리)이 오늘 뺀 카드가 도로 나왔다 — 격리가 막으려던 누설 그 자체.
    playSess와 같은 두 문을 지난다. 저장 순서는 지킨다(reorder=false). */
@@ -7813,7 +7821,7 @@ function refillSess(sx){ // 전체 범위 세션은 날이 바뀌면 스스로 �
    못 붙인 것은 저장 큐에 그대로 남는다(내일로). 지목 세션(pick)은 gateIn이 raw로 통과시킨다. 붙인 장수를 돌려준다. */
 function liveAppend(sx, ids){
   const inQ=new Set(queue.map(c=>c.id)), rest=queue.slice(qPos).filter(c=>!c._re);
-  const cand=(ids||[]).filter(id=>!inQ.has(id)).map(id=>BYID[id]).filter(c=>c && !newHeld(c, sx.scope));
+  const cand=(ids||[]).filter(id=>!inQ.has(id)).map(id=>BYID[id]).filter(c=>c && !sessHeld(sx, c));
   if(!cand.length) return 0;
   const pass=new Set(gateIn(cand, rest, sx.pick).map(c=>c.id));
   const add=newCap(sx, [...rest, ...cand.filter(c=>pass.has(c.id))]).filter(c=>!inQ.has(c.id));
@@ -9428,9 +9436,10 @@ function commitMemo(){
   const v=$('flagMemo').value; if(v===memoWas) return false;
   memoWas=v; const s=st(id);
   if(s.flag!=null){ s.flag=v; touchFb(s); cacheState(); return false; }
-  if(v.trim()){ s.flag=v; touchFb(s); cacheState(); return true; }   // 메모 칸이 늘 보인다(09-24) — 플래그 없이 쓰면 그 메모로 플래그
+  if(v.trim()){ s.flag=v; touchFb(s); cacheState(); memoFlagged=[id, Date.now()]; return true; }   // 메모 칸이 늘 보인다(09-24) — 플래그 없이 쓰면 그 메모로 플래그
   return false;
 }
+let memoFlagged=null;             // [카드, 시각] — 방금 메모가 플래그를 켠 자리(아래 rFlag가 본다)
 function syncRail(){
   commitMemo(); try{ scRenderDock(); }catch(e){}   // 레일 스터디 — 내 장수는 채점마다(10-05)
   const c=cur(); const s=c?state.cards[c.id]:null;
@@ -9470,8 +9479,12 @@ document.querySelectorAll('.rbtn.ann').forEach(b=>{
   b.onclick=()=>toggleAnn(b.dataset.ann);
 });
 $('rFlag').onclick=()=>{
-  commitMemo();                     // 쳐 둔 메모부터 넣고 토글한다 — 뒤에 넣으면 방금 끈 플래그가 메모로 다시 켜진다(L0-5)
+  const byMemo=commitMemo();        // 쳐 둔 메모부터 넣고 토글한다 — 뒤에 넣으면 방금 끈 플래그가 메모로 다시 켜진다(L0-5)
   const c=cur(); if(!c)return;
+  /* 🔴 **방금 그 메모가 플래그를 켰으면 토글하지 않는다**(독립 감사 11-11 C2-03). 메모 칸은 플래그 전에도 보인다(09-24) — 메모를 먼저 쓰고
+     「플래그」를 누르면 메모가 플래그를 켜고(위 줄 · 또는 칸을 떠나는 순간의 change) 바로 이 토글이 「켜져 있으니 끈다」로 메모까지 지웠다.
+     change가 먼저 온 경우는 같은 탭 한 번 안의 일이라 0.7초 창으로 본다 — 그 뒤에 누른 것은 켜진 단추를 보고 끄는 것이다. */
+  if(byMemo || (memoFlagged && memoFlagged[0]===c.id && Date.now()-memoFlagged[1]<700)){ memoFlagged=null; syncRail(); return; }
   const s=st(c.id);
   if(s.flag!=null){ s.flag=null; s.ft=[]; } else { s.flag=''; }   // 해제하면 사유도 같이 내린다
   touchFb(s); cacheState(); syncRail();

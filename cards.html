@@ -10158,7 +10158,12 @@ const SC_URL='https://uvrnsdknkivtclzlfjxx.supabase.co';
 const SC_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2cm5zZGtua2l2dGNsemxmanh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0OTA2NzYsImV4cCI6MjA3MDA2NjY3Nn0.k_jx9ysXfPIsU9ls3NHSgE4uqEkOrdzPftVVcYvck2s';   // 애드온에 든 공개(anon) 키 그대로
 const K_SC='cards_study_v1';
 let SC=(()=>{ try{ return JSON.parse(lsGet(K_SC)||'{}')||{}; }catch(e){ return {}; } })();
-function scSave(){ lsSet(K_SC, JSON.stringify(SC)); }
+/* 🔴 저장 전에 **기기에 든 로그인이 더 새것이면 그걸 남긴다**(독립 감사 11-11 C3-05 ③). 탭 둘이면 한 탭의 저장이 다른 탭이 방금 바꾼 연장 열쇠를
+   옛 것으로 덮었고, 그 탭이 다음에 연장하면 「Already Used」로 로그인이 끊겼다(아래 scToken은 연장 직전에만 기기 값을 다시 읽는다). 같은 사람의 로그인만 본다. */
+function scSave(){
+  try{ const a=SC.auth, b=a && (JSON.parse(lsGet(K_SC)||'{}')||{}).auth;
+    if(b && b.user_id===a.user_id && b.access_token && b.refresh_token && b.refresh_token!==a.refresh_token && (b.expires_at||0)>(a.expires_at||0)) SC.auth=b; }catch(e){}
+  lsSet(K_SC, JSON.stringify(SC)); }
 async function scReq(method, path, o){ o=o||{};
   let url=SC_URL+path; if(o.query) url+='?'+new URLSearchParams(o.query).toString();
   const h={apikey:SC_KEY, Accept:'application/json'}; if(o.token) h.Authorization='Bearer '+o.token; if(o.prefer) h.Prefer=o.prefer;
@@ -10177,20 +10182,43 @@ let scRefP=null;
 async function scToken(){ const a=SC.auth; if(!a||!a.access_token){ const e=new Error('계정이 없어요'); e.status=401; throw e; }
   if(a.refresh_token && Date.now()/1000>=(a.expires_at||0)-60){
     if(!scRefP) scRefP=(async()=>{
-      try{ const b=(JSON.parse(lsGet(K_SC)||'{}')||{}).auth; if(b && b.refresh_token && b.refresh_token!==SC.auth.refresh_token && (b.expires_at||0)>(SC.auth.expires_at||0)){ SC.auth=b; if(Date.now()/1000<(b.expires_at||0)-60) return; } }catch(e){}
-      scStore(await scReq('POST','/auth/v1/token',{query:{grant_type:'refresh_token'}, body:{refresh_token:SC.auth.refresh_token}})); })().finally(()=>{ scRefP=null; });
+      const adopt=()=>{ try{ const b=(JSON.parse(lsGet(K_SC)||'{}')||{}).auth; if(b && b.refresh_token && b.refresh_token!==SC.auth.refresh_token && (b.expires_at||0)>(SC.auth.expires_at||0)){ SC.auth=b; return Date.now()/1000<(b.expires_at||0)-60; } }catch(e){} return false; };
+      if(adopt()) return;
+      /* 🔴 연장 열쇠가 죽었으면(400 「Invalid Refresh Token: Already Used」·「Not Found」) 다시 보내도 같은 답이다 — 「로그인 끊김」 한 상태로 모은다(독립 감사 11-11 C3-05 ①).
+         전엔 로그인을 쥔 채 30초~5분마다 같은 연장을 되풀이하고 화면엔 영어 원문 + 「다시 시도」만 떴다. 그 사이 다른 창이 연장해 뒀으면 그 열쇠를 쓴다. */
+      try{ scStore(await scReq('POST','/auth/v1/token',{query:{grant_type:'refresh_token'}, body:{refresh_token:SC.auth.refresh_token}})); }
+      catch(e){ if((e.status===400||e.status===401) && /refresh token|invalid_grant/i.test(e.message||'')){ if(adopt()) return; e.status=401; e.authDead=true; } throw e; }
+    })().finally(()=>{ scRefP=null; });
     await scRefP; }
   return SC.auth.access_token; }
 async function scAuthed(fn){   // 만료로 401이면 한 번 갱신하고 다시(애드온 _run_authenticated_action)
   try{ return await fn(await scToken()); }
-  catch(e){ if(e.status!==401 || !SC.auth || !SC.auth.refresh_token) throw e; SC.auth.expires_at=0; return await fn(await scToken()); } }
+  catch(e){ if(e.authDead){ scAuthDead(); throw e; }
+    if(e.status!==401 || !SC.auth || !SC.auth.refresh_token) throw e; SC.auth.expires_at=0;
+    try{ return await fn(await scToken()); }catch(e2){ if(e2.authDead) scAuthDead(); throw e2; } } }
+/* 🔴 **로그인이 끊긴 한 상태**(C3-05 ②) — 로그인과 방 정보를 같이 비워 입구(초대 코드 · 아이디 로그인)가 뜨게 한다. 전엔 로그인만 지우고 방 정보를 남겨,
+   안내는 「초대 코드로 다시 들어가요」인데 초대 코드 칸이 안 뜨고 「다시 시도」는 아무 일도 안 하고 「방 나가기」는 「계정이 없어요」로 실패했다(출구 = 설정 › 연결 끊기뿐).
+   게스트는 같은 사람으로 못 돌아온다(서버에 옛 이름이 남는다 — 방장이 내보내거나 14일 정리) · 초대 코드는 칸에 채워 둔다. 아이디 계정은 다시 로그인하면 방이 돌아온다. */
+function scAuthDead(){ if(!SC.auth && !SC.group) return;
+  const user=SC.kind==='user', code=SC.group&&SC.group.invite_code;
+  delete SC.auth; scDropRoom(); if(code && !user) SC.lastCode=code;
+  SC.err = user ? '로그인이 끊겼어요 — 스터디 화면에서 아이디로 다시 로그인해요' : '연결이 끊겼어요 — 스터디 화면에서 초대 코드로 다시 들어가요';
+  scSave(); try{ if(document.visibilityState==='visible') toast(SC.err); }catch(e){}
+  setTimeout(()=>{ try{ scRender(); }catch(e){} }, 0); }
 async function scNick(uid){   // 애드온 canonical_nickname — sha256("study-companion:display-code:v1:"+id) 앞 6바이트 → XXX-XXX
   const b=new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('study-companion:display-code:v1:'+uid)));
   const A='23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; let s=''; for(let i=0;i<6;i++) s+=A[b[i]&31]; return s.slice(0,3)+'-'+s.slice(3); }
 const scTZ=()=>(SC.group&&SC.group.time_zone)||'Asia/Seoul';
 const scDSH=()=>{ const h=SC.group&&SC.group.day_start_hour; return Number.isInteger(h)?h:4; };
 let scDF=null;
+/* 🔴 서머타임이 있는 시간대는 **현지 시계**로 가른다(독립 감사 11-11 C3-08) — 「현지 시각이 04:00 앞이면 전날」(애드온 study_day.py · 서버 `(target_day + 4h) at time zone`와 같은 뜻).
+   절대 4시간을 빼면 전환일 새벽에 한 시간 어긋난다: 뉴욕 방 2026-03-08 현지 04:30 채점을 앱은 03-07로 보내고 서버는 `invalid review event`로 그날 묶음 전체를 거절했다.
+   서울(서머타임 없음)은 두 셈이 같아 종전 빠른 길 그대로 — 채점마다 불리는 함수다. */
+let scDF2=null;
 function scDay(t){ const tz=scTZ(), s=t-scDSH()*3600e3;   // 방의 하루 — 방 시간대 새벽 4시에 넘어간다(애드온 study_day.py)
+  if(tz!=='Asia/Seoul'){ try{ if(!scDF2||scDF2.tz!==tz) scDF2={tz, f:new Intl.DateTimeFormat('en-CA',{timeZone:tz, year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', hourCycle:'h23'})};
+      const m=/(\d{4})-(\d{2})-(\d{2})\D+(\d{1,2})/.exec(scDF2.f.format(new Date(t)));
+      if(m){ const day=m[1]+'-'+m[2]+'-'+m[3]; return (+m[4]%24)<scDSH() ? new Date(Date.UTC(+m[1], +m[2]-1, +m[3])-86400e3).toISOString().slice(0,10) : day; } }catch(e){} }
   try{ if(!scDF||scDF.tz!==tz) scDF={tz, f:new Intl.DateTimeFormat('en-CA',{timeZone:tz, year:'numeric', month:'2-digit', day:'2-digit'})}; return scDF.f.format(new Date(s)); }
   catch(e){ return new Date(s+9*3600e3).toISOString().slice(0,10); } }
 const scCid=id=>/^[0-9a-f]{1,16}$/i.test(id||'') ? (BigInt('0x'+id)||1n).toString() : null;   // 서버 card_id = 숫자 문자열(1~20자리) — 16자리 hex ID를 10진으로
@@ -10279,7 +10307,7 @@ async function scSync(o){ o=o||{};
       if(mine && mine.display_name && mine.display_name!==SC.nick){ SC.nick=mine.display_name; SC.customName=(mine.display_name===canon||!/^[a-zA-Z0-9]{2,16}$/.test(mine.display_name))?'':mine.display_name; } }
     delete SC.err; scFail=0; scHold=0; if(SC.ok) delete SC.ok.e; scSave();
   }catch(e){ if(e.status!==401){ scOkKey(); SC.ok.e={s:stage, m:String(e.message||e).slice(0,200), at:Date.now()}; } if(/not a member/i.test(e.message||'') && SC.group){ scDropRoom(); toast('스터디 방에서 빠졌어요 — 스터디 화면에서 초대 코드로 다시 들어가요'); return; }   // finally가 다시 그린다
-    SC.err = e.status===401 ? '연결이 끊겼어요 — 스터디 화면에서 초대 코드로 다시 들어가요' : (e.message||String(e)); if(e.status===401){ delete SC.auth; }
+    if(e.status===401) scAuthDead(); else SC.err=(e.message||String(e));   // 401 = 로그인 끊김 — 방 정보도 같이 비워 입구를 띄운다(C3-05)
     if(e.status!==401 && !o.keepalive){ scFail++; scHold=Date.now()+[60,120,240,300][Math.min(scFail,4)-1]*1000; } scSave(); }
   finally{ scBusy=false; if(!o.keepalive) scRender(); } }
 /* 계정을 바꿔도 이 기기 것은 남긴다 — 설치 ID · 목표 · 세션 이름 공유 · 세션별 속도 기록 */
@@ -10298,7 +10326,7 @@ async function scJoin(code){
     if(!g || !g.ok || !g.group_id) throw new Error(g&&g.error==='TOO_MANY_ATTEMPTS' ? '초대 코드를 너무 여러 번 넣었어요 — 10분 뒤에 다시 해 주세요' : '초대 코드를 확인해 주세요');
     return [g.group_id, await scGroups(tok)]; });
   SC.group=list.find(x=>x.id===gid) || list.find(x=>String(x.invite_code||'').toUpperCase()===code) || {id:gid, name:'스터디', invite_code:code};
-  delete SC.err; scSave(); await scSync(); }
+  delete SC.err; delete SC.lastCode; scSave(); await scSync(); }
 /* 🔴 스터디 계정 = 게스트(초대 코드) 또는 **아이디**(여러 기기 = 한 사람). 이메일은 없다(동하 「지원 안 함」).
    10-04 오전: 아이디 서버(account-auth)가 브라우저를 막아(CORS) 걷어냈다가 → 친구가 이슈 #3을 고쳐 운영 배포(OPTIONS 204 · POST
    Allow-Origin * — 10-04 저녁 실측) → 되살림. 계약 = 애드온 레포 ACCOUNT_AUTH_API.md · PUBLIC_API_CONTRACT.md.
@@ -11149,7 +11177,13 @@ function scRtOpen(){ if(!SC.group || !SC.auth || typeof WebSocket==='undefined' 
   scRtClose(); scRt.gid=SC.group.id;
   let ws; try{ ws=new WebSocket(SC_RT_URL+'?apikey='+encodeURIComponent(SC_KEY)+'&vsn=1.0.0'); }catch(e){ return; }
   scRt.ws=ws;
-  ws.onopen=()=>{ scRt.retry=0; scRt.topic='realtime:room:'+SC.group.id; scRt.tok=SC.auth.access_token||'';
+  /* 🔴 들어가기 전에 **로그인 연장을 기다린다**(독립 감사 11-11 C3-06) — 1시간 넘게 쉬다 돌아오면 연장 요청과 이 연결이 동시에 떠나, 소켓이 먼저 열리면
+     만료된 토큰으로 들어가려다 거절되고 「들어가지 못한 소켓」이 heartbeat만 돌며 남았다(30초 박자는 「소켓 있음」으로 돌아 나옴 → 다음 숨김·보임까지 실시간 없음).
+     거절(phx_reply 오류)·채널 오류(phx_error·phx_close)는 닫고 다시 건다. 재시도 간격은 **들어간 뒤에만** 처음으로 돌린다(받자마자 끊기면 2초 반복이 됐다). */
+  ws.onopen=async()=>{ let tk=''; try{ tk=await scToken(); }catch(e){ tk=''; }
+    if(scRt.ws!==ws || ws.readyState!==1) return;
+    if(!tk || !SC.group || !SC.auth){ scRt.ws=null; try{ ws.close(); }catch(e){} return; }   // 로그인이 없으면 안 들어간다 — 30초 박자가 다시 건다
+    scRt.topic='realtime:room:'+SC.group.id; scRt.tok=tk;
     /* 🔴 잠긴 채널(10-07 · 애드온 ef40849 · 이슈 #8) — 로그인 토큰이 있으면 private + access_token. 같은 이름이라도 공개/잠긴 채널은 따로라 애드온과 맞춰야 서로 보인다 */
     const cfg={broadcast:{self:false}, presence:{key:SC.auth.user_id}}, pl={config:cfg}; if(scRt.tok){ cfg.private=true; pl.access_token=scRt.tok; }
     scRtSend({topic:scRt.topic, event:'phx_join', payload:pl});
@@ -11174,6 +11208,7 @@ function scRtTick(entry){ if(!scRt.joined || !SC.auth) return; const t=logTs(ent
   scRtPresence(); }
 function scRtLive(uid){ const d=scDay(Date.now()); if(scRt.day!==d){ scRt.day=d; scRt.live=scLiveNew(); } return scRt.live[uid]=scRt.live[uid]||{at:0, n:0, bk:{}}; }
 function scRtApply(uid){ const L=scRt.live[uid], m=(SC.members||[]).find(x=>x.user_id===uid); if(!L || !m) return false;
+  if(SC.memDay!==scDay(Date.now())){ if(L.hasDnd) m.dnd=L.dnd; if(L.at && L.at>(Date.parse(m.updated_at||'')||0)){ if(L.status) m.status=L.status; if(L.hasDeck) m.current_deck_name=L.deck; m.updated_at=new Date(L.at).toISOString(); } return true; }   // 어제 목록엔 상태·덱만 얹는다 — 오늘 장수·칸은 오늘 목록이 온 뒤에(C3-04)
   if(L.hasDnd) m.dnd=L.dnd;   // DB로 목록을 다시 받아도(85초) 실시간 값을 다시 얹는다
   if(L.at && L.at>(Date.parse(m.updated_at||'')||0)){ if(L.status) m.status=L.status; if(L.hasDeck) m.current_deck_name=L.deck; m.updated_at=new Date(L.at).toISOString(); }
   if(L.n>(m.answer_count||0)) m.answer_count=L.n;
@@ -11192,10 +11227,16 @@ function scRtState(uid, meta){ if(!uid || !SC.auth || uid===SC.auth.user_id || !
   if((!meta.study_day || meta.study_day===scDay(Date.now())) && Number.isFinite(+meta.answer_count)) L.n=Math.max(L.n||0, +meta.answer_count);
   if(scRtApply(uid)) scRtPaint(); }
 function scRtOn(m){ const ev=m.event, p=m.payload||{};
-  if(ev==='phx_reply' && m.topic===scRt.topic && !scRt.joined){ if(p.status==='ok'){ scRt.joined=true; scRt.last='';
-      scRtSend({topic:scRt.topic, event:'broadcast', payload:{type:'broadcast', event:'room_ping', payload:{user_id:SC.auth.user_id}}}); scRtPresence(); } return; }
+  if(ev==='phx_reply' && m.topic===scRt.topic && !scRt.joined){ if(p.status==='ok'){ scRt.joined=true; scRt.last=''; scRt.retry=0;
+      scRtSend({topic:scRt.topic, event:'broadcast', payload:{type:'broadcast', event:'room_ping', payload:{user_id:SC.auth.user_id}}}); scRtPresence(); }
+    else if(p.status==='error'){ scRtClose(); scRtRetry(); }   // 들어가기 거절 — 닫고 다시(C3-06)
+    return; }
+  if((ev==='phx_error' || ev==='phx_close') && m.topic===scRt.topic){ scRtClose(); scRtRetry(); return; }
   if(ev==='broadcast'){ const e2=p.event, q=p.payload||{}, uid=String(q.user_id||'');
-    if(e2==='review_tick' && uid && uid!==SC.auth.user_id && scRtKnown(uid)){ const L=scRtLive(uid), m=(SC.members||[]).find(x=>x.user_id===uid), a=Math.max(0,Number(q.answers)||1), ms=Math.max(0,Number(q.time_ms)||0), s=Number(q.slot)||0;
+    if(e2==='review_tick' && uid && uid!==SC.auth.user_id && scRtKnown(uid)){
+      /* 🔴 밑수는 **오늘 받은 목록**일 때만(독립 감사 11-11 C3-04) — `SC.members`는 기기에 남아 다음 날 부팅·복귀 때도 어제 숫자다(화면은 memDay로 가린다).
+         그 위에 실시간 한 장이 얹히면 친구의 오늘 장수가 「어제 합계+1」(801장)로 굳었고, 오늘 치 DB 목록이 와도 「큰 수가 이긴다」로 그대로였다. */
+      const L=scRtLive(uid), m=SC.memDay===scDay(Date.now()) ? (SC.members||[]).find(x=>x.user_id===uid) : null, a=Math.max(0,Number(q.answers)||1), ms=Math.max(0,Number(q.time_ms)||0), s=Number(q.slot)||0;
       L.n=Math.max(L.n, (m&&m.answer_count)||0)+a; const v=L.bk[s]=L.bk[s]||{answer_count:0, time_ms:0};
       const mb=m&&(m.activity_buckets||[]).find(x=>x.slot===s); v.answer_count=Math.max(v.answer_count, (mb&&mb.answer_count)||0)+a; v.time_ms=Math.max(v.time_ms, (mb&&mb.time_ms)||0)+ms;
       L.at=Date.now(); L.status=L.status||'studying';
@@ -11232,14 +11273,26 @@ function scPubWire(msgId){ const m=()=>$(msgId);
   document.querySelectorAll('.sc-pubjoin').forEach(k=>k.onclick=()=>scPubJoin(k.dataset.code, k.dataset.name, msgId)); }
 async function scPubJoin(code, name, msgId){ const x=$(msgId);
   if(SC.group && !confirm(`「${SC.group.name||'스터디'}」에서 나가고 「${name||'스터디'}」에 들어갈까요? 지금 방에 올린 내 기록은 지워져요.`)) return;
-  try{ if(x) x.textContent='잠깐만요…'; if(SC.group) await scLeaveRoom(); await scJoin(code); scPubOpen=false;
+  /* 🔴 나가기 전에 **그 방에 아직 들어갈 수 있는지** 다시 본다(독립 감사 11-11 C3-07). 「한 사람 한 방」이라 지금 방을 먼저 나가야 하는데 나가기는 못 되돌린다
+     (내 기록 삭제 · 방장이 혼자면 방도 사라짐) — 목록은 60초 캐시라 그 사이 방이 차거나 내가 차단됐으면 방 없이 남았다. 목록을 새로 받아 그 방이 없으면 안 나간다.
+     그래도 들어가기가 실패하면 원래 방으로 돌아가 본다(초대 코드 · 방이 사라졌으면 못 돌아간다 — 그때는 코드를 알려 준다). */
+  const old=SC.group ? {code:SC.group.invite_code, name:SC.group.name||'스터디'} : null;
+  try{ if(x) x.textContent='잠깐만요…';
+    if(old){ await scLoadPublic(true); if(!(scPub||[]).some(g=>String(g.invite_code||'').toUpperCase()===String(code||'').toUpperCase())){ scPubPaint(); const y=$(msgId); if(y) y.textContent=`「${name||'스터디'}」에 지금은 들어갈 수 없어요 — 가득 찼거나 목록에서 빠졌어요`; return; }
+      await scLeaveRoom(); }
+    try{ await scJoin(code); }
+    catch(e){ if(!old || !old.code) throw e;
+      let back=false; try{ await scJoin(old.code); back=true; }catch(e2){}
+      const a=$('scBox'), c=$('studyBody'); if(a) a.dataset.m=''; if(c) c.dataset.m=''; scRender();
+      const y=$(msgId), t=`「${name||'스터디'}」에 못 들어갔어요(${scErrKo(e)}) — `+(back?`「${old.name}」으로 돌아왔어요`:`「${old.name}」 초대 코드는 ${old.code}예요`); if(y) y.textContent=t; toast(t); return; }
+    scPubOpen=false;
     const a=$('scBox'), c=$('studyBody'); if(a) a.dataset.m=''; if(c) c.dataset.m=''; scRender(); toast(`「${name||'스터디'}」에 들어갔어요`); }
   catch(e){ const y=$(msgId); if(y) y.textContent=scErrKo(e); } }
 /* 방에 들어가는 입구(초대 코드 · 방 만들기 · 아이디 로그인) — 스터디 화면에 둔다 */
 function scJoinForm(b, msgId){
   if(b.dataset.m==='join') return; b.dataset.m='join';   // 입력 중에 다시 그려 글자가 날아가지 않게
   b.innerHTML=`<div class="sc-sec"><div class="h-sec2"><h2>방에 들어가기</h2></div><div class="sc-card">`
-    + scRow(`<input id="scCode" type="text" maxlength="8" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="친구에게 받은 초대 코드" style="flex:1 1 150px;min-width:0"><button class="btn-ghost" id="scJoin" style="flex:0 0 auto">참여</button>`, 0)
+    + scRow(`<input id="scCode" type="text" maxlength="8" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="친구에게 받은 초대 코드" value="${esc(SC.lastCode||'')}" style="flex:1 1 150px;min-width:0"><button class="btn-ghost" id="scJoin" style="flex:0 0 auto">참여</button>`, 0)
     + `<details class="sc-more sc-fold"><summary><span>방 만들기</span>${SC_CHEV}</summary>`
     + scRow(scIn('scGName','text','방 이름')) + scRow(`<select id="scGTz" style="flex:1 1 150px;min-width:0" aria-label="방 시간대">${scTzOpts()}</select><button class="btn-ghost" id="scMake" style="flex:0 0 auto">만들기</button>`)
     + `<label class="sc-chk"><input type="checkbox" id="scGPub"> 공개 방으로</label>`

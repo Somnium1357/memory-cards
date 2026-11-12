@@ -14384,8 +14384,33 @@ function hdKey(e){ if((!kbdOn && !_padEv) || e.metaKey||e.ctrlKey||e.altKey) ret
       if(inSide) d.activeElement.blur();
       const big=e.key.startsWith('Page'); const step=big?Math.round(w.innerHeight*0.9):48;
       w.scrollBy({top:(e.key==='ArrowUp'||e.key==='PageUp')?-step:step, behavior:'auto'}); e.preventDefault(); }catch(err){} } }
+/* 🔴 **창 안에서 누른 링크도 히스토리를 쌓지 않게** 가로챈다(독립 감사 11-11 C5-02). 위 hdNewFrame의 설계(「iframe 이동이 부모 히스토리를 더럽히지 않게」)는
+   앱이 주소를 바꿀 때만 지켜졌다 — 과목 목록 → 과목 · 본문 속 `#성취_…` 링크 · 판 꼬리 「← 앞 과목 / 다음 과목 →」은 누를 때마다 한 칸씩 쌓여,
+   닫은 뒤 뒤로가기가 그만큼 헛돌았다(09-01 「뒤로 눌렀는데 화면이 그대로」와 같은 증상). 같은 문서 `#` = 해시 replace(hdTocJump · 판이 접힌 절을 편다) ·
+   다른 판 = 새 iframe(hdGoSubj · 해시가 붙었으면 그 자리로) · 「카드앱 ↗」 = 창 닫기. 바깥 주소·새 창 링크·판 밖 페이지는 손대지 않는다. */
+function hdLinkClick(ev){
+  if(ev.defaultPrevented || ev.button || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+  const a=ev.target && ev.target.closest && ev.target.closest('a[href]'); if(!a) return;
+  if(a.target && a.target!=='_self') return;
+  let w, u, pth; try{ w=$('hdFrame').contentWindow; u=new URL(a.getAttribute('href'), w.document.baseURI); pth=decodeURI(u.pathname); }catch(e){ return; }
+  if(u.origin!==w.location.origin) return;
+  if(/cards\.html$/.test(u.pathname)){ ev.preventDefault(); closeHoedok(); return; }
+  if(u.pathname===w.location.pathname){                       // 같은 문서 — 해시만 바꾼다
+    if(!u.hash) return;
+    let id; try{ id=decodeURIComponent(u.hash.slice(1)); }catch(e){ return; }
+    ev.preventDefault(); hdTocJump(id); return; }
+  if(!/\/hoedok\/판\/[^/]+\.html$/.test(pth)) return;
+  ev.preventDefault();
+  const f=hdFileOf(u.pathname);
+  if(f!=='index.html' && !u.hash){ hdGoSubj(f); return; }      // 과목 이동 = 그 과목의 마지막 자리로(과목 ▾ 시트와 같은 길)
+  hdSaveSpot(); hdPopClose(); setTimeout(hdNavHi,0);
+  HD_BROWSE=true; HD_QS=[]; HD_QI=0; HD_QA=[]; HD_KEY=''; HD_N=0; $('hdQList').classList.remove('on'); renderHdQ();
+  HD_RESUME=null; $('hdTtl').textContent = f==='index.html' ? '회독본' : f.replace(/\.html$/,'');
+  hdNewFrame(u.pathname+u.hash);
+}
 function hdOnLoad(){
   hdEmbed();
+  try{ $('hdFrame').contentDocument.addEventListener('click', hdLinkClick); }catch(e){}
   try{ const d=$('hdFrame').contentDocument; d.addEventListener('keydown', hdKey); d.addEventListener('click', ev=>{ const a=ev.target&&ev.target.closest&&ev.target.closest('aside.sidebar a'); if(a) setTimeout(()=>{ try{ a.blur(); }catch(e){} },0); }); }catch(e){}   // 🔴 iframe에 focus()를 주지 않는다(09-16 회귀 — 빈 프레임이 부팅 때 초점을 가져가 앱 전환 뒤 키가 거기로 갔다 · 화살표는 부모 keydown이 hdKey로 보낸다)
   /* 판 안의 「카드앱 ↗」을 누른 경우 — iframe에 앱을 띄우지 말고 오버레이를 닫는다 */
   try{ const p=$('hdFrame').contentWindow.location.pathname;
@@ -14447,10 +14472,23 @@ function navGuard(){
 }
 /* 뒤로가기 하나에 우선순위 둘 — ①회독본이 떠 있으면 그걸 닫는다 ②아니면 앱 안에서 뒤로.
    홈에서는 칸을 다시 쌓지 않는다 → 홈에서 한 번 더 누르면 앱을 벗어난다(그게 맞다). */
+/* 🔴 덮개는 **전부** 먼저 닫는다(독립 감사 11-11 C5-01) — 전엔 회독본(#ovlHd)만 보았다. 그림 확대·카드 시트가 뜬 채 뒤로 가면
+   덮개는 그대로인데 밑의 화면만 홈으로 갔다(풀이에서 쫓겨남 · clearResume까지). 순서 = 위에 뜬 것부터(그림 85 → 회독본 80 → 시트 60 · 확인 창이 시트보다 위) ·
+   닫는 법은 Esc와 같다. 닫고 나면 칸을 다시 문다 — **홈이고 남은 덮개가 없으면 안 문다**(홈에서 한 번 더 누르면 앱을 벗어난다 ·
+   전엔 홈에서 연 회독본을 뒤로가기로 닫으면 칸이 하나 남아 다음 뒤로가기가 헛돌았다 · C5-02 곁가지). */
+function ovlBackClose(){
+  if($('ovlImg').classList.contains('show')){ closeImg(); return true; }
+  if($('ovlHd').classList.contains('show')){ closeHoedok(true); return true; }
+  if(pauseAt){ resumeSession(); return true; }
+  const ovl=document.querySelector('#ovlConfirm.show') || document.querySelector('.ovl.show');
+  if(!ovl) return false;
+  if(ovl.id==='ovlCard') closeCardSheet(); else ovl.classList.remove('show');
+  return true;
+}
 window.addEventListener('popstate', ()=>{
   navPushed=false;
-  if($('ovlHd').classList.contains('show')){ closeHoedok(true); navGuard(); return; }
   const s=[...document.querySelectorAll('.scr.on')].map(e=>e.id)[0];
+  if(ovlBackClose()){ if((s && s!=='scrHome') || document.querySelector('.ovl.show, #ovlHd.show, #ovlImg.show')) navGuard(); return; }
   if(s && s!=='scrHome') go(backToScr());                     // go가 다시 navGuard를 부른다
 });
 /* 스와이프·뒤로가기가 같은 곳으로 가야 한다 — 풀이에서는 그 세션 화면, 그 밖에는 홈 */
@@ -14691,9 +14729,22 @@ function hdBlocks(d, anchorId){
   if(start && !/^H[1-6]$/.test(start.tagName)) start=(start.closest&&start.closest('h1,h2,h3,h4,h5,h6'))||start;
   /* 🔴 글줄이 `div`에 담긴 판이 많다 — li/p/td만 보다가 표본 250장 중 217장이 「절 없음」이었다.
      div를 받되 **잎만** 남긴다(다른 후보를 품은 컨테이너는 버린다). 안 그러면 절 통째가 한 줄이 된다. */
-  const all=[...d.querySelectorAll('h1,h2,h3,h4,h5,h6,li,p,td,dd,blockquote,div')];
+  const SEL='h1,h2,h3,h4,h5,h6,li,p,td,dd,blockquote,div';
+  const all=[...d.querySelectorAll(SEL)];
   const isH=e=>/^H[1-6]$/.test(e.tagName);
-  if(!start||!isH(start)) return all.filter(e=>!isH(e));
+  const leaf=out=>out.filter(e=>!out.some(o=>o!==e && e.contains(o)));
+  /* 🔴 앵커가 **제목이 아닐 때 문서 전체를 뒤지지 않는다**(독립 감사 11-11 C5-03). 중주제 앵커가 없어 대주제 표식(`<div class="part" id="읽기">`)이나
+     맨 `<a id>`로 떨어진 카드 648장이 이 길이었다 — 후보가 문서 전체(잎 거르기도 없이 본문 통째 `div`가 첫 후보)라 답이 문서 **어디든** 처음 나오는
+     자리로 갔다(점프한 186장 중 60장이 앵커보다 앞 = 남의 절 · 14장은 본문 통째 강조). 이제 ① 앵커가 글줄을 품은 통이면 그 안만
+     ② 표식이면 **다음 같은 급 표식 전까지** ③ 앵커를 못 찾으면 후보 없음(= 안 움직인다 · 절 머리). 어느 길이든 잎만 남긴다. */
+  if(!start) return [];
+  if(!isH(start)){
+    const inner=[...start.querySelectorAll(SEL)].filter(e=>!isH(e));
+    if(inner.length) return leaf(inner);
+    const F=Node.DOCUMENT_POSITION_FOLLOWING;
+    const peer=[...d.querySelectorAll(start.tagName)].find(e=>e!==start && e.id && e.className===start.className && (start.compareDocumentPosition(e)&F));
+    return leaf(all.filter(e=>!isH(e) && (start.compareDocumentPosition(e)&F) && (!peer || ((e.compareDocumentPosition(peer)&F) && !e.contains(peer)))));
+  }
   const i=all.indexOf(start); if(i<0) return [];
   const lv=+start.tagName[1], out=[];
   for(let j=i+1;j<all.length;j++){
@@ -14701,7 +14752,7 @@ function hdBlocks(d, anchorId){
     if(m){ if(+m[1]<=lv) break; continue; }
     out.push(e);
   }
-  return out.filter(e=>!out.some(o=>o!==e && e.contains(o)));
+  return leaf(out);
 }
 function hdSeekOne(blocks, a){
   if(!a) return null;
@@ -14716,7 +14767,11 @@ function hdSeekOne(blocks, a){
     ms.addAll(blocks.map((b,i)=>({id:i, t:(b.textContent||'')})));
     const res=ms.search(a);
     if(!res.length) return null;
-    if((res[0].terms||[]).length/qt.length < HD_SEEK_MIN) return null;   // 임계 미만이면 안 움직인다
+    /* 🔴 비율 = **질의 낱말** 가운데 맞은 것(독립 감사 11-11 C5-04). `terms`는 맞은 **문서 쪽** 낱말이라 prefix·fuzzy에서 한 질의 낱말이
+       「교사는·교사가·교사의…」로 불어난다 — 2낱말 답에서 하나만 맞아도 1.5로 통과했다(72장이 임계 미달인데 점프). 같은 낱말이 두 번 든 답은 한 번으로 센다. */
+    const uq=new Set(qt.map(x=>String(x).toLowerCase()).filter(Boolean)).size||1;   // 빈 조각(앞뒤 부호가 남긴 '')은 낱말이 아니다
+    const got=res[0].queryTerms ? new Set(res[0].queryTerms).size : Math.min(uq, (res[0].terms||[]).length);
+    if(got/uq < HD_SEEK_MIN) return null;   // 임계 미만이면 안 움직인다
     return blocks[res[0].id]||null;
   }catch(e){ return null; }
 }

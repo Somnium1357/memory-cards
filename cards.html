@@ -85,6 +85,7 @@ try{var _t=localStorage.getItem('cards_theme_v1');_t=_t==='b'?'dark':_t==='c'?'p
   --c-hard:  #C7731A; --c-hard-bg:  rgba(199,115,26,.13);
   --c-good:  #2A8A52; --c-good-bg:  rgba(42,138,82,.13);
   --c-easy:  #2A6AD8; --c-easy-bg:  rgba(42,106,216,.11);
+  --c-again-t:#B4332A; --c-hard-t:#925413; --c-good-t:#226F42; --c-easy-t:#245FC4; --c-green-t:#207C37; --c-orange-t:#9E5C00; --c-green-fill:#24883D;   /* 글자 전용 진한 색(독립 감사 11-11 C6-01 · 11-12 반영) — 채점 버튼 글자 4색 · 초록·주황을 글자로 쓰는 자리 · 흰 글자를 올리는 초록 채움. 화이트·페이퍼에서 4.5:1. 면·점·막대·아이콘은 원래 색 그대로 · 다크는 원래 값과 같다 */
   --c-dim: rgba(0,0,0,.28); --c-toast: rgba(30,30,32,.92);
 }
 
@@ -109,7 +110,7 @@ try{var _t=localStorage.getItem('cards_theme_v1');_t=_t==='b'?'dark':_t==='c'?'p
     --c-again: #FF7F74; --c-again-bg: rgba(255,127,116,.20);
     --c-hard:  #F4AA55; --c-hard-bg:  rgba(244,170,85,.20);
     --c-good:  #62CC88; --c-good-bg:  rgba(98,204,136,.18);
-    --c-easy:  #79AEFF; --c-easy-bg:  rgba(121,174,255,.22);
+    --c-easy:  #79AEFF; --c-easy-bg:  rgba(121,174,255,.22); --c-again-t:#FF7F74; --c-hard-t:#F4AA55; --c-good-t:#62CC88; --c-easy-t:#79AEFF; --c-green-t:#30D158; --c-orange-t:#FF9F0A; --c-green-fill:#30D158;
     --c-glass: rgba(36,36,38,.72); --c-glass-ring: rgba(255,255,255,.10); --c-glass-shadow: rgba(0,0,0,.55);
     --sh-card: 0 0 0 0.5px rgba(255,255,255,.07);
     --sh-big: 0 0 0 0.5px rgba(255,255,255,.07);
@@ -127,7 +128,7 @@ try{var _t=localStorage.getItem('cards_theme_v1');_t=_t==='b'?'dark':_t==='c'?'p
   --c-again: #FF7F74; --c-again-bg: rgba(255,127,116,.20);
   --c-hard:  #F4AA55; --c-hard-bg:  rgba(244,170,85,.20);
   --c-good:  #62CC88; --c-good-bg:  rgba(98,204,136,.18);
-  --c-easy:  #79AEFF; --c-easy-bg:  rgba(121,174,255,.22);
+  --c-easy:  #79AEFF; --c-easy-bg:  rgba(121,174,255,.22); --c-again-t:#FF7F74; --c-hard-t:#F4AA55; --c-good-t:#62CC88; --c-easy-t:#79AEFF; --c-green-t:#30D158; --c-orange-t:#FF9F0A; --c-green-fill:#30D158;
   --c-glass: rgba(36,36,38,.72); --c-glass-ring: rgba(255,255,255,.10); --c-glass-shadow: rgba(0,0,0,.55);
   --sh-card: 0 0 0 0.5px rgba(255,255,255,.07);
   --sh-big: 0 0 0 0.5px rgba(255,255,255,.07);
@@ -158,7 +159,7 @@ try{var _t=localStorage.getItem('cards_theme_v1');_t=_t==='b'?'dark':_t==='c'?'p
   --ink: var(--c-label);
   --ink2: var(--c-sec);
   --mute: var(--c-sec);
-  --faint: var(--c-ter);
+  --faint: var(--c-sec);
   --line: var(--c-sep);
   --hair: var(--c-sep);
   --accent: var(--c-acc);
@@ -912,7 +913,7 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .mk-cap1{font-size:13px;font-weight:600;color:var(--c-sec);}
 .mk-gap{margin-top:10px;}
 .mk-row .mk-rt{display:flex;align-items:center;gap:6px;}.mk-row .mk-rt .chip{padding:5px 10px;}
-.mk-row{display:flex;justify-content:space-between;align-items:center;}.mk-row span{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--c-ter);}
+.mk-row{display:flex;justify-content:space-between;align-items:center;}.mk-row span{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--c-sec);}
 .mk-big{display:flex;align-items:baseline;gap:4px;margin-top:1px;}
 .mk-big b{font-size:30px;line-height:34px;font-weight:700;color:var(--c-label);letter-spacing:-.02em;}
 .mk-big.sm b{font-size:22px;line-height:26px;}
@@ -920,13 +921,13 @@ details.hp[open]>summary{border-bottom:1px solid var(--line);}
 .mk-seg{flex:0 0 auto;}.mk-seg button{padding:4px 12px;font-size:13px;}
 .seg.mk-seg button{min-height:28px;}
 .mk-ab{display:inline-flex;align-items:baseline;gap:3px;margin-right:18px;}.mk-ab em{align-self:center;width:12px;height:3px;border-radius:2px;margin-right:3px;}.mk-ab .l{font-size:13px;font-weight:700;color:var(--c-sec);margin-right:2px;}
-.mk-big i{font-style:normal;font-size:13px;font-weight:700;margin-left:6px;}.mk-big i.up{color:var(--c-green);}.mk-big i.dn{color:var(--c-red);}.mk-big i.eq{color:var(--faint);}
+.mk-big i{font-style:normal;font-size:13px;font-weight:700;margin-left:6px;}.mk-big i.up{color:var(--c-green-t);}.mk-big i.dn{color:var(--c-red);}.mk-big i.eq{color:var(--faint);}
 .mk-meta{font-size:13px;line-height:18px;color:var(--c-sec);margin-top:1px;}
 .mk-rng{display:flex;align-items:center;gap:8px;margin-bottom:12px;}.mk-rng .mk-rseg{flex:1 1 auto;display:flex;}.mk-rng .mk-rseg button{flex:1 1 0;}   /* 범위(10-11) — 10회 넘을 때만 */
 .mk-wrap{position:relative;margin-top:6px;}   /* 커서 = 기본 화살표(10-12 동하 「십자로 바뀜」) */
 .mk-svg{display:block;width:100%;height:auto;overflow:visible;touch-action:pan-y;user-select:none;-webkit-user-select:none;}
 .mk-grid{stroke:var(--c-sep);stroke-width:.8;}
-.mk-ax{font-size:8.5px;fill:var(--c-ter);font-variant-numeric:tabular-nums;}
+.mk-ax{font-size:8.5px;fill:var(--c-sec);font-variant-numeric:tabular-nums;}
 .mk-avg{stroke-width:1;stroke-dasharray:4 3;opacity:.75;} .mk-avl{font-size:8.5px;font-weight:600;font-variant-numeric:tabular-nums;paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round;}   /* 평균 점선(10-25 동하 「10회·전체 각각」 = 보이는 회차만으로) */
 .mk-ay{font-size:10px;font-weight:600;fill:var(--c-sec);}   /* 점수 세로축(10-12 동하 「중요한 정보인데 흐림」) */
 
@@ -1436,10 +1437,10 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 .gbtn{height:var(--grade-h);border-radius:16px;position:relative;gap:1px;}
 .gbtn .gl{font-size:17px;font-weight:700;letter-spacing:0;}
 .gbtn .keycap{position:absolute;right:12px;top:50%;transform:translateY(-50%);}
-#gAgain{background:var(--c-again-bg);color:var(--c-again);}
-#gHard{background:var(--c-hard-bg);color:var(--c-hard);}
-#gGood{background:var(--c-good-bg);color:var(--c-good);}
-#gEasy{background:var(--c-easy-bg);color:var(--c-easy);}
+#gAgain{background:var(--c-again-bg);color:var(--c-again-t);}
+#gHard{background:var(--c-hard-bg);color:var(--c-hard-t);}
+#gGood{background:var(--c-good-bg);color:var(--c-good-t);}
+#gEasy{background:var(--c-easy-bg);color:var(--c-easy-t);}
 #gradeBar.re{grid-template-columns:1fr 3fr;}
 #gradeBar.re #gGood{flex:none;}
 
@@ -1569,7 +1570,7 @@ details.ym-subj>summary small{font-weight:600;color:var(--mute);font-size:12.5px
 .s2-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;}
 .s2-n{font-size:17px;line-height:22px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .s2-s{font-size:13px;color:var(--c-sec);line-height:18px;}
-.sess2.fin .s2-s{color:var(--c-green);}
+.sess2.fin .s2-s{color:var(--c-green-t);}
 .s2-r{display:flex;align-items:center;gap:10px;flex:0 0 auto;}
 .s2-r b{font-size:20px;font-weight:600;letter-spacing:-.01em;color:var(--c-label);}
 .s2-r small{font-size:15px;font-weight:400;color:var(--c-sec);margin-left:1px;}
@@ -1703,7 +1704,7 @@ button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inher
 .st-hr .hc em{position:absolute;left:0;right:0;height:0;border-top:2px solid var(--c-label);opacity:.28;pointer-events:none;}
 .st-hr .hc.on i{background:var(--c-label);}
 .st-hr.sel .hc:not(.on) i:not(.z){opacity:.45;}
-.st-hkey{display:flex;gap:14px;margin-top:8px;font-size:12px;color:var(--c-ter);}.st-hkey span{display:flex;align-items:center;gap:5px;}
+.st-hkey{display:flex;gap:14px;margin-top:8px;font-size:12px;color:var(--c-sec);}.st-hkey span{display:flex;align-items:center;gap:5px;}
 .st-hkey i{width:12px;height:0;border-top:2px solid var(--c-label);opacity:.28;}.st-hkey b{width:8px;height:8px;border-radius:4px;}
 .st-pick{cursor:pointer;touch-action:pan-y;}   /* 14일 막대 누르면 그날 */
 .st-day{touch-action:pan-y;}
@@ -1733,9 +1734,9 @@ button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inher
 #siteBody .btn-ghost{display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border-radius:18px;background:var(--c-fill);color:var(--c-label);font-size:15px;font-weight:600;text-decoration:none;}
 .st-fbn{display:flex;flex-wrap:wrap;gap:10px;}
 .st-chip{display:inline-block;font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:10px;background:var(--c-fill);color:var(--c-sec);}
-.st-chip.fixed{background:color-mix(in srgb,var(--c-green) 16%,transparent);color:var(--c-green);}
+.st-chip.fixed{background:color-mix(in srgb,var(--c-green) 16%,transparent);color:var(--c-green-t);}
 .st-chip.held{background:var(--c-fill);color:var(--c-sec);}   /* 보류 = 닫혔지만 안 고침(10-08 · 이슈식) */
-.st-chip.review{background:color-mix(in srgb,var(--c-orange) 16%,transparent);color:var(--c-orange);}
+.st-chip.review{background:color-mix(in srgb,var(--c-orange) 16%,transparent);color:var(--c-orange-t);}
 .st-chip.wait{background:color-mix(in srgb,var(--c-acc) 14%,transparent);color:var(--c-acc);}
 .st-fb{display:flex;align-items:center;gap:10px;min-height:44px;font-size:15px;line-height:20px;}
 .st-fb+.st-fb{box-shadow:inset 0 .5px 0 var(--c-sep);}
@@ -1764,7 +1765,7 @@ button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inher
 #railSc .rs-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:4px 12px 6px;}
 #railSc .rs-room{min-width:0;font-size:13px;font-weight:600;line-height:18px;color:var(--c-sec);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 #railSc .rs-n{flex:0 0 auto;font-size:13px;line-height:18px;color:var(--c-sec);}
-#railSc .rs-n.live{color:var(--c-green);font-weight:600;}
+#railSc .rs-n.live{color:var(--c-green-t);font-weight:600;}
 #railSc .rs-p{padding:12px 12px 14px;display:flex;flex-direction:column;gap:8px;}
 #railSc .rs-p+.rs-p{box-shadow:inset 0 .5px 0 var(--c-sep);}
 #railSc .rs-top{display:flex;align-items:center;gap:10px;}
@@ -1772,7 +1773,7 @@ button.sc-err{background:none;border:0;text-align:left;cursor:pointer;font:inher
 #railSc .rs-nm{flex:1;min-width:0;font-size:17px;line-height:22px;color:var(--c-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 #railSc .rs-nm small{font-size:13px;color:var(--c-sec);margin-left:4px;}
 #railSc .rs-st{flex:0 0 auto;font-size:13px;line-height:18px;color:var(--c-sec);}
-#railSc .rs-st.live{color:var(--c-green);}
+#railSc .rs-st.live{color:var(--c-green-t);}
 #railSc .rs-g{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding-left:18px;}
 #railSc .rs-v{display:flex;flex-direction:column;min-width:0;}
 #railSc .rs-v b{font-size:17px;line-height:22px;font-weight:600;color:var(--c-label);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -1874,6 +1875,7 @@ details.sc-fold+details.sc-fold{box-shadow:inset 0 .5px 0 var(--c-sep);margin-to
 .more-btn{border-radius:var(--r-group);}
 input,select{border-radius:10px;}
 .search-row input,#qSearch,#uSearch{background:var(--c-fill);border:0;min-height:36px;}
+.search-row input:focus,#qSearch:focus,#uSearch:focus{box-shadow:inset 0 0 0 2px var(--c-acc);}
 /* 토글 = 켜짐 초록 · 꺼짐 fill (§6) */
 .tgl.on{background:var(--c-green);}
 
@@ -1925,7 +1927,7 @@ input,select{border-radius:10px;}
 .gr-r{font-size:17px;line-height:22px;color:var(--c-sec);white-space:nowrap;}
 .gr-row.danger .gr-t{color:var(--c-danger);}
 .ss-panel{background:var(--c-card);border-radius:var(--r-group);box-shadow:var(--sh-card);padding:16px 20px;display:flex;flex-direction:column;gap:4px;}
-.ssp-n{color:var(--c-green);}
+.ssp-n{color:var(--c-green-t);}
 .ssp-sep{display:block;height:1px;transform:scaleY(.5);background:var(--c-sep);margin:10px 0 8px;}
 .ssp-r{display:flex;justify-content:space-between;font-size:15px;line-height:20px;margin-top:6px;}
 .ssp-r span:first-child{color:var(--c-sec);}
@@ -1968,7 +1970,7 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
 .grp>details.gr-fold{position:relative;}
 .grp>*+details.gr-fold::before{content:"";position:absolute;left:20px;right:20px;top:0;height:1px;transform:scaleY(.5);background:var(--c-sep);}
 .gr-row.static:active{background:none;}
-.gr-r.ok{color:var(--c-green);font-weight:600;}
+.gr-r.ok{color:var(--c-green-t);font-weight:600;}
 .gr-in{padding:4px 20px 16px;}
 /* 세션 격자(09-24 2차) — 폰: 한 줄 흐름(패널·자세히 카드 숨김, 「기록」 목록 줄) · 가로(≥900): 「범위 | 기록」 머리 한 줄 · 범위 카드와 성적 패널 같은 높이(stretch) · 아래 = 나머지 | 자세히 */
 .ss-g .a-sh,.ss-g .a-pnl,.ss-g .a-det{display:none;}
@@ -2032,7 +2034,7 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
 .end-top{display:flex;align-items:center;gap:16px;}
 .end-ring{width:52px;height:52px;flex:0 0 auto;}
 .end-h{display:flex;flex-direction:column;gap:2px;}
-.end-k{font-size:13px;font-weight:600;color:var(--c-green);}
+.end-k{font-size:13px;font-weight:600;color:var(--c-green-t);}
 .end-t{font-size:22px;font-weight:700;letter-spacing:-.015em;}
 .end-stats{display:grid;grid-template-columns:repeat(4,1fr);background:var(--c-card);border-radius:var(--r-group);box-shadow:var(--sh-card);padding:14px 8px;}
 .end-stats div{display:flex;flex-direction:column;align-items:center;gap:2px;}
@@ -2063,18 +2065,18 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
 .ymg .ym-row>.ym-mark{flex:0 0 28px;min-width:28px;width:28px;height:28px;padding:0;border-radius:0;background:none;font-size:21px;}
 .ymg .ym-row .t b{font-size:17px;font-weight:600;color:var(--c-label);}
 .ymg .ym-row .t small{font-size:13px;color:var(--c-sec);}
-.ymg .ym-row .t small .late{color:var(--c-orange);}
+.ymg .ym-row .t small .late{color:var(--c-orange-t);}
 .ymg .ym-row .t small .nw,.ymg .ym-row .t small .late{white-space:nowrap;}   /* 폰에서 두 줄로 갈 때 「해설 / p2」처럼 끊기지 않게 · 끊는 자리는 「 · 」뿐 */
 .ymg .ym-btns{gap:8px;}
 .ymg .ym-btn{min-height:36px;padding:0 14px;border-radius:18px;font-size:15px;font-weight:600;background:var(--c-fill);border:0;}
 .ymg .ym-btn.close{color:var(--c-easy);}
 .ymg .ym-btn.again{color:var(--c-again);}
-.ymg .ym-subtog{min-height:36px;padding:0 8px;border-radius:18px;background:none;color:var(--c-ter);font-size:15px;font-weight:500;outline:0;}
+.ymg .ym-subtog{min-height:36px;padding:0 8px;border-radius:18px;background:none;color:var(--c-sec);font-size:15px;font-weight:500;outline:0;}
 .ymg .ym-subtog.has{background:none;color:var(--c-acc);}
 .ymg .ym-subtog.on{background:var(--c-acc-tint);color:var(--c-acc);outline:0;}
 .ymg .ym-subs{margin:0 14px 12px 60px;padding:10px 12px;border-radius:14px;background:var(--c-fill);}
 .ymg .ym-subs .ym-mark{background:var(--c-card);border-color:var(--c-sep);}
-.ymg .ym-row .ym-skip{min-height:36px;padding:0 8px;border:0;background:none;color:var(--c-ter);font-size:15px;font-weight:500;}
+.ymg .ym-row .ym-skip{min-height:36px;padding:0 8px;border:0;background:none;color:var(--c-sec);font-size:15px;font-weight:500;}
 .ymg .ym-empty{padding:18px 20px;font-size:15px;color:var(--c-sec);}
 /* 트리: 과목 줄(오른쪽 값 n/N + 꺾쇠) · 펼치면 단위 줄이 40 들여 같은 카드 안에 */
 .ymg-subj{position:relative;display:flex;align-items:center;gap:10px;min-height:60px;padding:8px 10px 8px 20px;cursor:pointer;-webkit-user-select:none;user-select:none;}
@@ -2099,7 +2101,7 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
 #scrYmUnit .ym-prog{padding:0 20px 4px;gap:4px 14px;font-size:15px;color:var(--c-sec);}
 #scrYmUnit .ym-prog b{color:var(--c-label);font-weight:600;}
 #scrYmUnit .ym-foot .ym-btn{min-height:50px;border-radius:25px;border:0;font-size:17px;font-weight:600;background:var(--c-card);color:var(--c-label);box-shadow:var(--sh-card);}
-#scrYmUnit .ym-foot .ym-btn.primary{background:var(--c-green);color:#fff;}
+#scrYmUnit .ym-foot .ym-btn.primary{background:var(--c-green-fill);color:#fff;}
 @media (max-width:430px){
   .ymg .ym-row{flex-wrap:nowrap;padding:8px 10px 8px 16px;gap:10px;}
   .ymg .ym-row .ym-btns{width:auto;gap:6px;}
@@ -2201,6 +2203,10 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
 .hd-sp{flex:1 1 auto;}
 #ovlHd .hd-bar #hdSideBtn{display:none;}
 #ovlHd iframe{background:var(--c-bg);}
+#ovlHd .hd-wait,#ovlHd .hd-off{display:none;position:absolute;left:0;right:0;bottom:0;top:calc(env(safe-area-inset-top) + var(--sat-extra) + 56px);flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:4;}
+#ovlHd.hd-loading .hd-wait{display:flex;pointer-events:none;} #ovlHd.hd-fail .hd-off{display:flex;background:var(--c-bg);}
+#ovlHd .hd-wait .ld-bar{width:180px;height:4px;border-radius:2px;background:var(--c-fill);overflow:hidden;} #ovlHd .hd-wait .ld-bar i{display:block;width:40%;height:100%;border-radius:2px;background:var(--c-acc);animation:ldmove 1.4s ease-in-out infinite;}
+#ovlHd .hd-off b{font-size:17px;font-weight:600;color:var(--c-label);} #ovlHd .hd-off span{font-size:15px;color:var(--c-sec);} #ovlHd .hd-off .ym-btn{margin-top:8px;}
 #ovlHd .hd-edge{top:calc(env(safe-area-inset-top) + var(--sat-extra) + 56px);}   /* 머리 막대 밑부터 — 오버레이 위 여백(안전영역)만큼 내려야 한다(감사 11-11 C6-15 · 홈 화면 앱에서 첫 머리 버튼 절반이 띠에 덮여 안 눌렸다) */
 @media (min-width:760px){
   /* 사이드바는 기본 접힘(동하 09-30 「문서 모양상 왼쪽 사이드바 접는 게 나아」) · 펼 때는 **회독본 위로 덮어 미끄러진다**(동하 09-30 「열고 닫을 때 글자가 막 움직여 정신없어 ·
@@ -2269,17 +2275,17 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
 #hsToc .ht-s{display:block;width:100%;min-height:32px;padding:6px 8px 6px 26px;border-radius:10px;text-align:left;font-size:15px;line-height:20px;color:var(--c-sec);}
 #hsToc .ht-gt:active,#hsToc .ht-s:active{background:var(--c-fill);}
 #hsToc .ht-gt.on,#hsToc .ht-s.on{color:var(--c-acc);font-weight:600;}
-#hdPop .hp-r .n{margin-right:2px;min-width:22px;color:var(--c-ter);font-size:13px;font-variant-numeric:tabular-nums;}
+#hdPop .hp-r .n{margin-right:2px;min-width:22px;color:var(--c-sec);font-size:13px;font-variant-numeric:tabular-nums;}
 /* 질문 띠·목록 — 모양만(번호가 왼쪽 밖으로 잘리던 것 포함) */
 #hdQ{margin:0 16px 8px;padding:6px;gap:8px;border:0;border-radius:var(--r-group);background:var(--c-card);box-shadow:var(--sh-card);}
 #hdQ .qnav{width:36px;height:36px;border-radius:18px;background:var(--c-fill);color:var(--c-label);font-size:20px;font-weight:500;}
 #hdQTxt{font-size:15px;line-height:1.4;font-weight:600;color:var(--c-label);}
 #hdQIdx{font-size:13px;font-weight:500;color:var(--c-sec);font-variant-numeric:tabular-nums;}
-#hdQ .qdone{background:var(--c-green);color:#fff;}
+#hdQ .qdone{background:var(--c-green-fill);color:#fff;}
 #hdQList{margin:0 16px 10px;padding:4px 16px 12px 46px;border:0;border-radius:var(--r-group);background:var(--c-card);box-shadow:var(--sh-card);}
 #hdQList li{font-size:15px;line-height:1.45;color:var(--c-label);margin:0;padding:8px 0;}
 #hdQList li+li{box-shadow:inset 0 .5px 0 var(--c-sep);}
-#hdQList li::marker{color:var(--c-ter);font-size:13px;font-variant-numeric:tabular-nums;}
+#hdQList li::marker{color:var(--c-sec);font-size:13px;font-variant-numeric:tabular-nums;}
 #hdQList li.cur{color:var(--c-acc);font-weight:600;}
 #hdQList .qhead{margin:10px 0 4px -30px;font-size:13px;line-height:18px;font-weight:400;color:var(--c-sec);}
 #hdQList .qhead b{font-weight:600;color:var(--c-label);}
@@ -2303,7 +2309,7 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
 .cs-hoedok a::after,.st-sub a::after,.st-rf::after,.rd-qs li.more::after{content:"";position:absolute;left:-4px;right:-4px;top:-9px;bottom:-9px;}
 .fc-svg{display:block;max-width:100%;height:auto;}
 .fc-svg .fc-g{stroke:var(--c-sep);stroke-width:1;}
-.fc-svg .fc-t{fill:var(--c-ter);font-size:11px;font-variant-numeric:tabular-nums;}
+.fc-svg .fc-t{fill:var(--c-sec);font-size:11px;font-variant-numeric:tabular-nums;}
 .fc-svg .fc-rt{fill:var(--c-sec);}
 .fc-svg .fc-ret{stroke:var(--c-sec);stroke-width:1;stroke-dasharray:4 4;}
 .fc-svg .fc-now{stroke:var(--c-ter);stroke-width:1;stroke-dasharray:2 3;}
@@ -2320,7 +2326,7 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
 .fw-cs{font-size:13px;line-height:18px;color:var(--c-sec);}
 .fw-fc{overflow-x:auto;min-width:0;max-width:100%;}
 .fw-fc table{border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums;width:100%;}
-.fw-fc th{font-weight:400;color:var(--c-ter);padding:2px 4px;text-align:right;}
+.fw-fc th{font-weight:400;color:var(--c-sec);padding:2px 4px;text-align:right;}
 .fw-fc td{padding:3px 4px;text-align:right;color:var(--c-sec);}
 .fw-fc td:first-child,.fw-fc th:first-child{text-align:left;white-space:nowrap;}
 .fw-fc td.nw{color:var(--c-label);font-weight:600;}
@@ -2543,7 +2549,7 @@ details.gr-fold[open]>summary .s2-chev{transform:rotate(90deg);}
 
     <!-- 회독본 오버레이 — 앱 안에서 연다 (전체화면 유지 · 미저장분 방지) -->
     <div id="ovlHd">
-      <div class="hd-edge"></div>
+      <div class="hd-edge"></div><div class="hd-wait"><div class="ld-bar"><i></i></div></div><div class="hd-off"><b>회독본을 못 열었어요</b><span>연결된 뒤 다시 열어요</span><button class="ym-btn" id="hdRetry">다시 시도</button></div>
       <div class="hd-bar">
         <button class="tb-btn" id="hdSideBtn" title="사이드바" aria-label="사이드바"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M9 4.5v15"/></svg></button>
         <button class="tb-btn" id="hdClose" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
@@ -12577,6 +12583,9 @@ document.addEventListener('click', e=>{ const row=e.target.closest('.tgl-row'); 
     e.preventDefault(); e.stopPropagation(); if(!e.repeat) t.click();
   }, true);
 })();
+/* 회독본 창 「여는 중」 막대(.hd-loading)·「못 열었어요」(.hd-fail) — 감사 11-11 C7-06(예전엔 둘 다 빈 화면). 여는 순간 오프라인(navigator.onLine)이면 바로 못 엶 ·
+   load 때 판 문서가 비었으면(about: · 본문 없음) 못 엶. 연결이 끊겨 load 자체가 안 오면 막대가 계속 돈다(시간 제한 없음 — 타이밍 의존 금지). */
+document.addEventListener('click', e=>{ if(e.target&&e.target.id==='hdRetry'){ const f=$('hdFrame'); if(f) hdNewFrame(_hdSrc); } });
 $('ctOpen').onclick=()=>openHoedok('tools/curric-table.html','내용 체계표');   // 가리고 쓰기 페이지(동하 09-23 「앱에 올려줘 · 음악도」 · 메타 인계) — 회독본 창에서 연다(앱 테마를 따라간다)
 $('ovlSettings').onclick=(e)=>{ if(e.target===$('ovlSettings'))$('ovlSettings').classList.remove('show'); };
 $('btnNewSess').onclick=()=>openSessEditor(null,null);
@@ -14601,6 +14610,7 @@ function hdNewFrame(src){
   if(!src){ if(old) old.remove(); return null; }        // 🔴 닫을 때는 iframe을 **없앤다**(빈 프레임을 남기지 않는다 · 09-16 키 초점 회귀 의심)
   const f=document.createElement('iframe');
   f.id='hdFrame'; f.title='회독본'; _hdSrc=String(src);
+  { const off=navigator.onLine===false; $('ovlHd').classList.toggle('hd-loading', !off); $('ovlHd').classList.toggle('hd-fail', off); }
   f.addEventListener('load', hdOnLoad);
   /* 🔴 판 HTML은 Pages가 max-age=600으로 보내 배포 뒤 최대 10분 옛 판이 떴다(QC 09-30 · 동하 「회독본 반영이 왜 이렇게 안 되지」) — 열 때마다 새로 받는다(주소 뒤 ?r= · 경로·해시는 그대로라 자리 저장·앵커 무영향) */
   if(/hoedok\//.test(String(src)) && !/[?&]r=/.test(String(src))){ const h=String(src).indexOf('#'), base=h<0?String(src):String(src).slice(0,h), hash=h<0?'':String(src).slice(h); src=base+(base.includes('?')?'&':'?')+'r='+Date.now().toString(36)+hash; }
@@ -14654,6 +14664,8 @@ function hdLinkClick(ev){
   hdNewFrame(u.pathname+u.hash);
 }
 function hdOnLoad(){
+  { let ok=false; try{ const d=$('hdFrame').contentDocument; ok=!!(d && d.body && d.body.childElementCount && !/^about:/.test(d.URL)); }catch(e){}
+    $('ovlHd').classList.remove('hd-loading'); $('ovlHd').classList.toggle('hd-fail', !ok); }
   hdEmbed();
   try{ $('hdFrame').contentDocument.addEventListener('click', hdLinkClick); }catch(e){}
   try{ const d=$('hdFrame').contentDocument; d.addEventListener('keydown', hdKey); d.addEventListener('click', ev=>{ const a=ev.target&&ev.target.closest&&ev.target.closest('aside.sidebar a'); if(a) setTimeout(()=>{ try{ a.blur(); }catch(e){} },0); }); }catch(e){}   // 🔴 iframe에 focus()를 주지 않는다(09-16 회귀 — 빈 프레임이 부팅 때 초점을 가져가 앱 전환 뒤 키가 거기로 갔다 · 화살표는 부모 keydown이 hdKey로 보낸다)

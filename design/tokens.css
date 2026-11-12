@@ -70,6 +70,9 @@
   --c-hard:  #C7731A; --c-hard-bg:  rgba(199,115,26,.13);
   --c-good:  #2A8A52; --c-good-bg:  rgba(42,138,82,.13);
   --c-easy:  #2A6AD8; --c-easy-bg:  rgba(42,106,216,.11);
+  /* 글자 전용 진한 색(독립 감사 11-11 C6-01 · 11-12) — 화이트·페이퍼에서 4.5:1. 채점 버튼 글자 · 초록·주황을 글자로 쓰는 자리 · 흰 글자를 올리는 초록 채움. 면·점·막대·아이콘은 위 원래 색 */
+  --c-again-t: #B4332A; --c-hard-t: #925413; --c-good-t: #226F42; --c-easy-t: #245FC4;
+  --c-green-t: #207C37; --c-orange-t: #9E5C00; --c-green-fill: #24883D;
   --c-dim: rgba(0,0,0,.28); --c-toast: rgba(30,30,32,.92);
 }
 
@@ -95,6 +98,7 @@
     --c-hard:  #F4AA55; --c-hard-bg:  rgba(244,170,85,.20);
     --c-good:  #62CC88; --c-good-bg:  rgba(98,204,136,.18);
     --c-easy:  #79AEFF; --c-easy-bg:  rgba(121,174,255,.22);
+    --c-again-t: #FF7F74; --c-hard-t: #F4AA55; --c-good-t: #62CC88; --c-easy-t: #79AEFF; --c-green-t: #30D158; --c-orange-t: #FF9F0A; --c-green-fill: #30D158;   /* 다크 = 원래 값 */
     --c-glass: rgba(36,36,38,.72); --c-glass-ring: rgba(255,255,255,.10); --c-glass-shadow: rgba(0,0,0,.55);
     --sh-card: 0 0 0 0.5px rgba(255,255,255,.07);
     --sh-big: 0 0 0 0.5px rgba(255,255,255,.07);
@@ -113,6 +117,7 @@
   --c-hard:  #F4AA55; --c-hard-bg:  rgba(244,170,85,.20);
   --c-good:  #62CC88; --c-good-bg:  rgba(98,204,136,.18);
   --c-easy:  #79AEFF; --c-easy-bg:  rgba(121,174,255,.22);
+  --c-again-t: #FF7F74; --c-hard-t: #F4AA55; --c-good-t: #62CC88; --c-easy-t: #79AEFF; --c-green-t: #30D158; --c-orange-t: #FF9F0A; --c-green-fill: #30D158;   /* 다크 = 원래 값 */
   --c-glass: rgba(36,36,38,.72); --c-glass-ring: rgba(255,255,255,.10); --c-glass-shadow: rgba(0,0,0,.55);
   --sh-card: 0 0 0 0.5px rgba(255,255,255,.07);
   --sh-big: 0 0 0 0.5px rgba(255,255,255,.07);

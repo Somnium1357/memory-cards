@@ -5525,6 +5525,24 @@ let dataFresh=false;
 let dataAt=0, dataDay='', dataEtag='';   // dataEtag = 받은 카드 데이터의 판(Pages ETag) — 복귀 때 판만 물어 같으면 1.3MB를 다시 안 받는다(10-06)
 let state={cards:{},log:[],hoedok:{}}, sha={}, cfg=null;
 let logWeeks={};                       // 주 키 → 로그 배열 (이번 주 + 통계가 불러온 과거 주)
+/* 🔴 **되돌린 채점 표시**(독립 감사 11-11 C1-06). 로그 병합은 (카드|시각) 합집합이라, 되돌리기 전에 그 채점을 받아 간 다른 기기(다른 탭)가
+   다음 저장에서 그 항목을 원격에 되돌려 놓았다 — 잘못 누른 등급이 시각이 앞서 「그날 첫 채점」이 되고 고쳐 누른 등급은 무시됐다.
+   되돌린 (카드|시각)을 주 파일의 `del` 칸([[카드, 시각, 되돌린 때(초)], …])에 싣고, 합칠 때 그 항목을 걸러 낸다. 표시끼리는 합집합(지우지 않는다 — 주마다 몇십 건).
+   `log` 배열의 꼴은 그대로다(읽기만 하는 쪽은 `del`을 몰라도 된다 · 옛 판 앱이 저장하면 `del`이 빠지지만 표시를 든 기기가 다음 저장에 다시 싣는다).
+   주 파일을 **읽는 자리는 delAbsorb + delStrip(또는 mergeLogInto)**, **쓰는 자리는 weekFile** 하나를 지난다. */
+let logDel={};                         // 주 키 → {'카드|시각': [카드, 시각, 되돌린 때]}
+const lkey=e=>e[0]+'|'+e[1];
+function delAbsorb(wk, obj){ const d=obj&&obj.del; if(!Array.isArray(d)||!d.length) return 0; const m=logDel[wk]||(logDel[wk]={}); let n=0;
+  for(const x of d){ if(!Array.isArray(x)||x.length<2||x[0]==null||x[1]==null) continue; const k=x[0]+'|'+x[1]; if(!m[k]){ m[k]=[x[0], x[1], +x[2]||0]; n++; } }
+  return n; }
+function delHas(wk, e){ const m=logDel[wk]; return !!(m && m[lkey(e)]); }
+function delHasTs(id, ts){ const e=[id, ts]; return delHas(thisWeek(), e) || delHas(weekKeyOf(new Date(ts*1000)), e); }   // 채점 시각을 정할 때(rate) — 주 경계 0.5초 창까지 두 주를 본다
+/* 받은 주 파일이 **내 표시보다 뒤처졌는가**(독립 재검 F2) — 내가 되돌린 항목을 아직 품고 있거나, 내 표시가 그 파일의 `del`보다 많다.
+   옛 판 앱이 그 주 파일을 저장하면 `del`이 빠지고 되돌린 항목이 되살아난다 — 표시를 든 기기가 이걸 보고 다시 올린다(합친 뒤에 부른다). */
+function delBehind(wk, remote){ const m=logDel[wk]; if(!m||!remote) return false; const n=Object.keys(m).length; if(!n) return false;
+  return n>((remote.del||[]).length) || (remote.log||[]).some(e=>e && m[lkey(e)]); }
+function delStrip(wk, arr){ const m=logDel[wk]; if(!m||!arr) return arr||[]; return arr.some(e=>m[lkey(e)]) ? arr.filter(e=>!m[lkey(e)]) : arr; }
+function weekFile(wk){ const o={v:2, week:wk, log:logWeeks[wk]||[]}, m=logDel[wk]; if(m){ const d=Object.keys(m).map(k=>m[k]); if(d.length) o.del=d; } return o; }
 const dirtyFiles=new Set(), dirtyLogs=new Set();
 /* 🔴 병합이 **일정의 밑판**을 바꿨다 (전층 감사 F1-5 · F1-7 · 2026-09-06).
    `mergeSessInto`가 목표 기억률(`ret`)·개인 파라미터(`fw`)를, `mergeMarksInto`가 카드 `base`를 바꾸면
@@ -5800,7 +5818,7 @@ function cacheStateNow(){ // 파일 단위로 나눠 담는다 — 쿼터가 모
      `localStorage`로 되돌아가므로 종전보다 나빠지지 않는다. */
   const nowWk=thisWeek();
   for(const wk in logWeeks){ if(wk!==nowWk && !dirtyLogs.has(wk)) continue;
-    const body={v:2, week:wk, log:logWeeks[wk]};
+    const body=weekFile(wk);
     if(wk===nowWk) ok = lsSet(K_LOGP+wk, JSON.stringify(body)) && ok;
     else logCacheSet(wk, body); }
   ok = lsSet(K_SESS, JSON.stringify(sessFile())) && ok;
@@ -5809,7 +5827,7 @@ function cacheStateNow(){ // 파일 단위로 나눠 담는다 — 쿼터가 모
   /* 로그가 정본이므로 이번 주 로그부터 다시 담는다 — 일부만 저장될 상황이면 마지막까지 살아남아야 할 것은
      미푸시 로그의 유일 사본이고, marks/fb는 작고 원격에 있을 확률도 높다. 지난 주까지는 안 담는다(용량이 없다). */
   const wk=thisWeek();
-  ok = lsSet(K_LOGP+wk, JSON.stringify({v:2, week:wk, log:logWeeks[wk]||[]}));
+  ok = lsSet(K_LOGP+wk, JSON.stringify(weekFile(wk)));
   ok = lsSet(K_MARKS, JSON.stringify(parts.marks)) && lsSet(K_FB, JSON.stringify(parts.fb)) && ok;
   if(ok) return;
   if(!cacheWarned){ cacheWarned=true;
@@ -5829,7 +5847,10 @@ function markDirty(kind, wk){        // kind: sched|fb|sess|log
   const k=dirtyKey(kind, wk); dirtyGen[k]=(dirtyGen[k]||0)+1;
   setDirty(true);
 }
-function saveDirtyLogs(){ const v=[...dirtyLogs]; v.length?lsSet(K_DLOGS,v.join('|')):lsDel(K_DLOGS); }
+/* 🔴 K_DLOGS는 탭이 함께 쓰는 키 — 내 집합으로 덮지 않고 **저장된 것과 합쳐** 쓴다(독립 재검 F6). 다른 탭이 지난 주 미전송 표시를 세워 둔 채 이 탭이
+   제 집합으로 덮으면 그 탭이 죽었을 때 그 주가 영영 안 올라갔다. 빼는 것은 방금 올린(또는 올릴 사본이 없는) 그 주 하나뿐(gone). */
+function saveDirtyLogs(gone){ let st=[]; try{ st=(lsGet(K_DLOGS)||'').split('|').filter(Boolean); }catch(e){}
+  const v=[...new Set([...st.filter(w=>w!==gone), ...dirtyLogs])]; v.length?lsSet(K_DLOGS,v.join('|')):lsDel(K_DLOGS); }
 
 
 /* ═══════════════ 상태 ↔ 파일 변환 ═══════════════ */
@@ -6028,6 +6049,9 @@ function rebuildLog(){               // 주별 묶음 → 화면·통계가 쓰�
 }
 function pushLog(entry){             // 새 채점 = 이번 주 파일에 append
   const wk=thisWeek();
+  /* 되돌린 자리와 같은 (카드|초)로 다시 채점하면 표시에 걸려 지워진다 — 시각은 rate()가 FSRS 계산 전에 민다(delHasTs).
+     여기는 rate()를 안 거친 호출의 뒷문이다(같은 초에 되돌리고 다시 넣는 경우뿐 · C1-06). */
+  if(typeof entry[1]==='number'){ let g=0; while(delHasTs(entry[0], entry[1]) && g++<5) entry[1]+=1; }
   (logWeeks[wk]=logWeeks[wk]||[]).push(entry);
   state.log.push(entry);
   markDirty('log', wk);
@@ -6042,9 +6066,13 @@ function dropLogEntry(e){            // undo — 그 항목 하나만 지목해 
   if(!e)return;
   const hit=x=>x===e||(x[0]===e[0]&&x[1]===e[1]);
   for(let i=state.log.length-1;i>=0;i--){ if(hit(state.log[i])){ state.log.splice(i,1); break; } }
-  const wk=weekKeyOf(logDate(e));
-  const w=logWeeks[wk];
-  if(w){ for(let i=w.length-1;i>=0;i--){ if(hit(w[i])){ w.splice(i,1); break; } } }
+  /* 🔴 그 항목이 **실제로 든 주**에서 지운다(독립 재검 F3 = C2-12). pushLog는 「지금」의 주에 넣고 여기는 「항목 시각」의 주를 뒤졌다 — 월요일 04:00 직전 0.5초
+     (시각이 초로 올림되는 창)의 채점은 지난 주 파일에 들어 있는데 새 주에서 찾다 못 지워, 다음 rebuildLog에 되살아났다. 항목 시각의 주부터 보고 없으면 나머지 주를 본다. */
+  const wk0=weekKeyOf(logDate(e)); let wk=wk0;
+  for(const k of [wk0, ...Object.keys(logWeeks).filter(x=>x!==wk0)]){ const w=logWeeks[k]; if(!w) continue; let f=-1;
+    for(let i=w.length-1;i>=0;i--){ if(hit(w[i])){ f=i; break; } }
+    if(f>=0){ w.splice(f,1); wk=k; break; } }
+  (logDel[wk]||(logDel[wk]={}))[lkey(e)]=[e[0], e[1], Math.round(Date.now()/1000)];   // 되돌린 표시 — 다른 기기·탭이 받아 간 사본이 되살리지 못하게(C1-06)
   markDirty('log', wk);
 }
 
@@ -6384,9 +6412,10 @@ function mergeFbInto(remote, base){   // 피드백: u 최신 엔트리가 통째
     }
   }
 }
-function mergeLogInto(remote, wk){    // 로그: (카드|시각) 합집합
-  const cur=logWeeks[wk]||[], seen=new Set(cur.map(e=>e[0]+'|'+e[1]));
-  for(const e of (remote&&remote.log)||[]){ const k=e[0]+'|'+e[1]; if(!seen.has(k)){ seen.add(k); cur.push(e); } }
+function mergeLogInto(remote, wk){    // 로그: (카드|시각) 합집합 − 되돌린 표시(`del` · C1-06)
+  delAbsorb(wk, remote);
+  const cur=delStrip(wk, logWeeks[wk]||[]), seen=new Set(cur.map(e=>e[0]+'|'+e[1]));
+  for(const e of (remote&&remote.log)||[]){ const k=e[0]+'|'+e[1]; if(!seen.has(k) && !delHas(wk, e)){ seen.add(k); cur.push(e); } }
   cur.sort((x,y)=>logTs(x)-logTs(y));
   logWeeks[wk]=cur; rebuildLog();
 }
@@ -6462,8 +6491,9 @@ async function pushAll(force){        // 바뀐 파일만 올린다 (로그 우�
   const gen=k=>dirtyGen[k]||0;   // 비행 전 세대 — 끝난 뒤 같을 때만 지운다(F0-1)
   for(const wk of [...dirtyLogs]){
     const g=gen('log:'+wk);
-    await ghPut(logPath(wk), ()=>({v:2, week:wk, log:logWeeks[wk]||[]}), (rm)=>mergeLogInto(rm, wk));
-    if(gen('log:'+wk)===g){ dirtyLogs.delete(wk); saveDirtyLogs(); }
+    if(wk===thisWeek()) tabAdopted=false;   // 이번 주를 올린다 = 다른 탭에서 받아 둔 채점도 같이 올라간다(비행 중에 또 받으면 리스너가 다시 세운다 · C1-07)
+    await ghPut(logPath(wk), ()=>weekFile(wk), (rm)=>mergeLogInto(rm, wk));
+    if(gen('log:'+wk)===g){ dirtyLogs.delete(wk); saveDirtyLogs(wk); }
   }
   if(dirtyFiles.has('marks')){
     const g=gen('marks');
@@ -6637,6 +6667,7 @@ async function push(force){ // 배치 push — 옵티미스틱: 실패해도 로
        1.5초마다 push가 끝없이 돌았다(리뷰 09-25 L0-4 · 15초 10회). refreshRemote가 세션을 받으면 다음 push가 올린다. */
     const left = [...dirtyFiles].some(f=>f!=='sess'||sessLoadOK) || dirtyLogs.size>0;
     setDirty(left); ratedSincePush=0; lastPushAt=Date.now(); hideBanner('save');   // 저장 띠만(L0-3)
+    if(!left && tabAdopted) lsSet(K_DIRTY,'1');   // 다른 탭에서 받아 두기만 한 채점이 있다 — 기기 표시는 남긴다(그 탭이 못 올리고 죽으면 다음 부팅이 캐시를 얹는다 · C1-07)
     if(left) setTimeout(()=>push(), 1500);
     /* 여기까지 왔으면 로컬 피드백은 전부 원격에 있다. 이 시각이 「소진 판정」의 기준선이다 —
        이보다 오래된 u를 가진 키가 나중에 원격에서 사라지면 그건 루틴이 소비한 것이다. */
@@ -6726,7 +6757,8 @@ async function refreshRemote(){     // 포그라운드 복귀 시 원격 상태 
     const [sc, fb, sess, wk, ...pwl] = st.map(x=>x.status==='fulfilled' ? x.value : null);
     let pwNew=false;
     pws.forEach((w,i)=>{ const j=pwl[i]; if(!j||!Array.isArray(j.log)) return;
-      const n0=(logWeeks[w]||[]).length; mergeLogInto(j, w); if(logWeeks[w].length!==n0){ pwNew=true; logCacheSet(w, {v:2,week:w,log:logWeeks[w]}); } });
+      const n0=(logWeeks[w]||[]).length, d0=Object.keys(logDel[w]||{}).length; mergeLogInto(j, w); if(logWeeks[w].length!==n0 || Object.keys(logDel[w]||{}).length!==d0){ pwNew=true; logCacheSet(w, weekFile(w)); }
+      if(delBehind(w, j)) markDirty('log', w); });   // 그 주 파일이 내 되돌린 표시보다 뒤처졌으면 다시 올린다(F2)
     if(st.slice(4).every(x=>x.status==='fulfilled')) refreshWk=tw;   // 지난 주 파일을 못 받았으면 다음 복귀 때 다시 받는다
     if(sc||fb||sess||wk||pwNew){
       /* 🔴 걷어내기(reap)는 **받은 내용이 내 마지막 PUT보다 새것일 때만**(stFresh · 독립 재검 11-11). GET이 떠 있는 동안(카드 데이터를 다시 받는 몇 초)
@@ -6734,7 +6766,7 @@ async function refreshRemote(){     // 포그라운드 복귀 시 원격 상태 
          (그 뒤 다음 push가 원격에서도 지움). 낡은 내용은 합치기만 한다 — 걷기는 다음 갱신이 한다. */
       if(sc){ mergeMarksInto(sc); if(stFresh[0]) reapMarks(sc); }   // 다른 기기의 해제도 그때 걷어낸다
       if(fb){ mergeFbInto(fb); if(stFresh[1]) reapFb(fb); }   // 앱을 켜 둔 채로도 루틴이 소진한다 — 그때도 걷어낸다
-      if(wk) mergeLogInto(wk, tw); else rebuildLog();   // 받은 주(tw)에 합친다 — 기다리는 사이 주가 넘어가도 옛 주 내용이 새 주로 들어가지 않게
+      if(wk){ mergeLogInto(wk, tw); if(delBehind(tw, wk)) markDirty('log', tw); } else rebuildLog();   // 받은 주(tw)에 합친다 · 내 되돌린 표시보다 뒤처졌으면 다시 올린다(F2) — 기다리는 사이 주가 넘어가도 옛 주 내용이 새 주로 들어가지 않게
       if(sess){ mergeSessInto(sess); sessLoadOK=true; }   // 늦게라도 제대로 받으면 그때부터 올려도 된다
       replayLog();                    // 다른 기기가 올린 로그를 내 스냅샷에 반영
       restReset();                    // due가 움직였다 — 실효 due 캐시·백로그 계획을 버린다
@@ -6748,6 +6780,7 @@ async function refreshRemote(){     // 포그라운드 복귀 시 원격 상태 
       else if(scr==='scrList')refreshList();
     }
     if(stBad) throw stBad.reason;   // 일부를 못 받았다 — 받은 것은 위에서 합쳤고, 실패 처리(연속 2회부터 띠)는 종전대로
+    if(dirtyLogs.size) setTimeout(()=>push(), 0);   // 받은 주 파일이 내 되돌린 표시보다 뒤처져 다시 올릴 것이 생겼으면 곧바로(독립 재검 F2 — 미루면 그 사이 부팅한 기기가 되살아난 채점으로 일정을 잡는다)
     refreshFails=0;                 // 성공 — 연속 실패 카운터를 내린다
     hideBanner('sync'); if(sessLoadOK) hideBanner('boot');   // 받았으니 그 경고는 풀렸다(L0-3 · 지난 기록 부분 수신 띠는 새로고침 전엔 그대로)
   }catch(e){
@@ -6759,6 +6792,59 @@ async function refreshRemote(){     // 포그라운드 복귀 시 원격 상태 
     if(refreshFails>=2) showBanner('다른 기기 기록을 못 받았어요 — 새로고침하면 맞춰져요', false, 'sync');
   }
   finally{ refreshing=false; }
+}
+/* 🔴 **탭 둘(같은 기기)** — 다른 탭이 이번 주 로그 캐시를 쓰면 그 내용을 이 탭 메모리에 합친다(독립 감사 11-11 C1-07).
+   이번 주 로그 캐시(`K_LOGP+주`)와 K_DIRTY는 탭이 함께 쓰는 키인데 탭마다 제 메모리로 통째 덮었다 — 탭 B가 세션 저장만 해도 탭 A의 미전송 채점이
+   캐시에서 사라지고 B의 push 성공이 K_DIRTY를 지워, A가 정상으로 못 닫히면(강제 종료·크래시) 그 채점은 남은 곳이 없었다.
+   `storage` 이벤트(다른 탭이 쓸 때만 온다)로 받아 (카드|시각) 합집합 − 되돌린 표시로 합치고 올릴 것으로 표시한다 — 이 탭의 다음 캐시 쓰기·저장이 그 채점을 품는다.
+   풀이 중엔 로그만 합치고 일정 재계산·큐 정리는 풀이 화면을 떠날 때(go) 한다 — 손 밑에서 큐가 바뀌지 않게(refreshRemote와 같은 규칙).
+   ⚠ 마크·피드백·세션 캐시는 여전히 탭마다 통째로 쓴다(이 문은 정본인 로그만 지킨다). */
+let tabLogPending=false;
+function tabLogApply(){ tabLogPending=false;
+  replayLog(); restReset(); lastRevIdx=null; firstRevIdx=null; cacheState();
+  pruneSolvedFromQueues();
+  const scr=[...document.querySelectorAll('.scr.on')].map(x=>x.id)[0];
+  if(scr==='scrHome')renderHome(); else if(scr==='scrSession')renderSession();
+  else if(scr==='scrUnits')renderUnits(); else if(scr==='scrStats')renderStats();
+  else if(scr==='scrList')refreshList();
+}
+/* 🔴 받아 온 채점을 이 탭이 **곧바로 올리지는 않는다**(독립 재검 F5 — 올리면 다른 탭이 채점할 때마다 이 탭도 같은 파일을 PUT해 409 왕복·빈 커밋이 는다).
+   채점한 탭이 제 손으로 올린다. 이 탭은 「받아 둔 것이 있다」(tabAdopted)만 기억해, 제 저장이 성공해 K_DIRTY를 지울 때 그 표시를 **도로 세워 둔다**(push) —
+   채점한 탭이 못 올리고 죽어도 다음 부팅이 「더러운 부팅」으로 캐시(합집합)를 얹어 올린다. 이 탭이 이번 주 로그를 직접 올리면 풀린다(pushAll). */
+let tabAdopted=false;
+function tabLogTake(o, wk){          // 다른 탭이 쓴 이번 주 캐시 한 벌을 합친다 — 바뀌었으면 true
+  if(!o || !Array.isArray(o.log)) return false;
+  const have=new Set((logWeeks[wk]||[]).map(lkey)), dm=logDel[wk]||{};
+  const fresh=o.log.some(e=>e && !have.has(lkey(e)) && !dm[lkey(e)]) || (Array.isArray(o.del) && o.del.some(x=>Array.isArray(x) && !dm[x[0]+'|'+x[1]]));
+  if(!fresh) return false;
+  mergeLogInto(o, wk); lastRevIdx=null; firstRevIdx=null; todayRateIdx=null; tabAdopted=true;
+  return true;
+}
+window.addEventListener('storage', ev=>{
+  if(!booted || ev.newValue==null) return;             // 부팅 중에 온 것은 부팅 끝의 tabBootCatchUp이 캐시에서 다시 읽는다
+  const wk=thisWeek(); if(ev.key!==K_LOGP+wk) return;
+  let o=null; try{ o=JSON.parse(ev.newValue); }catch(e){ return; }
+  if(!o || !Array.isArray(o.log)) return;
+  if(!tabLogTake(o, wk)){
+    /* 새로 온 것은 없다. 다만 **받은 값이 내 것을 빠뜨렸으면** 합집합으로 다시 쓴다(독립 재검 F1) — 막 부팅한 탭·옛 판 탭이 제 메모리로 캐시를 덮은 경우.
+       다시 쓴 값은 상대 것을 다 품으므로 상대는 「새것 없음」으로 멈춘다(되받아치지 않는다). 내 것이 다 들어 있으면 아무것도 안 쓴다. */
+    const their=new Set(o.log.map(e=>e&&lkey(e))), td=new Set((o.del||[]).map(x=>Array.isArray(x)?x[0]+'|'+x[1]:''));
+    if((logWeeks[wk]||[]).some(e=>!their.has(lkey(e))) || Object.keys(logDel[wk]||{}).some(k=>!td.has(k))) cacheState();
+    return; }
+  if($('scrSolve').classList.contains('on') && cur()){ tabLogPending=true; cacheState(); return; }
+  tabLogApply();
+});
+/* 부팅이 끝난 자리에서 한 번 — 이 탭이 부팅하는 동안(리스너가 듣지 않는 동안) 다른 탭이 이번 주 캐시에 쓴 채점을 주워 담는다(독립 재검 F1).
+   부팅 머리에 읽은 사본(cLg)에 **없던** 항목만 본다 — 캐시를 통째로 얹으면 안 더러운 부팅의 「원격이 이긴다」가 깨진다(원격에서 빠진 옛 항목이 캐시에서 되살아난다).
+   이 뒤의 첫 캐시 쓰기(cacheState)는 그 채점을 품는다. booted=true와 같은 틱에 부른다(사이에 await를 넣지 마라). */
+function tabBootCatchUp(wk, cLg){
+  const c2=cachedFile(K_LOGP+wk); if(!c2 || !Array.isArray(c2.log)) return false;
+  const had=new Set(((cLg&&cLg.log)||[]).map(e=>e&&lkey(e)));
+  const add=c2.log.filter(e=>e && !had.has(lkey(e)));
+  if(!add.length && !(c2.del||[]).length) return false;
+  if(!tabLogTake({log:add, del:c2.del}, wk)) return false;
+  replayLog(); restReset(); lastRevIdx=null; firstRevIdx=null;
+  return true;
 }
 function pruneSolvedFromQueues(){   // 다른 기기에서 오늘 이미 푼 카드는 큐에서 뺀다
   const tk=todayKey(), solved=new Set();
@@ -7420,7 +7506,10 @@ async function loadAllBody(){     // 스케줄·피드백·세션·이번 주 �
      빈 메모리 집합 + 이번 주로 K_DLOGS를 다시 쓴 **다음 줄에서** 읽어, 저장돼 있던 지난 주 표시가 사라졌다(주 경계에 걸린 채점이 영영 안 올라감).
      읽은 주는 dirtyLogs에 먼저 넣어 둔다 — 아래에서 하나씩 처리하는 도중 앱이 닫혀도 표시가 남는다. */
   const pendLogs=(lsGet(K_DLOGS)||'').split('|').filter(Boolean);
-  if(wasDirty) for(const w of pendLogs) if(w!==wk) dirtyLogs.add(w);   // 이번 주는 아래 cLg 줄이 맡는다
+  /* K_DLOGS에 주가 적혀 있으면 K_DIRTY가 없어도 「못 올린 로그가 있다」로 읽는다(독립 재검 F6) — 두 키 모두 탭이 함께 쓰는데, 다른 탭의 저장 성공이
+     K_DIRTY만 지우고 그 탭은 죽은 경우다. 정상 흐름에선 주를 올린 자리에서 K_DLOGS의 그 주가 먼저 빠지므로 여기 남지 않는다. */
+  const logDirty=wasDirty || pendLogs.length>0;
+  if(logDirty) for(const w of pendLogs) if(w!==wk) dirtyLogs.add(w);   // 이번 주는 아래 cLg 줄이 맡는다
   const cSc=cachedFile(K_MARKS)||cachedFile(K_SCHED), cFb=cachedFile(K_FB), cSess=cachedFile(K_SESS), cLg=cachedFile(K_LOGP+wk);
   if(legacy){                     // 옛 단일 파일 → 새 구조로 읽어들인다 (한 번만)
     state.cards=legacy.cards||{};
@@ -7431,7 +7520,9 @@ async function loadAllBody(){     // 스케줄·피드백·세션·이번 주 �
     markDirty('marks'); markDirty('fb'); markDirty('sess'); for(const k in logWeeks) markDirty('log',k);
   } else {
     applyFiles(sc||cSc, fb||cFb);             shaCommit(H, MARKS_PATH); shaCommit(H, FB_PATH);   // 받은 내용을 깐 자리에서 sha를 적는다(C1-01)
-    logWeeks={}; const lw=(lg||cLg); if(lw&&Array.isArray(lw.log)) logWeeks[wk]=lw.log;   shaCommit(H, logPath(wk));
+    logWeeks={}; const lw=(lg||cLg); delAbsorb(wk, lg); delAbsorb(wk, cLg);   // 되돌린 표시는 원격·캐시 둘 다에서 받는다(C1-06)
+    if(lw&&Array.isArray(lw.log)) logWeeks[wk]=delStrip(wk, lw.log);   shaCommit(H, logPath(wk));
+    if(lg && cfg&&cfg.token && delBehind(wk, lg)) markDirty('log', wk);   // 원격 이번 주 파일이 내 표시보다 뒤처졌다 — 다시 올린다(독립 재검 F2)
     /* 못 올린 로컬분을 원격 위에 얹는다.
        🔴 얹기만 하고 「올려야 할 것」으로 표시하지 않으면, 지난번에 못 올린 채점이 스스로는
           영영 안 올라간다(다음 채점이 주 로그 전체를 올릴 때 딸려 갈 뿐). 표시까지 한다. */
@@ -7441,15 +7532,16 @@ async function loadAllBody(){     // 스케줄·피드백·세션·이번 주 �
     if(wasDirty && cFb){ mergeFbInto({cards:(cFb.cards||{})}, fbBase()); markDirty('fb'); }
     if(fb) reapFb(fb);                                            // 원격에서 소진된 것은 로컬에서도 뺀다
     if(sc) reapMarks(sc);                                         // 원격에서 해제된 마크도 마찬가지
-    if(wasDirty && cLg){ mergeLogInto(cLg, wk);                   markDirty('log', wk); }
-    /* K_DLOGS가 정본(맨 위에서 읽어 둔 pendLogs), 없는 기기(이 기능 이전)는 캐시 전수로 폴백.
-       ⚠ 폴백 조건은 종전과 같게 둔다 — 이번 주 캐시가 있는 더러운 부팅은 예전에도 폴백을 안 탔다(K_DLOGS에 이번 주가 막 적혀서).
-          여기서 그 조건을 풀면 더러운 부팅마다 전 주차를 다시 올린다(C1-05가 평소로 번진다). */
+    if((wasDirty || pendLogs.includes(wk)) && cLg){ mergeLogInto(cLg, wk);   markDirty('log', wk); }
+    /* 🔴 K_DLOGS(맨 위에서 읽어 둔 pendLogs)에 적힌 주만 올린다(독립 감사 11-11 C1-05). 예전엔 「K_DLOGS가 없는 옛 기기」 폴백으로 캐시에 든 주를 전부
+       다시 받고 다시 올렸는데, 그 조건이 「지난 주에 못 올린 것이 없는 평소」와 구분되지 않았다 — 새 주 첫 더러운 부팅(세션 저장 대기는 거의 늘 서 있다)마다
+       지난 12주를 통째로 재PUT했다(26초 · 3.3MB · 내용 같은 빈 커밋 12개 · 그동안 다른 저장이 막힘). 이관은 끝났다(K_DLOGS는 08월부터 쓴다).
+       표시 없이 캐시에만 남은 지난 주 채점(표시가 걷힌 경우)은 loadWeeks의 주 1회 재수신이 원격과 견줘 그 주만 올린다(아래 reget). */
     const pend=pendLogs.filter(w=>w!==wk);
-    if(wasDirty) for(const owk of (pend.length ? pend : (pendLogs.length||cLg) ? [] : await cachedLogWeeks())){
+    if(logDirty) for(const owk of pend){
       if(owk===wk) continue;
       const c=await logCacheGet(owk);
-      if(!c||!Array.isArray(c.log)||!c.log.length){ if(dirtyLogs.delete(owk)) saveDirtyLogs(); continue; }   // 올릴 사본이 없다 — 표시만 걷는다
+      if(!c||!Array.isArray(c.log)||!c.log.length){ dirtyLogs.delete(owk); saveDirtyLogs(owk); continue; }   // 올릴 사본이 없다 — 표시만 걷는다
       try{
         const rm=await (cfg&&cfg.token ? ghGet(logPath(owk)) : rawGet(logPath(owk),refFor(logPath(owk))));
         logWeeks[owk]=[]; if(rm) mergeLogInto(rm, owk);
@@ -7544,8 +7636,9 @@ async function loadAllBody(){     // 스케줄·피드백·세션·이번 주 �
   if(migrated) markDirty('marks');   // 옛 스냅샷에서 건져 온 마크를 새 파일로 한 번 올린다
   const pruned=pruneOrphans();       // 재생성으로 사라진 카드의 되짚기·마크 정리
   booted=true;                       // 🔴 여기부터 메모리가 정본이다 — 캐시 쓰기·push·복귀 갱신이 풀린다(감사 11-11 C1-02)
+  try{ tabBootCatchUp(wk, cLg); }catch(e){ console.warn('[탭 합치기] 부팅 끝', e); }   // 부팅하는 동안 다른 탭이 쓴 이번 주 채점(C1-07 · 독립 재검 F1)
   cacheState();
-  if(wasDirty||legacy||migrated||pruned) push(true);
+  if(wasDirty||legacy||migrated||pruned||dirtyLogs.size) push(true);   // 재수신이 「캐시에만 있는 지난 주 채점」을 찾았으면 그것도 지금(C1-05)
 }
 /* 지난 주 로그 — 전량 재계산의 재료.
    옛 전제 「지난 주는 안 바뀐다」는 틀렸다 (2026-08-24). 기기 B가 주 경계를 넘겨 오프라인이었다가
@@ -7562,7 +7655,7 @@ async function loadWeeks(keys){
   for(const k of want){
     const c=await logCacheGet(k);
     if(c&&Array.isArray(c.log)&&c.log.length){
-      logWeeks[k]=c.log;                 // 캐시를 일단 쓴다 — 재수신이 실패해도 이게 남는다
+      delAbsorb(k, c); logWeeks[k]=delStrip(k, c.log);   // 캐시를 일단 쓴다 — 재수신이 실패해도 이게 남는다
       if(resync && k!==tw) reget.push(k);
       continue;
     }
@@ -7582,9 +7675,9 @@ async function loadWeeks(keys){
       catch(e){ failed=true; }
       if(!failed && !j && !(cfg&&cfg.token) && rawNetFail!==nf0) failed=true;   // raw는 실패도 null로 삼킨다
       if(failed){ logIncomplete=true; logWeeks[k]=[]; return; }                 // 빈 주로 두되 캐시하지 않는다
-      logWeeks[k]=(j&&j.log)||[];
+      delAbsorb(k, j); logWeeks[k]=delStrip(k, (j&&j.log)||[]);
       // 🔴 빈 주는 캐시하지 않는다 — 다른 기기가 그 주에 뒤늦게 올린 것을 영영 못 보게 된다
-      if(logWeeks[k].length) await logCacheSet(k, {v:2,week:k,log:logWeeks[k]});
+      if(logWeeks[k].length) await logCacheSet(k, weekFile(k));
     }),
     ...reget.map(async k=>{
       let j=null;
@@ -7595,8 +7688,13 @@ async function loadWeeks(keys){
       if(!j||!Array.isArray(j.log)){ regetOK=false; return; }
       /* 🔴 통째 교체 금지 — 아직 push 못 한 로컬 채점이 날아간다. 로그는 정본이다.
          (카드|시각) 합집합으로 얹는다. */
+      const rk=new Set(j.log.map(lkey));
       mergeLogInto(j, k);
-      if(logWeeks[k].length) await logCacheSet(k, {v:2,week:k,log:logWeeks[k]});
+      /* 🔴 **캐시에만 있는 지난 주 채점**(또는 원격에 없는 되돌린 표시)이 있으면 그 주만 올릴 것으로 표시한다(C1-05의 안전망). 예전 「캐시 전수 재업로드」 폴백이
+         우연히 해 주던 구조를 내용 대조로 바꾼 것 — 미전송 표시(K_DLOGS)가 걷힌 경우(다른 탭의 저장 · 캐시 일시 읽기 실패)에도 주가 바뀐 뒤 첫 부팅에 올라간다.
+         원격과 같으면 아무것도 안 올린다. */
+      if(cfg&&cfg.token && (logWeeks[k].some(e=>!rk.has(lkey(e))) || delBehind(k, j))) markDirty('log', k);
+      if(logWeeks[k].length) await logCacheSet(k, weekFile(k));
     })
   ]);
   // 실패하면 기준선을 올리지 않는다 — 다음 부팅에 다시 시도해야 한다
@@ -9248,7 +9346,9 @@ function intervalsPreview(c){ // 채점 버튼 위 다음 간격 미리보기
 function rate(num){
   const c=cur(); if(!c||!revealed)return;
   if(Date.now()-revealAt < RATE_MIN_MS) return;   // 공개 직후 연타 — 위 주석
-  const ts=Math.round(Date.now()/1000), now=new Date(ts*1000);
+  let ts=Math.round(Date.now()/1000);
+  { let g=0; while(g++<5 && delHasTs(c.id, ts)) ts++; }   // 되돌린 자리와 같은 (카드|초)면 1초 민다 — **FSRS 계산 전에**(로그 시각 = 계산 시각 · C1-06 독립 재검 F4)
+  const now=new Date(ts*1000);
   // 🔴 채점 시각을 초로 끊는다 — FSRS fuzz 시드가 밀리초를 쓰기 때문에, 로그(초 단위)로 재계산할 때
   //    같은 결과가 나오려면 처음부터 같은 값을 넣어야 한다 (로그 = 정본 구조의 전제)
   /* 🔴 **날짜도 그 `now`에서 뽑는다** (전층 감사 F1-9 · 2026-09-06). 예전엔 `todayKey()`가 먼저였는데,
@@ -9794,6 +9894,7 @@ function gEnd(x,y){
 function go(id){
   document.getElementById('main').classList.toggle('solving', id==='scrSolve');   // 풀이 화면 밖에서는 윗줄(⌂) 숨김 — 하위 화면은 ‹ 하나(UI 리뷰 🟠 · 홈의 ⌂는 아무 일도 안 했다)
   if(id!=='scrSolve'){ resumeSession(); syncSessQueue();
+    if(tabLogPending){ try{ tabLogApply(); }catch(e){ console.warn('[탭 합치기]', e); } }   // 풀이 중에 다른 탭이 채점한 것 — 이제 일정·큐에 반영(C1-07)
     if(pendingRefresh){ pendingRefresh=false; setTimeout(refreshRemote,0); } }
   /* 🔴 **홈으로 나가면 복귀 지점을 버린다** (전층 감사 F4-8 · 2026-09-06).
      복귀(`tryResume`)는 「회독본 갔다 같은 탭으로 돌아옴」을 위한 장치인데 조건에 그 사실이 없어서,
